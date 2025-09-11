@@ -1,0 +1,132 @@
+/* Email Confirmation Styles */
+.emailConfirmation-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%);
+}
+
+.emailConfirmation-box {
+  width: 100%;
+  max-width: 450px;
+  padding: 30px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.emailConfirmation-logo {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.emailConfirmation-logo h1 {
+  color: #333;
+  font-size: 28px;
+  margin: 0;
+}
+
+.emailConfirmation-content {
+  padding: 20px 0;
+}
+
+.emailConfirmation-content h2 {
+  color: #333;
+  margin-bottom: 25px;
+  font-size: 24px;
+}
+
+.emailConfirmation-verifying-message,
+.emailConfirmation-success-message,
+.emailConfirmation-error-message {
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.emailConfirmation-verifying-message {
+  background-color: #e9f5fe;
+  color: #0c63e4;
+}
+
+.emailConfirmation-success-message {
+  background-color: #d4edda;
+  color: #28a745;
+}
+
+.emailConfirmation-error-message {
+  background-color: #f8d7da;
+  color: #dc3545;
+}
+
+.emailConfirmation-verifying-message p,
+.emailConfirmation-success-message p,
+.emailConfirmation-error-message p {
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+.emailConfirmation-loading-spinner {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(12, 99, 228, 0.2);
+  border-radius: 50%;
+  border-top-color: #0c63e4;
+  animation: spin 1s linear infinite;
+  margin: 10px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.emailConfirmation-btn-primary,
+.emailConfirmation-btn-secondary {
+  display: inline-block;
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-top: 15px;
+}
+
+.emailConfirmation-btn-primary {
+  background-color: #4a90e2;
+  color: white;
+}
+
+.emailConfirmation-btn-primary:hover {
+  background-color: #3a7bc8;
+}
+
+.emailConfirmation-btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.emailConfirmation-btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .emailConfirmation-box {
+    max-width: 90%;
+    padding: 20px;
+  }
+  
+  .emailConfirmation-logo h1 {
+    font-size: 24px;
+  }
+  
+  .emailConfirmation-content h2 {
+    font-size: 20px;
+  }
+}

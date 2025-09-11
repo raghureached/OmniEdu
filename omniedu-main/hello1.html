@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LMS Dummy Data - 3 Organizations (Final Version)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1700px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+        
+        .copy-btn {
+            background-color: #27ae60;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 12px;
+        }
+        
+        .copy-btn:hover {
+            background-color: #219a52;
+        }
+        
+        .table-container {
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        th,
+        td {
+            border: 1px solid #000;
+            padding: 3px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        
+        th {
+            background-color: #d3d3d3;
+            font-weight: bold;
+        }
+        
+        .org-summary {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-size: 12px;
+        }
+        
+        .instructions {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .stats {
+            background-color: #e8f5e8;
+            border: 1px solid #4caf50;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 11px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>LMS Dummy Data - Final Version (with Assessment Distribution & Completion %)</h1>
+
+        <div class="instructions">
+            <strong>Instructions:</strong> Click the "Copy Table" button below each organization table. Then paste directly into Excel or Word. The tables are formatted to maintain proper column alignment.<br>
+            <strong>New Features:</strong> 6-8 employees per org have assessment courses with Passed/Failed status. Course Completion % added (1-99% for In Progress, 100% for Completed).
+        </div>
+
+        <h2>Organization A - BPO Services</h2>
+        <div class="org-summary">
+            <strong>Teams:</strong> Customer Support, Technical Support, Quality Assurance, Training & Development<br>
+            <strong>Locations:</strong> Mumbai, Bangalore, Chennai, Hyderabad | <strong>Total Employees:</strong> 30
+        </div>
+        <div id="org1-stats" class="stats"></div>
+        <button class="copy-btn" onclick="copyTable('org1-table')">Copy Organization A Table</button>
+        <div class="table-container">
+            <table id="org1-table">
+                <thead>
+                    <tr>
+                        <th>Emp_ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Department</th>
+                        <th>Team</th>
+                        <th>Sub_team</th>
+                        <th>Manager</th>
+                        <th>Hire_Date</th>
+                        <th>Location</th>
+                        <th>Course_Name</th>
+                        <th>Course_Status</th>
+                        <th>Course_Completion_Percent</th>
+                        <th>Assessment_Score</th>
+                    </tr>
+                </thead>
+                <tbody id="org1-data">
+                </tbody>
+            </table>
+        </div>
+
+        <h2>Organization B - IT/ITES</h2>
+        <div class="org-summary">
+            <strong>Teams:</strong> Development, Infrastructure, Business Analysis, Project Management<br>
+            <strong>Locations:</strong> Pune, Noida, Gurgaon, Kolkata | <strong>Total Employees:</strong> 30
+        </div>
+        <div id="org2-stats" class="stats"></div>
+        <button class="copy-btn" onclick="copyTable('org2-table')">Copy Organization B Table</button>
+        <div class="table-container">
+            <table id="org2-table">
+                <thead>
+                    <tr>
+                        <th>Emp_ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Department</th>
+                        <th>Team</th>
+                        <th>Sub_team</th>
+                        <th>Manager</th>
+                        <th>Hire_Date</th>
+                        <th>Location</th>
+                        <th>Course_Name</th>
+                        <th>Course_Status</th>
+                        <th>Course_Completion_Percent</th>
+                        <th>Assessment_Score</th>
+                    </tr>
+                </thead>
+                <tbody id="org2-data">
+                </tbody>
+            </table>
+        </div>
+
+        <h2>Organization C - Sales</h2>
+        <div class="org-summary">
+            <strong>Teams:</strong> Inside Sales, Field Sales, Sales Operations, Customer Success<br>
+            <strong>Locations:</strong> Delhi, Mumbai, Bangalore, Ahmedabad | <strong>Total Employees:</strong> 30
+        </div>
+        <div id="org3-stats" class="stats"></div>
+        <button class="copy-btn" onclick="copyTable('org3-table')">Copy Organization C Table</button>
+        <div class="table-container">
+            <table id="org3-table">
+                <thead>
+                    <tr>
+                        <th>Emp_ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Department</th>
+                        <th>Team</th>
+                        <th>Sub_team</th>
+                        <th>Manager</th>
+                        <th>Hire_Date</th>
+                        <th>Location</th>
+                        <th>Course_Name</th>
+                        <th>Course_Status</th>
+                        <th>Course_Completion_Percent</th>
+                        <th>Assessment_Score</th>
+                    </tr>
+                </thead>
+                <tbody id="org3-data">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Course data
+        const courses = [
+            "Boost Your Focus",
+            "Awareness Test",
+            "Microsoft 365 Help & Learning",
+            "Learn to Code",
+            "AI at Meta",
+            "AWS Blogs",
+            "Microsoft AI Blogs",
+            "Google Cloud Blog",
+            "Employee Wellbeing - Sample",
+            "Effective Email Communication",
+            "Listening Skills",
+            "Remote Working Etiquette",
+            "Emotional_Intelligence",
+            "Soft_Skills - An Introduction",
+            "Time Management - A Comprehensive Guide",
+            "English Practice Exam_2011",
+            "Excel_Competencey_Exam_Practice_Test",
+            "Ocean Waves",
+            "Singing Narcissus Flycatcher"
+        ];
+
+        // Assessment courses (can have Passed/Failed status)
+        const assessmentCourses = [
+            "English Practice Exam_2011",
+            "Excel_Competencey_Exam_Practice_Test",
+            "Time Management - A Comprehensive Guide",
+            "Emotional_Intelligence",
+            "Effective Email Communication"
+        ];
+
+        // Status options
+        const regularStatuses = ["Assigned", "Enrolled", "In Progress", "Completed"];
+        const assessmentStatuses = ["Assigned", "Enrolled", "In Progress", "Passed", "Failed"];
+
+        // Organization data structures
+        const organizations = {
+            org1: {
+                name: "BPO Services",
+                prefix: "BPO",
+                domain: "bposervices.com",
+                teams: {
+                    "Customer Support": {
+                        subteams: ["Voice Support", "Chat Support", "Email Support"],
+                        roles: ["Support Executive", "Senior Support Executive", "Team Lead", "Manager"]
+                    },
+                    "Technical Support": {
+                        subteams: ["L1 Support", "L2 Support"],
+                        roles: ["Technical Executive", "Senior Technical Executive", "Technical Lead", "Manager"]
+                    },
+                    "Quality Assurance": {
+                        subteams: ["Call Monitoring", "Process Improvement"],
+                        roles: ["QA Analyst", "Senior QA Analyst", "QA Lead", "Manager"]
+                    },
+                    "Training & Development": {
+                        subteams: [],
+                        roles: ["Trainer", "Senior Trainer", "Training Manager", "Manager"]
+                    }
+                },
+                locations: ["Mumbai", "Bangalore", "Chennai", "Hyderabad"]
+            },
+            org2: {
+                name: "IT/ITES",
+                prefix: "IT",
+                domain: "techsolutions.com",
+                teams: {
+                    "Development": {
+                        subteams: ["Frontend", "Backend", "Full Stack"],
+                        roles: ["Software Developer", "Senior Developer", "Tech Lead", "Manager"]
+                    },
+                    "Infrastructure": {
+                        subteams: ["Cloud Ops", "DevOps"],
+                        roles: ["System Admin", "Cloud Engineer", "DevOps Engineer", "Manager"]
+                    },
+                    "Business Analysis": {
+                        subteams: ["Requirements", "Testing"],
+                        roles: ["Business Analyst", "Senior BA", "BA Lead", "Manager"]
+                    },
+                    "Project Management": {
+                        subteams: [],
+                        roles: ["Project Coordinator", "Project Manager", "Senior PM", "Director"]
+                    }
+                },
+                locations: ["Pune", "Noida", "Gurgaon", "Kolkata"]
+            },
+            org3: {
+                name: "Sales",
+                prefix: "SAL",
+                domain: "salesforce.com",
+                teams: {
+                    "Inside Sales": {
+                        subteams: ["Lead Generation", "Qualification", "Closing"],
+                        roles: ["Sales Executive", "Senior Sales Executive", "Sales Lead", "Manager"]
+                    },
+                    "Field Sales": {
+                        subteams: ["Enterprise", "SMB"],
+                        roles: ["Field Sales Rep", "Senior Sales Rep", "Territory Manager", "Regional Manager"]
+                    },
+                    "Sales Operations": {
+                        subteams: ["Analytics", "Process"],
+                        roles: ["Sales Analyst", "Operations Specialist", "Operations Lead", "Manager"]
+                    },
+                    "Customer Success": {
+                        subteams: [],
+                        roles: ["CSM", "Senior CSM", "CS Lead", "Manager"]
+                    }
+                },
+                locations: ["Delhi", "Mumbai", "Bangalore", "Ahmedabad"]
+            }
+        };
+
+        // Sample names
+        const firstNames = [
+            "Rahul", "Priya", "Amit", "Sneha", "Rajesh", "Kavya", "Suresh", "Meera", "Vikram", "Anita",
+            "Arjun", "Divya", "Kiran", "Pooja", "Manoj", "Ritu", "Anil", "Sonia", "Deepak", "Nisha",
+            "Ravi", "Preeti", "Sanjay", "Veena", "Ashok", "Sunita", "Naveen", "Rekha", "Vinod", "Madhuri",
+            "Rohit", "Swati", "Ajay", "Namita", "Prakash", "Seema", "Ramesh", "Geeta", "Nitin", "Shilpa",
+            "Sachin", "Rashmi", "Mahesh", "Usha", "Santosh", "Vandana", "Yogesh", "Pallavi", "Harish", "Manju"
+        ];
+
+        const lastNames = [
+            "Sharma", "Patel", "Singh", "Kumar", "Gupta", "Agarwal", "Jain", "Verma", "Shah", "Mehta",
+            "Reddy", "Nair", "Iyer", "Rao", "Pillai", "Menon", "Joshi", "Desai", "Thakur", "Pandey",
+            "Mishra", "Tiwari", "Srivastava", "Chopra", "Malhotra", "Kapoor", "Arora", "Bansal", "Goyal", "Mittal"
+        ];
+
+        // Utility functions
+        function getRandomElement(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        function getRandomDate(start, end) {
+            return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+        }
+
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        function getRandomScore(status, isAssessment) {
+            if (!isAssessment) return "NA";
+
+            if (status === "Passed") {
+                return Math.floor(Math.random() * 20) + 70; // 70-89
+            } else if (status === "Failed") {
+                return Math.floor(Math.random() * 19) + 51; // 51-69
+            }
+            return "NA";
+        }
+
+        function getCompletionPercent(status) {
+            if (status === "Completed") {
+                return "100%";
+            } else if (status === "In Progress") {
+                return Math.floor(Math.random() * 99) + 1 + "%"; // 1-99%
+            } else if (status === "Passed") {
+                return "100%";
+            } else if (status === "Failed") {
+                return "100%";
+            }
+            return "0%"; // Assigned, Enrolled
+        }
+
+        function generateEmployee(empId, orgData, orgKey) {
+            const firstName = getRandomElement(firstNames);
+            const lastName = getRandomElement(lastNames);
+            const name = `${firstName} ${lastName}`;
+            const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${orgData.domain}`;
+
+            // Assign to team
+            const teamNames = Object.keys(orgData.teams);
+            const teamName = getRandomElement(teamNames);
+            const team = orgData.teams[teamName];
+
+            // Assign subteam (if available)
+            let subteam = "";
+            if (team.subteams.length > 0) {
+                subteam = getRandomElement(team.subteams);
+            }
+
+            const role = getRandomElement(team.roles);
+            const location = getRandomElement(orgData.locations);
+            const hireDate = formatDate(getRandomDate(new Date(2020, 0, 1), new Date(2024, 11, 31)));
+
+            // Assign manager (simplified - managers from same team)
+            let manager = "";
+            if (role !== "Manager" && role !== "Director") {
+                const managerNames = ["John Smith", "Sarah Johnson", "Michael Brown", "Lisa Davis"];
+                manager = getRandomElement(managerNames);
+            }
+
+            return {
+                empId,
+                name,
+                email,
+                role,
+                department: orgData.name,
+                team: teamName,
+                subteam: subteam || "NA",
+                manager: manager || "NA",
+                hireDate,
+                location
+            };
+        }
+
+        function assignCourses(employee, shouldHaveAssessment = false) {
+            const numCourses = Math.floor(Math.random() * 3) + 2; // 2-4 courses per employee
+            const assignedCourses = [];
+            const shuffledCourses = [...courses].sort(() => 0.5 - Math.random());
+
+            // If this employee should have an assessment, ensure at least one assessment course
+            if (shouldHaveAssessment) {
+                const assessmentCourse = getRandomElement(assessmentCourses);
+                const status = getRandomElement(["Passed", "Failed"]);
+                const score = getRandomScore(status, true);
+                const completion = getCompletionPercent(status);
+
+                assignedCourses.push({
+                    courseName: assessmentCourse,
+                    status: status,
+                    score: score,
+                    completion: completion
+                });
+
+                // Remove this assessment course from the shuffled list to avoid duplicates
+                const index = shuffledCourses.indexOf(assessmentCourse);
+                if (index > -1) {
+                    shuffledCourses.splice(index, 1);
+                }
+            }
+
+            // Add remaining courses
+            const remainingCourses = numCourses - assignedCourses.length;
+            for (let i = 0; i < remainingCourses && i < shuffledCourses.length; i++) {
+                const course = shuffledCourses[i];
+                const isAssessment = assessmentCourses.includes(course);
+                let status;
+
+                if (isAssessment) {
+                    // For other assessment courses, use regular statuses mostly
+                    status = getRandomElement(assessmentStatuses);
+                    if (status === "Failed" && Math.random() < 0.7) {
+                        status = getRandomElement(["Assigned", "Enrolled", "In Progress"]);
+                    }
+                    if (status === "Passed" && Math.random() < 0.7) {
+                        status = getRandomElement(["Assigned", "Enrolled", "In Progress"]);
+                    }
+                } else {
+                    status = getRandomElement(regularStatuses);
+                }
+
+                const score = getRandomScore(status, isAssessment);
+                const completion = getCompletionPercent(status);
+
+                assignedCourses.push({
+                    courseName: course,
+                    status: status,
+                    score: score,
+                    completion: completion
+                });
+            }
+
+            return assignedCourses;
+        }
+
+        function generateOrganizationData(orgKey) {
+            const orgData = organizations[orgKey];
+            const employees = [];
+
+            // Randomly select 6-8 employees to have assessment courses with Passed/Failed
+            const numAssessmentEmployees = Math.floor(Math.random() * 3) + 6; // 6-8
+            const assessmentEmployeeIndices = [];
+            while (assessmentEmployeeIndices.length < numAssessmentEmployees) {
+                const randomIndex = Math.floor(Math.random() * 30) + 1;
+                if (!assessmentEmployeeIndices.includes(randomIndex)) {
+                    assessmentEmployeeIndices.push(randomIndex);
+                }
+            }
+
+            let assessmentCount = 0;
+
+            // Generate 30 employees
+            for (let i = 1; i <= 30; i++) {
+                const empId = `${orgData.prefix}${String(i).padStart(3, '0')}`;
+                const employee = generateEmployee(empId, orgData, orgKey);
+                const shouldHaveAssessment = assessmentEmployeeIndices.includes(i);
+                const courses = assignCourses(employee, shouldHaveAssessment);
+
+                if (shouldHaveAssessment) {
+                    assessmentCount++;
+                }
+
+                // Create a row for each course assignment
+                courses.forEach(course => {
+                    employees.push({
+                        ...employee,
+                        courseName: course.courseName,
+                        status: course.status,
+                        score: course.score,
+                        completion: course.completion
+                    });
+                });
+            }
+
+            // Update stats
+            const statsElement = document.getElementById(`${orgKey}-stats`);
+            const totalAssessments = employees.filter(emp =>
+                assessmentCourses.includes(emp.courseName) &&
+                (emp.status === "Passed" || emp.status === "Failed")
+            ).length;
+            const passedAssessments = employees.filter(emp => emp.status === "Passed").length;
+            const failedAssessments = employees.filter(emp => emp.status === "Failed").length;
+
+            statsElement.innerHTML = `
+                <strong>Assessment Summary:</strong> ${assessmentCount} employees have assessment courses with Passed/Failed status | 
+                Total Assessments: ${totalAssessments} | Passed: ${passedAssessments} | Failed: ${failedAssessments}
+            `;
+
+            return employees;
+        }
+
+        function populateTable(orgKey) {
+            const employees = generateOrganizationData(orgKey);
+            const tbody = document.getElementById(`${orgKey}-data`);
+
+            employees.forEach(emp => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${emp.empId}</td>
+                    <td>${emp.name}</td>
+                    <td>${emp.email}</td>
+                    <td>${emp.role}</td>
+                    <td>${emp.department}</td>
+                    <td>${emp.team}</td>
+                    <td>${emp.subteam}</td>
+                    <td>${emp.manager}</td>
+                    <td>${emp.hireDate}</td>
+                    <td>${emp.location}</td>
+                    <td>${emp.courseName}</td>
+                    <td>${emp.status}</td>
+                    <td>${emp.completion}</td>
+                    <td>${emp.score}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function copyTable(tableId) {
+            const table = document.getElementById(tableId);
+            let tableText = '';
+
+            // Get all rows including header
+            const rows = table.querySelectorAll('tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('th, td');
+                const rowData = Array.from(cells).map(cell => cell.textContent.trim()).join('\t');
+                tableText += rowData + '\n';
+            });
+
+            // Copy to clipboard
+            navigator.clipboard.writeText(tableText).then(() => {
+                alert('Table copied to clipboard! You can now paste it into Excel or Word.');
+            }).catch(err => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = tableText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Table copied to clipboard! You can now paste it into Excel or Word.');
+            });
+        }
+
+        // Initialize data when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            populateTable('org1');
+            populateTable('org2');
+            populateTable('org3');
+        });
+    </script>
+</body>
+
+</html>
+
+
+/////
+
+
+<ul className="globaladmin_sidebar_menu">
+    {/* home */}
+    <li>
+        <Link to="/global-admin" className={ isActive( "/global-admin") && !isActive( "/global-admin/users") && !isActive( "/global-admin/groups") ? "globaladmin_link_active" : "" }>
+        <Home size={20} /> {!sidebarCollapsed && (
+        <span className="globaladmin_sidebar_names">
+                   Global Admin Home
+                 </span> )}
+        </Link>
+    </li>
+    {/* new changes check */} {organizations.length > 0 && (
+    <div className="org-selector">
+        <label>Organization:</label>
+        <select>
+                 {organizations.map((org) => (
+                   <option key={org.id} value={org.id}>
+                     {org.name}
+                   </option>
+                 ))}
+               </select>
+    </div>
+    )} {/* organizations */}
+    <li>
+        <li className="globaladmin_menu_section">
+            {!sidebarCollapsed && (
+            <div className="globaladmin_section_title">Organizations</div>
+            )}
+            <li>
+                <Link to="/global-admin/organizations" className={ isActive( "/globl-admin/organizations") ? "globaladmin_link_active" : "" }> {/*
+                <BookCopy size={20} /> */}
+                <Building2 size={20} /> {!sidebarCollapsed && (
+                <span className="globaladmin_sidebar_names">
+                       Manage Organizations
+                     </span> )}
+                </Link>
+            </li>
+        </li>
+    </li>
+
+    {/* menu people */}
+    <li className="globaladmin_menu_section">
+        {!sidebarCollapsed && (
+        <div className="globaladmin_section_title"> People</div>
+        )}
+        <li>
+            <Link to="/global-admin/roles" className={ isActive( "/global-admin/roles") ? "globaladmin_link_active" : "" }>
+            <Shield size={20} /> {!sidebarCollapsed && (
+            <span className="globaladmin_sidebar_names">
+                     {" "}
+                     Manage Roles
+                   </span> )}
+            </Link>
+        </li>
+    </li>
+
+    {/*
+    <li>
+        <Link to="/global-admin/users" className={ isActive( "/global-admin/users") ? "globaladmin_link_active" : "" }>
+        <Users size={20} /> {!sidebarCollapsed && (
+        <span className="globaladmin_sidebar_names">Users</span> )}
+        </Link>
+    </li>
+    <li>
+        <Link to="/global-admin/groups" className={ isActive( "/global-admin/groups") ? "globaladmin_link_active" : "" }>
+        <UserCheck size={20} /> {!sidebarCollapsed && (
+        <span className="globaladmin_sidebar_names">Groups</span> )}
+        </Link>
+    </li> */} {/*
+    <li>
+        <Link to="/global-admin/roles" className={ isActive( "/global-admin/roles") ? "globaladmin_link_active" : "" }>
+        <Shield size={20} /> {!sidebarCollapsed && (
+        <span className="globaladmin_sidebar_names">Roles</span> )}
+        </Link>
+    </li> */} {/* content */}
+    <li className="globaladmin_menu_section">
+        {!sidebarCollapsed && (
+        <div className="globaladmin_section_title"> Content</div>
+        )}
+        <li>
+            <Link to="/global-admin/content" className={ isActive( "/global-admin/content") ? "globaladmin_link_active" : "" }>
+            <BookOpen size={20} /> {!sidebarCollapsed && (
+            <span className="globaladmin_sidebar_names">
+                     Manage Content
+                   </span> )}
+            </Link>
+        </li>
+    </li>
+
+    {/* // assessment
+    <li>
+        <Link to="/admin/content-assessments" className={ isActive( "/admin/content-assessments") ? "globaladmin_link_active" : "" }>
+        <CheckCircle size={20} /> {!sidebarCollapsed && (
+        <span className="globaladmin_sidebar_names">Assessments</span> )}
+        </Link>
+    </li>
+    <li>
+        <Link to="/admin/learning-paths" className={ isActive( "/admin/learning-paths") ? "globaladmin_link_active" : "" }>
+        <Award size={20} /> {!sidebarCollapsed && (
+        <span className="globaladmin_sidebar_names">
+                   Learning Paths
+                 </span> )}
+        </Link>
+    </li> */} {/* surveys */}
+    <li>
+        <li className="globaladmin_menu_section">
+            {!sidebarCollapsed && (
+            <div className="globaladmin_section_title">Surveys</div>
+            )}
+            <li>
+                <Link to="/global-admin/surveys" className={ isActive( "/globl-admin/surveys") ? "globaladmin_link_active" : "" }>
+                <BookCopy size={20} /> {!sidebarCollapsed && (
+                <span className="globaladmin_sidebar_names">
+                       Manage Surveys
+                     </span> )}
+                </Link>
+            </li>
+        </li>
+    </li>
+
+    {/*
+    <li>
+        <Link to="/admin/manage-surveys" className={ isActive( "/admin/manage-surveys") ? "globaladmin_link_active" : "" }>
+        <BookCopy size={20} /> {!sidebarCollapsed && (
+        <span className="globaladmin_sidebar_names">
+                   Manage Surveys
+                 </span> )}
+        </Link>
+    </li>
+    <li className="globaladmin_menu_section">
+        {!sidebarCollapsed && (
+        <div className="globaladmin_section_title">Assessments</div>
+        )}
+    </li>
+    <li>
+        <Link to="/admin/create-assignment" className={ isActive( "/admin/create-assignment") ? "globaladmin_link_active" : "" }>
+        <CheckCircle size={20} /> {!sidebarCollapsed && (
+        <span className="globaladmin_sidebar_names">
+                   Create Assignment
+                 </span> )}
+        </Link>
+    </li>
+    <li>
+        <Link to="/admin/manage-assignments" className={ isActive( "/admin/manage-assignments") ? "globaladmin_link_active" : "" }>
+        <CheckCircle size={20} /> {!sidebarCollapsed && (
+        <span className="globaladmin_sidebar_names">
+                   Manage Assignments
+                 </span> )}
+        </Link>
+    </li>
+    <li className="globaladmin_menu_section">
+        {!sidebarCollapsed && (
+        <div className="globaladmin_section_title">Library</div>
+        )}
+    </li>
+    <li>
+        <Link to="/admin/portal-library" className={ isActive( "/admin/portal-library") ? "globaladmin_link_active" : "" }>
+        <BookCopy size={20} /> {!sidebarCollapsed && (
+        <span className="globaladmin_sidebar_names">
+                   Portal Library
+                 </span> )}
+        </Link>
+    </li>
+    <li className="globaladmin_menu_section">
+        {!sidebarCollapsed && (
+        <div className="globaladmin_section_title">User Dashboard</div>
+        )}
+    </li>
+    <li>
+        <Link to="/admin/message-board" className={ isActive( "/admin/message-board") ? "globaladmin_link_active" : "" }>
+        <BookCopy size={20} /> {!sidebarCollapsed && (
+        <span className="globaladmin_sidebar_names">
+                   Message Board
+                 </span> )}
+        </Link>
+    </li>
+    <li className="globaladmin_menu_section">
+        {!sidebarCollapsed && (
+        <div className="globaladmin_section_title">Analytics</div>
+        )}
+    </li>
+    <li>
+        <Link to="/admin/analytics-overview" className={ isActive( "/admin/analytics-overview") ? "globaladmin_link_active" : "" }>
+        <BarChart size={20} /> {!sidebarCollapsed && (
+        <span className="globaladmin_sidebar_names">Overview</span> )}
+        </Link>
+    </li>
+    */}
+    <li className="globaladmin_menu_section">
+        {!sidebarCollapsed && (
+        <div className="globaladmin_section_title">Other</div>
+        )}
+    </li>
+    <li>
+        <Link to="/global-admin/profile" className={ isActive( "/global-admin/profile") ? "globaladmin_link_active" : "" }> {/*
+        <Clock size={20} /> */}
+        <UserRoundPen size={20} /> {!sidebarCollapsed && (
+        <span className="globaladmin_sidebar_names">
+                   Global Admin Profile
+                 </span> )}
+        </Link>
+    </li>
+    <li>
+        <Link to="/global-admin/activity-log" className={ isActive( "/global-admin/activity-log") ? "globaladmin_link_active" : "" }>
+        <Clock size={20} /> {!sidebarCollapsed && (
+        <span className="globaladmin_sidebar_names">Activity Log</span> )}
+        </Link>
+    </li>
+    <li>
+        <Link to="/global-admin/help-center" className={ isActive( "/global-admin/help-center") ? "globaladmin_link_active" : "" }>
+        <HelpCircle size={20} /> {!sidebarCollapsed && (
+        <span className="globaladmin_sidebar_names">Help Center</span> )}
+        </Link>
+    </li>
+</ul>

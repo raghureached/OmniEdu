@@ -1,0 +1,317 @@
+/* Catalog Styles - Enhanced for SaaS Application */
+.catalog-container {
+  padding: 24px;
+  max-width: 1280px;
+  margin: 0 auto;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.catalog-header {
+  margin-bottom: 32px;
+  text-align: left;
+}
+
+.catalog-header h2 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a56db;
+  letter-spacing: -0.5px;
+}
+
+.catalog-header p {
+  color: #4b5563;
+  margin: 0;
+  font-size: 16px;
+}
+
+.catalog-filter-section {
+  background-color: #f9fafb;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 32px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.catalog-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+
+.catalog-search-box {
+  flex: 1;
+  min-width: 240px;
+  position: relative;
+}
+
+.catalog-search-box input {
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 15px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.catalog-search-box input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+.catalog-filter-dropdown select {
+  padding: 10px 36px 10px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 15px;
+  background-color: white;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M8 11.5l-5-5h10l-5 5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  min-width: 160px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.catalog-filter-dropdown select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+.catalog-courses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.catalog-course-card {
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: transform 0.3s, box-shadow 0.3s;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e5e7eb;
+}
+
+.catalog-course-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+}
+
+.catalog-course-image {
+  height: 160px;
+  overflow: hidden;
+}
+
+.catalog-course-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s;
+}
+
+.catalog-course-card:hover .catalog-course-image img {
+  transform: scale(1.05);
+}
+
+.catalog-course-title {
+  margin: 0;
+  padding: 16px 20px 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.4;
+}
+
+.catalog-course-meta {
+  display: flex;
+  justify-content: space-between;
+  color: #6b7280;
+  font-size: 14px;
+  padding: 0 20px 12px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.catalog-course-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+}
+
+.catalog-rating {
+  display: flex;
+  flex-direction: column;
+}
+
+.catalog-rating-value {
+  font-weight: 600;
+  color: #111827;
+}
+
+.catalog-rating-stars {
+  color: #f59e0b;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.catalog-enrolled {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.catalog-enroll-button {
+  margin: 0 20px 20px;
+  padding: 10px 0;
+  background-color: #1a56db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 15px;
+}
+
+.catalog-enroll-button:hover {
+  background-color: #1e429f;
+}
+
+.catalog-no-results {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 20px;
+  background-color: #f9fafb;
+  border-radius: 10px;
+  border: 1px dashed #d1d5db;
+}
+
+.catalog-no-results p {
+  margin-bottom: 16px;
+  color: #4b5563;
+  font-size: 16px;
+}
+
+.catalog-no-results button {
+  padding: 8px 16px;
+  background-color: #e5e7eb;
+  color: #374151;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.catalog-no-results button:hover {
+  background-color: #d1d5db;
+}
+
+/* Skeleton loading animation */
+.catalog-skeleton {
+  position: relative;
+  overflow: hidden;
+}
+
+.catalog-skeleton::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0.5) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.catalog-skeleton-image {
+  height: 160px;
+  background-color: #e5e7eb;
+  margin-bottom: 16px;
+}
+
+.catalog-skeleton-title {
+  height: 24px;
+  background-color: #e5e7eb;
+  margin: 0 20px 12px;
+  border-radius: 4px;
+}
+
+.catalog-skeleton-meta {
+  height: 16px;
+  background-color: #e5e7eb;
+  margin: 0 20px 16px;
+  border-radius: 4px;
+  width: 60%;
+}
+
+.catalog-skeleton-description {
+  height: 40px;
+  background-color: #e5e7eb;
+  margin: 0 20px 16px;
+  border-radius: 4px;
+}
+
+.catalog-skeleton-button {
+  height: 40px;
+  background-color: #e5e7eb;
+  margin: 0 20px 20px;
+  border-radius: 6px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .catalog-container {
+    padding: 16px;
+  }
+  
+  .catalog-courses-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+  }
+  
+  .catalog-filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .catalog-search-box,
+  .catalog-filter-dropdown {
+    width: 100%;
+  }
+  
+  .catalog-filter-dropdown select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .catalog-courses-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .catalog-header h2 {
+    font-size: 24px;
+  }
+}

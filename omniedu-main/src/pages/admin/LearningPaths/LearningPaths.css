@@ -1,0 +1,261 @@
+.learning-paths-container {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.learning-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.learning-filter-section {
+  background-color: #f5f5f5;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.learning-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.learning-filter-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+}
+
+.learning-filter-group label {
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.learning-filter-group input,
+.learning-filter-group select {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.learning-filter-actions {
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.learning-btn-filter {
+  background-color: #4a90e2;
+  color: white;
+}
+
+.learning-btn-reset {
+  background-color: #6c757d;
+  color: white;
+}
+
+.learning-btn-create {
+  background-color: #5cb85c;
+  color: white;
+}
+
+.learning-btn-retry {
+  background-color: #4a90e2;
+  color: white;
+  margin-top: 10px;
+}
+
+.learning-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.learning-data-table th,
+.learning-data-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.learning-data-table th {
+  background-color: #f2f2f2;
+  font-weight: 600;
+}
+
+.learning-data-table tr:hover {
+  background-color: #f9f9f9;
+}
+
+.learning-status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.published {
+  background-color: #dff0d8;
+  color: #3c763d;
+}
+
+.draft {
+  background-color: #fcf8e3;
+  color: #8a6d3b;
+}
+
+.archived {
+  background-color: #f2dede;
+  color: #a94442;
+}
+
+.learning-actions-cell {
+  display: flex;
+  gap: 5px;
+}
+
+.learning-btn-preview {
+  background-color: #5bc0de;
+  color: white;
+}
+
+.learning-btn-edit {
+  background-color: #f0ad4e;
+  color: white;
+}
+
+.learning-btn-delete {
+  background-color: #d9534f;
+  color: white;
+}
+
+.learning-loading,
+.learning-error-message,
+.learning-no-data {
+  padding: 20px;
+  text-align: center;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  margin-top: 20px;
+}
+
+.learning-error-message {
+  color: #a94442;
+  background-color: #f2dede;
+}
+
+/* Improved Create Form Styles */
+.learning-create-form-container {
+  background-color: #fff;
+  padding: 25px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border: 1px solid #e0e0e0;
+}
+
+.learning-create-form-container h2 {
+  margin-top: 0;
+  margin-bottom: 25px;
+  color: #333;
+  font-size: 1.5rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.learning-path-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.learning-form-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.learning-form-group {
+  flex: 1;
+  min-width: 250px;
+  margin-bottom: 0;
+}
+
+.learning-full-width {
+  width: 100%;
+}
+
+.learning-form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #555;
+}
+
+.learning-form-group input,
+.learning-form-group select,
+.learning-form-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.learning-form-group input:focus,
+.learning-form-group select:focus,
+.learning-form-group textarea:focus {
+  border-color: #4a90e2;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.learning-form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.learning-form-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
+  justify-content: flex-end;
+}
+
+.learning-btn-submit {
+  background-color: #5cb85c;
+  color: white;
+  padding: 10px 20px;
+  font-size: 15px;
+}
+
+.learning-btn-cancel {
+  background-color: #f8f9fa;
+  color: #333;
+  border: 1px solid #ddd;
+  padding: 10px 20px;
+  font-size: 15px;
+}
+
+.learning-btn-cancel:hover {
+  background-color: #e9ecef;
+}

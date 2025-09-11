@@ -1,0 +1,451 @@
+.groups-management {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.groups-management h2 {
+  margin-bottom: 24px;
+  color: #1e293b;
+  font-size: 1.75rem;
+  font-weight: 600;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 12px;
+}
+
+/* Filter Section */
+.groups-management-filter-section {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Filter layout */
+.groups-management-filter-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.groups-management-search-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.groups-management-search-box label {
+  font-size: 0.875rem;
+  margin-bottom: 4px;
+  color: #4b5563;
+}
+
+.groups-management-search-box input,
+.groups-management-search-box select {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.groups-management-filter-actions {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.groups-management-btn-filter,
+.groups-management-btn-clear-filter {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border: none;
+}
+
+.groups-management-btn-filter {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.groups-management-btn-clear-filter {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+}
+
+/* Action Buttons */
+.groups-management-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.groups-management-btn-add,
+.groups-management-btn-import, 
+.groups-management-btn-export, 
+.groups-management-btn-delete-selected {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  border: none;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.groups-management-btn-add {
+  background-color: #2563eb;
+  color: white;
+}
+
+.groups-management-btn-import {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+}
+
+.groups-management-btn-export {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+}
+
+.groups-management-btn-delete-selected {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.groups-management-btn-delete-selected:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Table Styles */
+.groups-management-table-container {
+  background-color: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.groups-management-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.groups-management-table-title {
+  font-weight: 600;
+  color: #111827;
+  font-size: 1.125rem;
+}
+
+.groups-management-table-info {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.groups-management-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.groups-management-table th,
+.groups-management-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.groups-management-table th {
+  background-color: #f9fafb;
+  font-weight: 500;
+  color: #4b5563;
+  font-size: 0.875rem;
+}
+
+.groups-management-checkbox-cell {
+  width: 40px;
+}
+
+.groups-management-action-cell {
+  width: 150px;
+  white-space: nowrap;
+}
+
+.groups-management-btn-edit,
+.groups-management-btn-delete {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  margin-right: 8px;
+  border: none;
+}
+
+.groups-management-btn-edit {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.groups-management-btn-delete {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.groups-management-status-badge {
+  padding: 4px 8px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: inline-block;
+  text-align: center;
+  min-width: 80px;
+}
+
+.status-active {
+  color: #10b981;
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.status-inactive {
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Form Overlay */
+.groups-management-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+/* Loading and Error States */
+.groups-management-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #64748b;
+}
+
+.groups-management-loading-spinner {
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top: 3px solid #3b82f6;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.groups-management-error-container {
+  background-color: #ffffff;
+  border-radius: 8px;
+  overflow: visible;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+.groups-management-error-message {
+  display: flex;
+  padding: 16px;
+  border-left: 4px solid #ef4444;
+}
+
+.groups-management-error-icon {
+  font-size: 1.5rem;
+  margin-right: 16px;
+  color: #ef4444;
+}
+
+.groups-management-error-content h3 {
+  margin: 0 0 8px 0;
+  color: #b91c1c;
+  font-size: 1rem;
+}
+
+.groups-management-error-content p {
+  margin: 0 0 16px 0;
+  color: #ef4444;
+}
+
+.groups-management-btn-retry {
+  background-color: #ffffff;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  margin-bottom: 12px;
+}
+
+.groups-management-btn-retry:hover {
+  background-color: #fef2f2;
+}
+
+.groups-management-error-help {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Pagination */
+.groups-management-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.groups-management-pagination-btn {
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.groups-management-pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.groups-management-pagination-pages {
+  display: flex;
+  gap: 8px;
+}
+
+.groups-management-pagination-page {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.groups-management-pagination-page:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.groups-management-pagination-page.groups-management-active {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+/* Form overlay */
+.groups-management-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+/* Error message */
+.groups-management-error-container {
+  background-color: #ffffff;
+  border-radius: 8px;
+  overflow: visible;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+.groups-management-error-message {
+  display: flex;
+  padding: 16px 20px;
+  background-color: #fee2e2;
+  border-radius: 8px;
+}
+
+.groups-management-error-icon {
+  font-size: 1.5rem;
+  margin-right: 16px;
+  color: #b91c1c;
+}
+
+.groups-management-error-content p {
+  margin: 0 0 16px 0;
+  color: #ef4444;
+}
+
+.groups-management-btn-retry {
+  background-color: #ffffff;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  margin-bottom: 12px;
+}
+
+.groups-management-btn-retry:hover {
+  background-color: #fef2f2;
+}
+
+.groups-management-error-help {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .groups-management-filter-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .groups-management-action-buttons {
+    flex-direction: column;
+  }
+  
+  .groups-management-table th:nth-child(3),
+  .groups-management-table td:nth-child(3) {
+    display: none;
+  }
+}
