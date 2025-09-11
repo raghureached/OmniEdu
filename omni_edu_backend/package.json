@@ -1,0 +1,38 @@
+{
+  "name": "lms-backend",
+  "version": "1.0.0",
+  "description": "LMS BACKEND-\"KEEP IN MIND UPTO SCALABILITY\"",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js"
+  },
+  "author": "rahul (loser)",
+  "license": "ISC",
+  "dependencies": {
+    "argon2": "^0.43.0",
+    "bcrypt": "^6.0.0",
+    "cloudinary": "^2.7.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "csv-parser": "^3.2.0",
+    "csv-writer": "^1.6.0",
+    "docx": "^9.5.1",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.10.0",
+    "mongoose": "^8.14.3",
+    "multer": "^2.0.2",
+    "nodemailer": "^7.0.6",
+    "nodemon": "^3.1.10",
+    "officeparser": "^5.2.0",
+    "pdf-parse": "^1.1.1",
+    "uuid": "^11.1.0",
+    "winston": "^3.17.0",
+    "zod": "^4.1.5"
+  }
+}
