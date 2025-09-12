@@ -18,7 +18,7 @@ const diskStorageUploads = multer.diskStorage({
     cb(null, uploadsDir);
   },
   filename: function (req, file, cb) {
-    // console.log(file)  
+    console.log(file)    
     const filePrefix = file.fieldname === 'logo' ? 'logo' : 'doc';
     const { name = 'org' } = req.body;
     const timestamp = Date.now();

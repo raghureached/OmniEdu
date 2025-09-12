@@ -1,10 +1,11 @@
 const {addOrganization, editOrganization, deleteOrganization, getOrganizations} = require("../controllers/globalAdmin.controller/globalAdmin_organization");
 const {addRole, editRole, deleteRole, getRoles} = require("../controllers/globalAdmin.controller/globalAdmin_Roles");
-const {addContent, editContent, deleteContent, getContent} = require("../controllers/globalAdmin.controller/globalAdmin_content");
+const {addContent, editContent, deleteContent, getContent, getContentById} = require("../controllers/globalAdmin.controller/globalAdmin_content");
 const {createSurvey, editSurvey, deleteSurvey, getSurveys, getSurvey} = require("../controllers/globalAdmin.controller/globalAdmin_Surveys");
 const {upload,uploadContent} = require("../middleware/multer_middleware");
 const { uploadMultipleToCloudinary, uploadToCloudinary } = require("../utils/uploadOnCloud");
 const { setMessage, editMessage, deleteMessage } = require("../controllers/globalAdmin.controller/globalAdmin_message");
+const { getPlans } = require("../controllers/globalAdmin.controller/globalAdmin_plans");
 // const csvStream = require("../utils/csvParser");
 
 const router = require("express").Router();
@@ -28,6 +29,7 @@ router.route('/getRoles').get(getRoles)
 
 router.route('/addContent').post(uploadContent.single('file'),uploadToCloudinary("globalContent"),addContent)
 router.route('/getContent').get(getContent)
+router.route('/getContentById/:id').get(getContentById)
 //Some changes
 router.route('/editContent/:id').put(uploadContent.single('file'),uploadToCloudinary("globalContent"),editContent)
 router.route('/deleteContent/:id').delete(deleteContent)
@@ -47,5 +49,9 @@ router.route('/getSurvey/:id').get(getSurvey)
 router.route('/setMessage').post(setMessage)
 router.route('/editMessage/:id').put(editMessage)
 router.route('/deleteMessage/:id').delete(deleteMessage)
+
+//////////////Plans////////////
+
+router.route('/getPlans').get(getPlans)
 
 module.exports = router;

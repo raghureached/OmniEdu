@@ -33,6 +33,15 @@ const addOrganization = async(req, res) => {
         //     planId,
         // } = req.body;
         const parsed = createOrganizationSchema.safeParse(req.body);
+        // console.log(parsed.error.message);
+        // console.log(parsed)
+        if(parsed.error){
+            return res.status(400).json({
+                success: false,
+                message: parsed.error.message,
+                errors: parsed.error.flatten(),
+            });
+        }
         if (!parsed.success) {
             return res.status(400).json({
                 success: false,
@@ -49,7 +58,7 @@ const addOrganization = async(req, res) => {
                 message: "Plan not found",
             });
         }
-        console.log(req.uploadedFiles)
+        // console.log(req.uploadedFiles)
         const logo_url = req.uploadedFiles.logo[0].url;
         const documents_urls = req.uploadedFiles.documents.map(doc => doc.url);
         // 1. Create organization inside transaction
@@ -67,8 +76,6 @@ const addOrganization = async(req, res) => {
                 planId: generatePlanId(name, plan.name),
             }, ]
         );
-
-
         return res.status(201).json({
             success: true,
             message: "Organization added successfully",

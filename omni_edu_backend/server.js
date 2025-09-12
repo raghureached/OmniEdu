@@ -32,11 +32,14 @@ app.use((req, res, next) => {
 });
 // app.use(logActivity)
 
-app.use('/api/globalAdmin',authenticate,authorize(['GlobalAdmin']),globalAdminRouter)
+// app.use('/api/globalAdmin',authenticate,authorize(['GlobalAdmin']),globalAdminRouter)
+app.use('/api/globalAdmin',globalAdminRouter)
 app.use('/auth',authRouter)
-app.use('/api/admin',authenticate,authorize(['Admin']),adminRouter)
+// app.use('/api/admin',authenticate,authorize(['Admin']),adminRouter)
+app.use('/api/admin',authenticate,adminRouter)
 app.use('/dev',devRouter)
-app.use('/api/user',authenticate,authorize(['User']),userRouter)
+// app.use('/api/user',authenticate,authorize(['User']),userRouter)
+app.use('/api/user',authenticate,userRouter)
 app.listen(PORT, () => {
   console.log(`Server is running at PORT:${PORT}`);
 });
