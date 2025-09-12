@@ -671,6 +671,7 @@ import './GlobalAdminLayout.css';
          }`}
        >
          <header className="globaladmin_content_header">
+          
            <h2>Global Admin Dashboard</h2>
 
            {/* <div className="globaladmin_header_left">

@@ -187,15 +187,15 @@ const OrganizationManagement = () => {
     }
   };
 
-  const handleDeleteOrg = (id) => {
-    if (window.confirm("Are you sure you want to delete this organization?")) {
-      try {
-        dispatch(deleteOrganization({ id }));
-      } catch (error) {
-        console.error(error);
+    const handleDeleteOrg = (id) => {
+      if (window.confirm("Are you sure you want to delete this organization?")) {
+        try {
+          dispatch(deleteOrganization({ id }));
+        } catch (error) {
+          console.error(error);
+        }
       }
-    }
-  };
+    };
 
   const handleDeleteDocument = (docId) => {
     if (

@@ -42,6 +42,7 @@ import AdminPortalActivity from './pages/admin/AdminPortalActivity/AdminPortalAc
 
 // Global Admin Pages 
 import OrganizationManagement from './pages/globalAdmin/OrganizationManagement/OrganizationManagement';
+import NewOrgManagement from './pages/globalAdmin/OrganizationManagement/NewOrgManagement';
 import GlobalRolesManagement from './pages/globalAdmin/GlobalRolesManagement/GlobalRolesManagement'; 
 import GlobalContentManagement from './pages/globalAdmin/GlobalContentManagement/GlobalContentManagement'; 
 import GlobalSurveys from './pages/globalAdmin/GlobalSurveys/GlobalSurveys'; 
@@ -59,6 +60,7 @@ import { updateSessionTime } from './store/slices/authSlice';
 import GlobalActivityLog from './pages/globalAdmin/GlobalActivityLog/GlobalActivityLog';
 import GlobalHelpCenter from './pages/globalAdmin/GlobalHelpCenter/GlobalHelpCenter';
 import GlobalProfile from './pages/globalAdmin/GlobalProfile/GlobalProfile';
+import GlobalContentDetails from './pages/globalAdmin/GlobalContentManagement/GlobalContentDetail';
 
 
 
@@ -82,6 +84,7 @@ function App() {
         <div className="App">
           <Routes>
             {/* Public routes */}
+            {/* <Route path="/testManageOrg" element={<NewOrgManagement />} /> */}
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/email-confirmation" element={<EmailConfirmation />} />
@@ -122,12 +125,17 @@ function App() {
 
             {/* Global Admin routes - Removed ProtectedRoute wrapper */}
             <Route path="/global-admin/*" element={<GlobalAdminLayout />}>
-              <Route
+              {/* <Route
                 path="organizations"
                 element={<OrganizationManagement />}
+              /> */}
+              <Route
+                path="organizations"
+                element={<NewOrgManagement />}
               />
               <Route path="roles" element={<GlobalRolesManagement />} />
               <Route path="content" element={<GlobalContentManagement />} />
+              <Route path="content/:contentId" element={<GlobalContentDetails />} />
               <Route path="surveys" element={<GlobalSurveys/>} />
 
               <Route path="profile" element={<GlobalProfile />} />
@@ -140,7 +148,7 @@ function App() {
 
             {/* Catch all - 404 */}
             <Route path="*" element={<div>Page Not Found</div>} />
-          </Routes>
+          </Routes> 
         </div>
       </Router>
     </Provider>

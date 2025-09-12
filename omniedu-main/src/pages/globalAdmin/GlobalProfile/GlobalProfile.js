@@ -22,17 +22,7 @@ const GlobalProfile = () => {
       subTeam: "IT",
       role: "GlobalAdmin",
       lastLogin: "26/05/25, 10:46 am",
-    },
-    organization: {
-      name: "Acme Corporation Ltd.",
-      logo: "logo.png",
-      email: "contact@acmecorp.com",
-      status: "Active",
-      planId: "ACME-PRO-2025",
-      planName: "Professional Tier",
-      startDate: "2025-01-01",
-      endDate: "2025-12-31",
-    },
+    }
   };
 
   const getUserInitials = () => {
@@ -122,7 +112,7 @@ const GlobalProfile = () => {
         </div>
 
         {/* Organization Profile Section */}
-        <div className="globaladminprofile-card">
+        {/* <div className="globaladminprofile-card">
           <h3 className="globaladminprofile-section-title">
             Organization Profile
           </h3>
@@ -176,7 +166,7 @@ const GlobalProfile = () => {
               </span>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Password Section */}
         <div className="globaladminprofile-card password-card">

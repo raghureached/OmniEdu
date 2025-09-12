@@ -13,9 +13,8 @@ export const fetchOrganizations = createAsyncThunk(
             const response = await api.get(
               "/api/globalAdmin/getOrganizations",
               { params: filters }
-            );
-            console.log(response.data)
-            return response.data;
+            );    
+            return response.data.data;
         } catch (error) {
             return rejectWithValue(error.response.data);
         }
@@ -72,25 +71,57 @@ export const createOrganization = createAsyncThunk(
   async (organizationData, { rejectWithValue }) => {
     try {
       const formData = new FormData();
+      // Append all fields properly
       Object.keys(organizationData).forEach((key) => {
-        formData.append(key, organizationData[key]);
+        const value = organizationData[key];
+
+        if (value instanceof File) {
+          // Single file (logo)
+          formData.append(key, value);
+        } else if (Array.isArray(value)) {
+          // Multiple files (documents) or array of text
+          value.forEach((item) => {
+            if (item instanceof File) {
+              formData.append(key, item); // multiple files
+            } else {
+              formData.append(`${key}[]`, item); // array of text values
+            }
+          });
+        } else if (typeof value === "object" && value !== null) {
+          // JSON object
+          formData.append(key, JSON.stringify(value));
+        } else {
+          // Simple text/number
+          formData.append(key, value);
+        }
       });
-      console.log("Submitting organization data:", formData);
+
+      // Debug: check what is being sent
+      for (let [key, val] of formData.entries()) {
+        if (val instanceof File) {
+          console.log(`${key}: ${val.name} (${val.type}, ${val.size} bytes)`);
+        } else {
+          console.log(`${key}: ${val}`);
+        }
+      }
 
       const response = await api.post(
         "/api/globalAdmin/addOrganization",
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
- console.log("Submitting organization data:", formData);
+
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data || { message: "Something went wrong" }
-      );
+      return rejectWithValue({
+        status: error.response?.status,
+        message: error.response?.data?.message || "Something went wrong",
+      });
     }
   }
 );
+
+
 
 export const updateOrganization = createAsyncThunk(
     'organizations/updateOrganization',
@@ -101,6 +132,7 @@ export const updateOrganization = createAsyncThunk(
             if (data.logo instanceof File) {
                 formData = new FormData();
                 Object.keys(data).forEach(key => {
+                  // console.log(key, data[key]);
                     if (key === 'logo') {
                         formData.append('logo', data.logo);
                     } else {
