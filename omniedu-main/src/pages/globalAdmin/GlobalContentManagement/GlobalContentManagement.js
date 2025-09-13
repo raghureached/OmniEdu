@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchContent, deleteContent, createContent, updateContent } from '../../../store/slices/contentSlice';
 import "./GlobalContentManagement.css"
 import { useNavigate } from 'react-router-dom';
+import { Search } from 'lucide-react';
 
 const GlobalContentManagement = () => {
   const dispatch = useDispatch();
@@ -116,15 +117,16 @@ const GlobalContentManagement = () => {
     <div className="global-content-management">
       <div
         className="page-header"
-        style={{ marginTop: "100px", paddingLeft: "20px" }}
+        style={{ paddingLeft: "20px" }}
       >
-        <h1>Global Content Management</h1>
+        <h1 className='page-title'>Global Content Management</h1>
         <button className="btn-primary" onClick={() => setShowModal(true)}>Add Global Content</button>
       </div>
       {/* {error && <div className="error-message">{error}</div>} */}
 
       <div className="filter-section">
-        <div className="search-box">
+        <div className="search-box-content">
+          <Search size={16} color="#6b7280" className="search-icon" />
           <input
             type="text"
             class
@@ -134,7 +136,7 @@ const GlobalContentManagement = () => {
           />
         </div>
 
-        <div className="filter-box">
+        {/* <div className="filter-box">
           <label>Content Type:</label>
           <select
             value={contentType}
@@ -145,7 +147,7 @@ const GlobalContentManagement = () => {
             <option value="assessment">Assessments</option>
             <option value="learning_path">Learning Paths</option>
           </select>
-        </div>
+        </div> */}
       </div>
 
       {/* Add Content Modal */}
@@ -273,10 +275,6 @@ const GlobalContentManagement = () => {
           </div>
         </div>
       )}
-
-
-
-
       <div className="table-container">
         {loading ? (
           <div className="loading">Loading global content...</div>
@@ -295,23 +293,24 @@ const GlobalContentManagement = () => {
             <tbody>
               {currentContent.map((content) => (
                 <tr key={content.id}>
-                  <td onClick={() => handleOpenContent(content.uuid)}>{content.title}</td>
+                  <td style={{ cursor: "pointer" }} onClick={() => handleOpenContent(content.uuid)}>{content.title}</td>
                   <td>{content.type}</td>
                   <td>
                     <span className={`status-badge ${content.is_active ? 'active' : 'inactive'}`}>
-                      {content.is_active ? 'Active' : 'Inactive'}
+                      {content.is_active ? '✓ Active' : '✕ Inactive'}
                     </span>
                   </td>
                   <td>{content.organizations || "All"}</td>
                   <td>{new Date(content.createdAt).toLocaleDateString()}</td>
                   <td>
-                    <button className="btn-edit" onClick={() => openEditModal(content)}>Edit</button>
-                    <button
-                      className="btn-delete"
+                  <button
+                      className="delete-btn action-btn"
                       onClick={() => handleDeleteContent(content.uuid)}
                     >
                       Delete
                     </button>
+                    <button className="edit-btn action-btn" onClick={() => openEditModal(content)}>Edit</button>
+                    
                   </td>
                 </tr>
               ))}

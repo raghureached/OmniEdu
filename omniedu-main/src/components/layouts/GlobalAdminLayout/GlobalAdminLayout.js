@@ -98,7 +98,7 @@
  import { fetchNotifications, markNotificationAsRead } from '../../../store/slices/notificationSlice';
 import './GlobalAdminLayout.css';
  import { fetchOrganizations } from "../../../store/slices/organizationSlice";
- import { Menu, Home, Users, UserCheck, Shield, BookOpen,Building2, CheckCircle, Award, UserRoundPen, BookCopy, Clock, User, HelpCircle, LogOut, Bell, X, BarChart } from 'lucide-react';
+ import { Menu, Home, Users, UserCheck, Shield, BookOpen,Building2, CheckCircle, Award, UserRoundPen, BookCopy, Clock, User, HelpCircle, LogOut, Bell, X, BarChart, MessageCircle } from 'lucide-react';
  
  const GlobalAdminLayout = () => {
    const dispatch = useDispatch();
@@ -652,6 +652,21 @@ import './GlobalAdminLayout.css';
                <HelpCircle size={20} />
                {!sidebarCollapsed && (
                  <span className="globaladmin_sidebar_names">Help Center</span>
+               )}
+             </Link>
+           </li>
+           <li>
+             <Link
+               to="/global-admin/message-board"
+               className={
+                 isActive("/global-admin/message-board")
+                   ? "globaladmin_link_active"
+                   : ""
+               }
+             >
+               <MessageCircle size={20} />
+               {!sidebarCollapsed && (
+                 <span className="globaladmin_sidebar_names">Message Board</span>
                )}
              </Link>
            </li>

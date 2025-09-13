@@ -1,0 +1,95 @@
+/* Modal backdrop */
+.calendar-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* Modal content box */
+.calendar-modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  max-width: 320px;
+  width: 100%;
+}
+
+.calendar-modal-content h3 {
+  margin-bottom: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* React calendar overrides */
+.react-calendar {
+  border: none;
+  width: 100%;
+  user-select: none;
+}
+
+.react-calendar__tile {
+  color: grey;
+}
+
+.react-calendar__tile:enabled:hover,
+.react-calendar__tile:enabled:focus {
+  background-color: #e7e9fc;
+  color: #5570F1;
+}
+
+/* Selected date tile */
+.selected-tile {
+  background-color: #5570F1 !important;
+  color: white !important;
+  border-radius: 6px;
+}
+
+/* Disabled tiles */
+.disabled-tile {
+  color: #ccc !important;
+  pointer-events: none;
+  background-color: #f9f9f9;
+}
+
+/* Error text */
+.calendar-error {
+  color: #f44336;
+  font-size: 14px;
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* Modal buttons */
+.calendar-modal-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.cancel-btn,
+.confirm-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.cancel-btn {
+  background-color: #ccc;
+  color: #333;
+}
+
+.confirm-btn {
+  background-color: #5570F1;
+  color: white;
+}

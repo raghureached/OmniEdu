@@ -27,7 +27,7 @@ import Mandatory from './pages/user/Mandatory/Mandatory';
 import AdminHome from './pages/admin/AdminHome/AdminHome'; // Add this new import
 import UsersManagement from './pages/admin/UsersManagement/UsersManagement'; 
 import GroupsManagement from './pages/admin/GroupsManagement/GroupsManagement'; 
-import RolesManagement from './pages/admin/RolesManagement/RolesManagement'; 
+// import RolesManagement from './pages/admin/RolesManagement/RolesManagement'; 
 import ContentModules from './pages/admin/ContentModules/ContentModules'; 
 import ContentAssessments from './pages/admin/ContentAssessments/ContentAssessments'; 
 import LearningPaths from './pages/admin/LearningPaths/LearningPaths'; 
@@ -61,15 +61,15 @@ import GlobalActivityLog from './pages/globalAdmin/GlobalActivityLog/GlobalActiv
 import GlobalHelpCenter from './pages/globalAdmin/GlobalHelpCenter/GlobalHelpCenter';
 import GlobalProfile from './pages/globalAdmin/GlobalProfile/GlobalProfile';
 import GlobalContentDetails from './pages/globalAdmin/GlobalContentManagement/GlobalContentDetail';
-
-
-
+import GlobalMessageBoard from './pages/globalAdmin/GlobalMessageBoard/GlobalMessageBoard';
+import LoadingScreen from './components/common/Loading/Loading';
 
 
 
 function App() {
   const dispatch = useDispatch();
   const { isAuthenticated } = useSelector((state) => state.auth);
+  const {loading} = useSelector((state) => state.auth);
   
   // Initialize session time when app loads if user is authenticated
   useEffect(() => {
@@ -80,6 +80,8 @@ function App() {
   
   return (
     <Provider store={store}>
+      {loading ? <LoadingScreen />
+      :
       <Router>
         <div className="App">
           <Routes>
@@ -106,7 +108,7 @@ function App() {
               <Route index element={<AdminHome />} />
               <Route path="users" element={<UsersManagement />} />
               <Route path="groups" element={<GroupsManagement />} />
-              <Route path="roles" element={<RolesManagement />} />
+              {/* <Route path="roles" element={<RolesManagement />} /> */}
               <Route path="content-modules" element={<ContentModules />} />
               <Route
                 path="content-assessments"
@@ -133,6 +135,7 @@ function App() {
                 path="organizations"
                 element={<NewOrgManagement />}
               />
+              <Route path="message-board" element={<GlobalMessageBoard />} />
               <Route path="roles" element={<GlobalRolesManagement />} />
               <Route path="content" element={<GlobalContentManagement />} />
               <Route path="content/:contentId" element={<GlobalContentDetails />} />
@@ -151,6 +154,7 @@ function App() {
           </Routes> 
         </div>
       </Router>
+}
     </Provider>
   );
 }

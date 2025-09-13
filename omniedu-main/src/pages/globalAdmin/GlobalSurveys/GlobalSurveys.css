@@ -1,273 +1,399 @@
-/* Global Surveys Styles */
-
-.global-surveys-container {
-    padding: 20px;
-}
-
-.page-header {
+/* Container */
+.survey-container {
+    background: #f9fafb;
+    padding: 24px;
+    font-family: "Segoe UI", Roboto, sans-serif;
+    color: #111827;
+    min-height: 100vh;
+  }
+  
+  /* Header */
+  .survey-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-}
-
-.page-header h1 {
-    margin: 0;
-    color: #333;
-}
-
-.btn-primary {
-    background-color: #0d6efd;
-    color: white;
+  }
+  
+  .survey-header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+  
+  .survey-btn-primary {
+    background: #3b82f6;
+    color: #fff;
     border: none;
     padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.filter-section {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 20px;
-    background-color: #f5f5f5;
-    padding: 15px;
-    border-radius: 5px;
-}
-
-.search-box {
-    flex: 1;
-}
-
-.search-box input {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-.filter-box {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.filter-box label {
+    border-radius: 6px;
     font-weight: 500;
-}
-
-.filter-box select {
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-.loading {
-    text-align: center;
-    padding: 20px;
-    color: #6c757d;
-}
-
-.error-message {
-    background-color: #f8d7da;
-    color: #dc3545;
-    padding: 10px;
-    border-radius: 4px;
-    margin-bottom: 20px;
-}
-
-.no-data {
-    text-align: center;
-    padding: 20px;
-    color: #666;
-}
-
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.data-table th,
-.data-table td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-}
-
-.data-table th {
-    background-color: #f2f2f2;
-    font-weight: 600;
-}
-
-.data-table tr:hover {
-    background-color: #f9f9f9;
-}
-
-.status-badge {
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.85em;
-    text-transform: capitalize;
-}
-
-.status-badge.active {
-    background-color: #e6f7e6;
-    color: #28a745;
-}
-
-.status-badge.draft {
-    background-color: #f8f9fa;
-    color: #6c757d;
-}
-
-.status-badge.closed {
-    background-color: #f8d7da;
-    color: #dc3545;
-}
-
-.actions-cell {
-    white-space: nowrap;
-}
-
-.btn-view,
-.btn-edit,
-.btn-delete {
-    padding: 5px 10px;
-    margin-right: 5px;
-    border: none;
-    border-radius: 4px;
     cursor: pointer;
-    font-size: 0.9em;
-}
-
-.btn-view {
-    background-color: #e2f0fd;
-    color: #0d6efd;
-}
-
-.btn-edit {
-    background-color: #e7f3ff;
-    color: #0d6efd;
-}
-
-.btn-delete {
-    background-color: #f8d7da;
-    color: #dc3545;
-}
-
-
-/*  added after that */
-
-.surveys-data-table {
+    transition: background 0.2s;
+  }
+  .survey-btn-primary:hover {
+    background: #2563eb;
+  }
+  
+  /* Filters */
+  .survey-filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  
+  .survey-search,
+  .survey-select {
+    padding: 8px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 14px;
+    width: 200px;
+  }
+  
+  /* Table */
+  .survey-table-container {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .survey-table {
     width: 100%;
     border-collapse: collapse;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.surveys-data-table th,
-.surveys-data-table td {
-    padding: 12px 15px;
+  }
+  
+  .survey-table th {
+    background: #f9fafb;
+    padding: 12px;
     text-align: left;
-    border-bottom: 1px solid #ddd;
-}
-
-.surveys-data-table th {
-    background-color: #f2f2f2;
-    font-weight: 600;
-}
-
-.surveys-data-table tr:hover {
-    background-color: #f9f9f9;
-}
-
-.surveys-status-badge {
-    padding: 4px 8px;
-    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .survey-table td {
+    padding: 12px;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 14px;
+    color: #374151;
+  }
+  
+  /* Status Badges */
+  .survey-status {
+    padding: 4px 10px;
+    border-radius: 20px;
     font-size: 12px;
     font-weight: 500;
-    display: inline-block;
-}
-
-.surveys-status-badge.active {
-    background-color: #dff0d8;
-    color: #3c763d;
-}
-
-.surveys-status-badge.draft {
-    background-color: #fcf8e3;
-    color: #8a6d3b;
-}
-
-.surveys-status-badge.closed {
-    background-color: #f2dede;
-    color: #a94442;
-}
-
-.surveys-actions-cell {
-    display: flex;
-    gap: 5px;
-}
-
-.surveys-btn-view {
-    background-color: #5bc0de;
-    color: white;
-}
-
-.surveys-btn-edit {
-    background-color: #f0ad4e;
-    color: white;
-}
-
-.surveys-btn-delete {
-    background-color: #d9534f;
-    color: white;
-}
-
-.surveys-loading,
-.surveys-error-message,
-.surveys-no-data {
-    padding: 20px;
-    text-align: center;
-    background-color: #f9f9f9;
-    border-radius: 4px;
+  }
+  
+  .survey-status-active {
+    background: #dcfce7;
+    color: #22c55e;
+  }
+  
+  .survey-status-draft {
+    background: #fef9c3;
+    color: #eab308;
+  }
+  
+  .survey-status-closed {
+    background: #fee2e2;
+    color: #ef4444;
+  }
+  
+  /* Actions */
+  .survey-actions button {
+    margin-right: 8px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  
+  .survey-btn-view {
+    background: #f3f4f6;
+  }
+  .survey-btn-view:hover {
+    background: #e5e7eb;
+  }
+  
+  .survey-btn-edit {
+    background: #dbeafe;
+    color: #2563eb;
+  }
+  .survey-btn-edit:hover {
+    background: #bfdbfe;
+  }
+  
+  .survey-btn-delete {
+    background: #fee2e2;
+    color: #ef4444;
+  }
+  .survey-btn-delete:hover {
+    background: #fecaca;
+  }
+  
+  /* Pagination */
+  .survey-pagination {
     margin-top: 20px;
-}
-
-.surveys-error-message {
-    color: #a94442;
-    background-color: #f2dede;
-}
-
-
-/* pagination */
-
-.pagination {
     display: flex;
     justify-content: center;
-    align-items: center;
-    margin-top: 16px;
-    gap: 8px;
-}
-
-.pagination button {
+    gap: 6px;
+  }
+  
+  .survey-pagination button {
     padding: 6px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background-color: #fff;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    border-radius: 6px;
     cursor: pointer;
-    transition: 0.2s;
-}
-
-.pagination button:hover:not(:disabled) {
-    background-color: #f0f0f0;
-}
-
-.pagination button.active {
-    background-color: #0d6efd;
-    color: white;
-    border-color: #0d6efd;
-}
-
-.pagination button:disabled {
+  }
+  
+  .survey-pagination button:disabled {
+    background: #f3f4f6;
     cursor: not-allowed;
-    opacity: 0.5;
+  }
+  
+  .survey-active-page {
+    background: #3b82f6 !important;
+    color: #fff;
+    border-color: #3b82f6 !important;
+  }
+  /* Overlay background */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(30, 41, 59, 0.65); /* slate-800 opacity */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+/* Modal box */
+.modal {
+  background: #fff;
+  width: 650px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+/* Header */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.modal-header h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #475569;
+  transition: color 0.2s ease;
+}
+
+.close-btn:hover {
+  color: #ef4444;
+}
+
+/* Form */
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-form label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #334155;
+  margin-bottom: 4px;
+}
+
+.modal-form input,
+.modal-form textarea,
+.modal-form select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.modal-form input:focus,
+.modal-form textarea:focus,
+.modal-form select:focus {
+  border-color: #2563eb;
+}
+
+/* Date fields */
+.date-fields {
+  display: flex;
+  gap: 12px;
+}
+
+.date-fields div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Questions */
+.question-box {
+  border: 1px solid #e2e8f0;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.question-box input,
+.question-box select {
+  margin-bottom: 8px;
+}
+
+.remove-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: #475569;
+}
+
+.remove-btn:hover {
+  color: #ef4444;
+}
+
+/* Options */
+.options-box {
+  margin-top: 8px;
+  padding-left: 12px;
+}
+
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.option-row input {
+  flex: 1;
+}
+
+.remove-option-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: #475569;
+}
+
+.remove-option-btn:hover {
+  color: #ef4444;
+}
+
+.add-option-btn {
+  background: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  padding: 5px 10px;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-option-btn:hover {
+  background: #e2e8f0;
+}
+
+/* Buttons */
+.add-question-btn {
+  align-self: flex-start;
+  background: #2563eb;
+  color: #fff;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.add-question-btn:hover {
+  background: #1d4ed8;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.cancel-btn,
+.create-btn {
+  padding: 7px 14px;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+}
+
+.cancel-btn:hover {
+  background: #e2e8f0;
+}
+
+.create-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+}
+
+.create-btn:hover {
+  background: #1d4ed8;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

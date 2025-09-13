@@ -281,11 +281,22 @@ import api from '../../services/api';
 // Fetch Roles
 export const fetchRoles = createAsyncThunk(
   'roles/fetchRoles',
-  async (isGlobalAdmin = false, { rejectWithValue }) => {
+  async ( { rejectWithValue }) => {
     try {
-      const endpoint = isGlobalAdmin
-        ? '/api/globalAdmin/getRoles'
-        : '/admin/roles';
+      const endpoint = '/api/globalAdmin/getRoles'
+      const response = await api.get(endpoint);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+export const fetchPermissions = createAsyncThunk(
+  'roles/fetchPermissions',
+  async ( { rejectWithValue }) => {
+    try {
+      console.log("fetching")
+      const endpoint = '/api/globalAdmin/getPermissions'
       const response = await api.get(endpoint);
       return response.data.data;
     } catch (error) {
@@ -376,7 +387,18 @@ const roleSlice = createSlice({
         state.loading = false;
         state.error = action.payload?.message || 'Failed to fetch roles';
       })
-
+      .addCase(fetchPermissions.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchPermissions.fulfilled, (state, action) => {
+        state.loading = false;
+        state.permissions = action.payload;
+      })
+      .addCase(fetchPermissions.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.message || 'Failed to fetch permissions';
+      })
       // Create Role
       .addCase(createRole.pending, (state) => {
         state.loading = true;

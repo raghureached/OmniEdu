@@ -1,306 +1,243 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchContent, deleteContent } from '../../../store/slices/contentSlice';
-import './GlobalSurveys.css';
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchSurveys,
+  deleteSurvey,
+  createSurvey,
+  updateSurvey,
+} from "../../../store/slices/surveySlice";
+import "./GlobalSurveys.css";
 
 const GlobalSurveys = () => {
   const dispatch = useDispatch();
-  const { items, loading, error } = useSelector((state) => state.content);
+  const { surveys, loading, error } = useSelector((state) => state.surveys);
+    const [showForm, setShowForm] = useState(false);
+    const [editingSurvey, setEditingSurvey] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const [formData, setFormData] = useState({
+      title: "",
+      description: "",
+      survey_type: "text",
+      start_date: "",
+      end_date: "",
+      is_active: true,
+      questions: [{ question_text: "", question_type: "text", options: [] }],
+    });
+  
+  // Fetch surveys on mount
   useEffect(() => {
-    dispatch(fetchContent({ type: "survey", isGlobal: true }));
+    dispatch(fetchSurveys());
   }, [dispatch]);
-
-  const handleDeleteSurvey = (surveyId) => {
-    if (window.confirm("Are you sure you want to delete this global survey?")) {
-      dispatch(deleteContent(surveyId));
+  const handleChange = (e) => {
+      const { name, value, type, checked } = e.target;
+      setFormData({
+        ...formData,
+        [name]: type === "checkbox" ? checked : value,
+      });
+    };
+  
+    // handle question change
+    const handleQuestionChange = (index, field, value) => {
+      const updatedQuestions = [...formData.questions];
+      updatedQuestions[index][field] = value;
+      setFormData({ ...formData, questions: updatedQuestions });
+    };
+  
+    // add question
+    const addQuestion = () => {
+      setFormData({
+        ...formData,
+        questions: [
+          ...formData.questions,
+          { question_text: "", question_type: "text", options: [] },
+        ],
+      });
+    };
+  
+    // remove question
+    const removeQuestion = (index) => {
+      const updatedQuestions = formData.questions.filter((_, i) => i !== index);
+      setFormData({ ...formData, questions: updatedQuestions });
+    };
+  
+    // submit form
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        survey_type: formData.survey_type,
+        start_date: formData.start_date || null,
+        end_date: formData.end_date || null,
+        is_active: formData.is_active,
+        questions: formData.questions.map((q) => ({
+          question_text: q.question_text,
+          question_type: q.question_type,
+          options:
+            q.question_type === "multiple_choice"
+              ? q.options.filter((opt) => opt.trim() !== "")
+              : [],
+        })),
+      };
+  
+      if (editingSurvey) {
+        dispatch(
+          updateSurvey({
+            id: editingSurvey._id || editingSurvey.uuid,
+            data: payload,
+          })
+        );
+      } else {
+        dispatch(createSurvey(payload));
+      }
+  
+      // Reset after submit
+      setShowForm(false);
+      setEditingSurvey(null);
+      setFormData({
+        title: "",
+        description: "",
+        survey_type: "text",
+        start_date: "",
+        end_date: "",
+        is_active: true,
+        questions: [{ question_text: "", question_type: "text", options: [] }],
+      });
+    };
+  // Delete handler
+  const handleDeleteSurvey = (id) => {
+    if (window.confirm("Are you sure you want to delete this survey?")) {
+      dispatch(deleteSurvey(id));
     }
   };
 
-  // Dummy data for demonstration
-  const dummySurveys = [
-    {
-      id: 1,
-      title: "Remote Work Productivity Survey",
-      type: "Workplace Study",
-      status: "Active",
-      questionCount: 12,
-      responseCount: 76,
-      createdAt: "2025-06-12",
-    },
-    {
-      id: 2,
-      title: "Cybersecurity Awareness Quiz",
-      type: "Training Assessment",
-      status: "Draft",
-      questionCount: 15,
-      responseCount: 0,
-      createdAt: "2025-07-05",
-    },
-    {
-      id: 3,
-      title: "Office Facilities Feedback",
-      type: "Infrastructure",
-      status: "Closed",
-      questionCount: 9,
-      responseCount: 51,
-      createdAt: "2025-03-28",
-    },
-    {
-      id: 4,
-      title: "Employee Recognition Program Review",
-      type: "HR Feedback",
-      status: "Active",
-      questionCount: 10,
-      responseCount: 34,
-      createdAt: "2025-05-18",
-    },
-    {
-      id: 5,
-      title: "Diversity & Inclusion Survey",
-      type: "Culture & Values",
-      status: "Closed",
-      questionCount: 20,
-      responseCount: 142,
-      createdAt: "2025-02-09",
-    },
-    {
-      id: 6,
-      title: "AI Tools Adoption Feedback",
-      type: "Technology",
-      status: "Active",
-      questionCount: 14,
-      responseCount: 63,
-      createdAt: "2025-06-25",
-    },
-    {
-      id: 7,
-      title: "Annual Budget Planning Feedback",
-      type: "Finance",
-      status: "Draft",
-      questionCount: 8,
-      responseCount: 0,
-      createdAt: "2025-07-15",
-    },
-    {
-      id: 8,
-      title: "Corporate Social Responsibility Survey",
-      type: "CSR Initiative",
-      status: "Active",
-      questionCount: 11,
-      responseCount: 29,
-      createdAt: "2025-06-02",
-    },
-    {
-      id: 9,
-      title: "Innovation & Ideas Collection",
-      type: "Brainstorming",
-      status: "Closed",
-      questionCount: 13,
-      responseCount: 87,
-      createdAt: "2025-04-01",
-    },
-    {
-      id: 10,
-      title: "Hybrid Work Model Feedback",
-      type: "Work Policy",
-      status: "Active",
-      questionCount: 16,
-      responseCount: 98,
-      createdAt: "2025-05-27",
-    },
-    {
-      id: 11,
-      title: "Quarterly Sales Training Evaluation",
-      type: "Training Evaluation",
-      status: "Closed",
-      questionCount: 12,
-      responseCount: 67,
-      createdAt: "2025-03-15",
-    },
-    {
-      id: 12,
-      title: "Customer Experience Feedback",
-      type: "Customer Survey",
-      status: "Active",
-      questionCount: 18,
-      responseCount: 120,
-      createdAt: "2025-06-30",
-    },
-    {
-      id: 13,
-      title: "Health & Safety Awareness Survey",
-      type: "Workplace Safety",
-      status: "Draft",
-      questionCount: 10,
-      responseCount: 0,
-      createdAt: "2025-07-20",
-    },
-    {
-      id: 14,
-      title: "Employee Well-being Check",
-      type: "HR Feedback",
-      status: "Active",
-      questionCount: 15,
-      responseCount: 73,
-      createdAt: "2025-06-10",
-    },
-    {
-      id: 15,
-      title: "Sustainability Practices Survey",
-      type: "CSR",
-      status: "Closed",
-      questionCount: 11,
-      responseCount: 54,
-      createdAt: "2025-04-25",
-    },
-    {
-      id: 16,
-      title: "Product Knowledge Test",
-      type: "Training Assessment",
-      status: "Active",
-      questionCount: 20,
-      responseCount: 33,
-      createdAt: "2025-07-01",
-    },
-    {
-      id: 17,
-      title: "Quarterly Performance Review Survey",
-      type: "Performance Review",
-      status: "Closed",
-      questionCount: 25,
-      responseCount: 81,
-      createdAt: "2025-05-05",
-    },
-    {
-      id: 18,
-      title: "Work-Life Balance Study",
-      type: "Employee Feedback",
-      status: "Active",
-      questionCount: 14,
-      responseCount: 64,
-      createdAt: "2025-06-18",
-    },
-    {
-      id: 19,
-      title: "Team Collaboration Feedback",
-      type: "Teamwork",
-      status: "Draft",
-      questionCount: 9,
-      responseCount: 0,
-      createdAt: "2025-07-22",
-    },
-    {
-      id: 20,
-      title: "IT Helpdesk Service Feedback",
-      type: "Service Evaluation",
-      status: "Active",
-      questionCount: 12,
-      responseCount: 46,
-      createdAt: "2025-06-05",
-    },
-  ];
-
-
-  //pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 16; // show 5 surveys per page
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentSurveys = dummySurveys.slice(indexOfFirstItem, indexOfLastItem);
- const totalPages = Math.ceil(dummySurveys.length / itemsPerPage);
-
- const handlePageChange = (pageNumber) => {
-   setCurrentPage(pageNumber);
- };
-
-
-
-  // Filter surveys based on search term and status
-  const filteredSurveys = items.filter((item) => {
-    const matchesSearch = item.title
+  // Filtering
+  const filteredSurveys = surveys.filter((survey) => {
+    const matchesSearch = survey.title
       ?.toLowerCase()
       .includes(searchTerm.toLowerCase());
     const matchesStatus =
-      statusFilter === "all" || item.status === statusFilter;
+      statusFilter === "all" || survey.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
+  // Pagination
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentSurveys = filteredSurveys.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+  const totalPages = Math.ceil(filteredSurveys.length / itemsPerPage);
+
   return (
-    <div className="global-surveys-container">
-      <div className="page-header">
+    <div className="survey-container">
+      {/* Header */}
+      <div className="survey-header">
         <h1>Global Surveys</h1>
-        <button className="btn-primary">Create New Global Survey</button>
+        <button className="survey-btn-primary" onClick={() => setShowForm(true)}>+ Create Survey</button>
       </div>
 
-      <div className="filter-section">
-        <div className="search-box">
-          <input
-            type="text"
-            placeholder="Search global surveys..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-
-        <div className="filter-box">
-          <label htmlFor="status-filter">Status:</label>
-          <select
-            id="status-filter"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="all">All</option>
-            <option value="active">Active</option>
-            <option value="draft">Draft</option>
-            <option value="closed">Closed</option>
-          </select>
-        </div>
+      {/* Filters */}
+      <div className="survey-filters">
+        <input
+          type="text"
+          placeholder="Search surveys..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="survey-search"
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="survey-select"
+        >
+          <option value="all">All</option>
+          <option value="active">Active</option>
+          <option value="draft">Draft</option>
+          <option value="closed">Closed</option>
+        </select>
       </div>
 
-      {/* {loading ? (
-        <div className="loading">Loading global surveys...</div>
+      {/* Loading & Error States */}
+      {loading ? (
+        <div className="survey-loading">Loading surveys...</div>
       ) : error ? (
-        <div className="error-message">{error}</div>
+        <div className="survey-error">{error}</div>
       ) : (
-        <div className="surveys-list">
-          {filteredSurveys.length === 0 ? (
-            <div className="no-data">No global surveys found</div>
+        <div className="survey-table-container">
+          {currentSurveys.length === 0 ? (
+            <div className="survey-no-data">No surveys found</div>
           ) : (
-            <table className="data-table">
+            <table className="survey-table">
               <thead>
                 <tr>
                   <th>Title</th>
+                  <th>Type</th>
                   <th>Status</th>
                   <th>Questions</th>
-                  <th>Organizations</th>
-                  <th>Total Responses</th>
+                  <th>Responses</th>
+                  <th>Created Date</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredSurveys.map((survey) => (
-                  <tr key={survey.id}>
+                {currentSurveys.map((survey) => (
+                  <tr key={survey._id}>
                     <td>{survey.title}</td>
+                    <td>{survey.survey_type || "N/A"}</td>
                     <td>
-                      <span className={`status-badge ${survey.status}`}>
-                        {survey.status}
+                      <span
+                        className={`survey-status ${
+                          survey.is_active === true
+                            ? "survey-status-active"
+                            : survey.is_active === false
+                            ? "survey-status-draft"
+                            : "survey-status-closed"
+                        }`}
+                      >
+                        {survey.is_active === true ? "Active" : "Inactive"}
                       </span>
                     </td>
                     <td>{survey.questions?.length || 0}</td>
-                    <td>{survey.organizations?.length || 0}</td>
-                    <td>{survey.totalResponses || 0}</td>
-                    <td className="actions-cell">
-                      <button className="btn-view">View Results</button>
-                      <button className="btn-edit">Edit</button>
+                    <td>{survey.responses?.length || 0}</td>
+                    <td>
+                      {survey.createdAt
+                        ? new Date(survey.createdAt).toLocaleDateString()
+                        : "N/A"}
+                    </td>
+                    <td className="survey-actions">
+                      <button className="survey-btn-view">View</button>
                       <button
-                        className="btn-delete"
-                        onClick={() => handleDeleteSurvey(survey.id)}
+                        className="survey-btn-delete"
+                        onClick={() => handleDeleteSurvey(survey.uuid)}
                       >
                         Delete
                       </button>
+                      <button
+                    className="survey-btn-edit"
+                    onClick={() => {
+                      setEditingSurvey(survey);
+                      setFormData({
+                        title: survey.title,
+                        description: survey.description || "",
+                        survey_type: survey.survey_type,
+                        start_date: survey.start_date
+                          ? survey.start_date.split("T")[0]
+                          : "",
+                        end_date: survey.end_date ? survey.end_date.split("T")[0] : "",
+                        is_active: survey.is_active,
+                        questions: survey.questions || [],
+                      });
+                      setShowForm(true);
+                    }}
+                  >
+                    Edit
+                  </button>
+                      
                     </td>
                   </tr>
                 ))}
@@ -308,82 +245,228 @@ const GlobalSurveys = () => {
             </table>
           )}
         </div>
-      )} */}
+      )}
+      {showForm && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h3>{editingSurvey ? "Edit Survey" : "Add Survey"}</h3>
+              <button
+                className="close-btn"
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingSurvey(null);
+                }}
+              >
+                ✖
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="modal-form">
+              <label>Title*</label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                required
+              />
 
-      {/* Always show dummy data instead of loading/error states */}
-      <div className="surveys-list">
-        {dummySurveys.length === 0 ? (
-          <div className="surveys-no-data">No surveys found</div>
-        ) : (
-          <table className="surveys-data-table">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>Questions</th>
-                <th>Responses</th>
-                <th>Created Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentSurveys.map((survey) => (
-                <tr key={survey.id}>
-                  <td>{survey.title}</td>
-                  <td>{survey.type}</td>
-                  <td>
-                    <span
-                      className={`surveys-status-badge ${survey.status.toLowerCase()}`}
-                    >
-                      {survey.status}
-                    </span>
-                  </td>
-                  <td>{survey.questionCount}</td>
-                  <td>{survey.responseCount}</td>
-                  <td>{new Date(survey.createdAt).toLocaleDateString()}</td>
-                  <td className="surveys-actions-cell">
-                    <button className="surveys-btn-view">View Results</button>
-                    <button className="surveys-btn-edit">Edit</button>
-                    <button
-                      className="surveys-btn-delete"
-                      onClick={() => handleDeleteSurvey(survey.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
+              <label>Description</label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+              />
+
+              <label>Survey Type*</label>
+              <select
+                name="survey_type"
+                value={formData.survey_type}
+                onChange={handleChange}
+              >
+                <option value="text">Text</option>
+                <option value="rating">Rating</option>
+                <option value="multiple_choice">Multiple Choice</option>
+              </select>
+
+              <div className="date-fields">
+                <div>
+                  <label>Start Date</label>
+                  <input
+                    type="date"
+                    name="start_date"
+                    value={formData.start_date}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div>
+                  <label>End Date</label>
+                  <input
+                    type="date"
+                    name="end_date"
+                    value={formData.end_date}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label>Status</label>
+                <select
+                  name="is_active"
+                  value={formData.is_active}
+                  onChange={handleChange}
+                >
+                  <option value={true}>Active</option>
+                  <option value={false}>Inactive</option>
+                </select>
+              </div>
+
+              <h4>Questions</h4>
+              {formData.questions.map((q, index) => (
+                <div key={index} className="question-box">
+                  <input
+                    type="text"
+                    placeholder="Enter question"
+                    value={q.question_text}
+                    onChange={(e) =>
+                      handleQuestionChange(
+                        index,
+                        "question_text",
+                        e.target.value
+                      )
+                    }
+                    required
+                  />
+                  <select
+                    value={q.question_type}
+                    onChange={(e) =>
+                      handleQuestionChange(
+                        index,
+                        "question_type",
+                        e.target.value
+                      )
+                    }
+                  >
+                    <option value="text">Text</option>
+                    
+                    <option value="multiple_choice">Multiple Choice</option>
+                  </select>
+                  <button
+                    type="button"
+                    className="remove-btn"
+                    onClick={() => removeQuestion(index)}
+                  >
+                    ✖
+                  </button>
+
+                  {/* Options for Multiple Choice */}
+                  {q.question_type === "multiple_choice" && (
+                    <div className="options-box">
+                      {q.options.map((opt, optIndex) => (
+                        <div key={optIndex} className="option-row">
+                          <input
+                            type="text"
+                            placeholder={`Option ${optIndex + 1}`}
+                            value={opt}
+                            onChange={(e) => {
+                              const updatedOptions = [...q.options];
+                              updatedOptions[optIndex] = e.target.value;
+                              handleQuestionChange(
+                                index,
+                                "options",
+                                updatedOptions
+                              );
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className="remove-option-btn"
+                            onClick={() => {
+                              const updatedOptions = q.options.filter(
+                                (_, i) => i !== optIndex
+                              );
+                              handleQuestionChange(
+                                index,
+                                "options",
+                                updatedOptions
+                              );
+                            }}
+                          >
+                            ✖
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        className="add-option-btn"
+                        onClick={() =>
+                          handleQuestionChange(index, "options", [
+                            ...q.options,
+                            "",
+                          ])
+                        }
+                      >
+                        + Add Option
+                      </button>
+                    </div>
+                  )}
+                </div>
               ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-     <div className="pagination">
-  <button
-    disabled={currentPage === 1}
-    onClick={() => handlePageChange(currentPage - 1)}
-  >
-    Previous
-  </button>
+              <button
+                type="button"
+                className="add-question-btn"
+                onClick={addQuestion}
+              >
+                + Add Question
+              </button>
 
-  {[...Array(totalPages)].map((_, index) => (
-    <button
-      key={index + 1}
-      className={currentPage === index + 1 ? "active" : ""}
-      onClick={() => handlePageChange(index + 1)}
-    >
-      {index + 1}
-    </button>
-  ))}
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="cancel-btn"
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditingSurvey(null);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="create-btn">
+                  {editingSurvey ? "Update Survey" : "Create Survey"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
-  <button
-    disabled={currentPage === totalPages}
-    onClick={() => handlePageChange(currentPage + 1)}
-  >
-    Next
-  </button>
-</div>
-
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="survey-pagination">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(currentPage - 1)}
+          >
+            Previous
+          </button>
+          {[...Array(totalPages)].map((_, index) => (
+            <button
+              key={index + 1}
+              className={currentPage === index + 1 ? "survey-active-page" : ""}
+              onClick={() => setCurrentPage(index + 1)}
+            >
+              {index + 1}
+            </button>
+          ))}
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(currentPage + 1)}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };

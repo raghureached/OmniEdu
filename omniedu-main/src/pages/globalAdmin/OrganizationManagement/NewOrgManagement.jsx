@@ -15,7 +15,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 import "./NewOrgManage.css";
-import Notification from "../../../assets/Notification.svg";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchOrganizations,
@@ -26,35 +25,42 @@ import {
   clearFilters,
 } from "../../../store/slices/organizationSlice";
 import api from "../../../services/api";
+import { useNavigate } from "react-router-dom";
+import OrganizationModal from "./AddOrganizationModal";
+import LoadingScreen from "../../../components/common/Loading/Loading";
+import AddOrganizationFormModal from "./AddOrganizationModal";
+import OrganizationDetails from "./OrganizationDetails";
 
 const OrganizationManagement = () => {
   const dispatch = useDispatch();
-  const { organizations, loading, filters} = useSelector((state) => state.organizations);
-  const [plans,setPlans] = useState([]);
+  const { organizations, loading, filters } = useSelector((state) => state.organizations);
+  const [plans, setPlans] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedLogo, setSelectedLogo] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
-  const [showPreview, setShowPreview] = useState(false);
   const [currentOrg, setCurrentOrg] = useState(null);
+  const [orgId, setOrgId] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
-
+  const [showOrgModal, setShowOrgModal] = useState(false);
+  const [plan,setPlan] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     status: "Active",
     logo: null,
+    documents: [],
     planId: "",
     start_date: "",
     end_date: "",
     adminRoleId: "",
   });
-
+  const navigate = useNavigate();
   useEffect(() => {
     dispatch(fetchOrganizations(filters));
-   fetchPlans();
-  }, [dispatch,filters]);
-  const fetchPlans = async()=>{
+    fetchPlans();
+  }, [dispatch, filters]);
+  const fetchPlans = async () => {
     const response = await api.get("/api/globalAdmin/getPlans");
     const data = response.data.data;
     setPlans(data);
@@ -63,11 +69,13 @@ const OrganizationManagement = () => {
     if (org) {
       setEditMode(true);
       setCurrentOrg(org);
+      setPlan(plans.find((plan)=>plan._id === org.planId));
       setFormData({
         name: org.name || "",
         email: org.email || "",
         status: org.status || "Active",
         logo: null,
+        documents: org.documents || [],
         planId: org.planId || "",
         start_date: org.start_date
           ? new Date(org.start_date).toISOString().split("T")[0]
@@ -80,11 +88,13 @@ const OrganizationManagement = () => {
     } else {
       setEditMode(false);
       setCurrentOrg(null);
+      setPlan(null);
       setFormData({
         name: "",
         email: "",
         status: "Active",
         logo: null,
+        documents: [],
         planId: "",
         start_date: "",
         end_date: "",
@@ -103,11 +113,16 @@ const OrganizationManagement = () => {
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
-    // console.log(name,value);
-    
+    // console.log(name,value,files)
     if (files) {
-      setSelectedLogo(files[0]);
-      setFormData((prev) => ({ ...prev, [name]: files[0] }));
+      if (name === "logo") {
+        setSelectedLogo(files[0]);
+        setFormData((prev) => ({ ...prev, [name]: files[0] }));
+      } else if (name === "documents") {
+        // For multiple documents (FileList), keep as is
+        setFormData((prev) => ({ ...prev, [name]: files }));
+      }
+      // console.log(formData)
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -138,37 +153,48 @@ const OrganizationManagement = () => {
     );
   };
   const handleFilterChange = (e) => {
-      const { name, value } = e.target;
-      console.log(name,value)
-      dispatch(
-        setFilters({
-          [name]: value,
-        })
-      );
-    };
-  
-    const resetFilters = () => {
-      dispatch(clearFilters());
-    };
+    const { name, value } = e.target;
+    // console.log(name,value)
+    dispatch(
+      setFilters({
+        [name]: value,
+      })
+    );
+  };
+
+  const resetFilters = () => {
+    dispatch(clearFilters());
+  };
+
+  const handleOpenOrg = (Id) => {
+    setOrgId(Id);
+    setShowOrgModal(true);
+  };
+  const handleCloseOrgModal = () => {
+    setShowOrgModal(false);
+  };
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 15; // show 5 surveys per page
+  const itemsPerPage = 8; // show 5 surveys per page
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentpages = organizations.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(organizations.length / itemsPerPage);
   const handlePageChange = (pageNumber) => {
+    if (pageNumber < 1 || pageNumber > totalPages) return;
     setCurrentPage(pageNumber);
   };
-  
+
+
   const handleDeleteOrg = (id) => {
-      if (window.confirm("Are you sure you want to delete this organization?")) {
-        try {
-          dispatch(deleteOrganization({ id }));
-        } catch (error) {
-          console.error(error);
-        }
+    if (window.confirm("Are you sure you want to delete this organization?")) {
+      try {
+        // console.log(id)
+        dispatch(deleteOrganization(id));
+      } catch (error) {
+        console.error(error);
       }
-    };
+    }
+  };
 
   const sidebarItems = [
     { icon: Users, label: "Organizations", active: true },
@@ -186,21 +212,13 @@ const OrganizationManagement = () => {
 
         {/* Main Content */}
         <div className="main-content">
-          {/* Header */}
-          {/* <header className="header">
-            <div className="breadcrumbs">
-              <Home size={16} />
-              <span>/</span>
-              <span>Manage Organizations</span>
-            </div>
-
-            <div className="user-section">
-              <span className="user-name">Kushal Bhabthula</span>
-              <ChevronDown size={16} color="#6b7280" />
-              <img src={Notification} alt="notification" />
-              <div className="user-avatar">K</div>
-            </div>
-          </header> */}
+          {showOrgModal && (
+            <OrganizationDetails
+              orgId={orgId}
+              isOpen={showOrgModal}
+              onClose={handleCloseOrgModal}
+            />
+          )}
 
           {/* Page Content */}
           <div className="page-content">
@@ -217,7 +235,7 @@ const OrganizationManagement = () => {
                 <Search size={16} color="#6b7280" className="search-icon" />
                 <input
                   type="text"
-                  placeholder="Search"
+                  placeholder="Search.."
                   className="search-input"
                   onChange={(e) => handleFilterChange(e)}
                 />
@@ -228,10 +246,10 @@ const OrganizationManagement = () => {
                   <Filter size={16} />
                   Filter
                 </button>
-                <button className="control-btn">
+                {/* <button className="control-btn">
                   <Share size={16} />
                   Share
-                </button>
+                </button> */}
                 <button className="control-btn">
                   Bulk Action <ChevronDown size={16} />
                 </button>
@@ -239,7 +257,7 @@ const OrganizationManagement = () => {
             </div>
 
             {/* Table */}
-            {loading ? "Loading..." : <div className="table-container">
+            {loading ? <LoadingScreen /> : <div className="table-container">
               <div className="table-header">
                 <input
                   type="checkbox"
@@ -254,7 +272,7 @@ const OrganizationManagement = () => {
                 <div></div>
               </div>
 
-              {organizations.map((org) => (
+              {currentpages.map((org) => (
                 <div key={org.id} className="table-row">
                   <input
                     type="checkbox"
@@ -270,17 +288,16 @@ const OrganizationManagement = () => {
 
                   <div>
                     <span
-                      className={`status-badge ${
-                        org.status === "Active"
-                          ? "status-paid"
-                          : "status-cancelled"
-                      }`}
+                      className={`status-badge ${org.status === "Active"
+                        ? "status-paid"
+                        : "status-cancelled"
+                        }`}
                     >
                       {org.status === "Active" ? "✓ Active" : "✕ Inactive"}
                     </span>
                   </div>
 
-                  <div className="user-cell">
+                  <div className="user-cell" onClick={() => handleOpenOrg(org.uuid)}>
                     <div
                       className="user-avatar-cell"
                       style={{ backgroundColor: "#FFC107" }}
@@ -311,7 +328,7 @@ const OrganizationManagement = () => {
                   <div className="actions-cell">
                     <button
                       className="action-btn delete-btn"
-                      onClick={() => dispatch(deleteOrganization(org.id))}
+                      onClick={() => handleDeleteOrg(org.uuid)}
                     >
                       Delete
                     </button>
@@ -324,188 +341,57 @@ const OrganizationManagement = () => {
                   </div>
                 </div>
               ))}
-            </div> }
+            </div>}
 
             {/* Pagination */}
             <div className="pagination">
-              <button className="pagination-btn">
+              <button
+                className="pagination-btn"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
                 <ChevronLeft size={16} /> Previous
               </button>
+
+              {/* Page Numbers */}
               <div className="pagination-numbers">
-                {[1, 2, 3, "...", 8, 9, 10].map((page, index) => (
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                   <button
-                    key={index}
-                    className={`page-btn ${page === 1 ? "active" : ""}`}
-                    disabled={page === "..."}
+                    key={page}
+                    className={`page-btn ${currentPage === page ? "active" : ""}`}
                     onClick={() => handlePageChange(page)}
                   >
                     {page}
                   </button>
                 ))}
               </div>
-              <button className="pagination-btn">
+
+              <button
+                className="pagination-btn"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
                 Next <ChevronRight size={16} />
               </button>
             </div>
+
           </div>
         </div>
       </div>
 
-      {showForm && (
-  <div className="modal-overlay">
-    <div className="modal-content">
-      <div className="modal-header">
-        <h2>{editMode ? "Edit Organization" : "Add Organization"}</h2>
-        <button onClick={closeForm} className="close-btn">
-          &times;
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="org-form">
-        {/* Row 1 */}
-        <div className="form-row">
-          <div className="form-group">
-            <label>Organization Name *</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Contact Email *</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-        </div>
-
-        {/* Row 2 */}
-        <div className="form-row">
-          <div className="form-group">
-            <label>Logo</label>
-            <input
-              type="file"
-              name="logo"
-              accept="image/*"
-              onChange={handleInputChange}
-            />
-            {selectedLogo && (
-              <button
-                type="button"
-                onClick={() => setShowPreview(true)}
-                className="btn-secondary"
-              >
-                Preview
-              </button>
-            )}
-            {!selectedLogo && editMode && currentOrg?.logo_url && (
-              <img
-                src={currentOrg.logo_url}
-                alt="Current Logo"
-                className="logo-preview-small"
-              />
-            )}
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-            <label htmlFor="document">Document</label>
-                <input type="file" name="documents" id="document" onChange={handleInputChange} multiple />
-            </div>
-            
-          </div>
-          <div className="form-group">
-            <label>Status *</label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleInputChange}
-            >
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Plan *</label>
-            <select
-              name="planId"
-              value={formData.planId}
-              onChange={handleInputChange}
-            >
-              {plans.map((plan) => (
-                <option key={plan._id} value={plan._id}>
-                  {plan.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Row 3 - Dates */}
-        <div className="form-row">
-          <div className="form-group">
-            <label>Start Date *</label>
-            <input
-              type="date"
-              name="start_date"
-              value={formData.start_date}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>End Date *</label>
-            <input
-              type="date"
-              name="end_date"
-              value={formData.end_date}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="form-actions">
-          <button type="submit" className="btn-primary">
-            {editMode ? "Update" : "Create"}
-          </button>
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={closeForm}
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
-
-      {showPreview && selectedLogo && (
-        <div className="preview-overlay">
-          <div className="preview-content">
-            <button
-              className="close-preview"
-              onClick={() => setShowPreview(false)}
-            >
-              &times;
-            </button>
-            <img
-              src={URL.createObjectURL(selectedLogo)}
-              alt="Preview"
-              className="preview-image"
-            />
-          </div>
-        </div>
-      )}
-    </div>
-  </div>
-)}
+      {showForm && <AddOrganizationFormModal
+        showForm={showForm}
+        editMode={editMode}
+        formData={formData}
+        setFormData={setFormData}
+        setSelectedLogo={setSelectedLogo}
+        selectedLogo={selectedLogo}
+        closeForm={closeForm}
+        handleInputChange={handleInputChange}
+        handleSubmit={handleSubmit}
+        plans={plans}
+        plan={plan}
+      />}
 
 
     </>

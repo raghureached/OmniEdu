@@ -25,8 +25,9 @@ export const fetchOrganizationById = createAsyncThunk(
     'organizations/fetchOrganizationById',
     async(id, { rejectWithValue }) => {
         try {
-            const response = await api.get(`/api/globalAdmin/getOrganizations${id}`);
-            return response.data;
+            const response = await api.get(`/api/globalAdmin/getOrganizationById/${id}`);
+            // console.log(response.data.data)
+            return response.data.data;
         } catch (error) {
             return rejectWithValue(error.response.data);
         }
@@ -70,6 +71,7 @@ export const createOrganization = createAsyncThunk(
   "organizations/createOrganization",
   async (organizationData, { rejectWithValue }) => {
     try {
+      console.log(organizationData)
       const formData = new FormData();
       // Append all fields properly
       Object.keys(organizationData).forEach((key) => {
@@ -111,7 +113,7 @@ export const createOrganization = createAsyncThunk(
         { headers: { "Content-Type": "multipart/form-data" } }
       );
 
-      return response.data;
+      return response.data.data;
     } catch (error) {
       return rejectWithValue({
         status: error.response?.status,
@@ -159,7 +161,8 @@ export const deleteOrganization = createAsyncThunk(
     'organizations/deleteOrganization',
     async(id, { rejectWithValue }) => {
         try {
-            await api.delete(`/api/globalAdmin/deleteOrganization/${id}`);
+            const response = await api.delete(`/api/globalAdmin/deleteOrganization/${id}`);
+            // console.log(response.data)
             return id;
         } catch (error) {
             return rejectWithValue(error.response.data);
@@ -281,6 +284,7 @@ const organizationSlice = createSlice({
           })
           .addCase(fetchOrganizationById.fulfilled, (state, action) => {
             state.loading = false;
+            // console.log(action.payload)
             state.currentOrganization = action.payload;
           })
           .addCase(fetchOrganizationById.rejected, (state, action) => {
@@ -295,6 +299,7 @@ const organizationSlice = createSlice({
           })
           .addCase(createOrganization.fulfilled, (state, action) => {
             state.loading = false;
+            console.log(action.payload)
             state.organizations.push(action.payload);
             state.totalCount += 1;
           })
@@ -336,12 +341,12 @@ const organizationSlice = createSlice({
           .addCase(deleteOrganization.fulfilled, (state, action) => {
             state.loading = false;
             state.organizations = state.organizations.filter(
-              (org) => org.id !== action.payload
+              (org) => org.uuid !== action.payload
             );
             state.totalCount -= 1;
             if (
               state.currentOrganization &&
-              state.currentOrganization.id === action.payload
+              state.currentOrganization.uuid === action.payload
             ) {
               state.currentOrganization = null;
             }

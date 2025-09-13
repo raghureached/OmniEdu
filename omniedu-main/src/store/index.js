@@ -9,6 +9,7 @@ import notificationReducer from './slices/notificationSlice';
 import assignmentReducer from './slices/assignmentSlice';
 import messageReducer from './slices/messageSlice';
 import activityLogReducer from './slices/activityLogSlice';
+import surveyReducer from './slices/surveySlice';
 
 const store = configureStore({
   reducer: {
@@ -21,7 +22,8 @@ const store = configureStore({
     notifications: notificationReducer,
     assignments: assignmentReducer,
     message: messageReducer,
-    activityLog: activityLogReducer
+    activityLog: activityLogReducer,
+    surveys: surveyReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

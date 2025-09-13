@@ -12,6 +12,7 @@ import {
 } from '../../../store/slices/organizationSlice';
 import './OrganizationManagement.css';
 import { format } from "date-fns";
+import LoadingScreen from '../../../components/common/Loading/Loading';
 
 const OrganizationManagement = () => {
   const dispatch = useDispatch();
@@ -339,9 +340,7 @@ const handlePlanChange = (e) => {
         </button>
       </div>
 
-      {loading ? (
-        <div className="loading">Loading organizations...</div>
-      ) : (
+      {loading ? <LoadingScreen /> : (
         <>
           <div className="table-container">
             <table className="data-table">
