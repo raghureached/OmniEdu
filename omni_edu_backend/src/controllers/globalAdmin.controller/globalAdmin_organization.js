@@ -12,8 +12,6 @@ const baseOrgSchema = z.object({
     start_date: z.coerce.date({ invalid_type_error: "Invalid start date" }),
     end_date: z.coerce.date({ invalid_type_error: "Invalid end date" }),
     planId: z.string().min(1, "Plan ID is required"),
-    logo_url: z.string().url("Invalid logo URL").optional(),
-    documents: z.array(z.string().url("Invalid document URL")).optional(),
 });
 
 const createOrganizationSchema = baseOrgSchema;
@@ -32,6 +30,7 @@ const addOrganization = async(req, res) => {
         //     end_date,
         //     planId,
         // } = req.body;
+        // console.log(req.body)
         const parsed = createOrganizationSchema.safeParse(req.body);
         // console.log(parsed.error.message);
         // console.log(parsed)
@@ -61,6 +60,7 @@ const addOrganization = async(req, res) => {
         // console.log(req.uploadedFiles)
         const logo_url = req.uploadedFiles.logo[0].url;
         const documents_urls = req.uploadedFiles.documents.map(doc => doc.url);
+        // console.log(logo_url,documents_urls)
         // 1. Create organization inside transaction
         const newOrg = await Organization.create(
             [{
@@ -226,9 +226,26 @@ const getOrganizations = async(req, res) => {
     }
 };
 
+const getOrganizationById = async(req,res)=>{
+    try {
+        const organization = await Organization.findOne({ uuid: req.params.id })
+        return res.status(200).json({
+            success: true,
+            message: "Organization fetched successfully",
+            data: organization
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch organization",
+            error: error.message
+        })
+    }
+}
 module.exports = {
     addOrganization,
     editOrganization,
     deleteOrganization,
-    getOrganizations
+    getOrganizations,
+    getOrganizationById
 }

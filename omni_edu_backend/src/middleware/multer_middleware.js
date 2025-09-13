@@ -18,8 +18,8 @@ const diskStorageUploads = multer.diskStorage({
     cb(null, uploadsDir);
   },
   filename: function (req, file, cb) {
-    console.log(file)    
-    const filePrefix = file.fieldname === 'logo' ? 'logo' : 'doc';
+    // console.log(file)    
+    const filePrefix = file.fieldname === 'logo' ? 'logo' : 'documents';
     const { name = 'org' } = req.body;
     const timestamp = Date.now();
     cb(null, `${filePrefix}-${timestamp}-${name}${path.extname(file.originalname)}`);
@@ -32,10 +32,10 @@ const upload = multer({ storage: diskStorageUploads,
   },
   fileFilter: (req, file, cb) => {
     // Optional: restrict file types
-    const allowed = ["image/jpeg", "image/png", "application/pdf"];
-    if (!allowed.includes(file.mimetype)) {
-      return cb(new Error("Only JPEG, PNG, and PDF files are allowed"), false);
-    }
+    // const allowed = ["image/jpeg", "image/png", "application/pdf"];
+    // if (!allowed.includes(file.mimetype)) {
+    //   return cb(new Error("Only JPEG, PNG, and PDF files are allowed"), false);
+    // }
     cb(null, true);
   },
  });

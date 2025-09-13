@@ -1,40 +1,18 @@
 const mongoose = require("mongoose");
 const { v4: uuidv4 } = require("uuid");
 
-const globalRolesSchema = new mongoose.Schema(
-  {
-    uuid: {
-      type: String,
-      default: uuidv4,
-      unique: true,
-      index: true,
-    },
-    name: {
-      type: String,
-      required: true,
-      enum: ["User", "Admin", "Global Admin"],
-      unique: true,
-    },
-    permissions:{
-        type: [String],
-        default: [],
-    },
-    description:{
-        type: String,
-        default: "",
-    }
+const RoleSchema = new mongoose.Schema({
+  name: { type: String, required: true, unique: true },   // e.g., "Admin"
+  description: { type: String },
+  uuid: {
+    type: String,
+    default: uuidv4,
+    unique: true,
+    index: true
   },
-  { timestamps: true }
-);
+  permissions: [{ type: mongoose.Schema.Types.ObjectId, ref: "Permission" }] // assign permissions directly
+});
 
-// globalRolesSchema.set("toJSON", {        //if u dont want to use _id as main..
-//     transform: (_, ret) => {
-//       delete ret._id;
-//       delete ret.__v;
-//       return ret;
-//     },
-//   });
+const Role = mongoose.model("Role", RoleSchema);
+module.exports = Role;
 
-const GlobalRoles = mongoose.model("GlobalRoles", globalRolesSchema);
-
-module.exports = GlobalRoles;

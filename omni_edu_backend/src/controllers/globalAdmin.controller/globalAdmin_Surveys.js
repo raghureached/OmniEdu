@@ -31,6 +31,7 @@ const createSurvey = async (req, res) => {
   try {
     const parsed = createSurveySchema.safeParse(req.body);
     if (!parsed.success) {
+      console.log(parsed.error)
       return res.status(400).json({
         success: false,
         message: "Validation error",
@@ -38,7 +39,7 @@ const createSurvey = async (req, res) => {
       });
     }
 
-    const { title, description, questions, survey_type, start_date, end_date, is_active, created_by } = parsed.data;
+    const { title, description, questions, survey_type, start_date, end_date, is_active, created_by } = req.body;
 
     // Insert questions
     const createdQuestions = await GlobalSurveyQuestion.insertMany(questions);
@@ -227,7 +228,7 @@ const viewResponses = async(req, res) => {
 }
 const getSurvey = async(req, res) => {
     try {
-        const survey = await Surveys.findById(req.params.id)
+        const survey = await Surveys.findOne({uuid: req.params.id}).populate('questions')
         return res.status(200).json({
             success: true,
             message: "Survey fetched successfully",

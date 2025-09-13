@@ -158,7 +158,7 @@ const editContent = async (req, res) => {
     const bodyParsed = updateContentSchema.safeParse({
       ...req.body,
       file_url: req.uploadedFile?.url || req.body.file_url,
-    });
+    }); 
     if (!bodyParsed.success) {
       return res.status(400).json({
         success: false,
