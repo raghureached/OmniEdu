@@ -1,34 +1,35 @@
 const SurveyResponses = require("../../models/global_surveyResponses_model");
 const Surveys = require("../../models/global_surveys_model");
 const GlobalSurveyQuestion = require("../../models/global_surveys_Questions_model");
-const { z } = require("zod");
+const { v4: uuidv4 } = require("uuid");
 
-// Zod validation
-const createSurveySchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string().nullable().optional(),
-  questions: z
-    .array(
-      z.object({
-        question_text: z.string().min(1, "Question text is required"),
-        question_type: z.enum(["text", "rating", "multiple_choice"]),
-        options: z.array(z.string()).optional(),
-        position: z.number().optional(),
-      })
-    )
-    .nonempty("At least one question is required"),
-  survey_type: z.enum(["text", "rating", "multiple_choice"]),
-  start_date: z.string().transform(val => new Date(val)).nullable().optional(),
-  end_date: z.string().transform(val => new Date(val)).nullable().optional(),
-  is_active: z.boolean().default(true),
-  created_by: z.string().nullable().optional(),
-});
 
-const editSurveySchema = createSurveySchema.partial();
+// // Zod validation
+// const createSurveySchema = z.object({
+//   title: z.string().min(1, "Title is required"),
+//   description: z.string().nullable().optional(),
+//   questions: z
+//     .array(
+//       z.object({
+//         question_text: z.string().min(1, "Question text is required"),
+//         question_type: z.enum(["text", "rating", "multiple_choice"]),
+//         options: z.array(z.string()).optional(),
+//         position: z.number().optional(),
+//       })
+//     )
+//     .nonempty("At least one question is required"),
+//   survey_type: z.enum(["text", "rating", "multiple_choice"]),
+//   start_date: z.string().transform(val => new Date(val)).nullable().optional(),
+//   end_date: z.string().transform(val => new Date(val)).nullable().optional(),
+//   is_active: z.boolean().default(true),
+//   created_by: z.string().nullable().optional(),
+// });
+
+//  const editSurveySchema = createSurveySchema.partial();
 
 // Create Survey
 const createSurvey = async (req, res) => {
-  try {
+   try {
     // const parsed = createSurveySchema.safeParse(req.body);
     // if (!parsed.success) {
     //   console.log(parsed.error)
@@ -47,6 +48,7 @@ const createSurvey = async (req, res) => {
 
     // Create survey
     const survey = await Surveys.create({
+      uuid: uuidv4(),
       title,
       description,
       questions: questionIds,
@@ -74,16 +76,16 @@ const createSurvey = async (req, res) => {
 // Edit Survey
 const editSurvey = async (req, res) => {
   try {
-    const parsed = editSurveySchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation error",
-        errors: parsed.error.errors,
-      });
-    }
+    // const parsed = editSurveySchema.safeParse(req.body);
+    // if (!parsed.success) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Validation error",
+    //     errors: parsed.error.errors,
+    //   });
+    // }
 
-    const { title, description, questions, survey_type, start_date, end_date, is_active, created_by } = parsed.data;
+    const { title, description, questions, survey_type, start_date, end_date, is_active, created_by } = req.body;
 
     let questionIds = [];
 
@@ -105,20 +107,35 @@ const editSurvey = async (req, res) => {
       }
     }
 
+    // const updatedSurvey = await Surveys.findOneAndUpdate(
+    //   { uuid: req.params.id },
+    //   {
+    //     ...(title && { title }),
+    //     ...(description && { description }),
+    //     ...(questionIds.length > 0 && { questions: questionIds }),
+    //     ...(survey_type && { survey_type }),
+    //     ...(start_date && { start_date }),
+    //     ...(end_date && { end_date }),
+    //     ...(is_active !== undefined && { is_active }),
+    //     ...(created_by && { created_by }),
+    //   },
+    //   { new: true }
+    // );
     const updatedSurvey = await Surveys.findOneAndUpdate(
-      { uuid: req.params.id },
-      {
-        ...(title && { title }),
-        ...(description && { description }),
-        ...(questionIds.length > 0 && { questions: questionIds }),
-        ...(survey_type && { survey_type }),
-        ...(start_date && { start_date }),
-        ...(end_date && { end_date }),
-        ...(is_active !== undefined && { is_active }),
-        ...(created_by && { created_by }),
-      },
-      { new: true }
-    );
+  { uuid: req.params.id },
+  {
+    ...(title && { title }),
+    ...(description && { description }),
+    ...(questionIds.length > 0 && { questions: questionIds }),
+    ...(survey_type && { survey_type }),
+    ...(start_date && { start_date: new Date(start_date) }),
+    ...(end_date && { end_date: new Date(end_date) }),
+    ...(is_active !== undefined && { is_active }),
+    ...(created_by && { created_by }),
+  },
+  { new: true }
+).populate("questions"); // <-- add this
+ 
 
     if (!updatedSurvey) {
       return res.status(404).json({
@@ -171,7 +188,7 @@ const getSurveys = async(req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 50;
         const skip = (page - 1) * limit;
-        const surveys = await Surveys.find().skip(skip).limit(limit)
+        const surveys = await Surveys.find().skip(skip).limit(limit).populate("questions");
         const total = await Surveys.countDocuments()
         return res.status(200).json({
             success: true,

@@ -111,18 +111,26 @@ function generatePlanId(orgName, planName) {
 const editOrganization = async(req, res) => {
     try {
         //chrom const { name, email, status, logo_url, start_date, end_date, documents, planId } = req.body;
-        const parsed = updateOrganizationSchema.safeParse(req.body);
-        if (!parsed.success) {
-            return res.status(400).json({
-                success: false,
-                message: "Validation failed",
-                errors: parsed.error.flatten(),
-            });
+        // const parsed = updateOrganizationSchema.safeParse(req.body);
+        // if (!parsed.success) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: "Validation failed",
+        //         errors: parsed.error.flatten(),
+        //     });
+        // }
+
+        const { name, email, status, logo_url, start_date, end_date, documents, planId } = req.body;
+        
+        if(req.uploadedFiles.logo){
+            logo_url = req.uploadedFiles.logo[0].url;
         }
-
-        const { name, email, status, logo_url, start_date, end_date, documents, planId } = parsed.data;
-
-        const plan = await Plan.findById(planId)
+        // const logo_url = req.uploadedFiles.logo[0].url;
+        if(req.uploadedFiles.documents){
+            const documents_urls = req.uploadedFiles.documents.map(doc => doc.url);
+            documents = documents_urls;
+        }
+        const plan = await Plan.findById(planId); // const plan = await Plan.findById(planId);
         if (!plan) {
             return res.status(404).json({
                 success: false,
@@ -140,7 +148,13 @@ const editOrganization = async(req, res) => {
             plan: plan._id,
             planName: plan.name,
             planId: generatePlanId(name, plan.name),
-        })
+        },{new: true})
+        if(!updatedOrg){
+            return res.status(400).json({
+                success: false,
+                message: "Organization not found"
+            })
+        }
         return res.status(200).json({
             success: true,
             message: "Organization updated successfully",

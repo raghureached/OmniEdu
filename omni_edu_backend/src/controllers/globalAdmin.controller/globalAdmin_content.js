@@ -38,21 +38,21 @@ const addContent = async (req, res) => {
     //   pushable_to_orgs,
     // } = req.body;
 
-    const parsed = createContentSchema.safeParse({
-      ...req.body,
-      file_url: req.uploadedFile?.url || req.body.file_url,
-    });
+    // const parsed = createContentSchema.safeParse({
+    //   ...req.body,
+    //   file_url: req.uploadedFile?.url || req.body.file_url,
+    // });
 
-    if (!parsed.success) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: parsed.error.flatten(),
-      });
-    }
+    // if (!parsed.success) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Validation failed",
+    //     errors: parsed.error.flatten(),
+    //   });
+    // }
 
-    const { title, type, content, file_url, is_active, pushable_to_orgs } =
-      parsed.data;
+    const { title, type, content, is_active, pushable_to_orgs } =
+      req.body;
 
     // Optional: set this from auth middleware
     const created_by = req.user?.id || null;
@@ -87,6 +87,7 @@ const addContent = async (req, res) => {
     //   });
     // }
 
+
     const newContent = new Content({
       title,
       type,
@@ -106,6 +107,7 @@ const addContent = async (req, res) => {
     });
 
   } catch (error) {
+    console.log(error)
     return res.status(500).json({
       success: false,
       message: 'Failed to add content.',

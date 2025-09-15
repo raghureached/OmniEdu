@@ -25,7 +25,7 @@ const surveySchema = new mongoose.Schema(
     },
     survey_type: {
       type: String,
-      enum: ["Multiple Choice", "Short Answer", "Rating"],
+      enum: ["Short Answer", "Rating", "Multiple Choice"],
       required: true,
     },
     start_date: {

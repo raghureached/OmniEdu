@@ -47,6 +47,8 @@ ensureFolder(contentDir);
 
 const diskStorageContent = multer.diskStorage({
   destination: function (req, file, cb) {
+    ensureFolder(contentDir);
+    console.log("file",file)
     // console.log(contentDir);
     
     cb(null, contentDir);
