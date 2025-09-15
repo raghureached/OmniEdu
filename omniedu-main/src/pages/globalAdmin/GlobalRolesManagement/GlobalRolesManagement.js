@@ -7,61 +7,49 @@ import {
   updateRole,
 } from "../../../store/slices/roleSlice";
 import './GlobalRolesManagement.css'
-import { Search } from "lucide-react";
+import api from "../../../services/api";
+import CustomLoader from "../../../components/common/Loading/CustomLoader";
 
 const GlobalRolesManagement = () => {
   const dispatch = useDispatch();
   const { globalRoles, loading } = useSelector((state) => state.roles);
-
+  const [availablePermissions, setAvailablePermissions] = useState([]); // sections + permissions
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [currentRole, setCurrentRole] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    permissions: [],
-  }); 
-
-  const availablePermissions = [
-    { id: "view_home", label: "View Home" },
-    { id: "view_training_calendar", label: "View Training Calendar" },
-    { id: "view_message_board", label: "View Message Board" },
-    { id: "view_learning_hub", label: "View Learning Hub" },
-    { id: "view_my_training", label: "View My Training / Leaderboard" },
-    { id: "view_assigned_training", label: "View Assigned Training" },
-    { id: "view_additional_training", label: "View Additional Training" },
-    { id: "view_mandatory_training", label: "View Mandatory Training" },
-    { id: "view_course_catalog", label: "View Course Catalog" },
-    { id: "view_activity_history", label: "View Activity History" },
-    { id: "view_user_profile", label: "View User Profile" },
-    { id: "change_password", label: "Change Password" },
-    { id: "view_help_center", label: "View Help Center" },
-    { id: "access_support", label: "Access Support Button" }
-  ];
+  });
+  const [permissions, setPermissions] = useState([]); // structured by section
 
   useEffect(() => {
     dispatch(fetchRoles(true));
+    fetchPermissions();
   }, [dispatch]);
+
+  const fetchPermissions = async () => {
+    const response = await api.get("/api/globalAdmin/getPermissions");
+    // console.log(response.data.data)
+    setAvailablePermissions(response.data.data); // array of sections with permissions
+  };
 
   const handleAddRole = () => {
     setCurrentRole(null);
-    setFormData({ name: "", description: "", permissions: [] });
+    setFormData({ name: "", description: "" });
+    setPermissions([]);
     setShowForm(true);
   };
 
   const handleEditRole = (role) => {
     setCurrentRole(role);
-
-    const permissionsIds = availablePermissions
-      .filter((perm) => role.permissions.includes(perm.label))
-      .map((perm) => perm.id);
-
+    // console.log(role.sections)
+    setPermissions(role.permissions)
     setFormData({
       name: role.name || "",
       description: role.description || "",
-      permissions: permissionsIds,
     });
-    console.log(role)
+
     setShowForm(true);
   };
 
@@ -71,31 +59,37 @@ const GlobalRolesManagement = () => {
     }
   };
 
-  const togglePermission = (permId) => {
-    setFormData((prev) => ({
-      ...prev,
-      permissions: prev.permissions.includes(permId)
-        ? prev.permissions.filter((p) => p !== permId)
-        : [...prev.permissions, permId],
-    }));
+  const togglePermission = (sectionId, permId) => {
+    setPermissions((prev) => {
+      const section = prev.find((s) => s.section === sectionId);
+
+      if (section) {
+        const allowed = section.allowed.includes(permId)
+          ? section.allowed.filter((id) => id !== permId)
+          : [...section.allowed, permId];
+
+        return prev.map((s) =>
+          s.section === sectionId ? { ...s, allowed } : s
+        );
+      } else {
+        return [...prev, { section: sectionId, allowed: [permId] }];
+      }
+    });
   };
 
   const handleSaveRole = (e) => {
     e.preventDefault();
 
-    // Convert IDs back to labels for backend
     const roleData = {
       name: formData.name,
       description: formData.description,
-      permissions: formData.permissions.map(
-        (id) => availablePermissions.find((p) => p.id === id).label
-      ),
+      permissions: permissions, // section-based permissions
     };
 
     if (currentRole) {
       dispatch(
         updateRole({
-          _id: currentRole._id,
+          id: currentRole.uuid,
           roleData,
           isGlobalAdmin: true,
         })
@@ -104,7 +98,8 @@ const GlobalRolesManagement = () => {
       dispatch(createRole({ roleData, isGlobalAdmin: true }));
     }
 
-    setFormData({ name: "", description: "", permissions: [] });
+    setFormData({ name: "", description: "" });
+    setPermissions([]);
     setCurrentRole(null);
     setShowForm(false);
   };
@@ -115,7 +110,6 @@ const GlobalRolesManagement = () => {
       <h1 className="page-title page-title-roles">Roles</h1>
       <div className="roles-management-toolbar">
         <div className="roles-search-bar">
-          {/* <Search size={24} className="search-icon-roles" /> */}
           <input
             type="text"
             placeholder="Search roles..."
@@ -130,9 +124,9 @@ const GlobalRolesManagement = () => {
 
       {/* Modal */}
       {showForm && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
+        <div className="roles-modal-overlay">
+          <div className="roles-modal-content" style={{ width: "80%", maxWidth: "900px" }}>
+            <div className="roles-modal-header">
               <h2>{currentRole ? "Edit Role" : "Add New Role"}</h2>
             </div>
 
@@ -161,18 +155,44 @@ const GlobalRolesManagement = () => {
 
               <div className="form-group">
                 <label>Permissions</label>
-                <div className="permissions-list">
-                  {availablePermissions.map((perm) => (
-                    <div key={perm.id} className="permission-item">
-                      <span>{perm.label}</span>
-                      <label className="toggle-switch">
-                        <input
-                          type="checkbox"
-                          checked={formData.permissions.includes(perm.id)}
-                          onChange={() => togglePermission(perm.id)}
-                        />
-                        <span className="slider"></span>
-                      </label>
+                <div className="permissions-sections">
+                  {availablePermissions.map((section) => (
+                    <div key={section.sectionId} className="permission-section">
+                      <div className="section-title">{section.name}</div>
+                      <div className="permissions-list">
+                        {section.permissions.map((perm) => {
+                          // console.log(perm)
+                          // console.log(permissions)
+                          // const isChecked = permissions.some(
+                          //   (s) =>
+                          //     s.sectionId === section.sectionId &&
+                          //     s.permissions.map(p => p._id).includes(perm._id) 
+                          // );
+                          const isChecked = permissions.some(
+                            (s) =>
+                              s.section === section.sectionId &&
+                              s.allowed.includes(perm._id)
+                          );                          
+                          return (
+                            <div key={perm._id} className="permission-item">
+                              <span>{perm.name}</span>
+                              <label className="toggle-switch">
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() =>
+                                    togglePermission(
+                                      section.sectionId,
+                                      perm._id
+                                    )
+                                  }
+                                />
+                                <span className="slider"></span>
+                              </label>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -188,6 +208,7 @@ const GlobalRolesManagement = () => {
                   onClick={() => {
                     setShowForm(false);
                     setCurrentRole(null);
+                    setPermissions([]);
                   }}
                 >
                   Cancel
@@ -201,7 +222,7 @@ const GlobalRolesManagement = () => {
       {/* Table */}
       <div className="roles-table-container">
         {loading ? (
-          <div className="loading">Loading roles...</div>
+          <CustomLoader text="Loading roles..." />
         ) : (
           <table className="roles-table">
             <thead>
@@ -225,8 +246,15 @@ const GlobalRolesManagement = () => {
                     </td>
                     <td>
                       <span className="roles-permission-count">
-                        {role.permissions?.length || 0} /{" "}
-                        {availablePermissions.length}
+                        {role.permissions?.reduce(
+                          (total, sec) => total + sec.allowed.length,
+                          0
+                        ) || 0}{" "}
+                        /{" "}
+                        {availablePermissions.reduce(
+                          (total, section) => total + section.permissions.length,
+                          0
+                        )}
                       </span>
                     </td>
                     <td className="roles-action-cell">

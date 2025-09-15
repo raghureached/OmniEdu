@@ -265,120 +265,412 @@ import './GlobalAdminLayout.css';
            </div>
          )} */}
          <ul className="globaladmin_sidebar_menu">
-  {/* Home */}
-  <li>
-    <Link
-      to="/global-admin"
-      className={isActive("/global-admin") ? "globaladmin_link_active" : ""}
-    >
-      <Home size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Global Admin Home</span>}
-    </Link>
-  </li>
+           {/* home */}
+           <li>
+             <Link
+               to="/global-admin"
+               className={
+                 isActive("/global-admin") &&
+                 !isActive("/global-admin/users") &&
+                 !isActive("/global-admin/groups")
+                   ? "globaladmin_link_active"
+                   : ""
+               }
+             >
+               <Home size={20} />
+               {!sidebarCollapsed && (
+                 <span className="globaladmin_sidebar_names">
+                   Global Admin Home
+                 </span>
+               )}
+             </Link>
+           </li>
+           {/* new changes check */}
+           {/* {organizations.length > 0 && (
+             <div className="org-selector">
+               <label>Organization:</label>
+               <select>
+                 {organizations.map((org) => (
+                   <option key={org.id} value={org.id}>
+                     {org.name}
+                   </option>
+                 ))}
+               </select>
+             </div>
+           )} */}
 
-  {/* MANAGE Section */}
-  <li className="globaladmin_menu_section">
-    {!sidebarCollapsed && <div className="globaladmin_section_title">MANAGE</div>}
-  </li>
+           {/* organizations */}
+           <li>
+             <li className="globaladmin_menu_section">
+               {!sidebarCollapsed && (
+                 <div className="globaladmin_section_title">Organizations</div>
+               )}
+               <li>
+                 <Link
+                   to="/global-admin/organizations"
+                   className={
+                     isActive("/globl-admin/organizations")
+                       ? "globaladmin_link_active"
+                       : ""
+                   }
+                 >
+                   {/* <BookCopy size={20} /> */}
+                   <Building2 size={20} />
+                   {!sidebarCollapsed && (
+                     <span className="globaladmin_sidebar_names">
+                       Manage Organizations
+                     </span>
+                   )}
+                 </Link>
+               </li>
+             </li>
+           </li>
 
-  <li>
-    <Link to="/global-admin/organizations" className={isActive("/global-admin/organizations") ? "globaladmin_link_active" : ""}>
-      <Building2 size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Organization</span>}
-    </Link>
-  </li>
+           {/* menu people */}
+           <li className="globaladmin_menu_section">
+             {!sidebarCollapsed && (
+               <div className="globaladmin_section_title"> People</div>
+             )}
+             <li>
+               <Link
+                 to="/global-admin/roles"
+                 className={
+                   isActive("/global-admin/roles")
+                     ? "globaladmin_link_active"
+                     : ""
+                 }
+               >
+                 <Shield size={20} />
+                 {!sidebarCollapsed && (
+                   <span className="globaladmin_sidebar_names">
+                     {" "}
+                     Manage Roles
+                   </span>
+                 )}
+               </Link>
+             </li>
+           </li>
 
-  <li>
-    <Link to="/global-admin/roles" className={isActive("/global-admin/roles") ? "globaladmin_link_active" : ""}>
-      <Shield size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Roles</span>}
-    </Link>
-  </li>
+           {/* <li>
+             <Link
+               to="/global-admin/users"
+               className={
+                 isActive("/global-admin/users")
+                   ? "globaladmin_link_active"
+                   : ""
+               }
+             >
+               <Users size={20} />
+               {!sidebarCollapsed && (
+                 <span className="globaladmin_sidebar_names">Users</span>
+               )}
+             </Link>
+           </li>
+           <li>
+             <Link
+               to="/global-admin/groups"
+               className={
+                 isActive("/global-admin/groups")
+                   ? "globaladmin_link_active"
+                   : ""
+               }
+             >
+               <UserCheck size={20} />
+               {!sidebarCollapsed && (
+                 <span className="globaladmin_sidebar_names">Groups</span>
+               )}
+             </Link>
+           </li> */}
+           {/* <li>
+             <Link
+               to="/global-admin/roles"
+               className={
+                 isActive("/global-admin/roles")
+                   ? "globaladmin_link_active"
+                   : ""
+               }
+             >
+               <Shield size={20} />
+               {!sidebarCollapsed && (
+                 <span className="globaladmin_sidebar_names">Roles</span>
+               )}
+             </Link>
+           </li> */}
 
-  <li>
-    <Link to="/global-admin/content" className={isActive("/global-admin/content") ? "globaladmin_link_active" : ""}>
-      <BookOpen size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Content</span>}
-    </Link>
-  </li>
+           {/* content */}
+           <li className="globaladmin_menu_section">
+             {!sidebarCollapsed && (
+               <div className="globaladmin_section_title"> Content</div>
+             )}
+             <li>
+               <Link
+                 to="/global-admin/content"
+                 className={
+                   isActive("/global-admin/content")
+                     ? "globaladmin_link_active"
+                     : ""
+                 }
+               >
+                 <BookOpen size={20} />
+                 {!sidebarCollapsed && (
+                   <span className="globaladmin_sidebar_names">
+                     Manage Content
+                   </span>
+                 )}
+               </Link>
+             </li>
+           </li>
 
-  <li>
-    <Link to="/global-admin/surveys" className={isActive("/global-admin/surveys") ? "globaladmin_link_active" : ""}>
-      <BookCopy size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Surveys</span>}
-    </Link>
-  </li>
+           {/* //  assessment
+           <li>
+             <Link
+               to="/admin/content-assessments"
+               className={
+                 isActive("/admin/content-assessments")
+                   ? "globaladmin_link_active"
+                   : ""
+               }
+             >
+               <CheckCircle size={20} />
+               {!sidebarCollapsed && (
+                 <span className="globaladmin_sidebar_names">Assessments</span>
+               )}
+             </Link>
+           </li>
+           <li>
+             <Link
+               to="/admin/learning-paths"
+               className={
+                 isActive("/admin/learning-paths")
+                   ? "globaladmin_link_active"
+                   : ""
+               }
+             >
+               <Award size={20} />
+               {!sidebarCollapsed && (
+                 <span className="globaladmin_sidebar_names">
+                   Learning Paths
+                 </span>
+               )}
+             </Link>
+           </li> */}
 
-  <li>
-    <Link to="/global-admin/assignments" className={isActive("/global-admin/assignments") ? "globaladmin_link_active" : ""}>
-      <CheckCircle size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Assignments</span>}
-    </Link>
-  </li>
+           {/* surveys */}
+           <li>
+             <li className="globaladmin_menu_section">
+               {!sidebarCollapsed && (
+                 <div className="globaladmin_section_title">Surveys</div>
+               )}
+               <li>
+                 <Link
+                   to="/global-admin/surveys"
+                   className={
+                     isActive("/globl-admin/surveys")
+                       ? "globaladmin_link_active"
+                       : ""
+                   }
+                 >
+                   <BookCopy size={20} />
+                   {!sidebarCollapsed && (
+                     <span className="globaladmin_sidebar_names">
+                       Manage Surveys
+                     </span>
+                   )}
+                 </Link>
+               </li>
+             </li>
+           </li>
 
-  <li>
-    <Link to="/global-admin/library-user" className={isActive("/global-admin/library-user") ? "globaladmin_link_active" : ""}>
-      <BookCopy size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Library (User)</span>}
-    </Link>
-  </li>
-
-  <li>
-    <Link to="/global-admin/portal-library-admin" className={isActive("/global-admin/portal-library-admin") ? "globaladmin_link_active" : ""}>
-      <BookCopy size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Portal Library (Admin)</span>}
-    </Link>
-  </li>
-
-  <li>
-    <Link to="/global-admin/user-dashboard-config" className={isActive("/global-admin/user-dashboard-config") ? "globaladmin_link_active" : ""}>
-      <UserRoundPen size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">User Dashboard Config</span>}
-    </Link>
-  </li>
-
-  <li>
-    <Link to="/global-admin/admin-dashboard-config" className={isActive("/global-admin/admin-dashboard-config") ? "globaladmin_link_active" : ""}>
-      <UserCheck size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Admin Dashboard Config</span>}
-    </Link>
-  </li>
-
-  <li>
-    <Link to="/global-admin/analytics-view" className={isActive("/global-admin/analytics-view") ? "globaladmin_link_active" : ""}>
-      <BarChart size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Analytics View</span>}
-    </Link>
-  </li>
-
-  {/* GLOBAL SETTINGS */}
-  <li className="globaladmin_menu_section">
-    {!sidebarCollapsed && <div className="globaladmin_section_title">GLOBAL SETTINGS</div>}
-  </li>
-
-  <li>
-    <Link to="/global-admin/message-board" className={isActive("/global-admin/message-board") ? "globaladmin_link_active" : ""}>
-      <MessageCircle size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Message Board</span>}
-    </Link>
-  </li>
-
-  <li>
-    <Link to="/global-admin/activity-log" className={isActive("/global-admin/activity-log") ? "globaladmin_link_active" : ""}>
-      <Clock size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Activity Log</span>}
-    </Link>
-  </li>
-
-  {/* Profile */}
-  <li>
-    <Link to="/global-admin/profile" className={isActive("/global-admin/profile") ? "globaladmin_link_active" : ""}>
-      <User size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Global Admin Profile</span>}
-    </Link>
-  </li>
-</ul>
-
+           {/* <li>
+             <Link
+               to="/admin/manage-surveys"
+               className={
+                 isActive("/admin/manage-surveys")
+                   ? "globaladmin_link_active"
+                   : ""
+               }
+             >
+               <BookCopy size={20} />
+               {!sidebarCollapsed && (
+                 <span className="globaladmin_sidebar_names">
+                   Manage Surveys
+                 </span>
+               )}
+             </Link>
+           </li>
+           <li className="globaladmin_menu_section">
+             {!sidebarCollapsed && (
+               <div className="globaladmin_section_title">Assessments</div>
+             )}
+           </li>
+           <li>
+             <Link
+               to="/admin/create-assignment"
+               className={
+                 isActive("/admin/create-assignment")
+                   ? "globaladmin_link_active"
+                   : ""
+               }
+             >
+               <CheckCircle size={20} />
+               {!sidebarCollapsed && (
+                 <span className="globaladmin_sidebar_names">
+                   Create Assignment
+                 </span>
+               )}
+             </Link>
+           </li>
+           <li>
+             <Link
+               to="/admin/manage-assignments"
+               className={
+                 isActive("/admin/manage-assignments")
+                   ? "globaladmin_link_active"
+                   : ""
+               }
+             >
+               <CheckCircle size={20} />
+               {!sidebarCollapsed && (
+                 <span className="globaladmin_sidebar_names">
+                   Manage Assignments
+                 </span>
+               )}
+             </Link>
+           </li>
+           <li className="globaladmin_menu_section">
+             {!sidebarCollapsed && (
+               <div className="globaladmin_section_title">Library</div>
+             )}
+           </li>
+           <li>
+             <Link
+               to="/admin/portal-library"
+               className={
+                 isActive("/admin/portal-library")
+                   ? "globaladmin_link_active"
+                   : ""
+               }
+             >
+               <BookCopy size={20} />
+               {!sidebarCollapsed && (
+                 <span className="globaladmin_sidebar_names">
+                   Portal Library
+                 </span>
+               )}
+             </Link>
+           </li>
+           <li className="globaladmin_menu_section">
+             {!sidebarCollapsed && (
+               <div className="globaladmin_section_title">User Dashboard</div>
+             )}
+           </li>
+           <li>
+             <Link
+               to="/admin/message-board"
+               className={
+                 isActive("/admin/message-board")
+                   ? "globaladmin_link_active"
+                   : ""
+               }
+             >
+               <BookCopy size={20} />
+               {!sidebarCollapsed && (
+                 <span className="globaladmin_sidebar_names">
+                   Message Board
+                 </span>
+               )}
+             </Link>
+           </li>
+           <li className="globaladmin_menu_section">
+             {!sidebarCollapsed && (
+               <div className="globaladmin_section_title">Analytics</div>
+             )}
+           </li>
+           <li>
+             <Link
+               to="/admin/analytics-overview"
+               className={
+                 isActive("/admin/analytics-overview")
+                   ? "globaladmin_link_active"
+                   : ""
+               }
+             >
+               <BarChart size={20} />
+               {!sidebarCollapsed && (
+                 <span className="globaladmin_sidebar_names">Overview</span>
+               )}
+             </Link>
+           </li>
+           */}
+           <li className="globaladmin_menu_section">
+             {!sidebarCollapsed && (
+               <div className="globaladmin_section_title">Other</div>
+             )}
+           </li>
+           <li>
+             <Link
+               to="/global-admin/profile"
+               className={
+                 isActive("/global-admin/profile")
+                   ? "globaladmin_link_active"
+                   : ""
+               }
+             >
+               {/* <Clock size={20} /> */}
+               <UserRoundPen size={20} />
+               {!sidebarCollapsed && (
+                 <span className="globaladmin_sidebar_names">
+                   Global Admin Profile
+                 </span>
+               )}
+             </Link>
+           </li>
+           <li>
+             <Link
+               to="/global-admin/activity-log"
+               className={
+                 isActive("/global-admin/activity-log")
+                   ? "globaladmin_link_active"
+                   : ""
+               }
+             >
+               <Clock size={20} />
+               {!sidebarCollapsed && (
+                 <span className="globaladmin_sidebar_names">Activity Log</span>
+               )}
+             </Link>
+           </li>
+           <li>
+             <Link
+               to="/global-admin/help-center"
+               className={
+                 isActive("/global-admin/help-center")
+                   ? "globaladmin_link_active"
+                   : ""
+               }
+             >
+               <HelpCircle size={20} />
+               {!sidebarCollapsed && (
+                 <span className="globaladmin_sidebar_names">Help Center</span>
+               )}
+             </Link>
+           </li>
+           <li>
+             <Link
+               to="/global-admin/message-board"
+               className={
+                 isActive("/global-admin/message-board")
+                   ? "globaladmin_link_active"
+                   : ""
+               }
+             >
+               <MessageCircle size={20} />
+               {!sidebarCollapsed && (
+                 <span className="globaladmin_sidebar_names">Message Board</span>
+               )}
+             </Link>
+           </li>
+         </ul>
 
          <div className="globaladmin_sidebar_footer">
            <button onClick={handleLogout} className="globaladmin_logout_btn">

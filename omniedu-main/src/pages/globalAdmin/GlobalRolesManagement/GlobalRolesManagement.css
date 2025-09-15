@@ -27,7 +27,7 @@
     outline: none;
     transition: all 0.3s ease;
   }
-  .search-icon-roles{
+  .search-icon-roles {
     margin-right: 10px;
   }
   .roles-search-bar input:focus {
@@ -52,7 +52,7 @@
   }
   
   /* Modal */
-  .modal-overlay {
+  .roles-modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -65,10 +65,10 @@
     z-index: 50;
   }
   
-  .modal-content {
+  .roles-modal-content {
     background: #fff;
     border-radius: 16px;
-    width: 600px;
+    width: 800px;
     max-height: 90vh;
     overflow-y: auto;
     padding: 25px;
@@ -87,18 +87,18 @@
     }
   }
   
-  .modal-header h2 {
+  .roles-modal-header h2 {
     font-size: 20px;
     font-weight: 600;
     margin-bottom: 20px;
     color: #0f172a;
   }
   
-  .form-group {
+  .roles-form-group {
     margin-bottom: 18px;
   }
   
-  .form-group label {
+  .roles-form-group label {
     display: block;
     font-size: 14px;
     font-weight: 500;
@@ -106,9 +106,9 @@
     color: #334155;
   }
   
-  .form-group input,
-  .form-group textarea,
-  .form-group select {
+  .roles-form-group input,
+  .roles-form-group textarea,
+  .roles-form-group select {
     width: 100%;
     padding: 10px 14px;
     border: 1px solid #e2e8f0;
@@ -118,60 +118,99 @@
     transition: all 0.3s ease;
   }
   
-  .form-group input:focus,
-  .form-group textarea:focus,
-  .form-group select:focus {
+  .roles-form-group input:focus,
+  .roles-form-group textarea:focus,
+  .roles-form-group select:focus {
     border-color: #6366f1;
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
   }
   
-  .permissions-list {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px 20px;
-  }
-  
-  .permission-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 14px;
-    color: #475569;
-  }
-  
-  /* Modern Toggle Switch */
-  .toggle-switch {
-    position: relative;
-    width: 44px;
-    height: 22px;
-  }
-  
-  .toggle-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-  
-  .slider {
-    position: absolute;
-    cursor: pointer;
-    inset: 0;
-    background-color: #cbd5e1;
-    border-radius: 22px;
-    transition: 0.3s;
-  }
-  
-  .slider::before {
-    position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    left: 2px;
-    bottom: 2px;
-    background-color: white;
-    border-radius: 50%;
-    transition: 0.3s;
-  }
+  /* ==============================
+   Permissions Sections Fix
+   ============================== */
+.permission-section {
+  background: #f9fafb;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 15px 18px;
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 8px; /* reduced gap */
+  color: #1e293b;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 6px;
+}
+
+.permissions-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 20px;
+}
+
+.permission-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* ensures toggle aligns vertically */
+  gap: 12px;
+  font-size: 14px;
+  color: #475569;
+}
+
+/* Modern Toggle Switch Fix */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;  /* keep consistent width */
+  height: 24px; 
+  flex-shrink: 0; /* prevent shrinking in flex container */
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: 0.3s;
+  border-radius: 34px;
+}
+
+.slider::before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .slider {
+  background-color: #6366f1;
+}
+
+.toggle-switch input:checked + .slider::before {
+  transform: translateX(22px);
+}
+
+.slider:active::before {
+  width: 22px;
+}
+
   
   .toggle-switch input:checked + .slider {
     background-color: #6366f1;
@@ -179,6 +218,10 @@
   
   .toggle-switch input:checked + .slider::before {
     transform: translateX(22px);
+  }
+  
+  .slider:active::before {
+    width: 22px;
   }
   
   .form-actions {
@@ -202,7 +245,9 @@
     color: #ef4444;
   }
   
-  /* Table */
+  /* ==============================
+     Roles Table
+     ============================== */
   .roles-table-container {
     background: #fff;
     border-radius: 16px;
@@ -259,18 +304,10 @@
     gap: 8px;
   }
   
-  /* .roles-action-cell button {
-    margin-right: 8px;
-    padding: 8px 14px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-  } */
-  .page-title-roles{
-    margin-bottom:20px;
+  .page-title-roles {
+    margin-bottom: 20px;
   }
+  
   .roles-btn-edit {
     color: #6b7280;
     text-decoration: underline;
@@ -285,56 +322,4 @@
     color: #4f46e5;
     text-decoration: underline;
   }
-  /* Modern Toggle Switch */
-.toggle-switch {
-    position: relative;
-    display: inline-block;
-    width: 46px;
-    height: 24px;
-  }
-  
-  .toggle-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-  
-  .slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #cbd5e1; /* gray when off */
-    transition: 0.3s;
-    border-radius: 34px;
-  }
-  
-  .slider::before {
-    position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: 0.3s;
-    border-radius: 50%;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  }
-  
-  .toggle-switch input:checked + .slider {
-    background-color: #6366f1; /* purple/blue when ON */
-  }
-  
-  .toggle-switch input:checked + .slider::before {
-    transform: translateX(22px);
-  }
-  
-  /* Optional animation for click feedback */
-  .slider:active::before {
-    width: 22px;
-  }
-  
   

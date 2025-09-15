@@ -324,11 +324,9 @@ export const createRole = createAsyncThunk(
 // Update Role
 export const updateRole = createAsyncThunk(
   'roles/updateRole',
-  async ({ _id, roleData, isGlobalAdmin = false }, { rejectWithValue }) => {
+  async ({ id, roleData }, { rejectWithValue }) => {
     try {
-      const endpoint = isGlobalAdmin
-        ? `/api/globalAdmin/editRole/${_id}`
-        : `/admin/roles/${_id}`;
+      const endpoint = `/api/globalAdmin/editRole/${id}`
       const response = await api.put(endpoint, roleData);
       return response.data.data; // updated role
     } catch (error) {

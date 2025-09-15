@@ -63,6 +63,8 @@ import GlobalProfile from './pages/globalAdmin/GlobalProfile/GlobalProfile';
 import GlobalContentDetails from './pages/globalAdmin/GlobalContentManagement/GlobalContentDetail';
 import GlobalMessageBoard from './pages/globalAdmin/GlobalMessageBoard/GlobalMessageBoard';
 import LoadingScreen from './components/common/Loading/Loading';
+import UserDashBoardConfig from './pages/globalAdmin/UserDashBoardConfig/UserDashBoardConfig';
+import AdminDashBoardConfig from './pages/globalAdmin/AdminDashBoardConfig/AdminDashBoardConfig';
 
 
 
@@ -80,8 +82,6 @@ function App() {
   
   return (
     <Provider store={store}>
-      {loading ? <LoadingScreen />
-      :
       <Router>
         <div className="App">
           <Routes>
@@ -140,7 +140,8 @@ function App() {
               <Route path="content" element={<GlobalContentManagement />} />
               <Route path="content/:contentId" element={<GlobalContentDetails />} />
               <Route path="surveys" element={<GlobalSurveys/>} />
-
+              <Route path="user-dashboard-config" element={<UserDashBoardConfig />} />
+              <Route path="admin-dashboard-config" element={<AdminDashBoardConfig />} />
               <Route path="profile" element={<GlobalProfile />} />
               <Route path="activity-log" element={<GlobalActivityLog />} />
               <Route path="help-center" element={<GlobalHelpCenter />} />
@@ -154,7 +155,6 @@ function App() {
           </Routes> 
         </div>
       </Router>
-}
     </Provider>
   );
 }

@@ -210,17 +210,20 @@ const OrganizationFormModal = ({
                   id="logo-upload"
                   name="logo"
                   accept="image/svg+xml,image/png,image/jpeg,image/gif"
-                  onChange={handleInputChange}
+                  onChange={(e) => {
+                    handleInputChange(e);
+                    e.target.value = null;
+                  }}
                   required={!editMode}
                 />
-                <label htmlFor="logo-upload" className="addOrg-upload-label">
+                {selectedLogo ? "" : <label htmlFor="logo-upload" className="addOrg-upload-label">
                   Click to upload <span>or drag and drop</span>
                   <div className="addOrg-upload-formats">
                     SVG, PNG, JPG or GIF (max. 800×400px)
                   </div>
-                </label>
+                </label>}
                 {selectedLogo && (
-                  <div style={{ marginTop: 10, display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ position: 'absolute', marginTop: 10, display: 'flex', gap: 5, alignItems: 'center', justifyContent: 'center' }}>
                     <button
                       type="button"
                       onClick={() => setShowLogoPreview(true)}
@@ -246,7 +249,7 @@ const OrganizationFormModal = ({
 
             {/* Documents Upload */}
             <div className="addOrg-form-group" style={{ flex: 1, minWidth: 0 }}>
-              <label>Upload Documents</label>
+              <label>Upload Documents<span className="addOrg-required">*</span></label>
               <div className="addOrg-upload-box">
                 <input
                   type="file"
@@ -254,9 +257,17 @@ const OrganizationFormModal = ({
                   name="documents"
                   accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"
                   multiple
-                  onChange={handleDocumentsChange}
+                  onChange={(e) => {
+                    handleDocumentsChange(e);
+                    e.target.value = null;
+                  }}
                 />
-                <label htmlFor="documents-upload" className="addOrg-upload-label">
+                <label htmlFor="documents-upload" className="addOrg-upload-label" 
+                  style={
+                    documents.length !== 0
+                      ? { color:"gray",opacity:"60%"} // when empty
+                      : {}
+                  }>
                   Click to upload <span>or drag and drop</span>
                   <div className="addOrg-upload-formats">
                     PDF, DOC, PPT, XLS formats allowed
@@ -264,54 +275,25 @@ const OrganizationFormModal = ({
                 </label>
 
                 {/* Document icons preview */}
-                {documents.length > 0 && (
-                  <div className="document-icons-list" style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                    {documents.map((file, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          position: "relative",
-                          width: 50,
-                          height: 50,
-                          border: "1px solid #ccc",
-                          borderRadius: 6,
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          backgroundColor: "#f9f9f9",
-                          fontSize: 22,
-                          cursor: "pointer",
-                        }}
-                        title={file.name}
+                <div className="document-icons-list">
+                  {documents.map((file, idx) => (
+                    <div
+                      key={idx}
+                      className="document-icon"
+                      title={file.name}
+                    >
+                      <span onClick={() => openDocumentPreview(file)}>📄</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveDocument(idx)}
+                        className="remove-doc-btn"
                       >
-                        <span onClick={() => openDocumentPreview(file)}>📄</span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveDocument(idx)}
-                          style={{
-                            position: "absolute",
-                            top: -8,
-                            right: -8,
-                            background: "red",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "50%",
-                            width: 20,
-                            height: 20,
-                            cursor: "pointer",
-                            fontSize: 12,
-                            lineHeight: "18px",
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                          }}
-                        >
-                          &times;
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                        &times;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
               </div>
             </div>
           </div>

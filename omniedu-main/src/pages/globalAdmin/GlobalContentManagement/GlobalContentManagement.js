@@ -4,6 +4,7 @@ import { fetchContent, deleteContent, createContent, updateContent } from '../..
 import "./GlobalContentManagement.css"
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
+import CustomLoader from '../../../components/common/Loading/CustomLoader';
 
 const GlobalContentManagement = () => {
   const dispatch = useDispatch();
@@ -277,7 +278,7 @@ const GlobalContentManagement = () => {
       )}
       <div className="table-container">
         {loading ? (
-          <div className="loading">Loading global content...</div>
+          <CustomLoader text=" Loading Content..." />
         ) : (
           <table className="data-table">
             <thead>

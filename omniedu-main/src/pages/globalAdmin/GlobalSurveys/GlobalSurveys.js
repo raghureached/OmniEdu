@@ -7,17 +7,98 @@ import {
   updateSurvey,
 } from "../../../store/slices/surveySlice";
 import "./GlobalSurveys.css";
+import CustomLoader from "../../../components/common/Loading/CustomLoader";
 
 const GlobalSurveys = () => {
   const dispatch = useDispatch();
   const { surveys, loading, error } = useSelector((state) => state.surveys);
-    const [showForm, setShowForm] = useState(false);
-    const [editingSurvey, setEditingSurvey] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editingSurvey, setEditingSurvey] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    survey_type: "text",
+    start_date: "",
+    end_date: "",
+    is_active: true,
+    questions: [{ question_text: "", question_type: "text", options: [] }],
+  });
+
+  // Fetch surveys on mount
+  useEffect(() => {
+    dispatch(fetchSurveys());
+  }, [dispatch]);
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === "checkbox" ? checked : value,
+    });
+  };
+
+  // handle question change
+  const handleQuestionChange = (index, field, value) => {
+    const updatedQuestions = [...formData.questions];
+    updatedQuestions[index][field] = value;
+    setFormData({ ...formData, questions: updatedQuestions });
+  };
+
+  // add question
+  const addQuestion = () => {
+    setFormData({
+      ...formData,
+      questions: [
+        ...formData.questions,
+        { question_text: "", question_type: "text", options: [] },
+      ],
+    });
+  };
+
+  // remove question
+  const removeQuestion = (index) => {
+    const updatedQuestions = formData.questions.filter((_, i) => i !== index);
+    setFormData({ ...formData, questions: updatedQuestions });
+  };
+
+  // submit form
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const payload = {
+      title: formData.title,
+      description: formData.description,
+      survey_type: formData.survey_type,
+      start_date: formData.start_date || null,
+      end_date: formData.end_date || null,
+      is_active: formData.is_active,
+      questions: formData.questions.map((q) => ({
+        question_text: q.question_text,
+        question_type: q.question_type,
+        options:
+          q.question_type === "multiple_choice"
+            ? q.options.filter((opt) => opt.trim() !== "")
+            : [],
+      })),
+    };
+
+    if (editingSurvey) {
+      dispatch(
+        updateSurvey({
+          id: editingSurvey._id || editingSurvey.uuid,
+          data: payload,
+        })
+      );
+    } else {
+      dispatch(createSurvey(payload));
+    }
+
+    // Reset after submit
+    setShowForm(false);
+    setEditingSurvey(null);
+    setFormData({
       title: "",
       description: "",
       survey_type: "text",
@@ -26,87 +107,7 @@ const GlobalSurveys = () => {
       is_active: true,
       questions: [{ question_text: "", question_type: "text", options: [] }],
     });
-  
-  // Fetch surveys on mount
-  useEffect(() => {
-    dispatch(fetchSurveys());
-  }, [dispatch]);
-  const handleChange = (e) => {
-      const { name, value, type, checked } = e.target;
-      setFormData({
-        ...formData,
-        [name]: type === "checkbox" ? checked : value,
-      });
-    };
-  
-    // handle question change
-    const handleQuestionChange = (index, field, value) => {
-      const updatedQuestions = [...formData.questions];
-      updatedQuestions[index][field] = value;
-      setFormData({ ...formData, questions: updatedQuestions });
-    };
-  
-    // add question
-    const addQuestion = () => {
-      setFormData({
-        ...formData,
-        questions: [
-          ...formData.questions,
-          { question_text: "", question_type: "text", options: [] },
-        ],
-      });
-    };
-  
-    // remove question
-    const removeQuestion = (index) => {
-      const updatedQuestions = formData.questions.filter((_, i) => i !== index);
-      setFormData({ ...formData, questions: updatedQuestions });
-    };
-  
-    // submit form
-    const handleSubmit = (e) => {
-      e.preventDefault();
-      const payload = {
-        title: formData.title,
-        description: formData.description,
-        survey_type: formData.survey_type,
-        start_date: formData.start_date || null,
-        end_date: formData.end_date || null,
-        is_active: formData.is_active,
-        questions: formData.questions.map((q) => ({
-          question_text: q.question_text,
-          question_type: q.question_type,
-          options:
-            q.question_type === "multiple_choice"
-              ? q.options.filter((opt) => opt.trim() !== "")
-              : [],
-        })),
-      };
-  
-      if (editingSurvey) {
-        dispatch(
-          updateSurvey({
-            id: editingSurvey._id || editingSurvey.uuid,
-            data: payload,
-          })
-        );
-      } else {
-        dispatch(createSurvey(payload));
-      }
-  
-      // Reset after submit
-      setShowForm(false);
-      setEditingSurvey(null);
-      setFormData({
-        title: "",
-        description: "",
-        survey_type: "text",
-        start_date: "",
-        end_date: "",
-        is_active: true,
-        questions: [{ question_text: "", question_type: "text", options: [] }],
-      });
-    };
+  };
   // Delete handler
   const handleDeleteSurvey = (id) => {
     if (window.confirm("Are you sure you want to delete this survey?")) {
@@ -138,7 +139,25 @@ const GlobalSurveys = () => {
       {/* Header */}
       <div className="survey-header">
         <h1>Global Surveys</h1>
-        <button className="survey-btn-primary" onClick={() => setShowForm(true)}>+ Create Survey</button>
+        <button
+          className="survey-btn-primary"
+          onClick={() => {
+            setShowForm(true);
+            setEditingSurvey(null);
+            setFormData({
+              title: "",
+              description: "",
+              survey_type: "text",
+              start_date: "",
+              end_date: "",
+              is_active: true,
+              questions: [{ question_text: "", question_type: "text", options: [] }],
+            });
+          }}
+        >
+          + Create Survey
+        </button>
+
       </div>
 
       {/* Filters */}
@@ -164,7 +183,7 @@ const GlobalSurveys = () => {
 
       {/* Loading & Error States */}
       {loading ? (
-        <div className="survey-loading">Loading surveys...</div>
+        <CustomLoader text="Loading Surveys..." />
       ) : error ? (
         <div className="survey-error">{error}</div>
       ) : (
@@ -191,13 +210,12 @@ const GlobalSurveys = () => {
                     <td>{survey.survey_type || "N/A"}</td>
                     <td>
                       <span
-                        className={`survey-status ${
-                          survey.is_active === true
+                        className={`survey-status ${survey.is_active === true
                             ? "survey-status-active"
                             : survey.is_active === false
-                            ? "survey-status-draft"
-                            : "survey-status-closed"
-                        }`}
+                              ? "survey-status-draft"
+                              : "survey-status-closed"
+                          }`}
                       >
                         {survey.is_active === true ? "Active" : "Inactive"}
                       </span>
@@ -218,26 +236,26 @@ const GlobalSurveys = () => {
                         Delete
                       </button>
                       <button
-                    className="survey-btn-edit"
-                    onClick={() => {
-                      setEditingSurvey(survey);
-                      setFormData({
-                        title: survey.title,
-                        description: survey.description || "",
-                        survey_type: survey.survey_type,
-                        start_date: survey.start_date
-                          ? survey.start_date.split("T")[0]
-                          : "",
-                        end_date: survey.end_date ? survey.end_date.split("T")[0] : "",
-                        is_active: survey.is_active,
-                        questions: survey.questions || [],
-                      });
-                      setShowForm(true);
-                    }}
-                  >
-                    Edit
-                  </button>
-                      
+                        className="survey-btn-edit"
+                        onClick={() => {
+                          setEditingSurvey(survey);
+                          setFormData({
+                            title: survey.title,
+                            description: survey.description || "",
+                            survey_type: survey.survey_type,
+                            start_date: survey.start_date
+                              ? survey.start_date.split("T")[0]
+                              : "",
+                            end_date: survey.end_date ? survey.end_date.split("T")[0] : "",
+                            is_active: survey.is_active,
+                            questions: survey.questions || [],
+                          });
+                          setShowForm(true);
+                        }}
+                      >
+                        Edit
+                      </button>
+
                     </td>
                   </tr>
                 ))}
@@ -256,7 +274,17 @@ const GlobalSurveys = () => {
                 onClick={() => {
                   setShowForm(false);
                   setEditingSurvey(null);
+                  setFormData({
+                    title: "",
+                    description: "",
+                    survey_type: "text",
+                    start_date: "",
+                    end_date: "",
+                    is_active: true,
+                    questions: [{ question_text: "", question_type: "text", options: [] }],
+                  });
                 }}
+                
               >
                 ✖
               </button>
@@ -349,7 +377,7 @@ const GlobalSurveys = () => {
                     }
                   >
                     <option value="text">Text</option>
-                    
+
                     <option value="multiple_choice">Multiple Choice</option>
                   </select>
                   <button

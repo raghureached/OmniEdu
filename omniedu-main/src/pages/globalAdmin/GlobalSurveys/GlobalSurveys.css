@@ -116,23 +116,36 @@
   }
   
   .survey-btn-view {
-    background: #f3f4f6;
+    background: none !important;
+    color: #3b82f6 !important;
+    border: none !important;
+    cursor: pointer !important;
+    font-weight: 500 !important;
+    text-decoration: underline !important;
   }
   .survey-btn-view:hover {
     background: #e5e7eb;
   }
   
   .survey-btn-edit {
-    background: #dbeafe;
-    color: #2563eb;
+    background: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    font-weight: 500 !important;
+    text-decoration: underline !important;
+    color: #6b7280 !important;
   }
   .survey-btn-edit:hover {
-    background: #bfdbfe;
+    background: #e5e7eb;
   }
   
   .survey-btn-delete {
-    background: #fee2e2;
-    color: #ef4444;
+    background: none !important;
+    color: #ef4444 !important;
+    border: none !important;
+    cursor: pointer !important;
+    font-weight: 500 !important;
+    text-decoration: underline !important;
   }
   .survey-btn-delete:hover {
     background: #fecaca;

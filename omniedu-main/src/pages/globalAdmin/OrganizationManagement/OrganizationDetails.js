@@ -3,6 +3,7 @@ import "./OrganizationDetails.css";
 import { fetchOrganizationById } from "../../../store/slices/organizationSlice";
 import { useDispatch, useSelector } from "react-redux";
 import ReactDOM from "react-dom";
+import CustomLoader from "../../../components/common/Loading/CustomLoader";
 
 const OrganizationDetails = ({ orgId, isOpen, onClose }) => {
   const [docPreviewUrl, setDocPreviewUrl] = useState(null);
@@ -24,11 +25,7 @@ const OrganizationDetails = ({ orgId, isOpen, onClose }) => {
 
   if (loading) {
     return ReactDOM.createPortal(
-      <div className="org-modal-overlay">
-        <div className="org-modal">
-          <p>Loading...</p>
-        </div>
-      </div>,
+      <CustomLoader text="Loading Organization Data..." />,
       document.body
     );
   }
@@ -100,10 +97,10 @@ const OrganizationDetails = ({ orgId, isOpen, onClose }) => {
               <strong>Role:</strong> {role}
             </li>
             <li>
-              <strong>Start Date:</strong> {start_date}
+              <strong>Start Date:</strong> {new Date(start_date).toLocaleDateString("en-US")}
             </li>
             <li>
-              <strong>End Date:</strong> {end_date}
+              <strong>End Date:</strong> {new Date(end_date).toLocaleDateString("en-US")}
             </li>
           </ul>
         </div>

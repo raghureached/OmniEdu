@@ -30,6 +30,7 @@ import OrganizationModal from "./AddOrganizationModal";
 import LoadingScreen from "../../../components/common/Loading/Loading";
 import AddOrganizationFormModal from "./AddOrganizationModal";
 import OrganizationDetails from "./OrganizationDetails";
+import CustomLoader from "../../../components/common/Loading/CustomLoader";
 
 const OrganizationManagement = () => {
   const dispatch = useDispatch();
@@ -257,7 +258,7 @@ const OrganizationManagement = () => {
             </div>
 
             {/* Table */}
-            {loading ? <LoadingScreen /> : <div className="table-container">
+            {loading ? <CustomLoader text="Loading Organizations..."/> : <div className="table-container">
               <div className="table-header">
                 <input
                   type="checkbox"
@@ -269,7 +270,7 @@ const OrganizationManagement = () => {
                 <div>Status</div>
                 <div>Organization</div>
                 <div>Plan Name</div>
-                <div></div>
+                <div>Actions</div>
               </div>
 
               {currentpages.map((org) => (
