@@ -29,15 +29,15 @@ const editSurveySchema = createSurveySchema.partial();
 // Create Survey
 const createSurvey = async (req, res) => {
   try {
-    const parsed = createSurveySchema.safeParse(req.body);
-    if (!parsed.success) {
-      console.log(parsed.error)
-      return res.status(400).json({
-        success: false,
-        message: "Validation error",
-        errors: parsed.error.errors,
-      });
-    }
+    // const parsed = createSurveySchema.safeParse(req.body);
+    // if (!parsed.success) {
+    //   console.log(parsed.error)
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Validation error",
+    //     errors: parsed.error.errors,
+    //   });
+    // }
 
     const { title, description, questions, survey_type, start_date, end_date, is_active, created_by } = req.body;
 

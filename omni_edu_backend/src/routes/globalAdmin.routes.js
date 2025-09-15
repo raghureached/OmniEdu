@@ -1,5 +1,5 @@
 const {addOrganization, editOrganization, deleteOrganization, getOrganizations, getOrganizationById} = require("../controllers/globalAdmin.controller/globalAdmin_organization");
-const {addRole, editRole, deleteRole, getRoles, addPermissions} = require("../controllers/globalAdmin.controller/globalAdmin_Roles");
+const {addRole, editRole, deleteRole, getRoles, addPermissions, getPermissions} = require("../controllers/globalAdmin.controller/globalAdmin_Roles");
 const {addContent, editContent, deleteContent, getContent, getContentById} = require("../controllers/globalAdmin.controller/globalAdmin_content");
 const {createSurvey, editSurvey, deleteSurvey, getSurveys, getSurvey} = require("../controllers/globalAdmin.controller/globalAdmin_Surveys");
 const {upload,uploadContent} = require("../middleware/multer_middleware");
@@ -26,6 +26,7 @@ router.route('/editRole/:id').put(editRole)
 router.route('/deleteRole/:id').delete(deleteRole)
 router.route('/getRoles').get(getRoles)
 router.route('/addPermissions').post(addPermissions)
+router.route('/getPermissions').get(getPermissions)
 //////////////Global Content////////////
 
 router.route('/addContent').post(uploadContent.single('file'),uploadToCloudinary("globalContent"),addContent)

@@ -1,10 +1,16 @@
 const mongoose = require("mongoose");
+const { v4: uuidv4 } = require("uuid");
 
-const PermissionSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true }, // e.g., "view_home"
-  label: { type: String, required: true },            // e.g., "View Home"
-  section: { type: String, required: true } // belongs to a section
+const permissionSchema = new mongoose.Schema({
+  uuid: {
+    type: String,
+    default: uuidv4,
+    unique: true,
+    index: true,
+  },
+  name: { type: String, required: true },
+  section: { type: mongoose.Schema.Types.ObjectId, ref: "Section", required: true }
 });
 
-const Permission = mongoose.model("Permission", PermissionSchema);
+const Permission = mongoose.model("Permission", permissionSchema);
 module.exports = Permission;

@@ -1,10 +1,15 @@
 const mongoose = require("mongoose");
+const { v4: uuidv4 } = require("uuid");
 
-const SectionSchema = new mongoose.Schema({
-  name: { type: String, required: true, unique: true }, // e.g., "Training Calendar"
-  description: { type: String },
-  permissions: [{ type: mongoose.Schema.Types.ObjectId, ref: "Permission" }] // permissions under this section
+const sectionSchema = new mongoose.Schema({
+  uuid: {
+    type: String,
+    default: uuidv4,
+    unique: true,
+    index: true,
+  },
+  name: { type: String, required: true }
 });
 
-const Section = mongoose.model("Section", SectionSchema);
+const Section = mongoose.model("Section", sectionSchema);
 module.exports = Section;
