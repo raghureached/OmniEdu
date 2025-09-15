@@ -130,27 +130,30 @@ export const updateOrganization = createAsyncThunk(
     async({ id, data }, { rejectWithValue }) => {
         try {
             // Handle file upload for logo if present
-            let formData = null;
-            if (data.logo instanceof File) {
-                formData = new FormData();
-                Object.keys(data).forEach(key => {
-                  // console.log(key, data[key]);
-                    if (key === 'logo') {
-                        formData.append('logo', data.logo);
-                    } else {
-                        formData.append(key, data[key]);
-                    }
-                });
-            }
-
+            // console.log(data)
+            // let formData = null;
+            // if (data.logo instanceof File) {
+            //     formData = new FormData();
+            //     Object.keys(data).forEach(key => {
+            //       // console.log(key, data[key]);
+            //         if (key === 'logo') {
+            //             formData.append('logo', data.logo);
+            //         } else {
+            //             formData.append(key, data[key]);
+            //         }
+            //     });
+            // }
+            // console.log('formData', formData)
+            console.log(data)
             const response = await api.put(
               `/api/globalAdmin/editOrganization/${id}`,
-              formData || data,
-              formData
+             data,
+              data
                 ? { headers: { "Content-Type": "multipart/form-data" } }
                 : {}
             );
-            return response.data;
+            // console.log('response', response)
+            return response.data.data;
         } catch (error) {
             return rejectWithValue(error.response.data);
         }
@@ -211,7 +214,7 @@ const initialState = {
     filters: {
         name: '',
         status: '',
-        planName: ''
+        plan: ''
     },
     totalCount: 0
 };
@@ -222,6 +225,8 @@ const organizationSlice = createSlice({
     initialState,
     reducers: {
         setFilters: (state, action) => {
+          // console.log("action.payload", action.payload)  
+          // console.log("state.filters", state.filters)
             state.filters = {...state.filters, ...action.payload };
         },
         clearFilters: (state) => {
@@ -239,19 +244,14 @@ const organizationSlice = createSlice({
     extraReducers: (builder) => {
         builder
           // Fetch organizations
-          // .addCase(fetchOrganizations.pending, (state) => {
-          //     state.loading = true;
-          //     state.error = null;
-          // })
-          // .addCase(fetchOrganizations.fulfilled, (state, action) => {
-          //     state.loading = false;
-          //     state.organizations = action.payload.organizations;
-          //     state.totalCount = action.payload.totalCount;
-          // })
-          // .addCase(fetchOrganizations.rejected, (state, action) => {
-          //     state.loading = false;
-          //     state.error = action.payload || 'Failed to fetch organizations';
-          // })
+          .addCase(fetchOrganizations.pending, (state) => {
+              state.loading = true;
+              state.error = null;
+          })
+          .addCase(fetchOrganizations.rejected, (state, action) => {
+              state.loading = false;
+              state.error = action.payload || 'Failed to fetch organizations';
+          })
           .addCase(fetchOrganizations.fulfilled, (state, action) => {
             state.loading = false;
 
@@ -275,7 +275,7 @@ const organizationSlice = createSlice({
               state.organizations = [];
               state.totalCount = 0;
             }
-          })
+          }) 
 
           // Fetch organization by ID
           .addCase(fetchOrganizationById.pending, (state) => {
@@ -315,15 +315,18 @@ const organizationSlice = createSlice({
           })
           .addCase(updateOrganization.fulfilled, (state, action) => {
             state.loading = false;
+            console.log(state,action.payload)
             const index = state.organizations.findIndex(
-              (org) => org._id === action.payload._id
+              (org) => org.uuid === action.payload.uuid
             );
+            // console.log(index)
             if (index !== -1) {
               state.organizations[index] = action.payload;
+              console.log(state.organizations[index])
             }
             if (
               state.currentOrganization &&
-              state.currentOrganization._id === action.payload._id
+              state.currentOrganization.uuid=== action.payload.uuid
             ) {
               state.currentOrganization = action.payload;
             }

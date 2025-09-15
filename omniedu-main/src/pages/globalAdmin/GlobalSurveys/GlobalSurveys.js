@@ -7,107 +7,240 @@ import {
   updateSurvey,
 } from "../../../store/slices/surveySlice";
 import "./GlobalSurveys.css";
-import CustomLoader from "../../../components/common/Loading/CustomLoader";
-
+import SurveyPreview from "../GlobalSurveys/SurveyPreview";
+import SurveyForm from "../GlobalSurveys/SurveyForm";
+import SearchImage from "../../../images/Search Not Found 1.png";
 const GlobalSurveys = () => {
   const dispatch = useDispatch();
   const { surveys, loading, error } = useSelector((state) => state.surveys);
-  const [showForm, setShowForm] = useState(false);
-  const [editingSurvey, setEditingSurvey] = useState(null);
+    const [showForm, setShowForm] = useState(false);
+    const [editingSurvey, setEditingSurvey] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [previewSurvey, setPreviewSurvey] = useState(null);
+
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    survey_type: "text",
-    start_date: "",
-    end_date: "",
-    is_active: true,
-    questions: [{ question_text: "", question_type: "text", options: [] }],
-  });
-
-  // Fetch surveys on mount
-  useEffect(() => {
-    dispatch(fetchSurveys());
-  }, [dispatch]);
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
-  };
-
-  // handle question change
-  const handleQuestionChange = (index, field, value) => {
-    const updatedQuestions = [...formData.questions];
-    updatedQuestions[index][field] = value;
-    setFormData({ ...formData, questions: updatedQuestions });
-  };
-
-  // add question
-  const addQuestion = () => {
-    setFormData({
-      ...formData,
-      questions: [
-        ...formData.questions,
-        { question_text: "", question_type: "text", options: [] },
-      ],
-    });
-  };
-
-  // remove question
-  const removeQuestion = (index) => {
-    const updatedQuestions = formData.questions.filter((_, i) => i !== index);
-    setFormData({ ...formData, questions: updatedQuestions });
-  };
-
-  // submit form
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const payload = {
-      title: formData.title,
-      description: formData.description,
-      survey_type: formData.survey_type,
-      start_date: formData.start_date || null,
-      end_date: formData.end_date || null,
-      is_active: formData.is_active,
-      questions: formData.questions.map((q) => ({
-        question_text: q.question_text,
-        question_type: q.question_type,
-        options:
-          q.question_type === "multiple_choice"
-            ? q.options.filter((opt) => opt.trim() !== "")
-            : [],
-      })),
-    };
-
-    if (editingSurvey) {
-      dispatch(
-        updateSurvey({
-          id: editingSurvey._id || editingSurvey.uuid,
-          data: payload,
-        })
-      );
-    } else {
-      dispatch(createSurvey(payload));
-    }
-
-    // Reset after submit
-    setShowForm(false);
-    setEditingSurvey(null);
-    setFormData({
       title: "",
       description: "",
-      survey_type: "text",
+      survey_type: "Short Answer",
       start_date: "",
       end_date: "",
       is_active: true,
       questions: [{ question_text: "", question_type: "text", options: [] }],
     });
+  
+  // Fetch surveys on mount
+  useEffect(() => {
+    dispatch(fetchSurveys());
+  }, [dispatch]);
+  const handleChange = (e) => {
+      const { name, value, type, checked } = e.target;
+      setFormData({
+        ...formData,
+        [name]: type === "checkbox" ? checked : value,
+      });
+    };
+  
+    // handle question change
+    const handleQuestionChange = (index, field, value) => {
+      const updatedQuestions = [...formData.questions];
+      updatedQuestions[index][field] = value;
+      setFormData({ ...formData, questions: updatedQuestions });
+    };
+  
+    // add question
+    const addQuestion = () => {
+      setFormData({
+        ...formData,
+        questions: [
+          ...formData.questions,
+          { question_text: "", question_type: "text", options: [] },
+        ],
+      });
+    };
+  
+    // remove question
+    const removeQuestion = (index) => {
+      const updatedQuestions = formData.questions.filter((_, i) => i !== index);
+      setFormData({ ...formData, questions: updatedQuestions });
+    };
+  
+    // Change a specific option text
+const handleOptionChange = (qIndex, optIndex, newValue) => {
+  setFormData((prev) => {
+    const updatedQuestions = prev.questions.map((q, i) => {
+      if (i === qIndex) {
+        const updatedOptions = [...q.options];
+        updatedOptions[optIndex] = newValue;
+        return { ...q, options: updatedOptions };
+      }
+      return q;
+    });
+    return { ...prev, questions: updatedQuestions };
+  });
+};
+
+// Add a new option to a question
+const addOption = (qIndex) => {
+  setFormData((prev) => {
+    const updatedQuestions = prev.questions.map((q, i) =>
+      i === qIndex ? { ...q, options: [...q.options, ""] } : q
+    );
+    return { ...prev, questions: updatedQuestions };
+  });
+};
+
+// Remove an option from a question
+const removeOption = (qIndex, optIndex) => {
+  setFormData((prev) => {
+    const updatedQuestions = prev.questions.map((q, i) => {
+      if (i === qIndex) {
+        const updatedOptions = q.options.filter((_, j) => j !== optIndex);
+        return { ...q, options: updatedOptions };
+      }
+      return q;
+    });
+    return { ...prev, questions: updatedQuestions };
+  });
+};
+
+// submit form
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  const payload = {
+    title: formData.title,
+    description: formData.description,
+    survey_type: formData.survey_type,
+  start_date: formData.start_date
+    ? new Date(formData.start_date).toISOString()
+    : null,
+  end_date: formData.end_date
+    ? new Date(formData.end_date).toISOString()
+    : null,
+
+    is_active: formData.is_active,
+    created_by: "admin-user-uuid", // replace with actual logged-in user uuid
+    questions: formData.questions.map((q) => ({
+      question_text: q.question_text,
+      question_type: q.question_type,
+      options:
+        q.question_type === "multiple_choice" || q.question_type === "rating"
+          ? q.options.filter((opt) => opt.trim() !== "")
+          : [],
+    })),
   };
+
+  try {
+    if (editingSurvey) {
+      // ✅ update existing
+      await dispatch(
+        updateSurvey({
+          uuid: editingSurvey.uuid,  // always uuid
+          data: payload,
+        })
+      );
+    } else {
+      // ✅ create new
+      await dispatch(createSurvey(payload));
+    }
+
+    // ✅ fetch fresh list after update/create
+    dispatch(fetchSurveys());
+
+    // ✅ reset everything
+    setShowForm(false);
+    setEditingSurvey(null);
+    setFormData({
+      title: "",
+      description: "",
+      survey_type: "Short Answer",
+      start_date: "",
+      end_date: "",
+      is_active: true,
+      questions: [{ question_text: "", question_type: "text", options: [] }],
+    });
+  } catch (err) {
+    console.error("Failed to submit survey", err);
+  }
+};
+
+
+    // submit form
+    // const handleSubmit = (e) => {
+    //   e.preventDefault();
+    //   const payload = {
+    //     title: formData.title,
+    //     description: formData.description,
+    //     survey_type: formData.survey_type,
+    //     start_date: formData.start_date || null,
+    //     end_date: formData.end_date || null,
+    //     is_active: formData.is_active,
+    //     questions: formData.questions.map((q) => ({
+    //       question_text: q.question_text,
+    //       question_type: q.question_type,
+    //       options:
+    //         q.question_type === "multiple_choice"
+    //           ? q.options.filter((opt) => opt.trim() !== "")
+    //           : [],
+    //     })),
+    //   };
+  // submit form
+//   const handleSubmit = (e) => {
+//     e.preventDefault();
+
+//     const payload = {
+//       title: formData.title,
+//       description: formData.description,
+//       survey_type: formData.survey_type,
+//       start_date: formData.start_date || null,
+//       end_date: formData.end_date || null,
+//       is_active: formData.is_active,
+//       created_by: "admin-user-uuid", // replace with actual logged-in user uuid
+//       questions: formData.questions.map((q) => ({
+//   question_text: q.question_text,
+//   question_type: q.question_type,
+//   options:
+//     q.question_type === "multiple_choice" || q.question_type === "rating"
+//       ? q.options.filter((opt) => opt.trim() !== "")
+//       : [],
+// })),
+
+    
+//     };
+      // if (editingSurvey) {
+      //   dispatch(
+      //     updateSurvey({
+      //       id: editingSurvey._id || editingSurvey.uuid,
+      //       data: payload,
+      //     })
+      //   );
+//       if (editingSurvey) {
+//   dispatch(
+//     updateSurvey({
+//       uuid: editingSurvey.uuid,   // ✅ always use uuid
+//       data: payload,
+//     })
+//   );
+// }    else {
+//         dispatch(createSurvey(payload));
+//       }
+  
+//       // Reset after submit
+//       setShowForm(false);
+//       setEditingSurvey(null);
+//       setFormData({
+//         title: "",
+//         description: "",
+//         survey_type: "Short Answer",
+//         start_date: "",
+//         end_date: "",
+//         is_active: true,
+//         questions: [{ question_text: "", question_type: "text", options: [] }],
+//       });
+//     };
   // Delete handler
   const handleDeleteSurvey = (id) => {
     if (window.confirm("Are you sure you want to delete this survey?")) {
@@ -138,25 +271,26 @@ const GlobalSurveys = () => {
     <div className="survey-container">
       {/* Header */}
       <div className="survey-header">
-        <h1>Global Surveys</h1>
+        <h1> Surveys</h1>
+        {/* <button className="survey-btn-primary" onClick={() => setShowForm(true)}>+ Create Survey</button> */}
         <button
-          className="survey-btn-primary"
-          onClick={() => {
-            setShowForm(true);
-            setEditingSurvey(null);
-            setFormData({
-              title: "",
-              description: "",
-              survey_type: "text",
-              start_date: "",
-              end_date: "",
-              is_active: true,
-              questions: [{ question_text: "", question_type: "text", options: [] }],
-            });
-          }}
-        >
-          + Create Survey
-        </button>
+  className="survey-btn-primary"
+  onClick={() => {
+    setEditingSurvey(null); // make sure not in edit mode
+    setFormData({
+      title: "",
+      description: "",
+      survey_type: "Short Answer",
+      start_date: "",
+      end_date: "",
+      is_active: true,
+      questions: [{ question_text: "", question_type: "text", options: [] }],
+    });
+    setShowForm(true);
+  }}
+>
+  + Create Survey
+</button>
 
       </div>
 
@@ -182,10 +316,41 @@ const GlobalSurveys = () => {
       </div>
 
       {/* Loading & Error States */}
-      {loading ? (
-        <CustomLoader text="Loading Surveys..." />
-      ) : error ? (
-        <div className="survey-error">{error}</div>
+      
+       
+      {(loading) ? (
+        <div className="loading-screen">
+          <div className='image-div'>
+             <img
+              src={SearchImage}
+              className='loading image'
+                            
+        />
+        <h3>No Surveys Yet?</h3>
+         <p>Add Surveys to your panel and start to see them here</p>
+ {/* <button onClick={() => openForm()} className="btn-primary">
+              Add Surveys
+             </button> */}
+              <button
+  className="survey-btn-primary"
+  onClick={() => {
+    setEditingSurvey(null); // make sure not in edit mode
+    setFormData({
+      title: "",
+      description: "",
+      survey_type: "Short Answer",
+      start_date: "",
+      end_date: "",
+      is_active: true,
+      questions: [{ question_text: "", question_type: "text", options: [] }],
+    });
+    setShowForm(true);
+  }}
+>
+  + Create Survey
+</button>
+          </div>
+        </div>
       ) : (
         <div className="survey-table-container">
           {currentSurveys.length === 0 ? (
@@ -210,14 +375,15 @@ const GlobalSurveys = () => {
                     <td>{survey.survey_type || "N/A"}</td>
                     <td>
                       <span
-                        className={`survey-status ${survey.is_active === true
+                        className={`survey-status ${
+                          survey.is_active === true
                             ? "survey-status-active"
                             : survey.is_active === false
-                              ? "survey-status-draft"
-                              : "survey-status-closed"
-                          }`}
+                            ? "survey-status-draft"
+                            : "survey-status-closed"
+                        }`}
                       >
-                        {survey.is_active === true ? "Active" : "Inactive"}
+                        {survey.is_active === true ? "✓ Active" : "✕ Inactive"}
                       </span>
                     </td>
                     <td>{survey.questions?.length || 0}</td>
@@ -228,7 +394,14 @@ const GlobalSurveys = () => {
                         : "N/A"}
                     </td>
                     <td className="survey-actions">
-                      <button className="survey-btn-view">View</button>
+                      {/* <button className="survey-btn-view">View</button> */}
+                      <button
+  className="survey-btn-view"
+  onClick={() => setPreviewSurvey(survey)}
+>
+  View
+</button>
+
                       <button
                         className="survey-btn-delete"
                         onClick={() => handleDeleteSurvey(survey.uuid)}
@@ -236,26 +409,34 @@ const GlobalSurveys = () => {
                         Delete
                       </button>
                       <button
-                        className="survey-btn-edit"
-                        onClick={() => {
-                          setEditingSurvey(survey);
-                          setFormData({
-                            title: survey.title,
-                            description: survey.description || "",
-                            survey_type: survey.survey_type,
-                            start_date: survey.start_date
-                              ? survey.start_date.split("T")[0]
-                              : "",
-                            end_date: survey.end_date ? survey.end_date.split("T")[0] : "",
-                            is_active: survey.is_active,
-                            questions: survey.questions || [],
-                          });
-                          setShowForm(true);
-                        }}
-                      >
-                        Edit
-                      </button>
+                    className="survey-btn-edit"
+                    onClick={() => {
+  setEditingSurvey(survey);
+  setFormData({
+    title: survey.title,
+    description: survey.description || "",
+    survey_type: survey.survey_type,
+     start_date: survey.start_date
+    ? new Date(survey.start_date).toISOString().split("T")[0] // ✅ only yyyy-mm-dd
+    : "",
+  end_date: survey.end_date
+    ? new Date(survey.end_date).toISOString().split("T")[0]
+    : "",
+    is_active: survey.is_active,
+    questions: survey.questions
+      ? survey.questions.map((q) => ({
+          ...q,
+          options: q.options ? [...q.options] : [],
+        }))
+      : [],
+  });
+  setShowForm(true);
+}}
 
+                  >
+                    Edit
+                  </button>
+                      
                     </td>
                   </tr>
                 ))}
@@ -264,7 +445,33 @@ const GlobalSurveys = () => {
           )}
         </div>
       )}
-      {showForm && (
+      {previewSurvey && (
+      <SurveyPreview
+        survey={previewSurvey}
+        onClose={() => setPreviewSurvey(null)}
+      />
+    )}
+    {showForm && (
+  <SurveyForm
+    formData={formData}
+    setFormData={setFormData}
+    handleChange={handleChange}
+    handleQuestionChange={handleQuestionChange}
+    handleOptionChange={handleOptionChange}
+    addOption={addOption}
+    removeOption={removeOption}
+    addQuestion={addQuestion}
+    removeQuestion={removeQuestion}
+    handleSubmit={handleSubmit}
+    editingSurvey={editingSurvey}
+    onClose={() => {
+      setShowForm(false);
+      setEditingSurvey(null);
+    }}
+  />
+)}
+
+    {/*  {showForm && (
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-header">
@@ -274,17 +481,7 @@ const GlobalSurveys = () => {
                 onClick={() => {
                   setShowForm(false);
                   setEditingSurvey(null);
-                  setFormData({
-                    title: "",
-                    description: "",
-                    survey_type: "text",
-                    start_date: "",
-                    end_date: "",
-                    is_active: true,
-                    questions: [{ question_text: "", question_type: "text", options: [] }],
-                  });
                 }}
-                
               >
                 ✖
               </button>
@@ -312,9 +509,10 @@ const GlobalSurveys = () => {
                 value={formData.survey_type}
                 onChange={handleChange}
               >
-                <option value="text">Text</option>
-                <option value="rating">Rating</option>
-                <option value="multiple_choice">Multiple Choice</option>
+                <option value="Short Answer">Short Answer</option>
+                <option value="Rating">Rating</option>
+                <option value="Multiple Choice">Multiple Choice</option>
+             
               </select>
 
               <div className="date-fields">
@@ -376,9 +574,9 @@ const GlobalSurveys = () => {
                       )
                     }
                   >
-                    <option value="text">Text</option>
-
+                   <option value="text">Text</option>
                     <option value="multiple_choice">Multiple Choice</option>
+                    <option value="rating">Rating</option>
                   </select>
                   <button
                     type="button"
@@ -386,10 +584,10 @@ const GlobalSurveys = () => {
                     onClick={() => removeQuestion(index)}
                   >
                     ✖
-                  </button>
+                  </button>*/}
 
                   {/* Options for Multiple Choice */}
-                  {q.question_type === "multiple_choice" && (
+                  {/* {q.question_type === "multiple_choice" && (
                     <div className="options-box">
                       {q.options.map((opt, optIndex) => (
                         <div key={optIndex} className="option-row">
@@ -438,7 +636,66 @@ const GlobalSurveys = () => {
                         + Add Option
                       </button>
                     </div>
-                  )}
+                  )} */} 
+                {/*  {q.question_type === "multiple_choice" && (  <div className="options-box">
+    {q.options.map((opt, optIndex) => (
+      <div key={optIndex} className="option-row">
+        <input
+          type="text"
+          placeholder={`Option ${optIndex + 1}`}
+          value={opt}
+          onChange={(e) =>
+            handleOptionChange(index, optIndex, e.target.value)
+          }
+        />
+        <button
+          type="button"
+          className="remove-option-btn"
+          onClick={() => removeOption(index, optIndex)}
+        >
+          ✖
+        </button>
+      </div>
+    ))}
+    <button
+      type="button"
+      className="add-option-btn"
+      onClick={() => addOption(index)}
+    >
+      + Add Option
+    </button>
+  </div>
+)}
+{q.question_type === "rating" && (
+  <div className="options-box">
+    {q.options.map((opt, optIndex) => (
+      <div key={optIndex} className="option-row">
+        <input
+          type="text"
+          placeholder={`Option ${optIndex + 1}`}
+          value={opt}
+          onChange={(e) =>
+            handleOptionChange(index, optIndex, e.target.value)
+          }
+        />
+        <button
+          type="button"
+          className="remove-option-btn"
+          onClick={() => removeOption(index, optIndex)}
+        >
+          ✖
+        </button>
+      </div>
+    ))}
+    <button
+      type="button"
+      className="add-option-btn"
+      onClick={() => addOption(index)}
+    >
+      + Add Option
+    </button>
+  </div>
+)}
                 </div>
               ))}
               <button
@@ -467,10 +724,10 @@ const GlobalSurveys = () => {
             </form>
           </div>
         </div>
-      )}
+      )}*/}
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {totalPages >= 1 && (
         <div className="survey-pagination">
           <button
             disabled={currentPage === 1}

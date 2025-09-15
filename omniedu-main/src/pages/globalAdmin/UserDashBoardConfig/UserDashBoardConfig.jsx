@@ -1,13 +1,31 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import './UserDashBoardConfig.css'
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchOrganizations } from '../../../store/slices/organizationSlice';
 
 const UserDashBoardConfig = () => {
+    const [currentOrg,setCurrentOrg] = useState(null)
+            const dispatch = useDispatch();
+            useEffect(() => {
+                dispatch(fetchOrganizations());
+                // fetchPlans();
+              }, [dispatch]);
+            const {organizations } = useSelector((state) => state.organizations);
+            const handleOrgChange = (e) => {
+                // console.log(e.target.value)
+                setCurrentOrg(organizations.find((org) => org.uuid === e.target.value))
+            }
   return (
     <div className="user-dash-dashboard-settings-container">
   <div className="user-dash-settings-header">
     <label htmlFor="org-select">Manage Settings for Organization:</label>
-    <select id="org-select" className="user-dash-org-select">
+    <select id="org-select" className="user-dash-org-select" onChange={handleOrgChange}>
       <option value="">-- Select an Organization --</option>
+      {organizations.map((org) => (
+        <option key={org.uuid} value={org.uuid}>
+          {org.name}
+        </option>
+      ))}
     </select>
   </div>
 

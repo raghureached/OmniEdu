@@ -91,168 +91,170 @@
 // export default GlobalAdminLayout;
 
 ////admin code
- import React, { useState, useEffect } from 'react';
- import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
- import { useDispatch, useSelector } from 'react-redux';
- import { logout } from '../../../store/slices/authSlice';
- import { fetchNotifications, markNotificationAsRead } from '../../../store/slices/notificationSlice';
+import React, { useState, useEffect } from 'react';
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { logout } from '../../../store/slices/authSlice';
+import { fetchNotifications, markNotificationAsRead } from '../../../store/slices/notificationSlice';
 import './GlobalAdminLayout.css';
- import { fetchOrganizations } from "../../../store/slices/organizationSlice";
- import { Menu, Home, Users, UserCheck, Shield, BookOpen,Building2, CheckCircle, Award, UserRoundPen, BookCopy, Clock, User, HelpCircle, LogOut, Bell, X, BarChart, MessageCircle } from 'lucide-react';
- 
- const GlobalAdminLayout = () => {
-   const dispatch = useDispatch();
-   const navigate = useNavigate();
-   const location = useLocation();
-   const { user } = useSelector((state) => state.auth);
-   const { organizations } = useSelector((state) => state.organizations);
+import { fetchOrganizations } from "../../../store/slices/organizationSlice";
+import { Menu, Home, Users, UserCheck, Shield, BookOpen, Building2, CheckCircle, Award, UserRoundPen, BookCopy, Clock, User, HelpCircle, LogOut, Bell, X, BarChart, MessageCircle } from 'lucide-react';
 
-   const { items: notifications, unreadCount } = useSelector(
-     (state) => state.notifications
-   );
-   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-   const [notificationsOpen, setNotificationsOpen] = useState(false);
+const GlobalAdminLayout = () => {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { user } = useSelector((state) => state.auth);
+    const { organizations } = useSelector((state) => state.organizations);
 
-     useEffect(() => {
-       dispatch(fetchOrganizations({}));
-     }, [dispatch]);
-   // Fetch notifications on component mount
-   useEffect(() => {
-     dispatch(fetchNotifications());
-   }, [dispatch]);
+    const { items: notifications, unreadCount } = useSelector(
+        (state) => state.notifications
+    );
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+    const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-   // Close mobile menu when location changes
-   useEffect(() => {
-     setMobileMenuOpen(false);
-   }, [location.pathname]);
+    useEffect(() => {
+        dispatch(fetchOrganizations({}));
+    }, [dispatch]);
+    // Fetch notifications on component mount
+    useEffect(() => {
+        dispatch(fetchNotifications());
+    }, [dispatch]);
 
-   // Close profile dropdown when clicking outside
-   useEffect(() => {
-     const handleClickOutside = (event) => {
-       if (
-         profileDropdownOpen &&
-         !event.target.closest(".admin_profile_container")
-       ) {
-         setProfileDropdownOpen(false);
-       }
-       if (
-         notificationsOpen &&
-         !event.target.closest(".admin_notification_container")
-       ) {
-         setNotificationsOpen(false);
-       }
-     };
+    // Close mobile menu when location changes
+    useEffect(() => {
+        setMobileMenuOpen(false);
+    }, [location.pathname]);
 
-     document.addEventListener("mousedown", handleClickOutside);
-     return () => {
-       document.removeEventListener("mousedown", handleClickOutside);
-     };
-   }, [profileDropdownOpen, notificationsOpen]);
+    // Close profile dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                profileDropdownOpen &&
+                !event.target.closest(".admin_profile_container")
+            ) {
+                setProfileDropdownOpen(false);
+            }
+            if (
+                notificationsOpen &&
+                !event.target.closest(".admin_notification_container")
+            ) {
+                setNotificationsOpen(false);
+            }
+        };
 
-   const handleLogout = () => {
-     dispatch(logout()).then(() => {
-       navigate("/");
-     });
-   };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [profileDropdownOpen, notificationsOpen]);
 
-   // Function to check if a link is active
-   const isActive = (path) => {
-     return (
-       location.pathname === path || location.pathname.startsWith(`${path}/`)
-     );
-   };
+    const handleLogout = () => {
+        dispatch(logout()).then(() => {
+            navigate("/");
+        });
+    };
 
-   const toggleMobileMenu = () => {
-     setMobileMenuOpen(!mobileMenuOpen);
-   };
+    // Function to check if a link is active
+    const isActive = (path) => {
+        return (
+            location.pathname === path || location.pathname.startsWith(`${path}/`)
+        );
+    };
 
-   const toggleSidebar = () => {
-     setSidebarCollapsed(!sidebarCollapsed);
-   };
+    const toggleMobileMenu = () => {
+        setMobileMenuOpen(!mobileMenuOpen);
+    };
 
-   const toggleProfileDropdown = () => {
-     setProfileDropdownOpen(!profileDropdownOpen);
-   };
+    const toggleSidebar = () => {
+        setSidebarCollapsed(!sidebarCollapsed);
+    };
 
-   const toggleNotifications = () => {
-     setNotificationsOpen(!notificationsOpen);
-   };
+    const toggleProfileDropdown = () => {
+        setProfileDropdownOpen(!profileDropdownOpen);
+    };
 
-   const handleNotificationClick = (notificationId) => {
-     dispatch(markNotificationAsRead(notificationId));
-   };
+    const toggleNotifications = () => {
+        setNotificationsOpen(!notificationsOpen);
+    };
 
-   const navigateToProfile = () => {
-     navigate("/admin/profile");
-     setProfileDropdownOpen(false);
-   };
+    const handleNotificationClick = (notificationId) => {
+        dispatch(markNotificationAsRead(notificationId));
+    };
 
-   // Function to get user initials
-   const getUserInitials = () => {
-     if (!user || !user.name) return "A";
+    const navigateToProfile = () => {
+        navigate("/admin/profile");
+        setProfileDropdownOpen(false);
+    };
 
-     const nameParts = user.name.split(" ");
-     if (nameParts.length >= 2) {
-       return `${nameParts[0].charAt(0)}${nameParts[1].charAt(
-         0
-       )}`.toUpperCase();
-     }
+    // Function to get user initials
+    const getUserInitials = () => {
+        if (!user || !user.name) return "A";
 
-     return user.name.substring(0, 2).toUpperCase();
-   };
+        const nameParts = user.name.split(" ");
+        if (nameParts.length >= 2) {
+            return `${nameParts[0].charAt(0)}${nameParts[1].charAt(
+                0
+            )}`.toUpperCase();
+        }
 
-   // Function to format notification date
-   const formatNotificationDate = (dateString) => {
-     const date = new Date(dateString);
-     const now = new Date();
-     const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+        return user.name.substring(0, 2).toUpperCase();
+    };
+    const handleProfileLogout = () => {
+        setProfileDropdownOpen(false);
+        dispatch(logout()); // isAuthenticated effect will navigate automatically
+    };
+    // Function to format notification date
+    const formatNotificationDate = (dateString) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
 
-     if (diffInHours < 1) {
-       return "Just now";
-     } else if (diffInHours < 24) {
-       return `${diffInHours} ${diffInHours === 1 ? "hour" : "hours"} ago`;
-     } else {
-       const diffInDays = Math.floor(diffInHours / 24);
-       return `${diffInDays} ${diffInDays === 1 ? "day" : "days"} ago`;
-     }
-   };
+        if (diffInHours < 1) {
+            return "Just now";
+        } else if (diffInHours < 24) {
+            return `${diffInHours} ${diffInHours === 1 ? "hour" : "hours"} ago`;
+        } else {
+            const diffInDays = Math.floor(diffInHours / 24);
+            return `${diffInDays} ${diffInDays === 1 ? "day" : "days"} ago`;
+        }
+    };
 
-   return (
-     <div className="globaladmin_layout_container">
-       {/* Overlay for mobile */}
-       {mobileMenuOpen && (
-         <div
-           className="globaladmin_sidebar_overlay"
-           onClick={toggleMobileMenu}
-         ></div>
-       )}
+    return (
+        <div className="globaladmin_layout_container">
+            {/* Overlay for mobile */}
+            {mobileMenuOpen && (
+                <div
+                    className="globaladmin_sidebar_overlay"
+                    onClick={toggleMobileMenu}
+                ></div>
+            )}
 
-       <nav
-         className={`globaladmin_sidebar ${
-           mobileMenuOpen ? "globaladmin_sidebar_open" : ""
-         } ${sidebarCollapsed ? "globaladmin_sidebar_collapsed" : ""}`}
-       >
-         <div className="globaladmin_sidebar_header">
-           <div className="globaladmin_logo_container">
-             <button
-               className="globaladmin_menu_toggle"
-               onClick={toggleSidebar}
-             >
-               <Menu size={24} />
-             </button>
-             <div className="globaladmin_logo">
-               {sidebarCollapsed ? (
-                 <span className="globaladmin_logo_small"></span>
-               ) : (
-                 <h3>OmniEdu</h3>
-               )}
-             </div>
-           </div>
-         </div>
+            <nav
+                className={`globaladmin_sidebar ${mobileMenuOpen ? "globaladmin_sidebar_open" : ""
+                    } ${sidebarCollapsed ? "globaladmin_sidebar_collapsed" : ""}`}
+            >
+                <div className="globaladmin_sidebar_header">
+                    <div className="globaladmin_logo_container">
+                        <button
+                            className="globaladmin_menu_toggle"
+                            onClick={toggleSidebar}
+                        >
+                            <Menu size={24} />
+                        </button>
+                        <div className="globaladmin_logo">
+                            {sidebarCollapsed ? (
+                                <span className="globaladmin_logo_small"></span>
+                            ) : (
+                                <h3>OmniEdu</h3>
+                            )}
+                        </div>
+                    </div>
+                </div>
 
-         {/* {organizations.length > 0 && (
+                {/* {organizations.length > 0 && (
            <div className="org-selector">
              <label>Organization:</label>
              <select>
@@ -264,275 +266,268 @@ import './GlobalAdminLayout.css';
              </select>
            </div>
          )} */}
-         <ul className="globaladmin_sidebar_menu">
-  {/* Home */}
-  <li>
-    <Link
-      to="/global-admin"
-      className={isActive("/global-admin") ? "globaladmin_link_active" : ""}
-    >
-      <Home size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Global Admin Home</span>}
-    </Link>
-  </li>
+                <ul className="globaladmin_sidebar_menu">
+                    {/* Home */}
+                    <li>
+                        <Link
+                            to="/global-admin"
+                            className={isActive("/global-admin") ? "globaladmin_link_active" : ""}
+                        >
+                            <Home size={20} />
+                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Global Admin Home</span>}
+                        </Link>
+                    </li>
 
-  {/* MANAGE Section */}
-  <li className="globaladmin_menu_section">
-    {!sidebarCollapsed && <div className="globaladmin_section_title">MANAGE</div>}
-  </li>
+                    {/* MANAGE Section */}
+                    <li className="globaladmin_menu_section">
+                        {!sidebarCollapsed && <div className="globaladmin_section_title">MANAGE</div>}
+                    </li>
 
-  <li>
-    <Link to="/global-admin/organizations" className={isActive("/global-admin/organizations") ? "globaladmin_link_active" : ""}>
-      <Building2 size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Organization</span>}
-    </Link>
-  </li>
+                    <li>
+                        <Link to="/global-admin/organizations" className={isActive("/global-admin/organizations") ? "globaladmin_link_active" : ""}>
+                            <Building2 size={20} />
+                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Organization</span>}
+                        </Link>
+                    </li>
 
-  <li>
-    <Link to="/global-admin/roles" className={isActive("/global-admin/roles") ? "globaladmin_link_active" : ""}>
-      <Shield size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Roles</span>}
-    </Link>
-  </li>
+                    <li>
+                        <Link to="/global-admin/roles" className={isActive("/global-admin/roles") ? "globaladmin_link_active" : ""}>
+                            <Shield size={20} />
+                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Roles</span>}
+                        </Link>
+                    </li>
 
-  <li>
-    <Link to="/global-admin/content" className={isActive("/global-admin/content") ? "globaladmin_link_active" : ""}>
-      <BookOpen size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Content</span>}
-    </Link>
-  </li>
+                    <li>
+                        <Link to="/global-admin/content" className={isActive("/global-admin/content") ? "globaladmin_link_active" : ""}>
+                            <BookOpen size={20} />
+                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Content</span>}
+                        </Link>
+                    </li>
 
-  <li>
-    <Link to="/global-admin/surveys" className={isActive("/global-admin/surveys") ? "globaladmin_link_active" : ""}>
-      <BookCopy size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Surveys</span>}
-    </Link>
-  </li>
+                    <li>
+                        <Link to="/global-admin/surveys" className={isActive("/global-admin/surveys") ? "globaladmin_link_active" : ""}>
+                            <BookCopy size={20} />
+                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Surveys</span>}
+                        </Link>
+                    </li>
 
-  <li>
-    <Link to="/global-admin/assignments" className={isActive("/global-admin/assignments") ? "globaladmin_link_active" : ""}>
-      <CheckCircle size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Assignments</span>}
-    </Link>
-  </li>
+                    <li>
+                        <Link to="/global-admin/assignments" className={isActive("/global-admin/assignments") ? "globaladmin_link_active" : ""}>
+                            <CheckCircle size={20} />
+                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Assignments</span>}
+                        </Link>
+                    </li>
 
-  <li>
-    <Link to="/global-admin/library-user" className={isActive("/global-admin/library-user") ? "globaladmin_link_active" : ""}>
-      <BookCopy size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Library (User)</span>}
-    </Link>
-  </li>
+                    <li>
+                        <Link to="/global-admin/library-user" className={isActive("/global-admin/library-user") ? "globaladmin_link_active" : ""}>
+                            <BookCopy size={20} />
+                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Library (User)</span>}
+                        </Link>
+                    </li>
 
-  <li>
-    <Link to="/global-admin/portal-library-admin" className={isActive("/global-admin/portal-library-admin") ? "globaladmin_link_active" : ""}>
-      <BookCopy size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Portal Library (Admin)</span>}
-    </Link>
-  </li>
+                    <li>
+                        <Link to="/global-admin/portal-library-admin" className={isActive("/global-admin/portal-library-admin") ? "globaladmin_link_active" : ""}>
+                            <BookCopy size={20} />
+                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Portal Library (Admin)</span>}
+                        </Link>
+                    </li>
 
-  <li>
-    <Link to="/global-admin/user-dashboard-config" className={isActive("/global-admin/user-dashboard-config") ? "globaladmin_link_active" : ""}>
-      <UserRoundPen size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">User Dashboard Config</span>}
-    </Link>
-  </li>
+                    <li>
+                        <Link to="/global-admin/user-dashboard-config" className={isActive("/global-admin/user-dashboard-config") ? "globaladmin_link_active" : ""}>
+                            <UserRoundPen size={20} />
+                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">User Dashboard Config</span>}
+                        </Link>
+                    </li>
 
-  <li>
-    <Link to="/global-admin/admin-dashboard-config" className={isActive("/global-admin/admin-dashboard-config") ? "globaladmin_link_active" : ""}>
-      <UserCheck size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Admin Dashboard Config</span>}
-    </Link>
-  </li>
+                    <li>
+                        <Link to="/global-admin/admin-dashboard-config" className={isActive("/global-admin/admin-dashboard-config") ? "globaladmin_link_active" : ""}>
+                            <UserCheck size={20} />
+                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Admin Dashboard Config</span>}
+                        </Link>
+                    </li>
 
-  <li>
-    <Link to="/global-admin/analytics-view" className={isActive("/global-admin/analytics-view") ? "globaladmin_link_active" : ""}>
-      <BarChart size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Analytics View</span>}
-    </Link>
-  </li>
+                    <li>
+                        <Link to="/global-admin/analytics-view" className={isActive("/global-admin/analytics-view") ? "globaladmin_link_active" : ""}>
+                            <BarChart size={20} />
+                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Analytics View</span>}
+                        </Link>
+                    </li>
 
-  {/* GLOBAL SETTINGS */}
-  <li className="globaladmin_menu_section">
-    {!sidebarCollapsed && <div className="globaladmin_section_title">GLOBAL SETTINGS</div>}
-  </li>
+                    {/* GLOBAL SETTINGS */}
+                    <li className="globaladmin_menu_section">
+                        {!sidebarCollapsed && <div className="globaladmin_section_title">GLOBAL SETTINGS</div>}
+                    </li>
 
-  <li>
-    <Link to="/global-admin/message-board" className={isActive("/global-admin/message-board") ? "globaladmin_link_active" : ""}>
-      <MessageCircle size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Message Board</span>}
-    </Link>
-  </li>
+                    <li>
+                        <Link to="/global-admin/message-board" className={isActive("/global-admin/message-board") ? "globaladmin_link_active" : ""}>
+                            <MessageCircle size={20} />
+                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Message Board</span>}
+                        </Link>
+                    </li>
 
-  <li>
-    <Link to="/global-admin/activity-log" className={isActive("/global-admin/activity-log") ? "globaladmin_link_active" : ""}>
-      <Clock size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Activity Log</span>}
-    </Link>
-  </li>
+                    <li>
+                        <Link to="/global-admin/activity-log" className={isActive("/global-admin/activity-log") ? "globaladmin_link_active" : ""}>
+                            <Clock size={20} />
+                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Activity Log</span>}
+                        </Link>
+                    </li>
 
-  {/* Profile */}
-  <li>
-    <Link to="/global-admin/profile" className={isActive("/global-admin/profile") ? "globaladmin_link_active" : ""}>
-      <User size={20} />
-      {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Global Admin Profile</span>}
-    </Link>
-  </li>
-</ul>
+                    {/* Profile */}
+                    <li>
+                        <Link to="/global-admin/profile" className={isActive("/global-admin/profile") ? "globaladmin_link_active" : ""}>
+                            <User size={20} />
+                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Global Admin Profile</span>}
+                        </Link>
+                    </li>
+                </ul>
 
 
-         <div className="globaladmin_sidebar_footer">
-           <button onClick={handleLogout} className="globaladmin_logout_btn">
-             <LogOut size={20} />
-             {!sidebarCollapsed && <span>Logout</span>}
-           </button>
-         </div>
-       </nav>
+                <div className="globaladmin_sidebar_footer">
+                    <button onClick={handleLogout} className="globaladmin_logout_btn">
+                        <LogOut size={20} />
+                        {!sidebarCollapsed && <span>Logout</span>}
+                    </button>
+                </div>
+            </nav>
 
-       <main
-         className={`globaladmin_content ${
-           sidebarCollapsed ? "globaladmin_content_expanded" : ""
-         }`}
-       >
-         <header className="globaladmin_content_header">
-          
-           <h2>Global Admin Dashboard</h2>
+            <main
+                className={`globaladmin_content ${sidebarCollapsed ? "globaladmin_content_expanded" : ""
+                    }`}
+            >
+                <header className="globaladmin_content_header">
+                    <div className="globaladmin_header_left">
+                        <h2>
+                            {/* {location.pathname.includes('/global-admin') && 'Dashboard'} */}
+                            {location.pathname.includes('/global-admin/organizations') && 'Manage Organizations'}
+                            {location.pathname.includes('/global-admin/roles') && 'Manage Roles'}
+                            {location.pathname.includes('/global-admin/content') && 'Manage Content'}
+                            {location.pathname.includes('/global-admin/surveys') && 'Manage Surveys'}
+                            {location.pathname.includes('/global-admin/profile') && 'Manage Profile'}
+                            {location.pathname.includes('/global-admin/activity-log') && 'Manage Activity History'}
+                            {location.pathname.includes('/global-admin/help-center') && 'Manage Help Center'}
+                            {location.pathname.includes('/global-admin/assignments') && 'Assignments'}
+                            {location.pathname.includes('/global-admin/library-user') && 'User Library'}
+                            {location.pathname.includes('/global-admin/portal-library-admin') && 'Admin Library'}
+                            {location.pathname.includes('/global-admin/user-dashboard-config') && 'Admin Dashboard Configuration'}
+                            {location.pathname.includes('/global-admin/admin-dashboard-config') && 'User Dashboard Configuration'}
+                            {location.pathname.includes('/global-admin/analytics-view') && 'Analytics'}
+                            {location.pathname.includes('/global-admin/message-board') && 'Message Board'}
+                            {/* {location.pathname.includes('/global-admin/analytics-view') && 'Manage Help Center'} */}
+                        </h2>
+                    </div>
 
-           {/* <div className="globaladmin_header_left">
-             <h2>
-               {location.pathname.includes("/global-admin/users") &&
-                 "Users Management"}
-               {location.pathname.includes("/admin/groups") &&
-                 "Groups Management"}
-               {location.pathname.includes("/admin/roles") &&
-                 "Roles Management"}
-               {location.pathname.includes("/admin/content-modules") &&
-                 "Content Modules"}
-               {location.pathname.includes("/admin/content-assessments") &&
-                 "Content Assessments"}
-               {location.pathname.includes("/admin/learning-paths") &&
-                 "Learning Paths"}
-               {location.pathname.includes("/admin/profile") && "Admin Profile"}
-               {location.pathname.includes("/admin/manage-surveys") &&
-                 "Manage Surveys"}
-               {location.pathname.includes("/admin/assignments") &&
-                 "Assignments"}
-               {location.pathname.includes("/admin/create-assignment") &&
-                 "Create Assignment"}
-               {location.pathname.includes("/admin/manage-assignments") &&
-                 "Manage Assignments"}
-               {location.pathname.includes("/admin/portal-library") &&
-                 "Portal Library"}
-               {location.pathname.includes("/admin/message-board") &&
-                 "Message Board"}
-               {location.pathname.includes("/admin/analytics-overview") &&
-                 "Analytics Overview"}
-               {location.pathname.includes("/admin/activity-log") &&
-                 "Activity Log"}
-               {location.pathname.includes("/admin/help-center") &&
-                 "Help Center"}
-               {location.pathname === "/admin" && "Admin Dashboard"}
-             </h2>
-           </div> */}
-           <div className="globaladmin_header_right">
-             <div className="globaladmin_notification_container">
-               <div
-                 className="globaladmin_notification_icon"
-                 onClick={toggleNotifications}
-               >
-                 <Bell size={24} />
-                 {unreadCount > 0 && (
-                   <span className="globaladmin_notification_badge">
-                     {unreadCount}
-                   </span>
-                 )}
-               </div>
 
-               {notificationsOpen && (
-                 <div className="globaladmin_notification_dropdown">
-                   <div className="globaladmin_notification_header">
-                     <h4>Notifications</h4>
-                     <button
-                       className="globaladmin_notification_close"
-                       onClick={toggleNotifications}
-                     >
-                       <X size={16} />
-                     </button>
-                   </div>
+                    <div className="globaladmin_header_right">
+                        <div className='userdata'>
+                            <h4>{user ? `${user.firstName} ${user.lastName}` : "GlobalAdmin User"}</h4>
 
-                   <div className="globaladmin_notification_list">
-                     {notifications.length === 0 ? (
-                       <div className="globaladmin_notification_empty">
-                         No notifications
-                       </div>
-                     ) : (
-                       notifications.map((notification) => (
-                         <div
-                           key={notification.id}
-                           className={`globaladmin_notification_item ${
-                             notification.read
-                               ? "globaladmin_notification_read"
-                               : ""
-                           }`}
-                           onClick={() =>
-                             handleNotificationClick(notification.id)
-                           }
-                         >
-                           <div className="globaladmin_notification_content">
-                             <h5>{notification.title}</h5>
-                             <p>{notification.message}</p>
-                             <span className="globaladmin_notification_time">
-                               {formatNotificationDate(notification.date)}
-                             </span>
-                           </div>
-                         </div>
-                       ))
-                     )}
-                   </div>
-                 </div>
-               )}
-             </div>
+                        </div>
+                        <div className="globaladmin_notification_container">
 
-             <div className="globaladmin_profile_container">
-               <div
-                 className="globaladmin_profile_icon"
-                 onClick={toggleProfileDropdown}
-               >
-                 <div className="globaladmin_profile_initials">
-                   {getUserInitials()}
-                 </div>
-               </div>
-               {profileDropdownOpen && (
-                 <div className="globaladmin_profile_dropdown">
-                   <div className="globaladmin_profile_header">
-                     <div className="globaladmin_profile_initials admin_profile_initials_large">
-                       {getUserInitials()}
-                     </div>
-                     <div className="globaladmin_profile_info">
-                       <h4>{user?.name || "GlobalAdmin User"}</h4>
-                       <p>{user?.email || "globaladmin@example.com"}</p>
-                     </div>
-                   </div>
-                   <ul className="globaladmin_profile_menu">
-                     <li onClick={navigateToProfile}>
-                       <User size={16} />
-                       <span>My Profile</span>
-                     </li>
-                     <li onClick={handleLogout}>
-                       <LogOut size={16} />
-                       <span>Logout</span>
-                     </li>
-                   </ul>
-                 </div>
-               )}
-             </div>
-           </div>
-         </header>
-         <div className="globaladmin_content_body">
-           <Outlet />
-         </div>
-       </main>
-     </div>
-   );
- };
- 
- export default GlobalAdminLayout;
+                            <div
+                                className="globaladmin_notification_icon"
+                                onClick={toggleNotifications}
+                            >
+                                <Bell size={24} />
+
+                                {unreadCount > 0 && (
+                                    <span className="globaladmin_notification_badge">
+                                        {unreadCount}
+                                    </span>
+                                )}
+                            </div>
+
+                            {notificationsOpen && (
+                                <div className="globaladmin_notification_dropdown">
+                                    <div className="globaladmin_notification_header">
+                                        <h4>Notifications</h4>
+                                        <button
+                                            className="globaladmin_notification_close"
+                                            onClick={toggleNotifications}
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+
+                                    <div className="globaladmin_notification_list">
+                                        {notifications.length === 0 ? (
+                                            <div className="globaladmin_notification_empty">
+                                                No notifications
+                                            </div>
+                                        ) : (
+                                            notifications.map((notification) => (
+                                                <div
+                                                    key={notification.id}
+                                                    className={`globaladmin_notification_item ${notification.read
+                                                        ? "globaladmin_notification_read"
+                                                        : ""
+                                                        }`}
+                                                    onClick={() =>
+                                                        handleNotificationClick(notification.id)
+                                                    }
+                                                >
+                                                    <div className="globaladmin_notification_content">
+                                                        <h5>{notification.title}</h5>
+                                                        <p>{notification.message}</p>
+                                                        <span className="globaladmin_notification_time">
+                                                            {formatNotificationDate(notification.date)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="globaladmin_profile_container">
+                            <div
+                                className="globaladmin_profile_icon"
+                                onClick={toggleProfileDropdown}
+                            >
+                                <div className="globaladmin_profile_initials">
+                                    {getUserInitials()}
+                                </div>
+                            </div>
+                            {profileDropdownOpen && (
+                                <div className="globaladmin_profile_dropdown">
+                                    <div className="globaladmin_profile_header">
+                                        <div className="globaladmin_profile_initials admin_profile_initials_large">
+                                            {getUserInitials()}
+                                        </div>
+                                        <div className="globaladmin_profile_info">
+                                            <h4>{user ? `${user.firstName} ${user.lastName}` : "GlobalAdmin User"}</h4>
+                                            <p>{user?.email || "globaladmin@example.com"}</p>
+
+                                        </div>
+                                    </div>
+                                    <ul className="globaladmin_profile_menu">
+                                        <li onClick={navigateToProfile}>
+                                            <User size={16} />
+                                            <span>My Profile</span>
+                                        </li>
+                                        <li onClick={handleProfileLogout}>
+                                            <LogOut size={16} />
+                                            <span>Logout</span>
+                                        </li>
+
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+
+                </header>
+
+
+                <div className="globaladmin_content_body">
+                    <Outlet />
+                </div>
+            </main>
+        </div>
+    );
+};
+
+export default GlobalAdminLayout;

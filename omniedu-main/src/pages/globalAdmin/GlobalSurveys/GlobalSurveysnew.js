@@ -31,9 +31,11 @@ const GlobalSurvey = () => {
   // handle input change
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    const newValue = type === "checkbox" ? checked : value;
+
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: newValue,
     });
   };
 
@@ -60,12 +62,48 @@ const GlobalSurvey = () => {
     const updatedQuestions = formData.questions.filter((_, i) => i !== index);
     setFormData({ ...formData, questions: updatedQuestions });
   };
+  
+  const handleOptionChange = (qIndex, optIndex, newValue) => {
+  setFormData((prev) => {
+    const updatedQuestions = prev.questions.map((q, i) => {
+      if (i === qIndex) {
+        const updatedOptions = [...q.options];
+        updatedOptions[optIndex] = newValue;
+        return { ...q, options: updatedOptions };
+      }
+      return q;
+    });
+    return { ...prev, questions: updatedQuestions };
+  });
+};
+
+const addOption = (qIndex) => {
+  setFormData((prev) => {
+    const updatedQuestions = prev.questions.map((q, i) =>
+      i === qIndex ? { ...q, options: [...q.options, ""] } : q
+    );
+    return { ...prev, questions: updatedQuestions };
+  });
+};
+
+const removeOption = (qIndex, optIndex) => {
+  setFormData((prev) => {
+    const updatedQuestions = prev.questions.map((q, i) => {
+      if (i === qIndex) {
+        const updatedOptions = q.options.filter((_, j) => j !== optIndex);
+        return { ...q, options: updatedOptions };
+      }
+      return q;
+    });
+    return { ...prev, questions: updatedQuestions };
+  });
+};
+
 
   // submit form
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // ✅ Normalize payload for backend
     const payload = {
       title: formData.title,
       description: formData.description,
@@ -73,14 +111,17 @@ const GlobalSurvey = () => {
       start_date: formData.start_date || null,
       end_date: formData.end_date || null,
       is_active: formData.is_active,
+      created_by: "admin-user-uuid", // replace with actual logged-in user uuid
       questions: formData.questions.map((q) => ({
-        question_text: q.question_text,
-        question_type: q.question_type,
-        options:
-          q.question_type === "multiple_choice"
-            ? q.options.filter((opt) => opt.trim() !== "")
-            : [],
-      })),
+  question_text: q.question_text,
+  question_type: q.question_type,
+  options:
+    q.question_type === "multiple_choice" || q.question_type === "rating"
+      ? q.options.filter((opt) => opt.trim() !== "")
+      : [],
+})),
+
+    
     };
 
     if (editingSurvey) {
@@ -112,9 +153,25 @@ const GlobalSurvey = () => {
     <div className="survey-container">
       <div className="survey-header">
         <h2>Global Surveys</h2>
-        <button className="add-btn" onClick={() => setShowForm(true)}>
-          + Add Survey
-        </button>
+       <button
+  className="add-btn"
+  onClick={() => {
+    setEditingSurvey(null); // clear editing mode
+    setFormData({
+      title: "",
+      description: "",
+      survey_type: "text",
+      start_date: "",
+      end_date: "",
+      is_active: true,
+      questions: [{ question_text: "", question_type: "text", options: [] }],
+    }); // reset form
+    setShowForm(true); // show modal
+  }}
+>
+  + Add Survey
+</button>
+
       </div>
 
       {/* Table */}
@@ -143,9 +200,7 @@ const GlobalSurvey = () => {
                     : "-"}
                 </td>
                 <td>
-                  {s.end_date
-                    ? new Date(s.end_date).toLocaleDateString()
-                    : "-"}
+                  {s.end_date ? new Date(s.end_date).toLocaleDateString() : "-"}
                 </td>
                 <td>
                   <span
@@ -172,21 +227,26 @@ const GlobalSurvey = () => {
                   </button>
                   <button
                     className="edit-btn"
-                    onClick={() => {
-                      setEditingSurvey(s);
-                      setFormData({
-                        title: s.title,
-                        description: s.description || "",
-                        survey_type: s.survey_type,
-                        start_date: s.start_date
-                          ? s.start_date.split("T")[0]
-                          : "",
-                        end_date: s.end_date ? s.end_date.split("T")[0] : "",
-                        is_active: s.is_active,
-                        questions: s.questions || [],
-                      });
-                      setShowForm(true);
-                    }}
+                   onClick={() => {
+  setEditingSurvey(s);
+  setFormData({
+    title: s.title,
+    description: s.description || "",
+    survey_type: s.survey_type,
+    start_date: s.start_date ? s.start_date.split("T")[0] : "",
+    end_date: s.end_date ? s.end_date.split("T")[0] : "",
+    is_active: s.is_active,
+    // ✅ Deep clone questions so they're editable
+    questions: (s.questions || []).map((q) => ({
+  question_text: q.question_text,
+  question_type: q.question_type,
+  options: [...(q.options || [])], // ✅ deep copy
+})),
+
+  });
+  setShowForm(true);
+}}
+
                   >
                     Edit
                   </button>
@@ -284,27 +344,19 @@ const GlobalSurvey = () => {
                     placeholder="Enter question"
                     value={q.question_text}
                     onChange={(e) =>
-                      handleQuestionChange(
-                        index,
-                        "question_text",
-                        e.target.value
-                      )
+                      handleQuestionChange(index, "question_text", e.target.value)
                     }
                     required
                   />
                   <select
                     value={q.question_type}
                     onChange={(e) =>
-                      handleQuestionChange(
-                        index,
-                        "question_type",
-                        e.target.value
-                      )
+                      handleQuestionChange(index, "question_type", e.target.value)
                     }
                   >
                     <option value="text">Text</option>
-                    
                     <option value="multiple_choice">Multiple Choice</option>
+                    <option value="rating">Rating</option>
                   </select>
                   <button
                     type="button"
@@ -315,7 +367,7 @@ const GlobalSurvey = () => {
                   </button>
 
                   {/* Options for Multiple Choice */}
-                  {q.question_type === "multiple_choice" && (
+                  {/* {q.question_type === "multiple_choice" && (
                     <div className="options-box">
                       {q.options.map((opt, optIndex) => (
                         <div key={optIndex} className="option-row">
@@ -326,11 +378,7 @@ const GlobalSurvey = () => {
                             onChange={(e) => {
                               const updatedOptions = [...q.options];
                               updatedOptions[optIndex] = e.target.value;
-                              handleQuestionChange(
-                                index,
-                                "options",
-                                updatedOptions
-                              );
+                              handleQuestionChange(index, "options", updatedOptions);
                             }}
                           />
                           <button
@@ -340,11 +388,7 @@ const GlobalSurvey = () => {
                               const updatedOptions = q.options.filter(
                                 (_, i) => i !== optIndex
                               );
-                              handleQuestionChange(
-                                index,
-                                "options",
-                                updatedOptions
-                              );
+                              handleQuestionChange(index, "options", updatedOptions);
                             }}
                           >
                             ✖
@@ -355,18 +399,123 @@ const GlobalSurvey = () => {
                         type="button"
                         className="add-option-btn"
                         onClick={() =>
-                          handleQuestionChange(index, "options", [
-                            ...q.options,
-                            "",
-                          ])
+                          handleQuestionChange(index, "options", [...q.options, ""])
                         }
                       >
                         + Add Option
                       </button>
                     </div>
-                  )}
+                  )} */}
+                  {/* Options for Multiple Choice */}
+{q.question_type === "multiple_choice" && (
+  <div className="options-box">
+    {q.options.map((opt, optIndex) => (
+      <div key={optIndex} className="option-row">
+        <input
+          type="text"
+          placeholder={`Option ${optIndex + 1}`}
+          value={opt}
+          onChange={(e) =>
+            handleOptionChange(index, optIndex, e.target.value)
+          }
+        />
+        <button
+          type="button"
+          className="remove-option-btn"
+          onClick={() => removeOption(index, optIndex)}
+        >
+          ✖
+        </button>
+      </div>
+    ))}
+    <button
+      type="button"
+      className="add-option-btn"
+      onClick={() => addOption(index)}
+    >
+      + Add Option
+    </button>
+  </div>
+)}
+
+                  {/* Options for Rating */}
+                  {/* {q.question_type === "rating" && (
+                    <div className="options-box">
+                      {q.options.map((opt, optIndex) => (
+                        <div key={optIndex} className="option-row">
+                          <input
+                            type="text"
+                            placeholder={`Option ${optIndex + 1}`}
+                            value={opt}
+                            onChange={(e) => {
+                              const updatedOptions = [...q.options];
+                              updatedOptions[optIndex] = e.target.value;
+                              handleQuestionChange(index, "options", updatedOptions);
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className="remove-option-btn"
+                            onClick={() => {
+                              const updatedOptions = q.options.filter(
+                                (_, i) => i !== optIndex
+                              );
+                              handleQuestionChange(index, "options", updatedOptions);
+                            }}
+                          >
+                            ✖
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        className="add-option-btn"
+                        onClick={() =>
+                          handleQuestionChange(index, "options", [...q.options, ""])
+                        }
+                      >
+                        + Add Option
+                      </button>
+                    </div>
+                  )} */}
+                   {/* Options for Multiple Choice */}
+{q.question_type === "rating" && (
+  <div className="options-box">
+    {q.options.map((opt, optIndex) => (
+      <div key={optIndex} className="option-row">
+        <input
+          type="text"
+          placeholder={`Option ${optIndex + 1}`}
+          value={opt}
+          onChange={(e) =>
+            handleOptionChange(index, optIndex, e.target.value)
+          }
+        />
+        <button
+          type="button"
+          className="remove-option-btn"
+          onClick={() => removeOption(index, optIndex)}
+        >
+          ✖
+        </button>
+      </div>
+    ))}
+    <button
+      type="button"
+      className="add-option-btn"
+      onClick={() => addOption(index)}
+    >
+      + Add Option
+    </button>
+  </div>
+)}
+
+
                 </div>
               ))}
+
+
+
               <button
                 type="button"
                 className="add-question-btn"

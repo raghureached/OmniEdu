@@ -57,6 +57,7 @@ const GlobalContentManagement = () => {
   };
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
+    // console.log(name, value,files);
     if (name === "file") {
       setNewContent({ ...newContent, file: files[0] });
     } else {
@@ -66,14 +67,17 @@ const GlobalContentManagement = () => {
   const handleOpenContent = (contentId) => {
     navigate(`/global-admin/content/${contentId}`);
   };
+  const handleFileClick = (file) => {
+    window.open(file)
+  };
 
   const handleAddContent = async () => {
     // Validate form
-    if (!newContent.title || !newContent.type || !newContent.content) {
+    console.log(newContent)
+    if (!newContent.title || !newContent.type || !newContent.content || !newContent.file) {
       alert("Please fill all required fields");
       return;
     }
-
     // Dispatch to Redux or add locally
     dispatch(
       createContent({
@@ -94,7 +98,7 @@ const GlobalContentManagement = () => {
       title: content.title,
       type: content.type,
       content: content.content,
-      file: null, // Reset file unless user uploads a new one
+      file: content.file_url, // Reset file unless user uploads a new one
     });
     setEditContentId(content.uuid);
     setShowEditModal(true);
@@ -113,7 +117,10 @@ const GlobalContentManagement = () => {
     setNewContent({ title: "", type: "theory", content: "", file: null });
   };
 
-
+const handleOpenModal = () => {
+    setShowModal(true);
+    setNewContent({ title: "", type: "", content: "", file: null });
+  };
   return (
     <div className="global-content-management">
       <div
@@ -121,7 +128,7 @@ const GlobalContentManagement = () => {
         style={{ paddingLeft: "20px" }}
       >
         <h1 className='page-title'>Global Content Management</h1>
-        <button className="btn-primary" onClick={() => setShowModal(true)}>Add Global Content</button>
+        <button className="btn-primary" onClick={() => handleOpenModal()}> + Add Global Content</button>
       </div>
       {/* {error && <div className="error-message">{error}</div>} */}
 
@@ -254,6 +261,22 @@ const GlobalContentManagement = () => {
                 rows={4}
                 className="modal-input"
               ></textarea>
+            </label>
+            <label>
+              Status
+              <select
+                name="status"
+                value={newContent.status}
+                onChange={handleInputChange}
+                className="modal-input"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </label>  
+            <label>
+              File
+              <span onClick={() => handleFileClick(newContent.file)}>View File</span>
             </label>
             <label>
               Upload File

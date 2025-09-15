@@ -10,6 +10,7 @@
   width: 240px;
   background-color: #ffffff;
   border-right: 1px solid rgba(255, 255, 255, 0.1);
+  color:#5570F1;
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -219,7 +220,7 @@
 .globaladmin_menu_toggle {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.8);
+  color: #5570F1;
   cursor: pointer;
   padding: 0.25rem;
   border-radius: 0.25rem;
@@ -231,7 +232,7 @@
 
 .globaladmin_menu_toggle:hover {
   background-color: rgba(255, 255, 255, 0.1);
-  color: white;
+  color: #4d67ea;
 }
 
 /* Header Styles */

@@ -16,7 +16,7 @@
   }
   
   .survey-header h1 {
-    font-size: 1.5rem;
+    font-size: 30px;
     font-weight: 600;
   }
   
@@ -95,13 +95,14 @@
   }
   
   .survey-status-draft {
-    background: #fef9c3;
-    color: #eab308;
+    background-color: #fef2f2;
+    color: #991b1b;
   }
   
+  
   .survey-status-closed {
-    background: #fee2e2;
-    color: #ef4444;
+     background-color: #fef2f2;
+    color: #991b1b;
   }
   
   /* Actions */
@@ -116,36 +117,23 @@
   }
   
   .survey-btn-view {
-    background: none !important;
-    color: #3b82f6 !important;
-    border: none !important;
-    cursor: pointer !important;
-    font-weight: 500 !important;
-    text-decoration: underline !important;
+    background: #f3f4f6;
   }
   .survey-btn-view:hover {
     background: #e5e7eb;
   }
   
   .survey-btn-edit {
-    background: none !important;
-    border: none !important;
-    cursor: pointer !important;
-    font-weight: 500 !important;
-    text-decoration: underline !important;
-    color: #6b7280 !important;
+    background: #dbeafe;
+    color: #2563eb;
   }
   .survey-btn-edit:hover {
-    background: #e5e7eb;
+    background: #bfdbfe;
   }
   
   .survey-btn-delete {
-    background: none !important;
-    color: #ef4444 !important;
-    border: none !important;
-    cursor: pointer !important;
-    font-weight: 500 !important;
-    text-decoration: underline !important;
+    background: #fee2e2;
+    color: #ef4444;
   }
   .survey-btn-delete:hover {
     background: #fecaca;
@@ -398,7 +386,49 @@
 .create-btn:hover {
   background: #1d4ed8;
 }
+/* loading screen  */
 
+.loading-screen {
+  position: relative;
+  width: 100%; /* adjust the width as needed */
+  height: 650px; /* adjust the height as needed */
+  border-radius: 10px;
+  border: #bb9898;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color:#FFFFFF;
+  
+}
+.image-div{
+    width: 1000px;
+    height: 700px;
+    border:#212529;
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap:12px;
+   
+}
+.loading-image {
+  width: 50px; /* adjust the width of the loading image */
+  height: 50px; /* adjust the height of the loading image */
+  
+}.loading-div h2 {
+  font-family: Arial, sans-serif;
+}
+.loading-div p{
+  font-family: Arial, sans-serif;
+  font-size: small;
+
+}
+.loading-div button{
+     gap:10px
+    
+
+}
 /* Animations */
 @keyframes fadeIn {
   from {

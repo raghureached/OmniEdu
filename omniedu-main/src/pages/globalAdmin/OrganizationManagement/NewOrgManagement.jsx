@@ -44,7 +44,9 @@ const OrganizationManagement = () => {
   const [orgId, setOrgId] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
   const [showOrgModal, setShowOrgModal] = useState(false);
-  const [plan,setPlan] = useState(null);
+  const [plan, setPlan] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -67,17 +69,18 @@ const OrganizationManagement = () => {
     setPlans(data);
   }
   const openForm = (org = null) => {
+    // console.log(org)
     if (org) {
       setEditMode(true);
       setCurrentOrg(org);
-      setPlan(plans.find((plan)=>plan._id === org.planId));
+      setPlan(plans.find((plan) => plan._id === org.planId));
       setFormData({
         name: org.name || "",
         email: org.email || "",
         status: org.status || "Active",
-        logo: null,
+        logo: org.logo_url || "",
         documents: org.documents || [],
-        planId: org.planId || "",
+        planId: org.plan || "",
         start_date: org.start_date
           ? new Date(org.start_date).toISOString().split("T")[0]
           : "",
@@ -133,7 +136,8 @@ const OrganizationManagement = () => {
     e.preventDefault();
     // setLoading(true);
     if (editMode) {
-      dispatch(updateOrganization({ id: currentOrg.id, ...formData }));
+      console.log(formData)
+      dispatch(updateOrganization({ id: currentOrg.uuid, data: formData }));
     } else {
       dispatch(createOrganization(formData));
     }
@@ -155,7 +159,7 @@ const OrganizationManagement = () => {
   };
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    // console.log(name,value)
+    console.log(name,value)
     dispatch(
       setFilters({
         [name]: value,
@@ -236,6 +240,7 @@ const OrganizationManagement = () => {
                 <Search size={16} color="#6b7280" className="search-icon" />
                 <input
                   type="text"
+                  name="name"
                   placeholder="Search.."
                   className="search-input"
                   onChange={(e) => handleFilterChange(e)}
@@ -243,10 +248,11 @@ const OrganizationManagement = () => {
               </div>
 
               <div className="controls-right">
-                <button className="control-btn">
+                <button className="control-btn" onClick={() => setShowFilters((prev) => !prev)}>
                   <Filter size={16} />
                   Filter
                 </button>
+
                 {/* <button className="control-btn">
                   <Share size={16} />
                   Share
@@ -256,9 +262,51 @@ const OrganizationManagement = () => {
                 </button>
               </div>
             </div>
+            {showFilters && (
+              <div className="filter-panel">
+                {/* Status Filter */}
+                <div className="filter-group">
+                  <label>Status</label>
+                  <select
+                    name="status"
+                    value={filters?.status || ""}
+                    onChange={handleFilterChange}
+                  >
+                    <option value="">All</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
 
+                {/* Plan Filter */}
+                <div className="filter-group">
+                  <label>Plan</label>
+                  <select
+                    name="plan"
+                    value={filters?.plan || ""}
+                    onChange={handleFilterChange}
+                  >
+                    <option value="">All</option>
+                    {plans.map((plan) => (
+                      <option key={plan._id} value={plan._id}>
+                        {plan.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="filter-actions">
+                  {/* <button className="apply-btn" onClick={() => setShowFilters(false)}>
+                    Apply
+                  </button> */}
+                  <button className="reset-btn" onClick={resetFilters}>
+                    Clear
+                  </button>
+                </div>
+              </div>
+            )}
             {/* Table */}
-            {loading ? <CustomLoader text="Loading Organizations..."/> : <div className="table-container">
+            {loading ? <CustomLoader text="Loading Organizations..." /> : <div className="table-container">
               <div className="table-header">
                 <input
                   type="checkbox"

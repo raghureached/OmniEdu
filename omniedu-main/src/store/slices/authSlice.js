@@ -121,12 +121,22 @@ export const resetPassword = createAsyncThunk(
   }
 );
 
+// export const logout = createAsyncThunk('auth/logout', async () => {
+//   localStorage.removeItem('token');
+//   try {
+//     await api.post('/auth/logout');
+//   } catch (error) {
+//     // Silently handle API errors during logout
+//     console.log('Logout API call failed, but continuing logout process');
+//   }
+//   return null;
+// });
 export const logout = createAsyncThunk('auth/logout', async () => {
   localStorage.removeItem('token');
+  localStorage.removeItem('user');   // add this
   try {
     await api.post('/auth/logout');
   } catch (error) {
-    // Silently handle API errors during logout
     console.log('Logout API call failed, but continuing logout process');
   }
   return null;

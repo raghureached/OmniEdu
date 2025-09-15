@@ -15,6 +15,7 @@ const OrganizationFormModal = ({
   handleSubmit,
   plans,
 }) => {
+  console.log(formData)
   const [dateRange, setDateRange] = useState([null, null]);
   const [openStart, setOpenStart] = useState(false);
   const [openEnd, setOpenEnd] = useState(false);
@@ -216,13 +217,13 @@ const OrganizationFormModal = ({
                   }}
                   required={!editMode}
                 />
-                {selectedLogo ? "" : <label htmlFor="logo-upload" className="addOrg-upload-label">
+                {(selectedLogo || formData.logo) ? "" : <label htmlFor="logo-upload" className="addOrg-upload-label">
                   Click to upload <span>or drag and drop</span>
                   <div className="addOrg-upload-formats">
                     SVG, PNG, JPG or GIF (max. 800×400px)
                   </div>
                 </label>}
-                {selectedLogo && (
+                {(selectedLogo || formData.logo) && (
                   <div style={{ position: 'absolute', marginTop: 10, display: 'flex', gap: 5, alignItems: 'center', justifyContent: 'center' }}>
                     <button
                       type="button"
@@ -275,7 +276,7 @@ const OrganizationFormModal = ({
                 </label>
 
                 {/* Document icons preview */}
-                <div className="document-icons-list">
+                {documents && <div className="document-icons-list">
                   {documents.map((file, idx) => (
                     <div
                       key={idx}
@@ -292,7 +293,7 @@ const OrganizationFormModal = ({
                       </button>
                     </div>
                   ))}
-                </div>
+                </div>}
 
               </div>
             </div>
