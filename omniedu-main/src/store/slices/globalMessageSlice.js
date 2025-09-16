@@ -39,7 +39,9 @@ export const deleteMessage = createAsyncThunk(
     'message/deleteMessage',
     async (id, { rejectWithValue }) => {
         try {
-            await api.delete(`/admin/message/${id}`);
+            // console.log(id)
+            const res = await api.delete(`/api/globalAdmin/deleteMessage/${id}`);
+            // console.log(res)
             return id; // return the deleted message id
         } catch (error) {
             return rejectWithValue(error.response.data);
@@ -97,7 +99,7 @@ const globalMessageSlice = createSlice({
                 state.loading = false;
                 // ✅ remove deleted message by id
                 state.currentMessages = state.currentMessages.filter(
-                    (msg) => msg.id !== action.payload
+                    (msg) => msg.uuid !== action.payload
                 );
             })
             .addCase(deleteMessage.rejected, (state, action) => {

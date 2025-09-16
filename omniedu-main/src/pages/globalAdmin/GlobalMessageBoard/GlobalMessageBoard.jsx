@@ -78,7 +78,9 @@ const GlobalMessageBoard = () => {
       </div>
 
       {/* Loading & Error States */}
+
       {/* {loading && <div className="loading">Loading messages...</div>} */}
+
       {error && <div className="error">Error: {error}</div>}
 
       {/* Messages */}
@@ -108,7 +110,7 @@ const GlobalMessageBoard = () => {
             </div>
           ))
         ) : (
-          <div className="no-messages">{orgId==="" ? "No messages yet" : "Select an organization to see messages"}</div>
+          <div className="no-messages">{orgId && currentMessages.length === 0 ? "No messages yet" : "Select an organization to see messages"}</div>
         )}
       </div>}
 
