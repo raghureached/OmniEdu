@@ -1,0 +1,32 @@
+.custom-loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 500px;
+  }
+  
+  .custom-loader-spinner {
+    width: 48px;
+    height: 48px;
+    border: 5px solid #B7B7B7;       /* Grey */
+    border-top: 5px solid #5570F1;    /* Primary loader color */
+    border-radius: 50%;
+    animation: custom-spin 1s linear infinite;
+    background: transparent;
+    margin-bottom: 14px;
+  }
+  
+  @keyframes custom-spin {
+    0% { transform: rotate(0deg);}
+    100% { transform: rotate(360deg);}
+  }
+  
+  .custom-loader-text {
+    color: #5570F1;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+    letter-spacing: 0.02em;
+  }
+  

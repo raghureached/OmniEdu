@@ -1,0 +1,354 @@
+/* Calendar Component Styles */
+.calendar-section {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.calendar-header-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.calendar-navigation {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.calendar-navigation h4 {
+  margin: 0;
+  color: #334155;
+  min-width: 120px;
+  text-align: center;
+}
+
+.calendar-nav-button {
+  background-color: #f1f5f9;
+  border: none;
+  border-radius: 4px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+  font-weight: bold;
+}
+
+.calendar-nav-button:hover {
+  background-color: #e2e8f0;
+}
+
+.calendar-container {
+  display: flex;
+  gap: 20px;
+}
+
+.calendar-grid {
+  flex: 2;
+  min-width: 280px;
+}
+
+.calendar-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-weight: 500;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.calendar-weekday {
+  padding: 5px;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+.calendar-day {
+  height: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  padding: 5px;
+  background-color: #f8fafc;
+}
+
+.calendar-day:hover {
+  background-color: #f1f5f9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.calendar-day.empty {
+  background-color: transparent;
+  cursor: default;
+  box-shadow: none;
+}
+
+.calendar-day.empty:hover {
+  transform: none;
+}
+
+.calendar-day.selected {
+  background-color: #e0f2fe;
+  border: 1px solid #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.calendar-day.has-assignment {
+  font-weight: 500;
+}
+
+.calendar-day.today {
+  background-color: #eff6ff;
+  border: 1px dashed #3b82f6;
+}
+
+.day-number {
+  margin-bottom: 5px;
+}
+
+.assignment-indicators {
+  display: flex;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.assignment-type-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin: 0 2px;
+  display: inline-block;
+}
+
+.assignment-type-indicator.course {
+  background-color: #3b82f6; /* Blue */
+}
+
+.assignment-type-indicator.workshop {
+  background-color: #8b5cf6; /* Purple */
+}
+
+.assignment-type-indicator.exam {
+  background-color: #ef4444; /* Red */
+}
+
+.assignment-type-indicator.certification {
+  background-color: #f59e0b; /* Orange */
+}
+
+.selected-date-assignments {
+  flex: 1;
+  min-width: 200px;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.selected-date-assignments h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #334155;
+  font-size: 16px;
+}
+
+.assignment-navigation-hint {
+  background-color: #f0f9ff;
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 15px;
+  border-left: 3px solid #3b82f6;
+}
+
+.assignment-navigation-hint p {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.assignment-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.assignment-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background-color: white;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.assignment-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.assignment-category-indicator {
+  width: 4px;
+  height: 100%;
+  border-radius: 2px;
+  margin-right: 10px;
+}
+
+.assignment-category-indicator.assigned {
+  background-color: #3b82f6; /* Blue */
+}
+
+.assignment-category-indicator.additional {
+  background-color: #10b981; /* Green */
+}
+
+.assignment-category-indicator.mandatory {
+  background-color: #ef4444; /* Red */
+}
+
+.assignment-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.assignment-title {
+  font-weight: 500;
+  color: #334155;
+  margin-bottom: 3px;
+}
+
+.assignment-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.assignment-type {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  text-transform: capitalize;
+  margin-right: 5px;
+}
+
+.assignment-type.course {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+.assignment-type.workshop {
+  background-color: #ede9fe;
+  color: #7c3aed;
+}
+
+.assignment-type.exam {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.assignment-type.certification {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.assignment-status {
+  font-size: 12px;
+  color: #64748b;
+  text-transform: capitalize;
+}
+
+.assignment-item.completed .assignment-title {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+.no-assignments, .select-date-prompt {
+  color: #94a3b8;
+  text-align: center;
+  font-style: italic;
+  margin: 20px 0;
+}
+
+/* Assignment details popup */
+.assignment-details-popup {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #3b82f6;
+}
+
+.assignment-details-popup h5 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #1e293b;
+  font-size: 16px;
+}
+
+.assignment-description {
+  color: #64748b;
+  font-size: 14px;
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+.assignment-detail-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assignment-detail-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.detail-label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.detail-value {
+  color: #334155;
+}
+
+.detail-value.status-completed {
+  color: #10b981;
+}
+
+.detail-value.status-in-progress {
+  color: #f59e0b;
+}
+
+.detail-value.status-not-started {
+  color: #64748b;
+}
+
+@media (max-width: 768px) {
+  .calendar-container {
+    flex-direction: column;
+  }
+}

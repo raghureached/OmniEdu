@@ -1,0 +1,245 @@
+/* Assigned.css */
+
+.assigned-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.assigned-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+}
+
+.assigned-header h1 {
+  color: #2c3e50;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.assigned-subtitle {
+  color: #7f8c8d;
+  font-size: 1rem;
+  margin: 0 0 1.5rem;
+  line-height: 1.5;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #eaeaea;
+  margin-bottom: 1.5rem;
+}
+
+.tab-button {
+  background: none;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #7f8c8d;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.tab-button.active {
+  color: #3498db;
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: #3498db;
+  border-radius: 3px 3px 0 0;
+}
+
+.tab-button:hover:not(.active) {
+  color: #5d6d7e;
+}
+
+.assigned-content {
+  margin-top: 1rem;
+}
+
+.assigned-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.assigned-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border-top: 4px solid #3498db;
+}
+
+.assigned-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.card-header h3 {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.status-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  margin-left: 0.5rem;
+}
+
+.status-not-started {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.status-in-progress {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+.status-completed {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.card-description {
+  color: #555;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+  flex-grow: 1;
+}
+
+.card-details {
+  margin-bottom: 1.5rem;
+}
+
+.detail-item {
+  display: flex;
+  margin-bottom: 0.75rem;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #7f8c8d;
+  font-size: 0.85rem;
+  min-width: 90px;
+}
+
+.detail-value {
+  color: #34495e;
+  font-size: 0.85rem;
+}
+
+.detail-value.overdue {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+.progress-container {
+  margin-top: 1rem;
+}
+
+.progress-bar {
+  height: 8px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #3498db;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 0.8rem;
+  color: #7f8c8d;
+  display: block;
+  text-align: right;
+}
+
+.launch-button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+  width: 100%;
+  margin-top: auto;
+}
+
+.launch-button:hover {
+  background-color: #2980b9;
+}
+
+.assigned-empty-state {
+  padding: 3rem;
+  text-align: center;
+  color: #95a5a6;
+  font-size: 1.1rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* Different border colors for different types */
+.assigned-card[data-type="training"] {
+  border-top-color: #3498db;
+}
+
+.assigned-card[data-type="assignment"] {
+  border-top-color: #9b59b6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .assigned-container {
+    padding: 1rem;
+  }
+  
+  .assigned-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .tabs {
+    justify-content: center;
+  }
+  
+  .tab-button {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+}

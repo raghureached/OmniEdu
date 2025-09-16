@@ -1,0 +1,255 @@
+/* Organization Management Styles */
+
+.organization-management {
+    padding: 20px;
+}
+
+.organization-management h1 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Filter Section */
+
+.filter-section {
+    background-color: #f5f5f5;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.filter-group input,
+.filter-group select {
+    width: 90%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.filter-actions {
+    display: flex;
+    align-items: flex-end;
+}
+
+/* Action Bar */
+
+.action-bar {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Table Styles */
+
+.table-container {
+    overflow-x: auto;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.data-table th,
+.data-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    gap: 10px;
+}
+
+.data-table th {
+    background-color: #f2f2f2;
+    font-weight: 600;
+    color: #374151;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.data-table tr:hover {
+    background-color: #f9f9f9;
+}
+
+.no-data {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+/* Organization Logo */
+
+.org-logo {
+    max-width: 40px;
+    max-height: 40px;
+    object-fit: contain;
+}
+
+/* Status Badge */
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    text-transform: capitalize;
+}
+
+.status-badge.active {
+    background-color: #e6f7e6;
+    color: #28a745;
+}
+
+.status-badge.inactive {
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+
+.status-badge.pending {
+    background-color: #fff3cd;
+    color: #ffc107;
+}
+
+.status-badge.suspended {
+    background-color: #f8d7da;
+    color: #dc3545;
+}
+
+/* Document Count */
+
+.document-count {
+    background-color: #e9ecef;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 0.85em;
+}
+
+/* Action Buttons */
+
+.actions-cell {
+    white-space: nowrap;
+}
+
+.btn-edit,
+.btn-delete {
+    padding: 5px 10px;
+    margin-right: 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.btn-edit {
+    background-color: #e7f3ff;
+    color: #0d6efd;
+}
+
+.btn-delete {
+    background-color: #f8d7da;
+    color: #dc3545;
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Pagination Info */
+
+.pagination-info {
+    text-align: right;
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+/* Loading */
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+}
+
+.org-logo {
+    width: 100px;
+    height: 100px;
+    margin: 5px;
+    object-fit: cover;
+    border-radius: 70%;
+    overflow: hidden;
+}
+
+/* Pagination */
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 16px;
+    gap: 8px;
+}
+
+.pagination button {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.pagination button:hover:not(:disabled) {
+    background-color: #f0f0f0;
+}
+
+.pagination button.active {
+    background-color: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+}
+
+.pagination button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+@media (max-width:883px) {
+    .filter-row {
+        flex-wrap: wrap;
+    }
+}
