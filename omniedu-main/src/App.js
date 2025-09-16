@@ -46,7 +46,7 @@ import NewOrgManagement from './pages/globalAdmin/OrganizationManagement/NewOrgM
 import GlobalRolesManagement from './pages/globalAdmin/GlobalRolesManagement/GlobalRolesManagement'; 
 import GlobalContentManagement from './pages/globalAdmin/GlobalContentManagement/GlobalContentManagement'; 
 import GlobalSurveys from './pages/globalAdmin/GlobalSurveys/GlobalSurveys'; 
-
+import GlobalPortalActivity from './pages/globalAdmin/GlobalAdminLibraryPortal/GlobalPortal';
 // Import styles
 import './App.css';
 
@@ -147,6 +147,7 @@ function App() {
               <Route path="profile" element={<GlobalProfile />} />
               <Route path="activity-log" element={<GlobalActivityLog />} />
               <Route path="help-center" element={<GlobalHelpCenter />} />
+              <Route path="portal-library-admin" element={<GlobalPortalActivity/>} />
             </Route>
 
             {/* Redirect root to login */}
