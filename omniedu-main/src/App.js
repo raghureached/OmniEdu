@@ -65,6 +65,7 @@ import GlobalMessageBoard from './pages/globalAdmin/GlobalMessageBoard/GlobalMes
 import LoadingScreen from './components/common/Loading/Loading';
 import UserDashBoardConfig from './pages/globalAdmin/UserDashBoardConfig/UserDashBoardConfig';
 import AdminDashBoardConfig from './pages/globalAdmin/AdminDashBoardConfig/AdminDashBoardConfig';
+import GlobalCreateAssignment from './pages/globalAdmin/GlobalAssignments/CreateAssignment';
 
 
 
@@ -140,6 +141,7 @@ function App() {
               <Route path="content" element={<GlobalContentManagement />} />
               <Route path="content/:contentId" element={<GlobalContentDetails />} />
               <Route path="surveys" element={<GlobalSurveys/>} />
+              <Route path="assignments" element={<GlobalCreateAssignment />} />
               <Route path="user-dashboard-config" element={<UserDashBoardConfig />} />
               <Route path="admin-dashboard-config" element={<AdminDashBoardConfig />} />
               <Route path="profile" element={<GlobalProfile />} />

@@ -136,7 +136,7 @@ const OrganizationManagement = () => {
     e.preventDefault();
     // setLoading(true);
     if (editMode) {
-      console.log(formData)
+      // console.log(formData)
       dispatch(updateOrganization({ id: currentOrg.uuid, data: formData }));
     } else {
       dispatch(createOrganization(formData));

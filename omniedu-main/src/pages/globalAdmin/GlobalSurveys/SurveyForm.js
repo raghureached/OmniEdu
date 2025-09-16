@@ -329,10 +329,82 @@ const SurveyForm = ({
               <option value={false}>Inactive</option>
             </select>
           </div>
+         
+
+           {formData.questions.map((q, index) => (
+  <div key={index} className="question-box">
+    {/* Question header with remove button */}
+    <div className="question-header">
+      <span className="question-label">Question {index + 1}</span>
+      <button
+        type="button"
+        className="remove-btn"
+        onClick={() => removeQuestion(index)}
+      >
+        ✖
+      </button>
+    </div>
+
+    {/* Question text */}
+    <input
+      type="text"
+      placeholder="Enter question"
+      value={q.question_text}
+      onChange={(e) =>
+        handleQuestionChange(index, "question_text", e.target.value)
+      }
+      required
+    />
+
+    {/* Question type */}
+    <select
+      value={q.question_type}
+      onChange={(e) =>
+        handleQuestionChange(index, "question_type", e.target.value)
+      }
+    >
+      <option value="text">Text</option>
+      <option value="multiple_choice">Multiple Choice</option>
+      <option value="rating">Rating</option>
+    </select>
+
+    {/* Options Section */}
+    {(q.question_type === "multiple_choice" || q.question_type === "rating") && (
+      <div className="options-box">
+        {q.options.map((opt, optIndex) => (
+          <div key={optIndex} className="option-row">
+            <input
+              type="text"
+              placeholder={`Option ${optIndex + 1}`}
+              value={opt}
+              onChange={(e) =>
+                handleOptionChange(index, optIndex, e.target.value)
+              }
+            />
+            <button
+              type="button"
+              className="remove-option-btn"
+              onClick={() => removeOption(index, optIndex)}
+            >
+              ✖
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          className="add-option-btn"
+          onClick={() => addOption(index)}
+        >
+          + Add Option
+        </button>
+      </div>
+    )}
+  </div>
+))}
 
           {/* Questions */}
           <h4>Questions</h4>
-          {formData.questions.map((q, index) => (
+          {/* {formData.questions.map((q, index) => (
             <div key={index} className="question-box">
               <input
                 type="text"
@@ -362,7 +434,7 @@ const SurveyForm = ({
                 ✖
               </button>
 
-              {/* Options Section */}
+             
               {(q.question_type === "multiple_choice" ||
                 q.question_type === "rating") && (
                 <div className="options-box">
@@ -395,7 +467,8 @@ const SurveyForm = ({
                 </div>
               )}
             </div>
-          ))}
+          ))} */}
+          
 
           <button
             type="button"

@@ -131,6 +131,7 @@
 .permission-section {
   background: #f9fafb;
   border: 1px solid #e2e8f0;
+  margin:5px;
   border-radius: 12px;
   padding: 15px 18px;
 }

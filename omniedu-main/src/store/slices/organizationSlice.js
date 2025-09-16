@@ -144,7 +144,7 @@ export const updateOrganization = createAsyncThunk(
             //     });
             // }
             // console.log('formData', formData)
-            console.log(data)
+            // console.log(data)
             const response = await api.put(
               `/api/globalAdmin/editOrganization/${id}`,
              data,

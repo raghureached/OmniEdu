@@ -98,14 +98,14 @@ import { logout } from '../../../store/slices/authSlice';
 import { fetchNotifications, markNotificationAsRead } from '../../../store/slices/notificationSlice';
 import './GlobalAdminLayout.css';
 import { fetchOrganizations } from "../../../store/slices/organizationSlice";
-import { Menu, Home, Users, UserCheck, Shield, BookOpen, Building2, CheckCircle, Award, UserRoundPen, BookCopy, Clock, User, HelpCircle, LogOut, Bell, X, BarChart, MessageCircle } from 'lucide-react';
+import { Menu, Home, UserCheck, Shield, BookOpen, Building2, CheckCircle, UserRoundPen, BookCopy, Clock, User, LogOut, Bell, X, BarChart, MessageCircle } from 'lucide-react';
 
 const GlobalAdminLayout = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
     const { user } = useSelector((state) => state.auth);
-    const { organizations } = useSelector((state) => state.organizations);
+    // const { organizations } = useSelector((state) => state.organizations);
 
     const { items: notifications, unreadCount } = useSelector(
         (state) => state.notifications
@@ -318,12 +318,12 @@ const GlobalAdminLayout = () => {
                         </Link>
                     </li>
 
-                    <li>
+                    {/* <li>
                         <Link to="/global-admin/library-user" className={isActive("/global-admin/library-user") ? "globaladmin_link_active" : ""}>
                             <BookCopy size={20} />
                             {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Library (User)</span>}
                         </Link>
-                    </li>
+                    </li> */}
 
                     <li>
                         <Link to="/global-admin/portal-library-admin" className={isActive("/global-admin/portal-library-admin") ? "globaladmin_link_active" : ""}>
@@ -406,7 +406,7 @@ const GlobalAdminLayout = () => {
                             {location.pathname.includes('/global-admin/activity-log') && 'Manage Activity History'}
                             {location.pathname.includes('/global-admin/help-center') && 'Manage Help Center'}
                             {location.pathname.includes('/global-admin/assignments') && 'Assignments'}
-                            {location.pathname.includes('/global-admin/library-user') && 'User Library'}
+                            {/* {location.pathname.includes('/global-admin/library-user') && 'User Library'} */}
                             {location.pathname.includes('/global-admin/portal-library-admin') && 'Admin Library'}
                             {location.pathname.includes('/global-admin/user-dashboard-config') && 'Admin Dashboard Configuration'}
                             {location.pathname.includes('/global-admin/admin-dashboard-config') && 'User Dashboard Configuration'}
@@ -497,7 +497,7 @@ const GlobalAdminLayout = () => {
                                             {getUserInitials()}
                                         </div>
                                         <div className="globaladmin_profile_info">
-                                            <h4>{user ? `${user.firstName} ${user.lastName}` : "GlobalAdmin User"}</h4>
+                                            <h4>{user ? `${user.firstName} ${user.lastName}` : "GlobalAdmin"}</h4>
                                             <p>{user?.email || "globaladmin@example.com"}</p>
 
                                         </div>

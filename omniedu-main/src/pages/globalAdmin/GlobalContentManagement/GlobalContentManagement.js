@@ -22,7 +22,7 @@ const GlobalContentManagement = () => {
   });
   const navigate = useNavigate()
   useEffect(() => {
-    dispatch(fetchContent({ isGlobal: true }));
+    dispatch(fetchContent());
   }, [dispatch,]);
 
   const handleDeleteContent = (contentId) => {
@@ -73,7 +73,7 @@ const GlobalContentManagement = () => {
 
   const handleAddContent = async () => {
     // Validate form
-    console.log(newContent)
+    // console.log(newContent)
     if (!newContent.title || !newContent.type || !newContent.content || !newContent.file) {
       alert("Please fill all required fields");
       return;

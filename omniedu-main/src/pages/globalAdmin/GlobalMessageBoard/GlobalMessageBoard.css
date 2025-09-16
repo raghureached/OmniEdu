@@ -98,4 +98,64 @@
     color: #94a3b8;
     align-self: flex-end;
   }
-  
+  .message-delete-btn{
+    width:fit-content;
+    color: red;
+
+  }
+
+  .message-actions{
+    display: flex;
+    gap: 6px;
+    align-self: flex-end;
+  }
+
+  .message-board-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151; /* neutral gray */
+  margin-bottom: 6px;
+  display: block;
+}
+
+.message-board-select {
+  width: 100%;
+  max-width: 500px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937; /* dark text */
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  outline: none;
+  appearance: none; /* hide default arrow */
+  cursor: pointer;
+  margin: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease-in-out;
+  background-image: url("data:image/svg+xml,%3Csvg fill='none' height='20' stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 24 24' width='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 18px;
+}
+
+.message-board-select:hover {
+  border-color: #6366f1;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.15);
+}
+
+/* .message-board-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+} */
+
+.message-board-form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.no-messages {
+  text-align: center;
+}

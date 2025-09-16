@@ -8,9 +8,10 @@ import contentReducer from './slices/contentSlice';
 import notificationReducer from './slices/notificationSlice';
 import assignmentReducer from './slices/assignmentSlice';
 import messageReducer from './slices/messageSlice';
+import globalMessageReducer from './slices/globalMessageSlice'
 import activityLogReducer from './slices/activityLogSlice';
 import surveyReducer from './slices/surveySlice';
-
+import globalAssignmentReducer from './slices/globalAssignmentSlice'
 const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -22,8 +23,10 @@ const store = configureStore({
     notifications: notificationReducer,
     assignments: assignmentReducer,
     message: messageReducer,
+    globalMessage:globalMessageReducer ,
     activityLog: activityLogReducer,
     surveys: surveyReducer,
+    globalAssignment: globalAssignmentReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

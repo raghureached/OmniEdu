@@ -219,7 +219,7 @@
 .globaladmin_menu_toggle {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.8);
+  color: #5570F1;
   cursor: pointer;
   padding: 0.25rem;
   border-radius: 0.25rem;
@@ -230,7 +230,7 @@
 }
 
 .globaladmin_menu_toggle:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: #6b81f1;
   color: white;
 }
 

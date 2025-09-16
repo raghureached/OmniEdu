@@ -295,7 +295,7 @@ export const fetchPermissions = createAsyncThunk(
   'roles/fetchPermissions',
   async ( { rejectWithValue }) => {
     try {
-      console.log("fetching")
+      // console.log("fetching")
       const endpoint = '/api/globalAdmin/getPermissions'
       const response = await api.get(endpoint);
       return response.data.data;
@@ -310,9 +310,7 @@ export const createRole = createAsyncThunk(
   'roles/createRole',
   async ({ roleData, isGlobalAdmin = false }, { rejectWithValue }) => {
     try {
-      const endpoint = isGlobalAdmin
-        ? '/api/globalAdmin/addRole'
-        : '/admin/roles';
+      const endpoint = '/api/globalAdmin/createRoleOrg'
       const response = await api.post(endpoint, roleData);
       return response.data.data;
     } catch (error) {
@@ -422,17 +420,11 @@ const roleSlice = createSlice({
       })
       .addCase(updateRole.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.meta.arg.isGlobalAdmin) {
           const index = state.globalRoles.findIndex(
             (role) => role._id === action.payload._id
           );
+          
           if (index !== -1) state.globalRoles[index] = action.payload;
-        } else {
-          const index = state.adminRoles.findIndex(
-            (role) => role._id === action.payload._id
-          );
-          if (index !== -1) state.adminRoles[index] = action.payload;
-        }
       })
       .addCase(updateRole.rejected, (state, action) => {
         state.loading = false;

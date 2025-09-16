@@ -1,0 +1,437 @@
+/* ==============================
+   Global Create Assignment
+   ============================== */
+
+.global-assign-create-assignment-container {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+  background: #f4f6fa;
+  min-height: 100vh;
+  font-family: "Segoe UI", Roboto, sans-serif;
+}
+
+.global-assign-assignment-form-container {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 950px;
+  padding: 40px 50px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.07);
+  border: 1px solid #e5e7eb;
+}
+
+/* Stepper Navigation */
+.global-assign-assignment-steps {
+  display: flex;
+  justify-content: space-between;
+  gap: 32px;
+  margin-bottom: 40px;
+}
+
+.global-assign-assignment-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+  padding: 0 12px;
+  min-width: 100px;
+}
+
+.global-assign-assignment-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 18px;
+  right: -50%;
+  width: 100%;
+  height: 3px;
+  background: #d1d5db;
+  border-radius: 2px;
+  z-index: 0;
+}
+.global-assign-assignment-step.global-assign-completed:not(:last-child)::after {
+  background: #5570f1;
+}
+
+/* Step states */
+.global-assign-assignment-step.global-assign-active .global-assign-step-number {
+  background: #5570f1;
+  box-shadow: 0 0 12px rgba(85, 112, 241, 0.5);
+}
+.global-assign-assignment-step.global-assign-completed .global-assign-step-number {
+  background: #34d399;
+}
+
+.global-assign-step-number {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #d1d5db;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+  font-weight: 600;
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.global-assign-step-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4b5563;
+  margin-top: 8px;
+  white-space: nowrap;
+}
+
+/* Form */
+.global-assign-assignment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.global-assign-step-title {
+  font-size: 18px;
+  margin: 14px 0;
+  font-weight: 600;
+  color: #111827;
+}
+.global-assign-content-selection-note {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 10px 0;
+}
+
+/* Inputs */
+.global-assign-assignment-form input,
+.global-assign-assignment-form select,
+.global-assign-assignment-form textarea {
+  padding: 12px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  outline: none;
+  transition: border 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  width: 100%;
+  font-size: 14px;
+  background: #f9fafb;
+}
+.global-assign-assignment-form input:focus,
+.global-assign-assignment-form select:focus,
+.global-assign-assignment-form textarea:focus {
+  border-color: #5570f1;
+  box-shadow: 0 0 6px rgba(85, 112, 241, 0.3);
+  background: #fff;
+}
+
+/* Content Items */
+.global-assign-content-items-list {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.global-assign-content-item {
+  padding: 14px 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #fafafa;
+  flex: 1 1 calc(50% - 10px);
+}
+.global-assign-content-item:hover {
+  border-color: #5570f1;
+  background: rgba(85, 112, 241, 0.06);
+}
+.global-assign-content-item.global-assign-selected {
+  border-color: #5570f1;
+  background: #eef2ff;
+}
+.global-assign-content-item-type {
+  font-size: 10px;
+  font-weight: bold;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+.global-assign-content-item-name {
+  font-size: 14px;
+  color: #111827;
+}
+.global-assign-no-content-found {
+  font-size: 14px;
+  color: #9ca3af;
+  margin-top: 12px;
+  text-align: center;
+}
+
+/* Users */
+.global-assign-user-selection {
+  margin-top: 20px;
+}
+.global-assign-users-list {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.global-assign-user-item {
+  padding: 10px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.global-assign-user-item:hover {
+  border-color: #5570f1;
+  background: rgba(85, 112, 241, 0.06);
+}
+.global-assign-user-item.global-assign-selected {
+  border-color: #5570f1;
+  background: #eef2ff;
+}
+.global-assign-user-email {
+  font-weight: bold;
+  font-size: 13px;
+  color: #374151;
+}
+.global-assign-user-name {
+  font-size: 13px;
+  color: #4b5563;
+}
+
+/* Groups */
+.global-assign-group-selection {
+  margin-top: 15px;
+}
+.global-assign-group-select {
+  margin-top: 8px;
+}
+
+/* Dates */
+.global-assign-dates-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.global-assign-date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.global-assign-date-time-inputs {
+  display: flex;
+  gap: 12px;
+}
+.global-assign-date-note {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 8px;
+}
+
+/* Notifications & Recurring */
+.global-assign-notification-option,
+.global-assign-recurring-option {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+.global-assign-recurring-note {
+  font-size: 12px;
+  color: #6b7280;
+  margin-left: 28px;
+  /* margin-top: 4px; */
+}
+
+/* Step Actions */
+.global-assign-step-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+input[type="checkbox"]{
+    outline: none;
+    width: fit-content;
+    height: fit-content;
+}
+/* Buttons */
+.global-assign-next-step-btn,
+.global-assign-create-btn {
+  background: #5570f1;
+  color: white;
+  box-shadow: 0 3px 8px rgba(85, 112, 241, 0.25);
+  padding: 11px 20px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+.global-assign-next-step-btn:hover,
+.global-assign-create-btn:hover {
+  background: #4458d8;
+}
+.global-assign-prev-step-btn {
+  background: #f3f4f6;
+  color: #374151;
+  padding: 11px 20px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+.global-assign-prev-step-btn:hover {
+  background: #e5e7eb;
+}
+.global-assign-cancel-btn {
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 11px 20px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+.global-assign-cancel-btn:hover {
+  background: #fecaca;
+}
+
+/* Step content wrapper */
+.global-assign-assignment-step-content {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 28px 32px;
+  margin-bottom: 20px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+}
+
+/* Audience type selection */
+.global-assign-audience-type-selection {
+  display: flex;
+  gap: 24px;
+  margin: 20px 0;
+}
+
+.global-assign-audience-type-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f9fafb;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.global-assign-audience-type-option:hover {
+  border-color: #5570f1;
+  background: rgba(85, 112, 241, 0.06);
+}
+
+.global-assign-audience-type-option input[type="radio"] {
+  accent-color: #5570f1;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* User selection */
+.global-assign-user-selection {
+  margin-top: 20px;
+}
+
+.global-assign-user-search-input {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  margin-top: 6px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #f9fafb;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.global-assign-user-search-input:focus {
+  border-color: #5570f1;
+  box-shadow: 0 0 6px rgba(85, 112, 241, 0.3);
+  background: #fff;
+}
+
+/* Users list */
+.global-assign-users-list {
+  max-height: 220px;
+  overflow-y: auto;
+  height:220px;
+  padding-right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.global-assign-users-list::-webkit-scrollbar {
+  width: 6px;
+}
+.global-assign-users-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 6px;
+}
+.global-assign-users-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Group selection */
+.global-assign-group-selection {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.global-assign-group-select {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #f9fafb;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.global-assign-group-select:focus {
+  border-color: #5570f1;
+  box-shadow: 0 0 6px rgba(85, 112, 241, 0.3);
+  background: #fff;
+}
+.global-assign-date-input,
+.global-assign-time-input {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  width: 100%;
+  font-size: 14px;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.global-assign-date-input:focus,
+.global-assign-time-input:focus {
+  border-color: #5570f1;
+  box-shadow: 0 0 6px rgba(85, 112, 241, 0.3);
+  background: #fff;
+}

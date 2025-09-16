@@ -89,17 +89,51 @@
 }
 
 /* Questions section */
-.question-box {
+.survey_question-box {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 10px;
   margin-bottom: 12px;
 }
-.question-box input,
-.question-box select {
+.survey_question-box input,
+.survey_question-box select {
   flex: 1;
 }
+.survey_remove-btn {
+  background: #f8d7da;
+  color: #721c24;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.survey_remove-btn:hover {
+  background: #f5c6cb;
+}
+/* updated */
+/* Questions section */
+.question-box {
+  position: relative;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Header for question box */
+.question-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+/* Remove button at top-right */
 .remove-btn {
   background: #f8d7da;
   color: #721c24;
@@ -111,6 +145,12 @@
 }
 .remove-btn:hover {
   background: #f5c6cb;
+}
+
+/* Inputs inside question box */
+.question-box input,
+.question-box select {
+  width: 100%;
 }
 
 /* Options box */
