@@ -11,7 +11,7 @@ const organizationRoleSchema = new mongoose.Schema(
 
     },
     organization_id: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
       required: true,
     },
@@ -23,6 +23,12 @@ const organizationRoleSchema = new mongoose.Schema(
     description: {
       type: String,
     },
+    permissions: [
+        {
+          section: { type: mongoose.Schema.Types.ObjectId, ref: "Section", required: true },
+          allowed: [{ type: mongoose.Schema.Types.ObjectId, ref: "Permission" }]
+        }
+      ]
   },
   {
     timestamps: true,

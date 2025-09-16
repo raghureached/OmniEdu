@@ -4,6 +4,7 @@ const {z} =require("zod");
 
 const MessageSchema=z.object({
     message:z.string({required_error:"Message is required"}).min(1,"messge cannot be empty"),
+    orgId:z.string({required_error:"OrgId is required"}).min(1,"orgId cannot be empty"),
     status: z.enum(["active", "inactive"]).optional(),
 })
 const setMessage = async(req,res)=>{
@@ -16,12 +17,12 @@ const setMessage = async(req,res)=>{
                 error:parsed.error.errors
             })
         }
-        const {message,status} = parsed.data;
-
+        const {message,status,orgId} = parsed.data;
+        // console.log(message,orgId)
         const messageSet = await ForAdminMessage.create({
             message_text:message,
             status,
-            organization_id:"68bc0898fdb4a64d5a727a60",
+            organization_id:orgId,
             created_by:"68bc1d953f117b638adf49dc"
         })
         return res.status(201).json({
@@ -99,13 +100,13 @@ const getMessage = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = 50;
     const skip = (page - 1) * limit;
-
-    const messages = await ForAdminMessage.find()
+    const {orgId} = req.body;
+    const messages = await ForAdminMessage.find({organization_id:orgId})
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 }); // newest first (optional)
 
-    const total = await ForAdminMessage.countDocuments();
+    const total = await ForAdminMessage.countDocuments({ organization_id:orgId});
 
     return res.status(200).json({
       success: true,

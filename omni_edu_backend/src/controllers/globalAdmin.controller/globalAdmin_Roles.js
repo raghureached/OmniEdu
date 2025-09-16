@@ -4,6 +4,7 @@ const permissions_model = require("../../models/permissions_model");
 const Permission = require("../../models/permissions_model");
 const { z } = require("zod");
 const Section = require("../../models/sections_model");
+const OrganizationRole = require("../../models/organizationRoles_model");
 
 // ✅ Validation
 const createRoleSchema = z.object({
@@ -20,24 +21,10 @@ const createRoleSchema = z.object({
 });
 
 // ✅ Create role with sections & permissions
+///Global ROLES
 const addRole = async (req, res) => {
   try {
     const { name, description, permissions } = req.body;
-    /**
-     * Expected req.body.permissions format:
-     * [
-     *   {
-     *     section: "sectionId1",
-     *     allowed: ["permId1", "permId2"]
-     *   },
-     *   {
-     *     section: "sectionId2",
-     *     allowed: ["permId3"]
-     *   }
-     * ]
-     */
-
-    // Validate sections and permissions
     for (const permBlock of permissions) {
       const sectionExists = await Section.findById(permBlock.section);
       if (!sectionExists) {
@@ -73,6 +60,46 @@ const addRole = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error", error });
   }
 };
+
+////OrganizationRoles
+
+const createRole = async(req,res)=>{
+  try { 
+    const { name, description, permissions,orgId } = req.body;
+    for (const permBlock of permissions) {
+      const sectionExists = await Section.findById(permBlock.section);
+      if (!sectionExists) {
+        return res.status(400).json({ message: `Section not found: ${permBlock.section}` });
+      }
+
+      const validPermissions = await Permission.find({
+        _id: { $in: permBlock.allowed },
+        section: permBlock.section
+      });
+
+      if (validPermissions.length !== permBlock.allowed.length) {
+        return res.status(400).json({
+          message: `One or more permissions are invalid for section: ${permBlock.section}`
+        });
+      }
+    }
+    const newOrgRole = await OrganizationRole.create({
+      name,
+      description,
+      permissions,
+      organization_id:orgId 
+    });
+    return res.status(200).json({
+      message: "Role updated successfully",
+      role: newOrgRole
+    });
+  } catch(error){
+    return res.status(500).json({
+      message: "Failed to update role",
+      error: error.message
+    });
+  }
+}
 
 
 
@@ -318,6 +345,7 @@ const getPermissions = async (req, res) => {
 
 module.exports = {
     addRole,
+    createRole,
     editRole,
     deleteRole,
     getRoles,

@@ -24,7 +24,7 @@ const forAdminMessageSchema = new mongoose.Schema(
       enum: ["active", "inactive"],
     },
     created_by: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
   },

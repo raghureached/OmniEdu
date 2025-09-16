@@ -16,7 +16,6 @@ const contentSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      // enum: ["PDF", "DOCX", "Theory"],
       required: true,
     },
     content: {

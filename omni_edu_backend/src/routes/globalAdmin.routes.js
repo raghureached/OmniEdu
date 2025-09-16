@@ -1,11 +1,12 @@
 const {addOrganization, editOrganization, deleteOrganization, getOrganizations, getOrganizationById} = require("../controllers/globalAdmin.controller/globalAdmin_organization");
-const {addRole, editRole, deleteRole, getRoles, addPermissions, getPermissions} = require("../controllers/globalAdmin.controller/globalAdmin_Roles");
+const {addRole, editRole, deleteRole, getRoles, addPermissions, getPermissions, createRole} = require("../controllers/globalAdmin.controller/globalAdmin_Roles");
 const {addContent, editContent, deleteContent, getContent, getContentById} = require("../controllers/globalAdmin.controller/globalAdmin_content");
 const {createSurvey, editSurvey, deleteSurvey, getSurveys, getSurvey} = require("../controllers/globalAdmin.controller/globalAdmin_Surveys");
 const {upload,uploadContent} = require("../middleware/multer_middleware");
 const { uploadMultipleToCloudinary, uploadToCloudinary } = require("../utils/uploadOnCloud");
-const { setMessage, editMessage, deleteMessage } = require("../controllers/globalAdmin.controller/globalAdmin_message");
+const { setMessage, editMessage, deleteMessage, getMessage } = require("../controllers/globalAdmin.controller/globalAdmin_message");
 const { getPlans } = require("../controllers/globalAdmin.controller/globalAdmin_plans");
+const { createAssignment } = require("../controllers/globalAdmin.controller/globalAdmin_Assignmnet");
 // const csvStream = require("../utils/csvParser");
 
 const router = require("express").Router();
@@ -22,6 +23,7 @@ router.route('/getOrganizationById/:id').get(getOrganizationById)
 //////////////Global Roles////////////
 
 router.route('/addRole').post(addRole)
+router.route('/createRoleOrg').post(createRole)
 router.route('/editRole/:id').put(editRole)
 router.route('/deleteRole/:id').delete(deleteRole)
 router.route('/getRoles').get(getRoles)
@@ -51,9 +53,14 @@ router.route('/getSurvey/:id').get(getSurvey)
 router.route('/setMessage').post(setMessage)
 router.route('/editMessage/:id').put(editMessage)
 router.route('/deleteMessage/:id').delete(deleteMessage)
+router.route('/getMessage').post(getMessage)
 
 //////////////Plans////////////
 
 router.route('/getPlans').get(getPlans)
 
+
+
+///////////Assignments///////////
+router.route('/createAssignment').post(createAssignment)
 module.exports = router;
