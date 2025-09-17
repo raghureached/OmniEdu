@@ -5,33 +5,35 @@ import { login, loginWithSSO, clearError, mockLogin } from '../../../store/slice
 import './Login.css';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
+  const [ email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isAuthenticated, loading, error, user } = useSelector((state) => state.auth);
-  
+  const { isAuthenticated, loading, error, user,role } = useSelector((state) => state.auth);
   useEffect(() => {
     // Clear any existing errors
     dispatch(clearError());
-    
+    // console.log(isAuthenticated,role)
     // Redirect if already authenticated
-    if (isAuthenticated) {
-      if (user?.roles?.includes('global-admin')) {
+    if (isAuthenticated && role) {
+      if (role === 'GlobalAdmin') {
         navigate('/global-admin/organizations'); 
-      } else if (user?.roles?.includes('admin')) {
+      } else if (role === 'Admin') {
         navigate('/admin');
       } else {
         navigate('/user/learning-hub'); 
       }
     }
-  }, [isAuthenticated, user, navigate, dispatch]);
+  }, [isAuthenticated,role,dispatch]);
+  // }, []);
   
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+    // console.log(email,password)
+    dispatch(login({ email, password }));
+    // console.log(role)
     // Always use mockLogin for now until backend is ready
-    dispatch(mockLogin({ username, password }));
+    // dispatch(mockLogin({ username, password }));
     
     // Uncomment this when you have a real backend
     // const isDevelopment = process.env.NODE_ENV === 'development';
@@ -63,8 +65,8 @@ const Login = () => {
             <input
               type="text"
               id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>

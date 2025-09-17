@@ -486,13 +486,14 @@ const GlobalPortalActivity = () => {
   }, [itemsWithExtras, nameSearch, typeFilter, tagSearch]);
 
   const handleAddContent = (type) => {
-    switch(type) {
-      case 'Module': navigate('/admin/content-modules'); break;
-      case 'Assessment': navigate('/admin/content-assessments'); break;
-      case 'LearningPath': navigate('/admin/learning-paths'); break;
-      case 'Survey': navigate('/admin/manage-surveys'); break;
-      default: break;
-    }
+    // switch(type) {
+    //   case 'Module': navigate('/admin/content-modules'); break;
+    //   case 'Assessment': navigate('/admin/content-assessments'); break;
+    //   case 'LearningPath': navigate('/admin/learning-paths'); break;
+    //   case 'Survey': navigate('/admin/manage-surveys'); break;
+    //   default: break;
+    // }
+    navigate('/global-admin/content');
   };
 
   const getStatusBadgeClass = (isActive) => `status-badge ${isActive ? "active" : "inactive"}`;
@@ -545,9 +546,9 @@ const GlobalPortalActivity = () => {
 
       <div className="actions-section">
         <button className="add-button" onClick={() => handleAddContent('Module')}>
-          <Plus size={20} /> Add Module
+          <Plus size={20} /> Add Content
         </button>
-        <button className="add-button" onClick={() => handleAddContent('Assessment')}>
+        {/* <button className="add-button" onClick={() => handleAddContent('Assessment')}>
           <Plus size={20} /> Add Assessment
         </button>
         <button className="add-button" onClick={() => handleAddContent('LearningPath')}>
@@ -555,7 +556,7 @@ const GlobalPortalActivity = () => {
         </button>
         <button className="add-button" onClick={() => handleAddContent('Survey')}>
           <Plus size={20} /> Add Survey
-        </button>
+        </button> */}
       </div>
 
       <div className="content-grid">

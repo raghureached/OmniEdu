@@ -13,11 +13,11 @@ import AdminLayout from './components/layouts/AdminLayout/AdminLayout';
 import GlobalAdminLayout from './components/layouts/GlobalAdminLayout/GlobalAdminLayout';
 
 // User Pages 
-import UserProfile from './pages/user/UserProfile/UserProfile'; 
-import LearningHub from './pages/user/LearningHub/LearningHub'; 
-import Catalog from './pages/user/Catalog/Catalog'; 
-import ActivityHistory from './pages/user/ActivityHistory/ActivityHistory'; 
-import HelpCenter from './pages/user/HelpCenter/HelpCenter'; 
+import UserProfile from './pages/user/UserProfile/UserProfile';
+import LearningHub from './pages/user/LearningHub/LearningHub';
+import Catalog from './pages/user/Catalog/Catalog';
+import ActivityHistory from './pages/user/ActivityHistory/ActivityHistory';
+import HelpCenter from './pages/user/HelpCenter/HelpCenter';
 // Add the new imports for the missing components
 import Assigned from './pages/user/Assigned/Assigned';
 import Additional from './pages/user/Additional/Additional';
@@ -25,13 +25,13 @@ import Mandatory from './pages/user/Mandatory/Mandatory';
 
 // Admin Pages 
 import AdminHome from './pages/admin/AdminHome/AdminHome'; // Add this new import
-import UsersManagement from './pages/admin/UsersManagement/UsersManagement'; 
-import GroupsManagement from './pages/admin/GroupsManagement/GroupsManagement'; 
+import UsersManagement from './pages/admin/UsersManagement/UsersManagement';
+import GroupsManagement from './pages/admin/GroupsManagement/GroupsManagement';
 // import RolesManagement from './pages/admin/RolesManagement/RolesManagement'; 
-import ContentModules from './pages/admin/ContentModules/ContentModules'; 
-import ContentAssessments from './pages/admin/ContentAssessments/ContentAssessments'; 
-import LearningPaths from './pages/admin/LearningPaths/LearningPaths'; 
-import Surveys from './pages/admin/Surveys/Surveys'; 
+import ContentModules from './pages/admin/ContentModules/ContentModules';
+import ContentAssessments from './pages/admin/ContentAssessments/ContentAssessments';
+import LearningPaths from './pages/admin/LearningPaths/LearningPaths';
+import Surveys from './pages/admin/Surveys/Surveys';
 import AdminProfile from './pages/admin/AdminProfile/AdminProfile';
 import CreateAssignment from './pages/admin/CreateAssignment/CreateAssignment';
 import ManageAssignment from './pages/admin/ManageAssignment/ManageAssignment';
@@ -43,9 +43,9 @@ import AdminPortalActivity from './pages/admin/AdminPortalActivity/AdminPortalAc
 // Global Admin Pages 
 import OrganizationManagement from './pages/globalAdmin/OrganizationManagement/OrganizationManagement';
 import NewOrgManagement from './pages/globalAdmin/OrganizationManagement/NewOrgManagement';
-import GlobalRolesManagement from './pages/globalAdmin/GlobalRolesManagement/GlobalRolesManagement'; 
-import GlobalContentManagement from './pages/globalAdmin/GlobalContentManagement/GlobalContentManagement'; 
-import GlobalSurveys from './pages/globalAdmin/GlobalSurveys/GlobalSurveys'; 
+import GlobalRolesManagement from './pages/globalAdmin/GlobalRolesManagement/GlobalRolesManagement';
+import GlobalContentManagement from './pages/globalAdmin/GlobalContentManagement/GlobalContentManagement';
+import GlobalSurveys from './pages/globalAdmin/GlobalSurveys/GlobalSurveys';
 import GlobalPortalActivity from './pages/globalAdmin/GlobalAdminLibraryPortal/GlobalPortal';
 // Import styles
 import './App.css';
@@ -56,7 +56,7 @@ import Dashboard from './pages/user/Dashboard/Dashboard';
 // Add this near the top of your App.js file
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateSessionTime } from './store/slices/authSlice';
+import { checkAuth, updateSessionTime } from './store/slices/authSlice';
 import GlobalActivityLog from './pages/globalAdmin/GlobalActivityLog/GlobalActivityLog';
 import GlobalHelpCenter from './pages/globalAdmin/GlobalHelpCenter/GlobalHelpCenter';
 import GlobalProfile from './pages/globalAdmin/GlobalProfile/GlobalProfile';
@@ -66,13 +66,32 @@ import LoadingScreen from './components/common/Loading/Loading';
 import UserDashBoardConfig from './pages/globalAdmin/UserDashBoardConfig/UserDashBoardConfig';
 import AdminDashBoardConfig from './pages/globalAdmin/AdminDashBoardConfig/AdminDashBoardConfig';
 import GlobalCreateAssignment from './pages/globalAdmin/GlobalAssignments/CreateAssignment';
+import GlobalAdminActivity from './pages/globalAdmin/GlobalActivityLog/GlobalActivityLog';
 
 
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const { isAuthenticated, loading, role } = useSelector((state) => state.auth);
+
+  if (loading) return <LoadingScreen />;
+
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+
+  if (!allowedRoles.includes(role)) return <Navigate to="/login" replace />;
+
+  return children;
+};
 
 function App() {
   const dispatch = useDispatch();
-  const { isAuthenticated } = useSelector((state) => state.auth);
-  const {loading} = useSelector((state) => state.auth);
+  const { isAuthenticated, role, loading } = useSelector((state) => state.auth);
+  useEffect(() => {
+    // console.log("App.js 1",isAuthenticated,role,loading)
+    dispatch(checkAuth())
+    // console.log("App.js 2",isAuthenticated,role,loading)
+  }, [dispatch])
+  useEffect(() => {
+    console.log("Auth State Changed", isAuthenticated, role, loading);
+  }, [isAuthenticated, role, loading]);
   
   // Initialize session time when app loads if user is authenticated
   useEffect(() => {
@@ -80,7 +99,10 @@ function App() {
       dispatch(updateSessionTime());
     }
   }, [dispatch, isAuthenticated]);
-  
+  if(loading){
+    return <LoadingScreen />
+  }
+
   return (
     <Provider store={store}>
       <Router>
@@ -88,12 +110,20 @@ function App() {
           <Routes>
             {/* Public routes */}
             {/* <Route path="/testManageOrg" element={<NewOrgManagement />} /> */}
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={isAuthenticated && role ?
+              role === "GlobalAdmin" ? <GlobalAdminLayout /> :
+                role === "Admin" ? <AdminLayout /> :
+                  role === "User" ? <UserLayout /> :
+                    <Navigate to="/" replace />
+              :
+              <Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/email-confirmation" element={<EmailConfirmation />} />
 
             {/* User routes - Removed ProtectedRoute wrapper */}
-            <Route path="/user/*" element={<UserLayout />}>
+            <Route path="/user/*" element={<ProtectedRoute allowedRoles={["User"]}>
+              <UserLayout />
+            </ProtectedRoute>}>
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="profile" element={<UserProfile />} />
@@ -105,11 +135,13 @@ function App() {
               <Route path="additional" element={<Additional />} />
               <Route path="mandatory" element={<Mandatory />} />
             </Route>
-            <Route path="/admin/*" element={<AdminLayout />}>
+
+            <Route path="/admin/*" element={<ProtectedRoute allowedRoles={["Admin"]}>
+              <AdminLayout />
+            </ProtectedRoute>}>
               <Route index element={<AdminHome />} />
               <Route path="users" element={<UsersManagement />} />
               <Route path="groups" element={<GroupsManagement />} />
-              {/* <Route path="roles" element={<RolesManagement />} /> */}
               <Route path="content-modules" element={<ContentModules />} />
               <Route
                 path="content-assessments"
@@ -127,7 +159,9 @@ function App() {
             </Route>
 
             {/* Global Admin routes - Removed ProtectedRoute wrapper */}
-            <Route path="/global-admin/*" element={<GlobalAdminLayout />}>
+            <Route path="/global-admin/*" element={<ProtectedRoute allowedRoles={["GlobalAdmin"]}>
+              <GlobalAdminLayout />
+            </ProtectedRoute>}>
               {/* <Route
                 path="organizations"
                 element={<OrganizationManagement />}
@@ -140,14 +174,14 @@ function App() {
               <Route path="roles" element={<GlobalRolesManagement />} />
               <Route path="content" element={<GlobalContentManagement />} />
               <Route path="content/:contentId" element={<GlobalContentDetails />} />
-              <Route path="surveys" element={<GlobalSurveys/>} />
+              <Route path="surveys" element={<GlobalSurveys />} />
               <Route path="assignments" element={<GlobalCreateAssignment />} />
               <Route path="user-dashboard-config" element={<UserDashBoardConfig />} />
               <Route path="admin-dashboard-config" element={<AdminDashBoardConfig />} />
               <Route path="profile" element={<GlobalProfile />} />
-              <Route path="activity-log" element={<GlobalActivityLog />} />
+              <Route path="activity-log" element={<GlobalAdminActivity />} />
               <Route path="help-center" element={<GlobalHelpCenter />} />
-              <Route path="portal-library-admin" element={<GlobalPortalActivity/>} />
+              <Route path="portal-library-admin" element={<GlobalPortalActivity />} />
             </Route>
 
             {/* Redirect root to login */}
@@ -155,7 +189,7 @@ function App() {
 
             {/* Catch all - 404 */}
             <Route path="*" element={<div>Page Not Found</div>} />
-          </Routes> 
+          </Routes>
         </div>
       </Router>
     </Provider>

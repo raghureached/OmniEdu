@@ -419,7 +419,7 @@ const GlobalAdminLayout = () => {
 
                     <div className="globaladmin_header_right">
                         <div className='userdata'>
-                            <h4>{user ? `${user.firstName} ${user.lastName}` : "GlobalAdmin User"}</h4>
+                            <h4>{user ? `${user.name}` : "GlobalAdmin"}</h4>
 
                         </div>
                         <div className="globaladmin_notification_container">

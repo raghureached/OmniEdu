@@ -152,7 +152,7 @@ const removeOption = (qIndex, optIndex) => {
   return (
     <div className="survey-container">
       <div className="survey-header">
-        <h2>Global Surveys</h2>
+        {/* <h2>Global Surveys</h2> */}
        <button
   className="add-btn"
   onClick={() => {

@@ -271,29 +271,12 @@ const handleSubmit = async (e) => {
     <div className="survey-container">
       {/* Header */}
       <div className="survey-header">
-        <h1> Surveys</h1>
+        {/* <h1> Surveys</h1> */}
         {/* <button className="survey-btn-primary" onClick={() => setShowForm(true)}>+ Create Survey</button> */}
-        <button
-  className="survey-btn-primary"
-  onClick={() => {
-    setEditingSurvey(null); // make sure not in edit mode
-    setFormData({
-      title: "",
-      description: "",
-      survey_type: "Short Answer",
-      start_date: "",
-      end_date: "",
-      is_active: true,
-      questions: [{ question_text: "", question_type: "text", options: [] }],
-    });
-    setShowForm(true);
-  }}
->
-  + Create Survey
-</button>
+        
 
       </div>
-
+<div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
       {/* Filters */}
       <div className="survey-filters">
         <input
@@ -313,8 +296,27 @@ const handleSubmit = async (e) => {
           <option value="draft">Draft</option>
           <option value="closed">Closed</option>
         </select>
+        
       </div>
-
+      <button
+  className="survey-btn-primary"
+  onClick={() => {
+    setEditingSurvey(null); // make sure not in edit mode
+    setFormData({
+      title: "",
+      description: "",
+      survey_type: "Short Answer",
+      start_date: "",
+      end_date: "",
+      is_active: true,
+      questions: [{ question_text: "", question_type: "text", options: [] }],
+    });
+    setShowForm(true);
+  }}
+>
+  + Create Survey
+</button> 
+</div>
       {/* Loading & Error States */}
       
        

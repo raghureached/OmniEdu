@@ -63,15 +63,22 @@ export const mockLogin = createAsyncThunk(
     };
   }
 );
-
+export const checkAuth = createAsyncThunk('auth/checkAuth', async (_,{rejectWithValue}) => {
+  try {
+    const response = await api.post('/auth/checkAuth');
+    return response.data;
+  } catch (error) {
+    return rejectWithValue(error.response.data);
+  }
+})
 // Async thunks for authentication
 export const login = createAsyncThunk(
   'auth/login',
-  async ({ username, password }, { rejectWithValue }) => {
+  async ({ email, password }, { rejectWithValue }) => {
     try {
-      const response = await api.post('/auth/login', { username, password });
-      // Store token in localStorage
-      localStorage.setItem('token', response.data.token);
+      // console.log(email,password)
+      const response = await api.post('/auth/login', { email, password });
+      // console.log(response)
       return {
         ...response.data,
         lastLoginDateTime: new Date().toISOString()
@@ -147,14 +154,15 @@ const authSlice = createSlice({
   name: 'auth',
   initialState: {
     user: null,
-    token: localStorage.getItem('token'),
-    isAuthenticated: !!localStorage.getItem('token'),
+    // token: localStorage.getItem('token'),
+    isAuthenticated: false,
     loading: false,
     error: null,
     resetPasswordSuccess: false,
     forgotPasswordSuccess: false,
     lastLoginDateTime: null,
-    sessionStartTime: null
+    sessionStartTime: null,
+    role: null
   },
   reducers: {
     clearError: (state) => {
@@ -183,16 +191,37 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-        state.lastLoginDateTime = action.payload.lastLoginDateTime;
+        state.user = action.payload.data;
+        // state.token = action.payload.token;
+        // console.log(action.payload.role)
+        state.role = action.payload.role;
+        state.lastLoginDateTime = action.payload.data.last_login;
         state.sessionStartTime = new Date().toISOString();
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || 'Login failed';
       })
-      
+      .addCase(checkAuth.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(checkAuth.fulfilled, (state, action) => {
+        state.loading = false;
+        state.isAuthenticated = true;
+        console.log(action.payload)
+        state.user = action.payload.data;
+        state.role = action.payload.role;
+        state.lastLoginDateTime = action.payload.data.last_login;
+        state.sessionStartTime = new Date().toISOString();
+      })
+      .addCase(checkAuth.rejected, (state, action) => {
+        state.loading = false;
+        state.isAuthenticated = false;
+        state.user = null;
+        state.role = null;
+        state.error = action.payload?.message || 'Login failed';
+      })
       // Mock Login
       .addCase(mockLogin.pending, (state) => {
         state.loading = true;

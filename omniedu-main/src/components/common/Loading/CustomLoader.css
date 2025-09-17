@@ -3,7 +3,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 500px;
+    min-height: fit-content;
   }
   
   .custom-loader-spinner {

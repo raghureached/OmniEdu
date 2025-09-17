@@ -1,188 +1,141 @@
-.gobaladmin-activity-log {
+/* ==============================
+   Global Admin Activity Logs Page
+   ============================== */
+
+   .global-activity-admin-activity {
     padding: 24px;
-    max-width: 1280px;
-    margin: 0 auto;
-}
-
-.activity-log-header {
-    margin-bottom: 32px;
-}
-
-.activity-log-header h1 {
-    margin: 0 0 12px 0;
+    background: #f9fafb;
+    min-height: 100vh;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
     color: #1e293b;
-    font-size: 28px;
-}
-
-.activity-log-description {
-    color: #64748b;
-    font-size: 16px;
-    margin: 0;
-}
-
-.activity-log-filters {
-    background-color: white;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    margin-bottom: 24px;
-    display: flex;
-    flex-direction: column;
+  }
+  
+  /* Filters Section */
+  .global-activity-filters-form {
+    display: grid;
+    grid-template-columns: 1fr;
     gap: 16px;
-}
-
-.filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.filter-group label {
-    font-weight: 500;
-    color: #4b5563;
-}
-
-.filter-options {
-    display: flex;
-    gap: 8px;
-}
-
-.filter-options button {
-    padding: 8px 16px;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    background-color: white;
-    color: #4b5563;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.filter-options button.active {
-    background-color: #2563eb;
-    color: white;
-    border-color: #2563eb;
-}
-
-.search-group {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.search-group svg {
-    position: absolute;
-    left: 12px;
-    color: #9ca3af;
-}
-
-.search-group input {
-    padding: 8px 12px 8px 40px;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    width: 100%;
-    font-size: 14px;
-}
-
-.activity-log-table-container {
-    background-color: white;
+    background: #fff;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    margin-bottom: 24px;
+  }
+  
+  @media (min-width: 768px) {
+    .global-activity-filters-form {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+  
+  .global-activity-filters-form input,
+  .global-activity-filters-form select {
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-}
-
-.activity-log-table {
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+  }
+  
+  .global-activity-filters-form input:focus,
+  .global-activity-filters-form select:focus {
+    outline: none;
+    border-color: #5570f1;
+    box-shadow: 0 0 0 2px rgba(85, 112, 241, 0.3);
+  }
+  
+  .global-activity-filters-form button {
+    background: #5570f1;
+    color: white;
+    font-weight: 500;
+    padding: 10px 16px;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+    cursor: pointer;
+  }
+  
+  .global-activity-filters-form button:hover {
+    background: #4458c7;
+  }
+  
+  /* Date Range Section */
+  .global-activity-date-range {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  /* Table Styling */
+  .global-activity-activity-table {
     width: 100%;
     border-collapse: collapse;
-}
-
-.activity-log-table th,
-.activity-log-table td {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  }
+  
+  .global-activity-activity-table thead {
+    background: #5570f1;
+    color: #fff;
+  }
+  
+  .global-activity-activity-table th,
+  .global-activity-activity-table td {
     padding: 12px 16px;
     text-align: left;
+    font-size: 0.95rem;
+  }
+  
+  .global-activity-activity-table tbody tr {
     border-bottom: 1px solid #e5e7eb;
-}
-
-.activity-log-table th {
-    background-color: #f8fafc;
-    font-weight: 500;
-    color: #4b5563;
-}
-
-.action-badge {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.action-badge.create {
-    background-color: #dcfce7;
-    color: #16a34a;
-}
-
-.action-badge.update {
-    background-color: #e0f2fe;
-    color: #0284c7;
-}
-
-.action-badge.delete {
-    background-color: #fee2e2;
-    color: #dc2626;
-}
-
-.pagination {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    gap: 16px;
-}
-
-.pagination button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    background-color: white;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.pagination button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.page-info {
-    color: #4b5563;
-    font-size: 14px;
-}
-
-.loading-spinner {
-    padding: 40px;
+    transition: background 0.2s ease;
+  }
+  
+  .global-activity-activity-table tbody tr:hover {
+    background: #f3f4f6;
+  }
+  
+  .global-activity-empty-row {
     text-align: center;
     color: #6b7280;
-}
-
-.error-message {
-    padding: 16px;
-    color: #dc2626;
-    text-align: center;
-}
-
-@media (max-width: 768px) {
-    .activity-log-filters {
-        flex-direction: column;
-    }
-    .filter-options {
-        flex-wrap: wrap;
-    }
-    .activity-log-table-container {
-        overflow-x: auto;
-    }
-    .activity-log-table {
-        min-width: 800px;
-    }
-}
+    padding: 24px;
+    font-size: 0.95rem;
+  }
+  
+  /* Pagination */
+  .global-activity-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 24px;
+  }
+  
+  .global-activity-pagination button {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .global-activity-pagination button:disabled {
+    background: #d1d5db;
+    color: #6b7280;
+    cursor: not-allowed;
+  }
+  
+  .global-activity-pagination button:not(:disabled) {
+    background: #5570f1;
+    color: white;
+  }
+  
+  .global-activity-pagination button:not(:disabled):hover {
+    background: #4458c7;
+  }
+  
+  .global-activity-pagination span {
+    font-size: 0.95rem;
+    color: #374151;
+  }
+  

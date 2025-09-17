@@ -1,170 +1,120 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  fetchActivityLogs,
-  setFilters,
-  setPage,
-} from "../../../store/slices/activityLogSlice";
-import {
-  Calendar,
-  Filter,
-  Search,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { fetchActivityLogs } from "../../../store/slices/activityLogSlice";
 import "./GlobalActivityLog.css";
 
-const GlobalActivityLog = () => {
+const GlobalAdminActivity = () => {
   const dispatch = useDispatch();
-  const { logs, loading, error, filters, pagination } = useSelector(
-    (state) => state.activityLog
-  );
-  const [searchTerm, setSearchTerm] = useState("");
+  const { logs, pagination, loading } = useSelector((state) => state.activityLog);
+  const [search, setSearch] = useState("");
+  const [actionOn, setActionOn] = useState("");
+  const [dateRange, setDateRange] = useState(["", ""]);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    dispatch(
-      fetchActivityLogs({
-        ...filters,
-        page: pagination.currentPage,
-        search: searchTerm,
-      })
-    );
-  }, [dispatch, filters, pagination.currentPage, searchTerm]);
+    dispatch(fetchActivityLogs({ actionOn, dateRange, search, page }));
+  }, [page]);
 
-  const handleDateRangeChange = (range) => {
-    dispatch(setFilters({ dateRange: range }));
-  };
-
-  const handleCriteriaChange = (criteria) => {
-    dispatch(setFilters({ criteria }));
-  };
-
-  const handlePageChange = (page) => {
-    dispatch(setPage(page));
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setPage(1);
+    dispatch(fetchActivityLogs({ actionOn, dateRange, search, page }));
   };
 
   return (
-    <div className="globaladmin-activity-log">
-      <div className="activity-log-header">
-        <p className="activity-log-description">
-          A detailed record of all admin activity for clear oversight and
-          compliance.{" "}
-        </p>{" "}
-      </div>
-      <div className="activity-log-filters">
-        <div className="filter-group">
-          <label> Date Range: </label>{" "}
-          <div className="filter-options">
-            <button
-              className={filters.dateRange === "today" ? "active" : ""}
-              onClick={() => handleDateRangeChange("today")}
-            >
-              Today{" "}
-            </button>{" "}
-            <button
-              className={filters.dateRange === "thisWeek" ? "active" : ""}
-              onClick={() => handleDateRangeChange("thisWeek")}
-            >
-              This Week{" "}
-            </button>{" "}
-            <button
-              className={filters.dateRange === "thisMonth" ? "active" : ""}
-              onClick={() => handleDateRangeChange("thisMonth")}
-            >
-              This Month{" "}
-            </button>{" "}
-          </div>{" "}
-        </div>
-        <div className="filter-group">
-          <label> Criteria: </label>{" "}
-          <div className="filter-options">
-            <button
-              className={filters.criteria === "all" ? "active" : ""}
-              onClick={() => handleCriteriaChange("all")}
-            >
-              All{" "}
-            </button>{" "}
-            <button
-              className={filters.criteria === "user" ? "active" : ""}
-              onClick={() => handleCriteriaChange("user")}
-            >
-              User Management{" "}
-            </button>{" "}
-            <button
-              className={filters.criteria === "content" ? "active" : ""}
-              onClick={() => handleCriteriaChange("content")}
-            >
-              Content Management{" "}
-            </button>{" "}
-          </div>{" "}
-        </div>
-        <div className="search-group">
-          <Search size={20} />{" "}
+    <div className="global-activity-admin-activity">
+      {/* Filters */}
+      <form onSubmit={handleSearch} className="global-activity-filters-form">
+        {/* Search */}
+        <input
+          type="text"
+          placeholder="Search by details..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        {/* Action Filter */}
+        <select value={actionOn} onChange={(e) => setActionOn(e.target.value)}>
+          <option value="">All Actions</option>
+          <option value="Organization">Organization</option>
+          <option value="User">User</option>
+          <option value="Role">Role</option>
+        </select>
+
+        {/* Date Range */}
+        <div className="global-activity-date-range">
           <input
-            type="text"
-            placeholder="Search logs..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />{" "}
-        </div>{" "}
+            type="date"
+            value={dateRange[0]}
+            onChange={(e) => setDateRange([e.target.value, dateRange[1]])}
+          />
+          <input
+            type="date"
+            value={dateRange[1]}
+            onChange={(e) => setDateRange([dateRange[0], e.target.value])}
+          />
+        </div>
+
+        {/* Apply Button */}
+        <button type="submit">Apply Filters</button>
+      </form>
+
+      {/* Table */}
+      <div>
+        <table className="global-activity-activity-table">
+          <thead>
+            <tr>
+              <th>Action On</th>
+              <th>Details</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan="3" className="global-activity-empty-row">
+                  Loading...
+                </td>
+              </tr>
+            ) : logs.length > 0 ? (
+              logs.map((activity) => (
+                <tr key={activity._id}>
+                  <td>{activity.actionOn}</td>
+                  <td>{activity.details}</td>
+                  <td>{new Date(activity.createdAt).toLocaleString()}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="3" className="global-activity-empty-row">
+                  No activities found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
-      <div className="activity-log-table-container">
-        {" "}
-        {loading ? (
-          <div className="loading-spinner"> Loading... </div>
-        ) : error ? (
-          <div className="error-message"> {error} </div>
-        ) : (
-          <>
-            <table className="activity-log-table">
-              <thead>
-                <tr>
-                  <th> Timestamp </th> <th> Admin </th> <th> Action </th>{" "}
-                  <th> Details </th> <th> IP Address </th>{" "}
-                </tr>{" "}
-              </thead>{" "}
-              <tbody>
-                {" "}
-                {logs.map((log) => (
-                  <tr key={log.id}>
-                    <td> {new Date(log.timestamp).toLocaleString()} </td>{" "}
-                    <td> {log.adminName} </td>{" "}
-                    <td>
-                      <span
-                        className={`action-badge ${log.actionType.toLowerCase()}`}
-                      >
-                        {" "}
-                        {log.actionType}{" "}
-                      </span>{" "}
-                    </td>{" "}
-                    <td> {log.details} </td> <td> {log.ipAddress} </td>{" "}
-                  </tr>
-                ))}{" "}
-              </tbody>{" "}
-            </table>
-            <div className="pagination">
-              <button
-                onClick={() => handlePageChange(pagination.currentPage - 1)}
-                disabled={pagination.currentPage === 1}
-              >
-                <ChevronLeft size={20} />{" "}
-              </button>{" "}
-              <span className="page-info">
-                Page {pagination.currentPage}
-                of {pagination.totalPages}{" "}
-              </span>{" "}
-              <button
-                onClick={() => handlePageChange(pagination.currentPage + 1)}
-                disabled={pagination.currentPage === pagination.totalPages}
-              >
-                <ChevronRight size={20} />{" "}
-              </button>{" "}
-            </div>{" "}
-          </>
-        )}{" "}
-      </div>{" "}
+
+      {/* Pagination */}
+      <div className="global-activity-pagination">
+        <button
+          disabled={page === 1}
+          onClick={() => setPage((prev) => prev - 1)}
+        >
+          Previous
+        </button>
+        <span>
+          Page {pagination.currentPage} of {pagination.totalPages}
+        </span>
+        <button
+          disabled={!pagination.hasNextPage}
+          onClick={() => setPage((prev) => prev + 1)}
+        >
+          Next
+        </button>
+      </div>
     </div>
   );
 };
 
-export default GlobalActivityLog;
+export default GlobalAdminActivity;

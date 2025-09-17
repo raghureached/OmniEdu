@@ -244,6 +244,7 @@
 .globaladmin_header_right {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 1.5rem;
   height: 100%;
 }
