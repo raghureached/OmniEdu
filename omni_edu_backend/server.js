@@ -32,8 +32,8 @@ app.use((req, res, next) => {
 });
 // app.use(logActivity)
 
-// app.use('/api/globalAdmin',authenticate,authorize(['GlobalAdmin']),globalAdminRouter)
-app.use('/api/globalAdmin',globalAdminRouter)
+app.use('/api/globalAdmin',authenticate,authorize(['GlobalAdmin']),globalAdminRouter)
+// app.use('/api/globalAdmin',globalAdminRouter)
 app.use('/auth',authRouter)
 // app.use('/api/admin',authenticate,authorize(['Admin']),adminRouter)
 app.use('/api/admin',authenticate,adminRouter)

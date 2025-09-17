@@ -1,5 +1,6 @@
 const Content = require("../../models/content_model");
 const { z } = require("zod");
+const { logGlobalAdminActivity } = require("./globalAdmin_activity");
 
 const CONTENT_TYPES = ["PDF", "DOCX", "Theory"];
 
@@ -99,7 +100,7 @@ const addContent = async (req, res) => {
     });
 
     await newContent.save();
-
+    await logGlobalAdminActivity(req,"Create Content","content",`Content created successfully ${newContent.title}`)
     return res.status(201).json({
       success: true,
       message: 'Content added successfully.',
@@ -123,6 +124,7 @@ const getContent = async (req, res) => {
     const skip = (page - 1) * limit;
     const content = await Content.find().skip(skip).limit(limit)
     const total = await Content.countDocuments()
+    // await logGlobalAdminActivity(req,"Get Content","content", `Content fetched successfully ${content.title}`)
     return res.status(200).json({
       success: true,
       message: 'Content fetched successfully.',
@@ -146,6 +148,7 @@ const getContent = async (req, res) => {
 const getContentById = async (req, res) => {
   try {
     const content = await Content.findOne({ uuid: req.params.id });
+    // await logGlobalAdminActivity(req,"Get Content","content",`Content fetched successfully ${content.title}`)
     return res.status(200).json({ success: true, message: 'Content fetched successfully.', data: content });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to fetch content.', error: error.message });
@@ -179,6 +182,7 @@ const editContent = async (req, res) => {
         message: "Content not found"
       })
     }
+    await logGlobalAdminActivity(req,"Edit Content","content",`Content updated successfully ${updatedContent.title}`)
     return res.status(200).json({
       success: true,
       message: "Content updated successfully",
@@ -202,6 +206,7 @@ const deleteContent = async (req, res) => {
         message: "Content not found"
       })
     }
+    await logGlobalAdminActivity(req,"Delete Content","content",`Content deleted successfully ${deletedContent.title}`)
     return res.status(200).json({
       success: true,
       message: "Content deleted successfully",

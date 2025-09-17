@@ -2,6 +2,7 @@ const SurveyResponses = require("../../models/global_surveyResponses_model");
 const Surveys = require("../../models/global_surveys_model");
 const GlobalSurveyQuestion = require("../../models/global_surveys_Questions_model");
 const { v4: uuidv4 } = require("uuid");
+const { logGlobalAdminActivity } = require("./globalAdmin_activity");
 
 
 // // Zod validation
@@ -58,7 +59,7 @@ const createSurvey = async (req, res) => {
       is_active,
       created_by,
     });
-
+    await logGlobalAdminActivity(req,"Create Survey","survey",`Survey created successfully ${survey.title}`)
     return res.status(201).json({
       success: true,
       message: "Survey created successfully",
@@ -143,7 +144,7 @@ const editSurvey = async (req, res) => {
         message: "Survey not found",
       });
     }
-
+    await logGlobalAdminActivity(req,"Edit Survey","survey",`Survey updated successfully ${updatedSurvey.title}`)
     return res.status(200).json({
       success: true,
       message: "Survey updated successfully",
@@ -169,6 +170,7 @@ const deleteSurvey = async(req, res) => {
                 message: "Survey not found"
             })
         }
+        await logGlobalAdminActivity(req,"Delete Survey","survey",`Survey deleted successfully ${deletedSurvey.title}`)
         return res.status(200).json({
             success: true,
             message: 'Survey deleted successfully',
@@ -190,6 +192,7 @@ const getSurveys = async(req, res) => {
         const skip = (page - 1) * limit;
         const surveys = await Surveys.find().skip(skip).limit(limit).populate("questions");
         const total = await Surveys.countDocuments()
+        // await logGlobalAdminActivity(req,"Get Surveys","survey","Surveys fetched successfully")
         return res.status(200).json({
             success: true,
             message: 'Surveys fetched successfully',
@@ -214,6 +217,7 @@ const getSurveys = async(req, res) => {
 const viewResponse = async(req, res) => {
     try {
         const response = await SurveyResponses.findById(req.params.id)
+        // await logGlobalAdminActivity(req,"View Response","survey",`Response fetched successfully ${response.title}`)
         return res.status(200).json({
             success: true,
             message: "Response fetched successfully",
@@ -230,6 +234,7 @@ const viewResponse = async(req, res) => {
 const viewResponses = async(req, res) => {
     try {
         const responses = await SurveyResponses.find()
+        // await logGlobalAdminActivity(req,"View Responses","survey","Responses fetched successfully")
         return res.status(200).json({
             success: true,
             message: "Responses fetched successfully",
@@ -246,6 +251,7 @@ const viewResponses = async(req, res) => {
 const getSurvey = async(req, res) => {
     try {
         const survey = await Surveys.findOne({uuid: req.params.id}).populate('questions')
+        // await logGlobalAdminActivity(req,"Get Survey","survey",`Survey fetched successfully ${survey.title}`)
         return res.status(200).json({
             success: true,
             message: "Survey fetched successfully",

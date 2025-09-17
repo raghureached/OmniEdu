@@ -1,6 +1,7 @@
 const GlobalAssignment = require("../../models/global_Assignment")
 const Content = require("../../models/content_model")
 const Organization = require("../../models/organization_model")
+const { logGlobalAdminActivity } = require("./globalAdmin_activity")
 const createAssignment = async(req,res)=>{
     try {
         const {assignType,assignDate,assignTime,dueDate,dueTime,notifyUsers,isRecurring,contentId} = req.body
@@ -21,6 +22,7 @@ const createAssignment = async(req,res)=>{
             contentId:content._id,
         contentName:content.title
         })
+        await logGlobalAdminActivity(req,"Create Assignment","assignment",`Assignment created successfully ${assignment.title}`)
         return res.status(201).json({
             isSuccess:true,
             message:"Assignment created successfully",

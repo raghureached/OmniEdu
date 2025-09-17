@@ -7,6 +7,8 @@ const { uploadMultipleToCloudinary, uploadToCloudinary } = require("../utils/upl
 const { setMessage, editMessage, deleteMessage, getMessage } = require("../controllers/globalAdmin.controller/globalAdmin_message");
 const { getPlans } = require("../controllers/globalAdmin.controller/globalAdmin_plans");
 const { createAssignment } = require("../controllers/globalAdmin.controller/globalAdmin_Assignmnet");
+const { getGlobalAdminActivity } = require("../controllers/globalAdmin.controller/globalAdmin_activity");
+const { getGlobalProfile, changeGlobalPassword } = require("../controllers/globalAdmin.controller/globalAdmin_profile");
 // const csvStream = require("../utils/csvParser");
 
 const router = require("express").Router();
@@ -63,4 +65,13 @@ router.route('/getPlans').get(getPlans)
 
 ///////////Assignments///////////
 router.route('/createAssignment').post(createAssignment)
+
+
+
+//////Activity Log//////
+router.route('/getActivityLog').get(getGlobalAdminActivity)
+
+
+router.route('/getGlobalProfile').get(getGlobalProfile)
+router.route('/changeGlobalPassword').put(changeGlobalPassword)
 module.exports = router;

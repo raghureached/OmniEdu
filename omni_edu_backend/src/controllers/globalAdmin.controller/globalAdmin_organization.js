@@ -1,6 +1,7 @@
 const Organization = require("../../models/organization_model");
 const Plan = require("../../models/plans_model");
 const { z } = require("zod");
+const { logGlobalAdminActivity } = require("./globalAdmin_activity");
 
 
 const STATUS_ENUM = ["Active", "Inactive", "Suspended"];
@@ -75,7 +76,8 @@ const addOrganization = async(req, res) => {
                 planName: plan.name,
                 planId: generatePlanId(name, plan.name),
             }, ]
-        );
+        );  
+        await logGlobalAdminActivity(req,"Add Organization","organization",`Organization added successfully ${newOrg[0].name}`)
         return res.status(201).json({
             success: true,
             message: "Organization added successfully",
@@ -155,6 +157,7 @@ const editOrganization = async(req, res) => {
                 message: "Organization not found"
             })
         }
+        await logGlobalAdminActivity(req,"Edit Organization","organization",`Organization updated successfully ${updatedOrg.name}`)
         return res.status(200).json({
             success: true,
             message: "Organization updated successfully",
@@ -172,6 +175,7 @@ const editOrganization = async(req, res) => {
 const deleteOrganization = async(req, res) => {
     try {
         const deletedOrg = await Organization.findOneAndDelete({ uuid: req.params.id })
+        await logGlobalAdminActivity(req,"Delete Organization","organization",`Organization deleted successfully ${deletedOrg.name}`)
         return res.status(200).json({
             success: true,
             message: "Organization deleted successfully",
@@ -243,6 +247,7 @@ const getOrganizations = async(req, res) => {
 const getOrganizationById = async(req,res)=>{
     try {
         const organization = await Organization.findOne({ uuid: req.params.id })
+        // await logGlobalAdminActivity(req,"Get Organization","organization",`Organization fetched successfully ${organization.name}`)
         return res.status(200).json({
             success: true,
             message: "Organization fetched successfully",

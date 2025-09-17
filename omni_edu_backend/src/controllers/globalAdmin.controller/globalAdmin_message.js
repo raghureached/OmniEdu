@@ -1,6 +1,7 @@
 const { required } = require("joi");
 const ForAdminMessage = require("../../models/messageforAdmin");
 const {z} =require("zod");
+const { logGlobalAdminActivity } = require("./globalAdmin_activity");
 
 const MessageSchema=z.object({
     message:z.string({required_error:"Message is required"}).min(1,"messge cannot be empty"),
@@ -25,6 +26,7 @@ const setMessage = async(req,res)=>{
             organization_id:orgId,
             created_by:"68bc1d953f117b638adf49dc"
         })
+        await logGlobalAdminActivity(req,"Set Message","message","Message set successfully")
         return res.status(201).json({
             success:true,
             message:"Message set successfully",
@@ -59,6 +61,7 @@ const editMessage = async(req,res)=>{
                 message:"Message not found"
             })
         }
+        await logGlobalAdminActivity(req,"Edit Message","message","Message edited successfully")
         return res.status(201).json({
             success:true,
             message:"Message edited successfully",
@@ -82,6 +85,7 @@ const deleteMessage = async(req,res)=>{
                 message:"Message not found"
             })
         }
+        await logGlobalAdminActivity(req,"Delete Message","message","Message deleted successfully")
         return res.status(200).json({
             success:true,
             message:"Message deleted successfully",
@@ -107,7 +111,7 @@ const getMessage = async (req, res) => {
       .sort({ createdAt: -1 }); // newest first (optional)
 
     const total = await ForAdminMessage.countDocuments({ organization_id:orgId});
-
+    // await logGlobalAdminActivity(req,"Get Message","message","Message fetched successfully")
     return res.status(200).json({
       success: true,
       message: "Messages fetched successfully",

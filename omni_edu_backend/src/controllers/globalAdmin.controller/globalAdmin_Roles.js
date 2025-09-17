@@ -5,6 +5,7 @@ const Permission = require("../../models/permissions_model");
 const { z } = require("zod");
 const Section = require("../../models/sections_model");
 const OrganizationRole = require("../../models/organizationRoles_model");
+const { logGlobalAdminActivity } = require("./globalAdmin_activity");
 
 // ✅ Validation
 const createRoleSchema = z.object({
@@ -89,6 +90,7 @@ const createRole = async(req,res)=>{
       permissions,
       organization_id:orgId 
     });
+    await logGlobalAdminActivity(req,"Create Role","role",`Role created successfully ${newOrgRole.name}`)
     return res.status(200).json({
       message: "Role updated successfully",
       role: newOrgRole
@@ -151,7 +153,7 @@ const editRole = async (req, res) => {
         message: "Role not found",
       });
     }
-
+    await logGlobalAdminActivity(req,"Edit Role","role",`Updated ${updatedRole.name} role for ${updatedRole.organization_id}`)
     return res.status(200).json({
       success: true,
       message: "Role updated successfully",
@@ -171,7 +173,7 @@ const editRole = async (req, res) => {
 const deleteRole = async(req, res) => {
     try {
         const deletedRole = await Role.findOneAndDelete({ uuid: req.params.id })
-
+        await logGlobalAdminActivity(req,"Delete Role","role",`Role deleted successfully ${deletedRole.name}`)
         return res.status(200).json({
             success: true,
             message: "Role deleted successfully",
@@ -193,7 +195,7 @@ const getRoles = async (req, res) => {
         path: "permissions",
         select: "section allowed", 
       });
-
+    // await logGlobalAdminActivity(req,"Get Roles","role","Roles fetched successfully")
     // ✅ Transform to required format
     const formatted = roles.map(role => ({
       uuid: role.uuid,
@@ -283,7 +285,7 @@ const addPermissions = async (req, res) => {
       savedSections.push(savedSection);
       savedPermissions.push(...permissionDocs);
     }
-
+    await logGlobalAdminActivity(req,"Add Permissions","permissions","Permissions added successfully")
     res.status(200).json({
       success: true,
       message: "Sections & Permissions added successfully.",

@@ -14,7 +14,7 @@ const cors = require("cors");
 // };
 
 const corsMiddleware = cors({
-  origin: "*", // allowed origins or using "*" for all sites || whitelisted sites
+  origin: "http://localhost:3000", // allowed origins or using "*" for all sites || whitelisted sites
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true, // if you use cookies or tokens

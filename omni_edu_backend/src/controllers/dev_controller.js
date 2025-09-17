@@ -1,4 +1,4 @@
-const User = require("../models/users_model");
+const GlobalAdmin = require("../models/globalAdmin_model");
 
 const addGlobalAdmin = async(req,res)=>{
     try {
@@ -9,17 +9,15 @@ const addGlobalAdmin = async(req,res)=>{
                 message:"Email and password are required"
             })
         }
-        const user = await User.create({
-            email,
-            password,
+        const globalAdmin = await GlobalAdmin.create({
             name,
-            ///global admin
-            global_role_id:"68b6863aad08c16efb202a5d",
+            email,
+            password
         })
         return res.status(201).json({
             isSuccess:true,
             message:"Global Admin added successfully",
-            data:user
+            data:globalAdmin
         })
     } catch (error) {
         return res.status(500).json({
