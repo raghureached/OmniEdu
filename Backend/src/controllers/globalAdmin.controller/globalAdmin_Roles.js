@@ -68,6 +68,7 @@ const addRole = async (req, res) => {
 const createRole = async(req,res)=>{
   try { 
     const { name, description, permissions,orgId } = req.body;
+    // console.log(orgId)
     for (const permBlock of permissions) {
       const sectionExists = await Section.findById(permBlock.section);
       if (!sectionExists) {
@@ -97,6 +98,7 @@ const createRole = async(req,res)=>{
       role: newOrgRole
     });
   } catch(error){
+    console.log(error)
     return res.status(500).json({
       message: "Failed to update role",
       error: error.message
@@ -172,7 +174,7 @@ const editRole = async (req, res) => {
 
 const deleteRole = async(req, res) => {
     try {
-        const deletedRole = await Role.findOneAndDelete({ uuid: req.params.id })
+        const deletedRole = await OrganizationRole.findOneAndDelete({ uuid: req.params.id })
         await logGlobalAdminActivity(req,"Delete Role","role",`Role deleted successfully ${deletedRole.name}`)
         return res.status(200).json({
             success: true,

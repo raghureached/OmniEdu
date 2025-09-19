@@ -9,7 +9,7 @@ const OrganizationDetails = ({ orgId, isOpen, onClose }) => {
   const [docPreviewUrl, setDocPreviewUrl] = useState(null);
   const dispatch = useDispatch();
 
-    console.log(orgId)
+    // console.log(orgId)
     useEffect(() => {
         if (isOpen && orgId) {
           dispatch(fetchOrganizationById(orgId));

@@ -55,13 +55,18 @@ const OrganizationManagement = () => {
   });
   const navigate = useNavigate();
   useEffect(() => {
-    console.log("Updated logo:", formData.logo);
+    // console.log("Updated logo:", formData.logo);
   }, [formData.logo]);
   
   useEffect(() => {
-    dispatch(fetchOrganizations(filters));
-    fetchPlans();
+    const timeoutId = setTimeout(() => {
+      dispatch(fetchOrganizations(filters));
+      fetchPlans();
+    }, 500); // Delay in milliseconds
+  
+    return () => clearTimeout(timeoutId); // Cleanup on unmount or dependency change
   }, [dispatch, filters]);
+  
   const fetchPlans = async () => {
     const response = await api.get("/api/globalAdmin/getPlans");
     const data = response.data.data;
@@ -118,7 +123,7 @@ const OrganizationManagement = () => {
     const { name, value, files } = e.target;
     if (files) {
       if (name === "logo") {
-        console.log("Logo file selected:", files[0]);
+        // console.log("Logo file selected:", files[0]);
         setSelectedLogo(files[0]);
         setFormData((prev) => ({ ...prev, [name]: files[0] }));
       } else if (name === "documents") {
@@ -353,7 +358,7 @@ const OrganizationManagement = () => {
                     key={org.uuid}
                   />
                   <div className="planId">{org.planId}</div>
-                  <div className="user-cell" onClick={() => handleOpenOrg(org.uuid)}>
+                  <div className="user-cell" >
                     <div
                       className="user-avatar-cell"
                       style={{ backgroundColor: "#FFC107" }}

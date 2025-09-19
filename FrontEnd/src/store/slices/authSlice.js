@@ -1,6 +1,32 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
 
+// Helper functions for localStorage
+const loadAuthState = () => {
+  try {
+    const authState = localStorage.getItem('authState');
+    return authState ? JSON.parse(authState) : null;
+  } catch (error) {
+    console.error('Error loading auth state from localStorage', error);
+    return null;
+  }
+};
+
+const saveAuthState = (state) => {
+  try {
+    const stateToPersist = {
+      user: state.user,
+      isAuthenticated: state.isAuthenticated,
+      role: state.role,
+      lastLoginDateTime: state.lastLoginDateTime,
+      token: state.token
+    };
+    localStorage.setItem('authState', JSON.stringify(stateToPersist));
+  } catch (error) {
+    console.error('Error saving auth state to localStorage', error);
+  }
+};
+
 // Mock users for testing (remove in production)
 const mockUsers = {
   'globaladmin': {  // Changed from globaladmin to 'globaladmin'
@@ -63,6 +89,7 @@ export const mockLogin = createAsyncThunk(
     };
   }
 );
+
 export const checkAuth = createAsyncThunk('auth/checkAuth', async (_,{rejectWithValue}) => {
   try {
     const response = await api.post('/auth/checkAuth');
@@ -71,14 +98,13 @@ export const checkAuth = createAsyncThunk('auth/checkAuth', async (_,{rejectWith
     return rejectWithValue(error.response.data);
   }
 })
+
 // Async thunks for authentication
 export const login = createAsyncThunk(
   'auth/login',
   async ({ email, password }, { rejectWithValue }) => {
     try {
-      // console.log(email,password)
       const response = await api.post('/auth/login', { email, password });
-      // console.log(response)
       return {
         ...response.data,
         lastLoginDateTime: new Date().toISOString()
@@ -128,17 +154,11 @@ export const resetPassword = createAsyncThunk(
   }
 );
 
-// export const logout = createAsyncThunk('auth/logout', async () => {
-//   localStorage.removeItem('token');
-//   try {
-//     await api.post('/auth/logout');
-//   } catch (error) {
-//     // Silently handle API errors during logout
-//     console.log('Logout API call failed, but continuing logout process');
-//   }
-//   return null;
-// });
 export const logout = createAsyncThunk('auth/logout', async () => {
+  // Clear auth data from localStorage
+  localStorage.removeItem('authState');
+  localStorage.removeItem('token');
+  
   try {
     await api.post('/auth/logout');
   } catch (error) {
@@ -147,12 +167,15 @@ export const logout = createAsyncThunk('auth/logout', async () => {
   return null;
 });
 
+// Get persisted state from localStorage
+const persistedState = loadAuthState();
+
 // Auth slice
 const authSlice = createSlice({
   name: 'auth',
-  initialState: {
+  initialState: persistedState || {
     user: null,
-    // token: localStorage.getItem('token'),
+    token: null,
     isAuthenticated: false,
     loading: false,
     error: null,
@@ -190,11 +213,16 @@ const authSlice = createSlice({
         state.loading = false;
         state.isAuthenticated = true;
         state.user = action.payload.data;
-        // state.token = action.payload.token;
-        // console.log(action.payload.role)
+        state.token = action.payload.token;
         state.role = action.payload.role;
         state.lastLoginDateTime = action.payload.data.last_login;
         state.sessionStartTime = new Date().toISOString();
+        
+        // Save token to localStorage for API requests
+        localStorage.setItem('token', action.payload.token);
+        
+        // Save auth state to localStorage
+        saveAuthState(state);
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
@@ -207,11 +235,19 @@ const authSlice = createSlice({
       .addCase(checkAuth.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        // console.log(action.payload)
         state.user = action.payload.data;
+        state.token = action.payload.token;
         state.role = action.payload.role;
         state.lastLoginDateTime = action.payload.data.last_login;
         state.sessionStartTime = new Date().toISOString();
+        
+        // Save token to localStorage for API requests
+        if (action.payload.token) {
+          localStorage.setItem('token', action.payload.token);
+        }
+        
+        // Save auth state to localStorage
+        saveAuthState(state);
       })
       .addCase(checkAuth.rejected, (state, action) => {
         state.loading = false;
@@ -232,8 +268,12 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         state.lastLoginDateTime = action.payload.lastLoginDateTime;
         state.sessionStartTime = new Date().toISOString();
-        // Store token in localStorage for consistency with real login
+        
+        // Store token in localStorage for API requests
         localStorage.setItem('token', action.payload.token);
+        
+        // Save auth state to localStorage
+        saveAuthState(state);
       })
       .addCase(mockLogin.rejected, (state, action) => {
         state.loading = false;
@@ -255,6 +295,12 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         state.lastLoginDateTime = action.payload.lastLoginDateTime;
         state.sessionStartTime = new Date().toISOString();
+        
+        // Store token in localStorage for API requests
+        localStorage.setItem('token', action.payload.token);
+        
+        // Save auth state to localStorage
+        saveAuthState(state);
       })
       .addCase(loginWithSSO.rejected, (state, action) => {
         state.loading = false;
@@ -298,6 +344,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.lastLoginDateTime = null;
         state.sessionStartTime = null;
+        state.role = null;
       });
   },
 });

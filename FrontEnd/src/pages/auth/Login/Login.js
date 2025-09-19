@@ -5,48 +5,51 @@ import { login, loginWithSSO, clearError, mockLogin } from '../../../store/slice
 import './Login.css';
 
 const Login = () => {
-  const [ email, setEmail] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isAuthenticated, loading, error, user,role } = useSelector((state) => state.auth);
+  const { isAuthenticated, loading, error, user, role } = useSelector((state) => state.auth);
+
+  // Clear errors only once when component mounts
   useEffect(() => {
-    // Clear any existing errors
     dispatch(clearError());
-    // console.log(isAuthenticated,role)
-    // Redirect if already authenticated
+  }, []); // Empty dependency array - runs only once
+
+  // Handle navigation when authentication state changes
+  useEffect(() => {
     if (isAuthenticated && role) {
+      // Use replace: true to avoid adding to browser history
       if (role === 'GlobalAdmin') {
-        navigate('/global-admin/organizations'); 
+        navigate('/global-admin/organizations', { replace: true });
       } else if (role === 'Admin') {
-        navigate('/admin');
+        navigate('/admin', { replace: true });
       } else {
-        navigate('/user/learning-hub'); 
+        navigate('/user/learning-hub', { replace: true });
       }
     }
-  }, [isAuthenticated,role,dispatch]);
-  // }, []);
-  
+  }, [isAuthenticated, role, navigate]); // Include navigate for completeness
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // console.log(email,password)
     dispatch(login({ email, password }));
-    // console.log(role)
+    
     // Always use mockLogin for now until backend is ready
-    // dispatch(mockLogin({ username, password }));
+    // dispatch(mockLogin({ username: email, password }));
+    
     // Uncomment this when you have a real backend
     // const isDevelopment = process.env.NODE_ENV === 'development';
     // if (isDevelopment) {
-    //   dispatch(mockLogin({ username, password }));
+    //   dispatch(mockLogin({ username: email, password }));
     // } else {
-    //   dispatch(login({ username, password }));
+    //   dispatch(login({ email, password }));
     // }
   };
-  
+
   const handleSSOLogin = (provider) => {
     dispatch(loginWithSSO(provider));
   };
-  
+
   return (
     <div className="login-container">
       <div className="login-form-wrapper">

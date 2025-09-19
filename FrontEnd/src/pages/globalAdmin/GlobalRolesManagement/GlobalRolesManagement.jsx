@@ -102,6 +102,7 @@ const GlobalRolesManagement = () => {
       description: formData.description,
       organization: organization,
       permissions: permissions, // section-based permissions
+      orgId:organization
     };
 
     if (currentRole) {
@@ -139,7 +140,7 @@ const GlobalRolesManagement = () => {
         {currentRole ? "" : <div className="form-group  ">
                 <select
                   style={{marginTop:"20px"}}
-                  value={formData.organization}
+                  value={currentOrg}
                   onChange={(e) =>
                     handleSelectCurrentOrg(e.target.value)
                   }

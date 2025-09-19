@@ -48,7 +48,7 @@ export const updateContent = createAsyncThunk(
   'content/updateContent',
   async ({ id, updatedData }, { rejectWithValue }) => {
     try {
-      console.log(updatedData)
+      // console.log(updatedData)
       const response = await api.put(`/api/globalAdmin/editContent/${id}`, updatedData);
       console.log(response)
       return response.data.data;
@@ -135,6 +135,7 @@ const contentSlice = createSlice({
         state.loading = true;
       })
       .addCase(updateContent.fulfilled, (state, action) => {
+        state.loading = false;
         const index = state.items.findIndex(item => item.id === action.payload.id);
         if (index !== -1) {
           state.items[index] = action.payload;

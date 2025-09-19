@@ -133,7 +133,7 @@ const GlobalSurveys = () => {
         question_type: q.question_type,
         options:
           q.question_type === "multiple_choice" || q.question_type === "rating"
-            ? q.options.filter((opt) => opt.trim() !== "")
+            ? q.options.filter((opt) => typeof opt === "string" && opt.trim() !== "")
             : [],
       })),
     };
@@ -254,14 +254,29 @@ const GlobalSurveys = () => {
   };
 
   // Filtering
-  const filteredSurveys = surveys.filter((survey) => {
-    const matchesSearch = survey.title
-      ?.toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || survey.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // const filteredSurveys = surveys.filter((survey) => {
+  //   const matchesSearch = survey.title
+  //     ?.toLowerCase()
+  //     .includes(searchTerm.toLowerCase());
+  //   const matchesStatus =
+  //     statusFilter === "all" || survey.status === statusFilter;
+  //   return matchesSearch && matchesStatus;
+  // });
+// Filtering
+const filteredSurveys = surveys.filter((survey) => {
+  // Search by title (safe check)
+  const matchesSearch = survey.title
+    ? survey.title.toLowerCase().includes(searchTerm.toLowerCase())
+    : false;
+
+  // Filter by status (use is_active boolean instead of status string)
+  const matchesStatus =
+    statusFilter === "all" ||
+    (statusFilter === "active" && survey.is_active === true) ||
+    (statusFilter === "inactive" && survey.is_active === false);
+
+  return matchesSearch && matchesStatus;
+});
 
   // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -290,7 +305,7 @@ const GlobalSurveys = () => {
             className="survey-search"
           />
           </div>
-          <select
+          {/* <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="survey-select"
@@ -299,7 +314,17 @@ const GlobalSurveys = () => {
             <option value="active">Active</option>
             <option value="draft">Draft</option>
             <option value="closed">Closed</option>
-          </select> 
+          </select>  */}
+          <select
+  value={statusFilter}
+  onChange={(e) => setStatusFilter(e.target.value)}
+  className="survey-select"
+>
+  <option value="all">All</option>
+  <option value="active">Active</option>
+  <option value="inactive">Inactive</option>
+</select>
+
           </div>
           <div>
           <button

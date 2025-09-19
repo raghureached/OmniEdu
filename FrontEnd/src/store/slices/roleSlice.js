@@ -311,9 +311,11 @@ export const createRole = createAsyncThunk(
   'roles/createRole',
   async ({ roleData, isGlobalAdmin = false }, { rejectWithValue }) => {
     try {
+      // console.log(roleData)
       const endpoint = '/api/globalAdmin/createRoleOrg'
       const response = await api.post(endpoint, roleData);
-      return response.data.data;
+      // console.log(response.data)
+      return response.data.role;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -337,13 +339,12 @@ export const updateRole = createAsyncThunk(
 // Delete Role
 export const deleteRole = createAsyncThunk(
   'roles/deleteRole',
-  async ({ _id, isGlobalAdmin = false }, { rejectWithValue }) => {
+  async ({ _id }, { rejectWithValue }) => {
     try {
-      const endpoint = isGlobalAdmin
-        ? `/api/globalAdmin/deleteRole/${_id}`
-        : `/admin/roles/${_id}`;
+      const endpoint = `/api/globalAdmin/deleteRole/${_id}`;
       const response = await api.delete(endpoint);
-      return { _id: response.data.data._id, isGlobalAdmin }; // return deleted role id
+      // console.log(response.data.data._id)
+      return response.data.data._id; // return deleted role id
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -408,6 +409,7 @@ const roleSlice = createSlice({
         } else {
           state.adminRoles.push(action.payload);
         }
+        // console.log(action.payload)
       })
       .addCase(createRole.rejected, (state, action) => {
         state.loading = false;
@@ -439,15 +441,9 @@ const roleSlice = createSlice({
       })
       .addCase(deleteRole.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.payload.isGlobalAdmin) {
-          state.globalRoles = state.globalRoles.filter(
-            (role) => role._id !== action.payload._id
-          );
-        } else {
-          state.adminRoles = state.adminRoles.filter(
-            (role) => role._id !== action.payload._id
-          );
-        }
+        state.globalRoles = state.globalRoles.filter(
+          (role) => role._id !== action.payload
+        );
       })
       .addCase(deleteRole.rejected, (state, action) => {
         state.loading = false;
