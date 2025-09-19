@@ -3,20 +3,18 @@ import "./SurveyPreview.css";
 
 const SurveyPreview = ({ survey, onClose }) => {
   if (!survey) return null;
-
+  
   return (
-    <div className="modal-overlay">
-      <div className="modal">
+    <div className="survey-preview-modal-overlay">
+      <div className="survey-preview-modal">
         {/* Header */}
-        <div className="modal-header">
+        <div className="survey-preview-modal-header">
           <h3>Survey Preview: {survey.title}</h3>
-          <button className="close-btn" onClick={onClose}>
-            ✖
-          </button>
+          <button className="survey-preview-close-btn" onClick={onClose}>✖</button>
         </div>
 
         {/* Body */}
-        <div className="preview-body">
+        <div className="survey-preview-body">
           <p><strong>Description:</strong> {survey.description}</p>
           <p><strong>Status:</strong> {survey.is_active ? "Active" : "Inactive"}</p>
           <p><strong>Start Date:</strong> {survey.start_date ? new Date(survey.start_date).toLocaleDateString() : "N/A"}</p>
@@ -25,17 +23,17 @@ const SurveyPreview = ({ survey, onClose }) => {
           <h4>Questions</h4>
           {survey.questions?.length > 0 ? (
             survey.questions.map((q, index) => (
-              <div key={index} className="preview-question">
+              <div key={index} className="survey-preview-question">
                 <p><strong>Q{index + 1}:</strong> {q.question_text}</p>
 
                 {q.question_type === "text" && (
-                  <input type="text" placeholder="Your answer" disabled />
+                  <input type="text" placeholder="User's Response" disabled />
                 )}
 
                 {q.question_type === "rating" && (
                   <div>
                     {[1, 2, 3, 4, 5].map((star) => (
-                      <span key={star} style={{ marginRight: "5px" }}>⭐</span>
+                      <span key={star} className="star">⭐</span>
                     ))}
                   </div>
                 )}
@@ -43,7 +41,7 @@ const SurveyPreview = ({ survey, onClose }) => {
                 {q.question_type === "multiple_choice" && (
                   <div>
                     {q.options?.map((opt, optIndex) => (
-                      <label key={optIndex} style={{ display: "block" }}>
+                      <label key={optIndex}>
                         <input type="radio" name={`q${index}`} disabled /> {opt}
                       </label>
                     ))}
@@ -57,8 +55,8 @@ const SurveyPreview = ({ survey, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="modal-actions">
-          <button className="cancel-btn" onClick={onClose}>
+        <div className="survey-preview-modal-actions">
+          <button className="survey-preview-cancel-btn" onClick={onClose}>
             Close
           </button>
         </div>

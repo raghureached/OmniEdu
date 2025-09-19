@@ -281,9 +281,10 @@ import api from '../../services/api';
 // Fetch Roles
 export const fetchRoles = createAsyncThunk(
   'roles/fetchRoles',
-  async ( { rejectWithValue }) => {
+  async (currentOrg ,{ rejectWithValue }) => {
     try {
-      const endpoint = '/api/globalAdmin/getRoles'
+      // console.log(currentOrg)
+      const endpoint = `/api/globalAdmin/getRoles/${currentOrg}`
       const response = await api.get(endpoint);
       return response.data.data;
     } catch (error) {

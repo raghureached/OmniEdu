@@ -73,12 +73,8 @@ const logout = async(req,res)=>{
 }
 
 const generateTokens = async (userId,role) => {
-    const accessToken = jwt.sign({_id:userId,role:role},process.env.ACCESS_TOKEN_SECRET,{
-        expiresIn:"15m"
-    })
-    const refreshToken = jwt.sign({_id:userId,role:role},process.env.REFRESH_TOKEN_SECRET,{
-        expiresIn:"7d"
-    })
+    const accessToken = jwt.sign({_id:userId,role:role},process.env.ACCESS_TOKEN_SECRET)
+    const refreshToken = jwt.sign({_id:userId,role:role},process.env.REFRESH_TOKEN_SECRET)
     return {accessToken,refreshToken}
 }
 
@@ -105,8 +101,7 @@ const handleLogin = async (entity, password, role, res) => {
   entity.password = undefined;
 
   const { accessToken, refreshToken } = await generateTokens(entity._id, role);
-
-  // attach cookies for refresh and access tokens
+  
   res.cookie("refreshToken", refreshToken, options);
   res.cookie("accessToken", accessToken, options);
 

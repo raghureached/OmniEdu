@@ -15,11 +15,27 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
     margin-bottom: 25px;
   }
-  
+  .orgs-drop-down {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .roles-search-bar {
+    display: flex;
+    position: relative;
+    flex: 1;
+    align-items: center;
+    gap: 10px;
+  }
   .roles-search-bar input {
     padding: 10px 14px;
+    padding-left: 36px  ;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     font-size: 14px;

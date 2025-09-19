@@ -31,11 +31,13 @@ export const fetchContentById = createAsyncThunk(
 export const createContent = createAsyncThunk(
   'content/createContent',
   async (contentData, { rejectWithValue }) => {
-    // console.log(contentData);
+    console.log(contentData);
     
     try {
-      const response = await api.post('/api/globalAdmin/addcontent', contentData);
-      return response.data;
+      const response = await api.post('/api/globalAdmin/addcontent', contentData,
+        {headers: { 'Content-Type': 'multipart/form-data' }}
+      );
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -44,11 +46,12 @@ export const createContent = createAsyncThunk(
 
 export const updateContent = createAsyncThunk(
   'content/updateContent',
-  async ({ id, data }, { rejectWithValue }) => {
+  async ({ id, updatedData }, { rejectWithValue }) => {
     try {
-      // console.log(data)
-      const response = await api.put(`/api/globalAdmin/editContent/${id}`, data);
-      return response.data;
+      console.log(updatedData)
+      const response = await api.put(`/api/globalAdmin/editContent/${id}`, updatedData);
+      console.log(response)
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }

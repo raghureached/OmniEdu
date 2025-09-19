@@ -34,7 +34,6 @@ const Login = () => {
     // console.log(role)
     // Always use mockLogin for now until backend is ready
     // dispatch(mockLogin({ username, password }));
-    
     // Uncomment this when you have a real backend
     // const isDevelopment = process.env.NODE_ENV === 'development';
     // if (isDevelopment) {

@@ -6,7 +6,8 @@ export const fetchGlobalAssignments = createAsyncThunk(
   'globalAssignments/fetchGlobalAssignments',
   async (filters, { rejectWithValue }) => {
     try {
-      const response = await api.get('/globalAssignments', { params: filters });
+      const response = await api.get('/api/globalAdmin/fetchAssignments', { params: filters });
+      // console.log(response)
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -18,7 +19,6 @@ export const createGlobalAssignment = createAsyncThunk(
   'globalAssignments/createGlobalAssignment',
   async (assignmentData, { rejectWithValue }) => {
     try {
-        console.log(assignmentData)
       const response = await api.post('/api/globalAdmin/createAssignment', assignmentData);
       return response.data;
     } catch (error) {
@@ -78,7 +78,8 @@ const globalAssignmentSlice = createSlice({
       })
       .addCase(fetchGlobalAssignments.fulfilled, (state, action) => {
         state.loading = false;
-        state.content = action.payload.items || action.payload;
+        state.content = action.payload.data;
+        console.log(action.payload)
         state.totalCount = action.payload.totalCount || action.payload.length;
       })
       .addCase(fetchGlobalAssignments.rejected, (state, action) => {
@@ -87,8 +88,16 @@ const globalAssignmentSlice = createSlice({
       })
       
       // Create assignment
+      .addCase(createGlobalAssignment.pending, (state) => {
+        state.loading = true;
+      })
       .addCase(createGlobalAssignment.fulfilled, (state, action) => {
+        state.loading = false;
         state.content.push(action.payload);
+      })
+      .addCase(createGlobalAssignment.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.message || 'Failed to create assignment';
       })
       
       // Update assignment

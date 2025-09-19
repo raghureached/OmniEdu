@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './CreateAssignment.css';
-import AddOrgDateRangePickerSingle from '../OrganizationManagement/DateRangePicker';
+import AddOrgDateRangePickerSingle from '../../../components/common/CustomDatePicker/DateRangePicker';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchContent } from '../../../store/slices/contentSlice';
 import { createGlobalAssignment } from '../../../store/slices/globalAssignmentSlice';
@@ -13,7 +13,6 @@ const GlobalCreateAssignment = () => {
     const [currentStep, setCurrentStep] = useState(1);
     const [showAssignDatePicker, setShowAssignDatePicker] = useState(false);
     const [showDueDatePicker, setShowDueDatePicker] = useState(false);
-
 
     const [formData, setFormData] = useState({
         contentType: '',
@@ -29,7 +28,7 @@ const GlobalCreateAssignment = () => {
         notifyUsers: false,
         isRecurring: false,
     });
-    const {items } = useSelector((state) => state.content);
+    const {items,loading } = useSelector((state) => state.content);
     const content = items;
     // console.log(dummyContent)
 
@@ -52,7 +51,7 @@ const GlobalCreateAssignment = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log('Assignment created:', formData);
+        // console.log('Assignment created:', formData);
         setFormData({
             contentType: '',
             contentId: '',
@@ -145,188 +144,6 @@ const GlobalCreateAssignment = () => {
                             </div>
                         </div>
                     )}
-
-                    {/* Step 2: Choose Target Audience */}
-                    {/* {currentStep === 2 && (
-                        <div className="global-assign-assignment-step-content">
-                            <h2 className="global-assign-step-title">Step 2: Choose Target Audience</h2>
-                            <div className="global-assign-audience-type-selection">
-                                <div className="global-assign-audience-type-option">
-                                    <label htmlFor="individual">Assign to Individual Users</label>
-                                    <input
-                                        type="radio"
-                                        id="individual"
-                                        name="assignType"
-                                        value="individual"
-                                        checked={formData.assignType === 'individual'}
-                                        onChange={handleInputChange}
-                                    />
-                                </div>
-                                <div className="global-assign-audience-type-option">
-                                    <label htmlFor="group">Assign to a Group</label>
-
-                                    <input
-                                        type="radio"
-                                        id="group"
-                                        name="assignType"
-                                        value="group"
-                                        checked={formData.assignType === 'group'}
-                                        onChange={handleInputChange}
-                                    />
-                                </div>
-                            </div>
-                            {formData.assignType === 'individual' ? (
-                                <div className="global-assign-user-selection">
-                                    <label style={{ marginBottom: '10px' }}>Select Users (by Email):</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Search users by email..."
-                                        value={userSearchTerm}
-                                        onChange={(e) => setUserSearchTerm(e.target.value)}
-                                        className="global-assign-user-search-input"
-                                    />
-                                    <div className="global-assign-users-list">
-                                        {filteredUsers.map(user => (
-                                            <div
-                                                key={user.id}
-                                                className={[
-                                                    "global-assign-user-item",
-                                                    formData.selectedUsers.includes(user.id) ? "global-assign-selected" : ""
-                                                ].filter(Boolean).join(' ')}
-                                                onClick={() => handleUserSelection(user.id)}
-                                            >
-                                                <div className="global-assign-user-email">{user.email}</div>
-                                                <div className="global-assign-user-name">{user.name}</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="global-assign-group-selection">
-                                    <label htmlFor="selectedGroup">Select Group:</label>
-                                    <select
-                                        id="selectedGroup"
-                                        name="selectedGroup"
-                                        value={formData.selectedGroup}
-                                        onChange={handleInputChange}
-                                        className="global-assign-group-select"
-                                    >
-                                        <option value="">Select a group...</option>
-                                        {dummyGroups.map(group => (
-                                            <option key={group.id} value={group.id}>{group.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-                            <div className="global-assign-step-actions">
-                                <button type="button" className="global-assign-prev-step-btn" onClick={handlePrevStep}>
-                                    Previous
-                                </button>
-                                <button
-                                    type="button"
-                                    className="global-assign-next-step-btn"
-                                    onClick={handleNextStep}
-                                    disabled={
-                                        (formData.assignType === 'individual' && formData.selectedUsers.length === 0) ||
-                                        (formData.assignType === 'group' && !formData.selectedGroup)
-                                    }
-                                >
-                                    Next
-                                </button>
-                            </div>
-                        </div>
-                    )} */}
-                    {/* {currentStep === 2 && (
-                        <div className="global-assign-assignment-step-content">
-                            <h2 className="global-assign-step-title">Step 2: Choose Target Organization</h2>
-                            <div className="global-assign-audience-type-selection">
-                                <div className="global-assign-audience-type-option">
-                                    <label htmlFor="individual">Assign to Individual Users</label>
-                                    <input
-                                        type="radio"
-                                        id="individual"
-                                        name="assignType"
-                                        value="individual"
-                                        checked={formData.assignType === 'individual'}
-                                        onChange={handleInputChange}
-                                    />
-                                </div>
-                                <div className="global-assign-audience-type-option">
-                                    <label htmlFor="group">Assign to a Group</label>
-
-                                    <input
-                                        type="radio"
-                                        id="group"
-                                        name="assignType"
-                                        value="group"
-                                        checked={formData.assignType === 'group'}
-                                        onChange={handleInputChange}
-                                    />
-                                </div>
-                            </div>
-                            {formData.assignType === 'individual' ? (
-                                <div className="global-assign-user-selection">
-                                    <label style={{ marginBottom: '10px' }}>Select Users (by Email):</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Search users by email..."
-                                        value={userSearchTerm}
-                                        onChange={(e) => setUserSearchTerm(e.target.value)}
-                                        className="global-assign-user-search-input"
-                                    />
-                                    <div className="global-assign-users-list">
-                                        {filteredUsers.map(user => (
-                                            <div
-                                                key={user.id}
-                                                className={[
-                                                    "global-assign-user-item",
-                                                    formData.selectedUsers.includes(user.id) ? "global-assign-selected" : ""
-                                                ].filter(Boolean).join(' ')}
-                                                onClick={() => handleUserSelection(user.id)}
-                                            >
-                                                <div className="global-assign-user-email">{user.email}</div>
-                                                <div className="global-assign-user-name">{user.name}</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="global-assign-group-selection">
-                                    <label htmlFor="selectedGroup">Select Group:</label>
-                                    <select
-                                        id="selectedGroup"
-                                        name="selectedGroup"
-                                        value={formData.selectedGroup}
-                                        onChange={handleInputChange}
-                                        className="global-assign-group-select"
-                                    >
-                                        <option value="">Select a group...</option>
-                                        {dummyGroups.map(group => (
-                                            <option key={group.id} value={group.id}>{group.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-                            <div className="global-assign-step-actions">
-                                <button type="button" className="global-assign-prev-step-btn" onClick={handlePrevStep}>
-                                    Previous
-                                </button>
-                                <button
-                                    type="button"
-                                    className="global-assign-next-step-btn"
-                                    onClick={handleNextStep}
-                                    disabled={
-                                        (formData.assignType === 'individual' && formData.selectedUsers.length === 0) ||
-                                        (formData.assignType === 'group' && !formData.selectedGroup)
-                                    }
-                                >
-                                    Next
-                                </button>
-                            </div>
-                        </div>
-                    )} */}
-
-                    {/* Step 3: Set Dates */}
                     {currentStep === 2 && (
                         <div className="global-assign-assignment-step-content">
                             <h2 className="global-assign-step-title">Step 3: Set Overall Dates</h2>
@@ -481,7 +298,7 @@ const GlobalCreateAssignment = () => {
                                     Previous
                                 </button>
                                 <button type="submit" className="global-assign-create-btn">
-                                    Create Assignment
+                                    {loading ? "Creating Assignment..." : "Create Assignment"}
                                 </button>
                             </div>
                         </div>

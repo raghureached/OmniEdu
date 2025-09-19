@@ -42,7 +42,6 @@ import AdminPortalActivity from './pages/admin/AdminPortalActivity/AdminPortalAc
 
 // Global Admin Pages 
 import OrganizationManagement from './pages/globalAdmin/OrganizationManagement/OrganizationManagement';
-import NewOrgManagement from './pages/globalAdmin/OrganizationManagement/NewOrgManagement';
 import GlobalRolesManagement from './pages/globalAdmin/GlobalRolesManagement/GlobalRolesManagement';
 import GlobalContentManagement from './pages/globalAdmin/GlobalContentManagement/GlobalContentManagement';
 import GlobalSurveys from './pages/globalAdmin/GlobalSurveys/GlobalSurveys';
@@ -88,9 +87,9 @@ function App() {
   const { isAuthenticated, role, loading } = useSelector((state) => state.auth);
   useEffect(() => {
     dispatch(checkAuth())
-  }, [dispatch])
+  }, [])
   useEffect(() => {
-    console.log("Auth State Changed", isAuthenticated, role, loading);
+
   }, [isAuthenticated, role, loading]);
 
   // Initialize session time when app loads if user is authenticated
@@ -181,7 +180,7 @@ function App() {
               /> */}
             <Route
               path="organizations"
-              element={<NewOrgManagement />}
+              element={<OrganizationManagement />}
             />
             <Route path="" element={<GlobalAdminDashboard />} />
             <Route path="message-board" element={<GlobalMessageBoard />} />

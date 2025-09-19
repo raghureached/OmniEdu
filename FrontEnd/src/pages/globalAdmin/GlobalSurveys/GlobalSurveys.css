@@ -21,7 +21,7 @@
   }
   
   .survey-btn-primary {
-    background: #3b82f6;
+    background: #5570F1;
     color: #fff;
     border: none;
     padding: 8px 16px;
@@ -31,12 +31,20 @@
     transition: background 0.2s;
   }
   .survey-btn-primary:hover {
-    background: #2563eb;
+    background: #5570F1;
+  }
+  .survey-top-controls{
+    display: flex;
+    justify-content: space-between !important;
+    /* justify-content: center   ; */
+    margin-bottom: 20px;
   }
   
   /* Filters */
   .survey-filters {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 12px;
     margin-bottom: 16px;
   }
@@ -54,8 +62,10 @@
   /* Table */
   .survey-table-container {
     background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
+    /* border: 1px solid #e5e7eb; */
+
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-radius: 16px;
     overflow: hidden;
   }
   
@@ -65,17 +75,17 @@
   }
   
   .survey-table th {
-    background: #f9fafb;
-    padding: 12px;
+    background: #f1f5f9;
+    padding: 12px 18px;
     text-align: left;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     color: #374151;
     border-bottom: 1px solid #e5e7eb;
   }
   
   .survey-table td {
-    padding: 12px;
+    padding: 12px 18px;
     border-bottom: 1px solid #f3f4f6;
     font-size: 14px;
     color: #374151;

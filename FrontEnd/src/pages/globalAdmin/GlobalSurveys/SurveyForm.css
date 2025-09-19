@@ -1,161 +1,88 @@
-/* Overlay */
 .modal-overlay {
   position: fixed;
+   top: 0; left: 0; right: 0; bottom: 0;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0,0,0,0.55);
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 1000;
+  justify-content: center;
+  
 }
 
-/* Modal Container */
 .modal {
   background: #fff;
+  max-width: 820px;
   width: 100%;
-  max-width: 800px;
   border-radius: 16px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
-  padding: 0;
-  position: relative;
+  box-shadow: 0 4px 32px rgba(14,19,24,0.18);
   border: 2px solid #5570F1;
+  position: relative;
   font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  padding: 0;
 }
-
-/* Header */
 .modal-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 24px 32px;
+  justify-content: space-between;
+  padding: 32px 48px 18px 48px;
   border-bottom: 1px solid #eee;
 }
+
 .modal-header h3 {
-  margin: 0;
   font-size: 1.5rem;
   font-weight: 700;
   color: #5570F1;
+  margin: 0;
 }
 .close-btn {
   background: none;
   border: none;
-  font-size: 1.6rem;
+  font-size: 2rem;
+  color: #B7B7B7;
   cursor: pointer;
-  color: #999;
   transition: color 0.2s;
 }
 .close-btn:hover {
   color: #5570F1;
 }
-
-/* Form */
 .modal-form {
-  padding: 24px 32px;
+  padding: 10px 32px 32px 32px;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 .modal-form label {
   font-weight: 600;
-  margin-bottom: 6px;
-  color: #333;
+  margin-bottom: 7px;
+  color: #222;
 }
 .modal-form input,
 .modal-form select,
 .modal-form textarea {
-  width: 100%;
-  border: 1px solid #bbb;
+  border: 1px solid #B7B7B7;
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 10px 14px;
   font-size: 1rem;
+  transition: all 0.2s;
 }
 .modal-form input:focus,
 .modal-form select:focus,
 .modal-form textarea:focus {
   border-color: #5570F1;
+  box-shadow: 0 0 0 2px rgba(85,112,241,0.17);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(85, 112, 241, 0.2);
 }
-
-/* Date fields side by side */
-.date-fields {
-  display: flex;
-  gap: 16px;
-}
-.date-fields > div {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Questions section */
-.survey_question-box {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-.survey_question-box input,
-.survey_question-box select {
-  flex: 1;
-}
-.survey_remove-btn {
-  background: #f8d7da;
-  color: #721c24;
-  border: none;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-.survey_remove-btn:hover {
-  background: #f5c6cb;
-}
-/* updated */
-/* Questions section */
 .question-box {
-  position: relative;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  background: #f6f6fa;
+  border-radius: 10px;
   padding: 16px;
-  margin-bottom: 16px;
-  background: #fafafa;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 8px rgba(44,44,44,0.07);
 }
-
-/* Header for question box */
-.question-header {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 8px;
-}
-
-/* Remove button at top-right */
-.remove-btn {
-  background: #f8d7da;
-  color: #721c24;
-  border: none;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-.remove-btn:hover {
-  background: #f5c6cb;
-}
-
-/* Inputs inside question box */
-.question-box input,
-.question-box select {
-  width: 100%;
-}
-
-/* Options box */
 .options-box {
-  margin-left: 0px;
   margin-top: 8px;
   display: flex;
   flex-direction: column;
@@ -164,67 +91,80 @@
 .option-row {
   display: flex;
   gap: 8px;
+  align-items: center;
 }
 .option-row input {
-  flex: 1;
+  flex: 0 0 200px; /* Fixed width for option inputs */
+  max-width: 200px;
+  border: 1px solid #B7B7B7;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
 }
-.remove-option-btn {
+
+.remove-option-btn,
+.remove-btn {
   background: #f8d7da;
   color: #721c24;
   border: none;
-  border-radius: 16px;
-  padding: 6px 10px;
+  border-radius: 10px;
+  padding: 2px 5px;
   cursor: pointer;
+  font-size: 0.96rem;
 }
-.remove-option-btn:hover {
+.remove-option-btn:hover,
+.remove-btn:hover {
   background: #f5c6cb;
 }
 .add-option-btn,
 .add-question-btn {
   background: #eaedef;
-  border: 1px solid #ccc;
+  border: 1px solid #b6b6bc;
   border-radius: 8px;
-  padding: 8px 14px;
+  padding: 8px 16px;
   cursor: pointer;
   font-weight: 600;
-  color: #333;
+  color: #222;
   margin-top: 6px;
   align-self: flex-start;
 }
 .add-option-btn:hover,
 .add-question-btn:hover {
-  background: #ddd;
+  background: #eef1ff;
+  border-color: #5570F1;
+  color: #5570F1;
 }
-
-/* Footer Buttons */
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 14px;
-  margin-top: 24px;
-}
-.cancel-btn {
-  background: #eaedef;
-  border: 1px solid #bbb;
-  color: #333;
-  border-radius:8px;
-  padding: 10px 20px;
-  cursor: pointer;
-  font-weight: 600;
-}
-.cancel-btn:hover {
-  background: #dcdcdc;
+  gap: 16px;
+  margin-top: 32px;
 }
 .create-btn {
+  padding: 10px 26px;
   background: #5570F1;
+  color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 10px 22px;
-  cursor: pointer;
   font-weight: 700;
-  color: white;
+  cursor: pointer;
+  font-size: 1rem;
   transition: background 0.2s;
 }
 .create-btn:hover {
   background: #4358c9;
+}
+.cancel-btn {
+  padding: 10px 26px;
+  background: #eaedef;
+  color: #333;
+  border: 1px solid #B7B7B7;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+.cancel-btn:hover {
+  background: #dcdcdc;
 }

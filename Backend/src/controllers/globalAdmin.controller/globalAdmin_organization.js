@@ -2,7 +2,9 @@ const Organization = require("../../models/organization_model");
 const Plan = require("../../models/plans_model");
 const { z } = require("zod");
 const { logGlobalAdminActivity } = require("./globalAdmin_activity");
-
+const Role = require("../../models/globalRoles_model");
+const OrganizationRole = require("../../models/organizationRoles_model");
+const mongoose = require("mongoose");
 
 const STATUS_ENUM = ["Active", "Inactive", "Suspended"];
 
@@ -22,6 +24,8 @@ const updateOrganizationSchema = baseOrgSchema.partial().refine(
 );
 
 const addOrganization = async(req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
         // const {
         //     name,
@@ -63,8 +67,14 @@ const addOrganization = async(req, res) => {
         const documents_urls = req?.uploadedFiles?.documents.map(doc => doc.url);
         // console.log(logo_url,documents_urls)
         // 1. Create organization inside transaction
+        const defaultRoles = await Role.find().lean();
+        const formatted = defaultRoles.map(role => ({
+            name: role.name,
+            description: role.description,
+            permissions: role.permissions,
+        }));
         const newOrg = await Organization.create(
-            [{
+            {
                 name,
                 email,
                 status,
@@ -75,15 +85,27 @@ const addOrganization = async(req, res) => {
                 plan: plan._id,
                 planName: plan.name,
                 planId: generatePlanId(name, plan.name),
-            }, ]
+            }, 
         );  
-        await logGlobalAdminActivity(req,"Add Organization","organization",`Organization added successfully ${newOrg[0].name}`)
+        const newOrgRoles = await OrganizationRole.create(
+            formatted.map(role => ({
+                organization_id: newOrg._id,
+                name: role.name,
+                description: role.description,
+                permissions: role.permissions,
+            }))
+        );
+        await session.commitTransaction();
+        await session.endSession();
+        await logGlobalAdminActivity(req,"Add Organization","organization",`Organization added successfully ${newOrg.name}`)
         return res.status(201).json({
             success: true,
             message: "Organization added successfully",
-            data: newOrg[0],
+            data: newOrg,
         });
     } catch (error) {
+        await session.abortTransaction();
+        await session.endSession();
         console.error(error);
         return res.status(500).json({
             success: false,

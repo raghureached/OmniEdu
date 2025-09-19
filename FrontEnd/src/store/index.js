@@ -26,7 +26,7 @@ const store = configureStore({
     globalMessage:globalMessageReducer ,
     activityLog: activityLogReducer,
     surveys: surveyReducer,
-    globalAssignment: globalAssignmentReducer
+    globalAssignments: globalAssignmentReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

@@ -157,23 +157,22 @@ const getContentById = async (req, res) => {
 
 const editContent = async (req, res) => {
   try {
-    // const { title, type, content, file_url, is_active, pushable_to_orgs } = req.body;
-
-
-    const bodyParsed = updateContentSchema.safeParse({
-      ...req.body,
-      file_url: req.uploadedFile?.url || req.body.file_url,
-    }); 
-    if (!bodyParsed.success) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: bodyParsed.error.flatten(),
-      });
-    }
+    const { title, type, content, file_url, is_active, pushable_to_orgs } = req.body;
+    console.log(req.body)
+    // const bodyParsed = updateContentSchema.safeParse({ 
+    //   ...req.body,
+    //   file_url: req.uploadedFile?.url || req.body.file_url,
+    // }); 
+    // if (!bodyParsed.success) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Validation failed",
+    //     errors: bodyParsed.error.flatten(),
+    //   });
+    // }
     const updatedContent = await Content.findOneAndUpdate(
       { uuid: req.params.id },
-      bodyParsed.data,
+      { title, type, content, file_url, is_active, pushable_to_orgs },
       { new: true }
     );
     if (!updatedContent) {
@@ -189,6 +188,7 @@ const editContent = async (req, res) => {
       data: updatedContent
     })
   } catch (error) {
+    console.log(error)
     return res.status(500).json({
       success: false,
       message: "Failed to update content",

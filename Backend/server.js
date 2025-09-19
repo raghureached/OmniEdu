@@ -36,7 +36,7 @@ app.use('/api/globalAdmin',authenticate,authorize(['GlobalAdmin']),globalAdminRo
 // app.use('/api/globalAdmin',globalAdminRouter)
 app.use('/auth',authRouter)
 // app.use('/api/admin',authenticate,authorize(['Admin']),adminRouter)
-app.use('/api/admin',authenticate,adminRouter)
+app.use('/api/admin',adminRouter)
 app.use('/dev',devRouter)
 // app.use('/api/user',authenticate,authorize(['User']),userRouter)
 app.use('/api/user',authenticate,userRouter)

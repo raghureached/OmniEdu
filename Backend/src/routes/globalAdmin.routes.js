@@ -6,7 +6,7 @@ const {upload,uploadContent} = require("../middleware/multer_middleware");
 const { uploadMultipleToCloudinary, uploadToCloudinary } = require("../utils/uploadOnCloud");
 const { setMessage, editMessage, deleteMessage, getMessage } = require("../controllers/globalAdmin.controller/globalAdmin_message");
 const { getPlans } = require("../controllers/globalAdmin.controller/globalAdmin_plans");
-const { createAssignment } = require("../controllers/globalAdmin.controller/globalAdmin_Assignmnet");
+const { createAssignment, fetchAssignments } = require("../controllers/globalAdmin.controller/globalAdmin_Assignmnet");
 const { getGlobalAdminActivity } = require("../controllers/globalAdmin.controller/globalAdmin_activity");
 const { getGlobalProfile, changeGlobalPassword } = require("../controllers/globalAdmin.controller/globalAdmin_profile");
 const { userDashBoardSettings, getUserDashBoardSettings } = require("../controllers/globalAdmin.controller/globalAdmin_userDashBoard");
@@ -30,7 +30,7 @@ router.route('/addRole').post(addRole)
 router.route('/createRoleOrg').post(createRole)
 router.route('/editRole/:id').put(editRole)
 router.route('/deleteRole/:id').delete(deleteRole)
-router.route('/getRoles').get(getRoles)
+router.route('/getRoles/:orgId').get(getRoles)
 router.route('/addPermissions').post(addPermissions)
 router.route('/getPermissions').get(getPermissions)
 //////////////Global Content////////////
@@ -67,6 +67,7 @@ router.route('/getPlans').get(getPlans)
 
 ///////////Assignments///////////
 router.route('/createAssignment').post(createAssignment)
+router.route('/fetchAssignments').get(fetchAssignments)
 
 
 

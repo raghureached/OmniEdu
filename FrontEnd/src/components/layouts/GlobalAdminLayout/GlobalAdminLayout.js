@@ -6,7 +6,8 @@ import { logout } from '../../../store/slices/authSlice';
 import { fetchNotifications, markNotificationAsRead } from '../../../store/slices/notificationSlice';
 import './GlobalAdminLayout.css';
 import { fetchOrganizations } from "../../../store/slices/organizationSlice";
-import { Menu, Home, UserCheck, Shield, BookOpen, Building2, CheckCircle, UserRoundPen, BookCopy, Clock, User, LogOut, Bell, X, BarChart, MessageCircle } from 'lucide-react';
+import { Menu, Home, UserCheck, Shield, BookOpen, Building2, CheckCircle, UserRoundPen, BookCopy, Clock, User, LogOut, Bell, X, BarChart, MessageCircle,Landmark,MessageCircleCode,BookCheck,NotebookTabs,CircleUserRound,NotepadText,ChartColumnIncreasing } from 'lucide-react';
+import { SiAwsorganizations } from "react-icons/si";
 
 const GlobalAdminLayout = () => {
     const dispatch = useDispatch();
@@ -194,8 +195,10 @@ const GlobalAdminLayout = () => {
 
                     <li>
                         <Link to="/global-admin/organizations" className={isActive("/global-admin/organizations") ? "globaladmin_link_active" : ""}>
-                            <Building2 size={20} />
-                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Organization</span>}
+                           {/* <Building2 size={20} /> */}
+                            {/* <SiAwsorganizations size={25} /> */}
+                            <Landmark size={20} />
+                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Organizations</span>}
                         </Link>
                     </li>
 
@@ -215,7 +218,10 @@ const GlobalAdminLayout = () => {
 
                     <li>
                         <Link to="/global-admin/surveys" className={isActive("/global-admin/surveys") ? "globaladmin_link_active" : ""}>
-                            <BookCopy size={20} />
+                            {/* <BookCopy size={20} /> */}
+                            {/* <BookCheck size={20}/> */}
+                            {/* <NotebookTabs size={20}/> */}
+                            <NotepadText size={20}/>
                             {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Surveys</span>}
                         </Link>
                     </li>
@@ -257,7 +263,8 @@ const GlobalAdminLayout = () => {
 
                     <li>
                         <Link to="/global-admin/analytics-view" className={isActive("/global-admin/analytics-view") ? "globaladmin_link_active" : ""}>
-                            <BarChart size={20} />
+                            {/* <BarChart size={20} /> */}
+                            <ChartColumnIncreasing size={20}/>
                             {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Analytics View</span>}
                         </Link>
                     </li>
@@ -269,7 +276,8 @@ const GlobalAdminLayout = () => {
 
                     <li>
                         <Link to="/global-admin/message-board" className={isActive("/global-admin/message-board") ? "globaladmin_link_active" : ""}>
-                            <MessageCircle size={20} />
+                            {/* <MessageCircle size={20} /> */}
+                            <MessageCircleCode size={20} />
                             {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Message Board</span>}
                         </Link>
                     </li>
@@ -284,7 +292,8 @@ const GlobalAdminLayout = () => {
                     {/* Profile */}
                     <li>
                         <Link to="/global-admin/profile" className={isActive("/global-admin/profile") ? "globaladmin_link_active" : ""}>
-                            <User size={20} />
+                            {/* <User size={20} /> */}
+                            <CircleUserRound  size={20}/>
                             {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Global Admin Profile</span>}
                         </Link>
                     </li>
@@ -414,7 +423,8 @@ const GlobalAdminLayout = () => {
                                     </div>
                                     <ul className="globaladmin_profile_menu">
                                         <li onClick={navigateToProfile}>
-                                            <User size={16} />
+                                            {/* <User size={16} /> */}
+                                            <CircleUserRound size={16}/>
                                             <span>My Profile</span>
                                         </li>
                                         <li onClick={handleProfileLogout}>

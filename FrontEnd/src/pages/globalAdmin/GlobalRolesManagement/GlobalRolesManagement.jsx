@@ -9,6 +9,10 @@ import {
 import './GlobalRolesManagement.css'
 import api from "../../../services/api";
 import CustomLoader from "../../../components/common/Loading/CustomLoader";
+import { RiDeleteBinFill } from "react-icons/ri";
+import { FiEdit3 } from "react-icons/fi";
+import { Search } from "lucide-react";
+import LoadingScreen from "../../../components/common/Loading/Loading";
 
 const GlobalRolesManagement = () => {
   const dispatch = useDispatch();
@@ -22,23 +26,21 @@ const GlobalRolesManagement = () => {
     description: "",
   });
   const [org,setOrg] = useState(null)
+  const [currentOrg,setCurrentOrg] = useState(null)
   const [orgRoles,setOrgRoles] = useState([])
-  const [permissions, setPermissions] = useState([]); // structured by section
+  const [permissions, setPermissions] = useState([]);
   const [organization,setOrganization] = useState(null)
   const {organizations } = useSelector(state => state.organizations);
-  // console.log(globalRoles)
+
   useEffect(() => {
-    dispatch(fetchRoles(true));
+    dispatch(fetchRoles(currentOrg));
     fetchPermissions();
-  }, [dispatch]);
-  useEffect(() => {
-    
-  }, [org]);
+  }, [dispatch,currentOrg]);
+
   
   const fetchPermissions = async () => {
     const response = await api.get("/api/globalAdmin/getPermissions");
-    // console.log(response.data.data)
-    setAvailablePermissions(response.data.data); // array of sections with permissions
+    setAvailablePermissions(response.data.data);
   };
 
   const handleAddRole = () => {
@@ -86,7 +88,11 @@ const GlobalRolesManagement = () => {
   const handleSelectOrg = (orgId) =>{
     // console.log("orgId",orgId)
     setOrganization((prev) => (prev === orgId ? null : orgId)); 
-} 
+  } 
+  const handleSelectCurrentOrg = (orgId) =>{
+    // console.log("orgId",orgId)
+    setCurrentOrg((prev) => (prev === orgId ? null : orgId)); 
+  } 
 
   const handleSaveRole = (e) => {
     e.preventDefault();
@@ -114,13 +120,15 @@ const GlobalRolesManagement = () => {
     setCurrentRole(null);
     setShowForm(false);
   };
+  if(loading){
+    return <LoadingScreen text="Loading Roles..."/>
+  }
 
   return (
     <div className="global-roles-management">
-      {/* Toolbar */}
-      <h1 className="page-title page-title-roles">Roles</h1>
       <div className="roles-management-toolbar">
         <div className="roles-search-bar">
+        <Search size={16} color="#6b7280" className="search-icon" />
           <input
             type="text"
             placeholder="Search roles..."
@@ -128,16 +136,29 @@ const GlobalRolesManagement = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+        {currentRole ? "" : <div className="form-group  ">
+                <select
+                  style={{marginTop:"20px"}}
+                  value={formData.organization}
+                  onChange={(e) =>
+                    handleSelectCurrentOrg(e.target.value)
+                  }
+                > 
+                <option>Select Organization</option>
+                  {
+                    organizations.map((organization) => (
+                      <option key={organization.id} value={organization.uuid}>
+                        {organization.name} 
+                      </option>
+                    ))
+                  }
+                </select>
+                
+              </div>}
         <button className="roles-quick-add-btn" onClick={handleAddRole}>
           + Add Role
         </button>
       </div>
-      {/* <div>
-        <select>
-          <option></option>
-        </select>
-      </div> */}
-      {/* Modal */}
       {showForm && (
         <div className="roles-modal-overlay">
           <div className="roles-modal-content" style={{ width: "80%", maxWidth: "900px" }}>
@@ -176,7 +197,6 @@ const GlobalRolesManagement = () => {
                   }
                 > 
                 <option>Select Organization</option>
-                {/* <input type="text" id="organization" name="organization"  /> */}
                   {
                     organizations.map((organization) => (
                       <option key={organization.id} value={organization._id}>
@@ -196,13 +216,6 @@ const GlobalRolesManagement = () => {
                       <div className="section-title">{section.name}</div>
                       <div className="permissions-list">
                         {section.permissions.map((perm) => {
-                          // console.log(perm)
-                          // console.log(permissions)
-                          // const isChecked = permissions.some(
-                          //   (s) =>
-                          //     s.sectionId === section.sectionId &&
-                          //     s.permissions.map(p => p._id).includes(perm._id) 
-                          // );
                           const isChecked = permissions.some(
                             (s) =>
                               s.section === section.sectionId &&
@@ -256,8 +269,8 @@ const GlobalRolesManagement = () => {
 
       {/* Table */}
       <div className="roles-table-container">
-        {loading ? (
-          <CustomLoader text="Loading roles..." />
+        {globalRoles.length === 0 ? (
+          <h3 style={{textAlign:"center"}}>No Roles Assigned</h3>
         ) : (
           <table className="roles-table">
             <thead>
@@ -297,13 +310,13 @@ const GlobalRolesManagement = () => {
                         className="roles-btn-delete"
                         onClick={() => handleDeleteRole(role.uuid)}
                       >
-                        Delete
+                        <span style={{display:"flex",alignItems:"center",justifyContent:"center", gap:"2px"}}><RiDeleteBinFill size={16} color="red" />Delete</span>
                       </button>
                       <button
                         className="roles-btn-edit"
                         onClick={() => handleEditRole(role)}
                       >
-                        Edit
+                        <span style={{display:"flex",alignItems:"center",justifyContent:"center", gap:"2px"}}><FiEdit3 size={16} color="#67280" />Edit</span>
                       </button>
                     </td>
                   </tr>
@@ -314,9 +327,6 @@ const GlobalRolesManagement = () => {
       </div>
       {org && 
       <div className="roles-table-container">
-        {loading ? (
-          <CustomLoader text="Loading roles..." />
-        ) : (
           <table className="roles-table">
             <thead>
               <tr>
@@ -368,7 +378,6 @@ const GlobalRolesManagement = () => {
                 ))}
             </tbody>
           </table>
-        )}
       </div>}
     </div>
   );

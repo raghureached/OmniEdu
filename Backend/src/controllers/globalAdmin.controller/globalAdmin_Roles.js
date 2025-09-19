@@ -6,6 +6,7 @@ const { z } = require("zod");
 const Section = require("../../models/sections_model");
 const OrganizationRole = require("../../models/organizationRoles_model");
 const { logGlobalAdminActivity } = require("./globalAdmin_activity");
+const Organization = require("../../models/organization_model");
 
 // ✅ Validation
 const createRoleSchema = z.object({
@@ -139,9 +140,8 @@ const editRole = async (req, res) => {
         }
       }
     }
-
     // 🔹 Update role
-    const updatedRole = await Role.findOneAndUpdate(
+    const updatedRole = await OrganizationRole.findOneAndUpdate(
       { uuid: req.params.id },
       { name, description, permissions },
       { new: true, runValidators: true }
@@ -190,14 +190,16 @@ const deleteRole = async(req, res) => {
 // ✅ Get all roles with populated sections + permissions
 const getRoles = async (req, res) => {
   try {
-    const roles = await Role.find()
+    const orgId = await Organization.findOne({uuid:req.params.orgId}).lean().select("_id");
+    // console.log(roleIds.roles)
+    const orgRoles = await OrganizationRole.find({organization_id:orgId._id})
       .populate({
         path: "permissions",
         select: "section allowed", 
       });
     // await logGlobalAdminActivity(req,"Get Roles","role","Roles fetched successfully")
     // ✅ Transform to required format
-    const formatted = roles.map(role => ({
+    const formatted = orgRoles.map(role => ({
       uuid: role.uuid,
       name: role.name,
       description: role.description,
@@ -205,7 +207,7 @@ const getRoles = async (req, res) => {
         section: perm.section?._id?.toString(),  // section ID
         allowed: perm.allowed?.map(a => a._id?.toString()) || [] // array of IDs
       }))
-    }));
+    })).sort((a, b) => a.name.localeCompare(b.name));
 
     res.status(200).json({ success: true, data: formatted });
   } catch (error) {

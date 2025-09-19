@@ -2,19 +2,13 @@ import React, { useState, useEffect } from "react";
 import {
   Search,
   Filter,
-  Share,
   ChevronDown,
-  Home,
-  Users,
-  BookOpen,
-  Calendar,
-  User,
-  Clock,
-  HelpCircle,
   ChevronLeft,
   ChevronRight,
+  Loader,
 } from "lucide-react";
-import "./NewOrgManage.css";
+import { RiDeleteBinFill } from "react-icons/ri";
+import { FiEdit3 } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchOrganizations,
@@ -27,11 +21,11 @@ import {
 } from "../../../store/slices/organizationSlice";
 import api from "../../../services/api";
 import { useNavigate } from "react-router-dom";
-import OrganizationModal from "./AddOrganizationModal";
-import LoadingScreen from "../../../components/common/Loading/Loading";
 import AddOrganizationFormModal from "./AddOrganizationModal";
 import OrganizationDetails from "./OrganizationDetails";
 import CustomLoader from "../../../components/common/Loading/CustomLoader";
+import './OrganizationManagement.css'
+import LoadingScreen from "../../../components/common/Loading/Loading";
 
 const OrganizationManagement = () => {
   const dispatch = useDispatch();
@@ -74,7 +68,7 @@ const OrganizationManagement = () => {
     setPlans(data);
   }
   const openForm = (org = null) => {
-    console.log(org)
+    // console.log(org)
     if (org) {
       setEditMode(true);
       setCurrentOrg(org);
@@ -155,12 +149,12 @@ const OrganizationManagement = () => {
         alert("Please select a plan.")
         return;
       }
-
-      
-      
       dispatch(createOrganization(formData));
     }
-    closeForm();
+    if(!loading){
+      closeForm();
+    }
+    // closeForm();
   };
 
   const handleCheckboxChange = (id) => {
@@ -234,8 +228,8 @@ const OrganizationManagement = () => {
 
   return (
     <>
+      {loading ? <LoadingScreen text="Loading Organizations..."/> : (
       <div className="app-container">
-
         {/* Main Content */}
         <div className="main-content">
           {showOrgModal && (
@@ -248,12 +242,6 @@ const OrganizationManagement = () => {
 
           {/* Page Content */}
           <div className="page-content">
-            <div className="page-header">
-              <h1 className="page-title">Organizations</h1>
-              <button className="add-btn" onClick={() => openForm()}>
-                + Add Organization
-              </button>
-            </div>
 
             {/* Controls */}
             <div className="controls">
@@ -281,6 +269,9 @@ const OrganizationManagement = () => {
                 <button className="control-btn" onClick={() => setShowBulkAction((prev) => !prev)}>
                   Bulk Action <ChevronDown size={16} />
                 </button>
+                <button className="add-btn" onClick={() => openForm()}>
+                + Add Organization
+              </button>
               </div>
             </div>
             {showFilters && (
@@ -317,9 +308,6 @@ const OrganizationManagement = () => {
                 </div>
 
                 <div className="filter-actions">
-                  {/* <button className="apply-btn" onClick={() => setShowFilters(false)}>
-                    Apply
-                  </button> */}
                   <button className="reset-btn" onClick={resetFilters}>
                     Clear
                   </button>
@@ -331,14 +319,14 @@ const OrganizationManagement = () => {
                 {/* Status Filter */}
                 <div className="bulk-action-group">
                   {/* <label>Delete</label> */}
+                  <label style={{fontSize: "14px", fontWeight: "500"}}>Items Selected: {selectedItems.length}</label>
                   <button className="bulk-action-delete-btn" onClick={() => handleBulkDeleteOrg(selectedItems)}>
-                    Delete
+                    <span style={{display: "flex", alignItems: "center", gap: "2px"}}><RiDeleteBinFill size={16} color="#fff" /> Delete</span>
                   </button>
                 </div>
               </div>
             )}
             {/* Table */}
-            {loading ? <CustomLoader text="Loading Organizations..." /> : 
             <>
             <div className="table-container">
               <div className="table-header">
@@ -347,10 +335,11 @@ const OrganizationManagement = () => {
                   checked={currentpages.length > 0 && selectedItems.length === currentpages.length}
                   onChange={handleSelectAll}
                 />
+                <div>Plan ID</div>
+                <div>Organization</div>
                 <div>Start Date</div>
                 <div>End Date</div>
                 <div>Status</div>
-                <div>Organization</div>
                 <div>Plan Name</div>
                 <div>Actions</div>
               </div>
@@ -363,24 +352,7 @@ const OrganizationManagement = () => {
                     onChange={() => handleCheckboxChange(org.uuid)}
                     key={org.uuid}
                   />
-                  <div className="date-cell">
-                    {new Date(org.start_date).toLocaleDateString("en-CA")}
-                  </div>
-                  <div className="date-cell">
-                    {new Date(org.end_date).toLocaleDateString("en-CA")}
-                  </div>
-
-                  <div>
-                    <span
-                      className={`status-badge ${org.status === "Active"
-                        ? "status-paid"
-                        : "status-cancelled"
-                        }`}
-                    >
-                      {org.status === "Active" ? "✓ Active" : "✕ Inactive"}
-                    </span>
-                  </div>
-
+                  <div className="planId">{org.planId}</div>
                   <div className="user-cell" onClick={() => handleOpenOrg(org.uuid)}>
                     <div
                       className="user-avatar-cell"
@@ -406,7 +378,25 @@ const OrganizationManagement = () => {
                       <div className="user-email">{org.email}</div>
                     </div>
                   </div>
+                  
 
+                  <div className="date-cell">
+                    {new Date(org.start_date).toLocaleDateString("en-CA")}
+                  </div>
+                  <div className="date-cell">
+                    {new Date(org.end_date).toLocaleDateString("en-CA")}
+                  </div>
+
+                  <div>
+                    <span
+                      className={`status-badge ${org.status === "Active"
+                        ? "status-paid"
+                        : "status-cancelled"
+                        }`}
+                    >
+                      {org.status === "Active" ? "✓ Active" : "✕ Inactive"}
+                    </span>
+                  </div>
                   <div className="purchase-cell">{org.planName}</div>
 
                   <div className="actions-cell">
@@ -414,13 +404,13 @@ const OrganizationManagement = () => {
                       className="action-btn delete-btn"
                       onClick={() => handleDeleteOrg(org.uuid)}
                     >
-                      Delete
+                      <span style={{display: "flex", alignItems: "center", gap: "2px"}}><RiDeleteBinFill size={16} /> Delete</span>
                     </button>
                     <button
                       className="action-btn edit-btn"
                       onClick={() => openForm(org)}
                     >
-                      Edit
+                      <span style={{display: "flex", alignItems: "center", gap: "2px"}}><FiEdit3 size={16} /> Edit</span>
                     </button>
                   </div>
                 </div>
@@ -458,10 +448,10 @@ const OrganizationManagement = () => {
                 Next <ChevronRight size={16} />
               </button>
             </div>
-            </>}
+            </>
           </div>
         </div>
-      </div>
+      </div>)}
 
       {showForm && <AddOrganizationFormModal
         showForm={showForm}
@@ -475,8 +465,8 @@ const OrganizationManagement = () => {
         handleSubmit={handleSubmit}
         plans={plans}
         plan={plan}
+        loading={loading}
       />}
-
 
     </>
   );

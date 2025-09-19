@@ -71,7 +71,7 @@ export const createOrganization = createAsyncThunk(
   "organizations/createOrganization",
   async (organizationData, { rejectWithValue }) => {
     try {
-      console.log(organizationData)
+      // console.log(organizationData)
       const formData = new FormData();
       // Append all fields properly
       Object.keys(organizationData).forEach((key) => {

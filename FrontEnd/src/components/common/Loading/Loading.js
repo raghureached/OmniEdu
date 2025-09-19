@@ -2,13 +2,13 @@
 import React from "react";
 import "./LoadingScreen.css";
 
-const LoadingScreen = () => {
+const LoadingScreen = ({text}) => {
   return (
     <div className="loading-overlay">
       <div className="loading-box">
         <div className="spinner"></div>
-        <h2>Loading...</h2>
-        <p>Please wait while we fetch your data</p>
+        <h2>{text}</h2>
+        {/* <p>Please wait while we fetch your data</p> */}
       </div>
     </div>
   );

@@ -52,6 +52,11 @@ const organizationSchema = new mongoose.Schema(
     documents: {
       type: [String], 
       default: [],
+    },
+    roles:{
+      type: [mongoose.Schema.Types.ObjectId],
+      ref:"GlobalRole",
+      default: [],
     }
   },
   { timestamps: true }

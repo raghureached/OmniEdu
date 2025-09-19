@@ -35,9 +35,6 @@ const organizationRoleSchema = new mongoose.Schema(
   }
 );
 
-// Compound unique index to ensure no duplicate role names within the same organization
-//organizationRoleSchema.index({ organization_id: 1, name: 1 }, { unique: true });
-
 const OrganizationRole = mongoose.model(
   "OrganizationRole",
   organizationRoleSchema

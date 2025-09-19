@@ -4,8 +4,9 @@ import { fetchContent, deleteContent, createContent, updateContent } from '../..
 import "./GlobalContentManagement.css"
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
-import CustomLoader from '../../../components/common/Loading/CustomLoader';
-
+import LoadingScreen from '../../../components/common/Loading/Loading'
+import { RiDeleteBinFill } from "react-icons/ri";
+import { FiEdit3 } from "react-icons/fi";
 const GlobalContentManagement = () => {
   const dispatch = useDispatch();
   const { items, loading, error } = useSelector((state) => state.content);
@@ -20,6 +21,7 @@ const GlobalContentManagement = () => {
     content: "",
     file: null,
   });
+  const [uploading,setUploading] = useState(false)
   const navigate = useNavigate()
   useEffect(() => {
     dispatch(fetchContent());
@@ -57,7 +59,6 @@ const GlobalContentManagement = () => {
   };
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
-    // console.log(name, value,files);
     if (name === "file") {
       setNewContent({ ...newContent, file: files[0] });
     } else {
@@ -74,10 +75,11 @@ const GlobalContentManagement = () => {
   const handleAddContent = async () => {
     // Validate form
     // console.log(newContent)
-    if (!newContent.title || !newContent.type || !newContent.content || !newContent.file) {
+    if (!editContentId &&(!newContent.title || !newContent.type || !newContent.content || !newContent.file)) {
       alert("Please fill all required fields");
       return;
     }
+    setUploading(true)
     // Dispatch to Redux or add locally
     dispatch(
       createContent({
@@ -90,10 +92,12 @@ const GlobalContentManagement = () => {
     );
     // Close modal and reset form
     setShowModal(false);
+    setUploading(false)
     setNewContent({ title: "", type: "theory", content: "", file: null });
   };
 
   const openEditModal = (content) => {
+    // console.log(content)
     setNewContent({
       title: content.title,
       type: content.type,
@@ -103,37 +107,29 @@ const GlobalContentManagement = () => {
     setEditContentId(content.uuid);
     setShowEditModal(true);
   };
-  
-  const handleEditContent = () => {
-    if (!newContent.title || !newContent.type || !newContent.content) {
-      alert("Please fill all required fields");
-      return;
-    }
-    // console.log(newContent);
-    
+
+  const handleEditContent = () => { 
     dispatch(updateContent({ id: editContentId, updatedData: newContent }));
     setShowEditModal(false);
     setEditContentId(null);
     setNewContent({ title: "", type: "theory", content: "", file: null });
   };
 
-const handleOpenModal = () => {
+  const handleOpenModal = () => {
     setShowModal(true);
     setNewContent({ title: "", type: "", content: "", file: null });
   };
+  if(uploading){
+    return <LoadingScreen text={"Uploading Global Content..."}/>
+  }
+  if(loading){
+    return <LoadingScreen text={"Loading Global Content..."}/>
+  }
+  
   return (
     <div className="global-content-management">
-      <div
-        className="page-header"
-        style={{ paddingLeft: "20px" }}
-      >
-        <h1 className='page-title'>Global Content Management</h1>
-        <button className="btn-primary" onClick={() => handleOpenModal()}> + Add Global Content</button>
-      </div>
-      {/* {error && <div className="error-message">{error}</div>} */}
-
       <div className="filter-section">
-        <div className="search-box-content">
+        <div className="search-box-content" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
           <Search size={16} color="#6b7280" className="search-icon" />
           <input
             type="text"
@@ -142,23 +138,9 @@ const handleOpenModal = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+          <button className="btn-primary" onClick={() => handleOpenModal()}> + Add Global Content</button>
         </div>
-
-        {/* <div className="filter-box">
-          <label>Content Type:</label>
-          <select
-            value={contentType}
-            onChange={(e) => setContentType(e.target.value)}
-          >
-            <option value="all">All Types</option>
-            <option value="module">Modules</option>
-            <option value="assessment">Assessments</option>
-            <option value="learning_path">Learning Paths</option>
-          </select>
-        </div> */}
       </div>
-
-      {/* Add Content Modal */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -273,13 +255,13 @@ const handleOpenModal = () => {
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
-            </label>  
-            <label>
-              File
-              <span onClick={() => handleFileClick(newContent.file)}>View File</span>
             </label>
             <label>
-              Upload File
+              Uploaded File
+              <span onClick={() => handleFileClick(newContent.file)} style={{ cursor: "pointer" ,fontWeight:"lighter " ,fontSize:"15px",marginLeft:"10px"}}>View File</span>
+            </label>
+            <label>
+              Upload New File
               <input
                 type="file"
                 name="file"
@@ -300,55 +282,53 @@ const handleOpenModal = () => {
         </div>
       )}
       <div className="table-container">
-        {loading ? (
-          <CustomLoader text=" Loading Content..." />
-        ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>Organizations</th>
-                <th>Created Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentContent.map((content) => (
-                <tr key={content.id}>
-                  <td style={{ cursor: "pointer" }} onClick={() => handleOpenContent(content.uuid)}>{content.title}</td>
-                  <td>{content.type}</td>
-                  <td>
-                    <span className={`status-badge ${content.is_active ? 'active' : 'inactive'}`}>
-                      {content.is_active ? '✓ Active' : '✕ Inactive'}
-                    </span>
-                  </td>
-                  <td>{content.organizations || "All"}</td>
-                  <td>{new Date(content.createdAt).toLocaleDateString()}</td>
-                  <td>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Organizations</th>
+              <th>Created Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentContent.map((content) => (
+              <tr key={content.id}>
+                <td style={{ cursor: "pointer" }} onClick={() => handleOpenContent(content.uuid)}>{content.title}</td>
+                <td>{content.type}</td>
+                <td>
+                  <span className={`status-badge ${content.is_active ? 'active' : 'inactive'}`}>
+                    {content.is_active ? '✓ Active' : '✕ Inactive'}
+                  </span>
+                </td>
+                <td>{content.organizations || "All"}</td>
+                <td>{new Date(content.createdAt).toLocaleDateString()}</td>
+                <td>
                   <button
-                      className="delete-btn action-btn"
-                      onClick={() => handleDeleteContent(content.uuid)}
-                    >
-                      Delete
-                    </button>
-                    <button className="edit-btn action-btn" onClick={() => openEditModal(content)}>Edit</button>
-                    
-                  </td>
-                </tr>
-              ))}
+                    className="delete-btn action-btn"
+                    onClick={() => handleDeleteContent(content.uuid)}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: "2px" }}><RiDeleteBinFill size={16} />Delete </span>
+                  </button>
+                  <button className="edit-btn action-btn" onClick={() => openEditModal(content)}>
+                    <span style={{ display: "flex", alignItems: "center", gap: "2px" }}><FiEdit3 size={16} />Edit </span>
+                  </button>
 
-              {currentContent.length === 0 && (
-                <tr>
-                  <td colSpan="6" className="no-results">
-                    No global content found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        )}
+                </td>
+              </tr>
+            ))}
+
+            {currentContent.length === 0 && (
+              <tr>
+                <td colSpan="6" className="no-results">
+                  No global content found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
       <div className="pagination">
         <button
@@ -375,10 +355,6 @@ const handleOpenModal = () => {
           Next
         </button>
       </div>
-
-      {/* <div className="pagination-info">
-        Showing {contentData.length} of {20} global content
-      </div> */}
     </div>
   );
 };

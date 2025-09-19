@@ -38,6 +38,24 @@ const createAssignment = async(req,res)=>{
 }
 
 
+const fetchAssignments = async(req,res)=>{
+    try {
+        const assignments = await GlobalAssignment.find().populate("contentId")
+        return res.status(200).json({
+            isSuccess:true,
+            message:"Assignments fetched successfully",
+            data:assignments
+        })
+    } catch (error) {
+        return res.status(500).json({
+            isSuccess:false,
+            message:"Failed to fetch assignments",
+            error:error.message
+        })
+    }
+}
+
 module.exports = {
-    createAssignment
+    createAssignment,
+    fetchAssignments
 }

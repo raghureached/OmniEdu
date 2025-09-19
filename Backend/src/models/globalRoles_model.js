@@ -15,7 +15,11 @@ const roleSchema = new mongoose.Schema({
       section: { type: mongoose.Schema.Types.ObjectId, ref: "Section", required: true },
       allowed: [{ type: mongoose.Schema.Types.ObjectId, ref: "Permission" }]
     }
-  ]
+  ],
+  isDefault:{
+    type:Boolean,
+    default:false
+  }
 });
 
 

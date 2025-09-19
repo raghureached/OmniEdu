@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import "./AddOrganizationModal.css";
 import FeaturedIcon from "../../../assets/Featured icon.svg";
-import AddOrgDateRangePickerSingle from "./DateRangePicker";
-
+import AddOrgDateRangePickerSingle from "../../../components/common/CustomDatePicker/DateRangePicker";
+import { GoOrganization } from "react-icons/go";
 const OrganizationFormModal = ({
   showForm,
   editMode,
@@ -14,8 +14,8 @@ const OrganizationFormModal = ({
   handleInputChange,
   handleSubmit,
   plans,
+  loading,
 }) => {
-  // console.log(formData)
   const [dateRange, setDateRange] = useState([null, null]);
   const [openStart, setOpenStart] = useState(false);
   const [openEnd, setOpenEnd] = useState(false);
@@ -44,7 +44,7 @@ const OrganizationFormModal = ({
       setDocuments(Array.from(formData.documents));
     }
   }, [formData.documents]);
-
+  
   if (!showForm) return null;
 
   const openDocumentPreview = (fileOrUrl) => {
@@ -318,7 +318,7 @@ const OrganizationFormModal = ({
               Cancel
             </button>
             <button type="submit" className="addOrg-btn-primary">
-              {editMode ? "Update Organization" : "Create Organization"}
+             <span style={{ display: "flex", alignItems: "center", gap: 5 }}><GoOrganization size={16} color="#fff" /> {editMode ? "Update Organization" : "Create Organization"}</span>
             </button>
           </div>
         </form>
