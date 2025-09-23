@@ -152,7 +152,7 @@ const contentSlice = createSlice({
       })
       .addCase(deleteContent.fulfilled, (state, action) => {
         state.loading = false;
-        console.log(action.payload);
+        // console.log(action.payload);
         
         state.items = state.items.filter(item => item.uuid !== action.payload);
       })

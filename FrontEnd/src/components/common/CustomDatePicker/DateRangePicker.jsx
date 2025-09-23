@@ -13,7 +13,6 @@ const AddOrgDateRangePickerSingle = ({
 }) => {
   const [date, setDate] = useState(selectedDate || null);
   const [error, setError] = useState("");
-
   useEffect(() => {
     setDate(selectedDate);
   }, [selectedDate]);
@@ -47,24 +46,19 @@ const AddOrgDateRangePickerSingle = ({
           onChange={onChange}
           value={date}
           tileClassName={({ date: tileDate }) => {
-            // Disable dates before today if required
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-
             if (isEndDate && startDate && tileDate < startDate) {
               return "disabled-tile";
             }
-
             if (!isEndDate && tileDate < today) {
               return "disabled-tile";
-            }
-
-            // Highlight selected date
+            }          
             if (date && tileDate.toDateString() === date.toDateString()) {
               return "selected-tile";
             }
             return "";
-          }}
+          }}          
           minDate={isEndDate ? startDate : new Date()}
         />
         {error && <div className="calendar-error">{error}</div>}

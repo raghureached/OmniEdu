@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchContentById } from "../../../store/slices/contentSlice";
-import './GlobalContentDetail.css'
+import './GlobalModuleDetail.css'
 
-const GlobalContentDetails = () => {
+const GlobalModuleDetail = () => {
   const { contentId } = useParams();
   const navigate = useNavigate()
-//   console.log(contentId)
   const dispatch = useDispatch();
   const { selectedContent, loading, error } = useSelector((state) => state.content);
 
@@ -98,4 +97,4 @@ const GlobalContentDetails = () => {
   );
 };
 
-export default GlobalContentDetails;
+export default GlobalModuleDetail;

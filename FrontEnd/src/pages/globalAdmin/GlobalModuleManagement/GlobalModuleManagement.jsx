@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchContent, deleteContent, createContent, updateContent } from '../../../store/slices/contentSlice';
-import "./GlobalContentManagement.css"
+import "./GlobalModuleManagement.css"
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading'
 import { RiDeleteBinFill } from "react-icons/ri";
 import { FiEdit3 } from "react-icons/fi";
-const GlobalContentManagement = () => {
+
+
+const GlobalModuleManagement = () => {
   const dispatch = useDispatch();
   const { items, loading, error } = useSelector((state) => state.content);
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,14 +30,11 @@ const GlobalContentManagement = () => {
   }, [dispatch,]);
 
   const handleDeleteContent = (contentId) => {
-    // console.log(contentId);
-
     if (window.confirm("Are you sure you want to delete this content?")) {
       dispatch(deleteContent(contentId));
     }
   };
 
-  // Filter content based on search term and type
   const filteredContent = items?.filter((item) => {
     const matchesSearch = item.title
       ?.toLowerCase()
@@ -73,14 +72,11 @@ const GlobalContentManagement = () => {
   };
 
   const handleAddContent = async () => {
-    // Validate form
-    // console.log(newContent)
     if (!editContentId &&(!newContent.title || !newContent.type || !newContent.content || !newContent.file)) {
       alert("Please fill all required fields");
       return;
     }
     setUploading(true)
-    // Dispatch to Redux or add locally
     dispatch(
       createContent({
         ...newContent,
@@ -138,13 +134,13 @@ const GlobalContentManagement = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <button className="btn-primary" onClick={() => handleOpenModal()}> + Add Global Content</button>
+          <button className="btn-primary" onClick={() => handleOpenModal()}> + Add Module</button>
         </div>
       </div>
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h2>Add Global Content</h2>
+            <h2>Add Module</h2>
             <label>
               Title
               <input
@@ -155,20 +151,19 @@ const GlobalContentManagement = () => {
                 className="modal-input"
               />
             </label>
-            <label>
+            {/* <label>
               Type
               <select
                 name="type"
                 value={newContent.type}
                 onChange={handleInputChange}
                 className="modal-input"
-              >
+              > 
+                <option value="">Select Type</option>
                 <option value="theory">Theory</option>
                 <option value="module">Module</option>
-                <option value="assessment">Assessment</option>
-                <option value="learning_path">Learning Path</option>
               </select>
-            </label>
+            </label> */}
             <label>
               Content
               <textarea
@@ -359,4 +354,4 @@ const GlobalContentManagement = () => {
   );
 };
 
-export default GlobalContentManagement;
+export default GlobalModuleManagement;

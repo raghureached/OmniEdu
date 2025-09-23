@@ -721,8 +721,8 @@
   /* Filter css  */
   .filter-panel {
   position: absolute;
-  top: 200px; /* adjust based on header height */
-  right: 30px; /* align with Filter button */
+  top: 150px  ; /* adjust based on header height */
+  right: 180px; /* align with Filter button */
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -782,8 +782,8 @@
 
 .bulk-action-panel {
   position: absolute;
-  top: 200px; /* adjust based on header height */
-  right: 30px; /* align with Filter button */
+  top: 150px; /* adjust based on header height */
+  right: 200px; /* align with Filter button */
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 8px;

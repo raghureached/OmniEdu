@@ -12,6 +12,10 @@ import globalMessageReducer from './slices/globalMessageSlice'
 import activityLogReducer from './slices/activityLogSlice';
 import surveyReducer from './slices/surveySlice';
 import globalAssignmentReducer from './slices/globalAssignmentSlice'
+import globalAssessmentReducer from './slices/globalAssessmentSlice'
+import adminDashboardConfigReducer from './slices/adminDashboardConfigSlice'
+import userDashboardConfigReducer from './slices/userDashboardConfigSlice'
+
 const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -26,7 +30,10 @@ const store = configureStore({
     globalMessage:globalMessageReducer ,
     activityLog: activityLogReducer,
     surveys: surveyReducer,
-    globalAssignments: globalAssignmentReducer
+    globalAssignments: globalAssignmentReducer,
+    globalAssessments: globalAssessmentReducer,
+    adminDashboardConfig: adminDashboardConfigReducer,
+    userDashboardConfig: userDashboardConfigReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

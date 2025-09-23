@@ -19,7 +19,6 @@ const Login = () => {
   // Handle navigation when authentication state changes
   useEffect(() => {
     if (isAuthenticated && role) {
-      // Use replace: true to avoid adding to browser history
       if (role === 'GlobalAdmin') {
         navigate('/global-admin/organizations', { replace: true });
       } else if (role === 'Admin') {
@@ -28,7 +27,7 @@ const Login = () => {
         navigate('/user/learning-hub', { replace: true });
       }
     }
-  }, [isAuthenticated, role, navigate]); // Include navigate for completeness
+  }, [isAuthenticated, role, navigate]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

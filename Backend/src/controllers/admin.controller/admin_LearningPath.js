@@ -1,5 +1,4 @@
 const Assessment = require("../../models/assessment_model");
-const Content = require("../../models/content_model");
 const LearningPath = require("../../models/learningPath_model");
 const Module = require("../../models/moduleOrganization_model");
 const logAdminActivity = require("./admin_activity");

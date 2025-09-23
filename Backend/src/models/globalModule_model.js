@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const { v4: uuidv4 } = require("uuid");
 
-const contentSchema = new mongoose.Schema(
+const GlobalModuleSchema = new mongoose.Schema(
   {
     uuid: {
       type: String,
@@ -45,6 +45,6 @@ const contentSchema = new mongoose.Schema(
   }
 );
 
-const Content = mongoose.model("Content", contentSchema);
+const GlobalModule = mongoose.model("Content", GlobalModuleSchema);
 
-module.exports = Content;
+module.exports = GlobalModule;

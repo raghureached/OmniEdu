@@ -1,7 +1,7 @@
 const Organization = require("../../models/organization_model");
-const userDashBoardConfig = require("../../models/userDashBoardConfig_model");
+const AdminDashboardConfig = require("../../models/adminDashboardConfig_model");
 
-const updateUserDashBoardConfig = async(req,res)=>{
+const updateAdminDashboardConfig = async(req,res)=>{
     try {
         const permissionId = req.body.id;
         const organizationId = req.params.id;
@@ -18,28 +18,28 @@ const updateUserDashBoardConfig = async(req,res)=>{
                 message:"Organization not found"
             })
         }
-        const permissionExists = organization.userDashboardConfig.includes(permissionId);
-        if(permissionExists){
-            organization.userDashboardConfig.pull(permissionId)
+        const roleExists = organization.adminDashboardConfig.includes(permissionId);
+        if(roleExists){
+            organization.adminDashboardConfig.pull(permissionId)
         }else{
-            organization.userDashboardConfig.push(permissionId)
+            organization.adminDashboardConfig.push(permissionId)
         }
         await organization.save()
         return res.status(200).json({
             isSuccess:true,
-            message:`${permissionExists ? "Removed" : "Added"} permission for organization ${organization.name}`,
-            data:organization.userDashboardConfig
+            message:`${roleExists ? "Removed" : "Added"} permission for organization ${organization.name}`,
+            data:organization.adminDashboardConfig
         })
     } catch (error) {
         return res.status(500).json({
             isSuccess:false,
-            message:"Failed to update user dashboard config",
+            message:"Failed to update admin dashboard config",
             error:error.message
         })
     }
 }
 
-const getUserDashBoardConfig = async(req,res)=>{
+const getAdminDashboardConfig = async(req,res)=>{
     try {
         const organizationId = req.params.id;
         const organization = await Organization.findOne({uuid:organizationId})
@@ -51,21 +51,21 @@ const getUserDashBoardConfig = async(req,res)=>{
         }
         return res.status(200).json({
             isSuccess:true,
-            message:"User dashboard config fetched successfully",
-            data:organization.userDashboardConfig
+            message:"Admin dashboard config fetched successfully",
+            data:organization.adminDashboardConfig
         })
     } catch (error) {
         return res.status(500).json({
             isSuccess:false,
-            message:"Failed to get user dashboard config",
+            message:"Failed to get admin dashboard config",
             error:error.message
         })
     }
 }
 
-const getUserDashBoardPermissions = async(req,res)=>{
+const getAdminDashboardPermissions = async(req,res)=>{
     try {
-        const permissions = await userDashBoardConfig.find({})
+        const permissions = await AdminDashboardConfig.find({})
         return res.status(200).json({
             isSuccess:true,
             message:"Permissions fetched successfully",
@@ -81,7 +81,7 @@ const getUserDashBoardPermissions = async(req,res)=>{
 }
 
 module.exports = {
-    updateUserDashBoardConfig,
-    getUserDashBoardConfig,
-    getUserDashBoardPermissions
+    updateAdminDashboardConfig,
+    getAdminDashboardConfig,
+    getAdminDashboardPermissions
 }

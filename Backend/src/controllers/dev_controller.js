@@ -1,4 +1,7 @@
+const AdminDashboardConfig = require("../models/adminDashboardConfig_model");
 const GlobalAdmin = require("../models/globalAdmin_model");
+const Plan = require("../models/plans_model");
+const userDashBoardConfig = require("../models/userDashBoardConfig_model");
 
 const addGlobalAdmin = async(req,res)=>{
     try {
@@ -28,7 +31,86 @@ const addGlobalAdmin = async(req,res)=>{
     }
 }
 
+const addPlans = async(req,res)=>{
+    try {
+        const {name} = req.body;
+        if(!name){
+            return res.status(400).json({
+                isSuccess:false,
+                message:"Name is required"
+            })
+        }
+        const plan = await Plan.create({
+            name
+        })
+        return res.status(201).json({
+            isSuccess:true,
+            message:"Plan added successfully",
+            data:plan
+        })
+    } catch (error) {
+        return res.status(500).json({
+            isSuccess:false,
+            message:"Failed to add plan",
+            error:error.message
+        })
+    }
+}
 
+const addAdminDashboardConfig = async(req,res)=>{
+    try {
+        const {name} = req.body;
+        if(!name){
+            return res.status(400).json({
+                isSuccess:false,
+                message:"Name is required"
+            })
+        }
+        const adminDashboardConfig = await AdminDashboardConfig.create({
+            name
+        })
+        return res.status(201).json({
+            isSuccess:true,
+            message:"Admin Dashboard Config added successfully",
+            data:adminDashboardConfig
+        })
+    } catch (error) {
+        return res.status(500).json({
+            isSuccess:false,
+            message:"Failed to add admin dashboard config",
+            error:error.message
+        })
+    }
+}
+
+const addUserDashboardConfig = async(req,res)=>{
+    try {
+        const {name} = req.body;
+        if(!name){
+            return res.status(400).json({
+                isSuccess:false,
+                message:"Name is required"
+            })
+        }
+        const userDashboardConfig = await userDashBoardConfig.create({
+            name
+        })
+        return res.status(201).json({
+            isSuccess:true,
+            message:"User Dashboard Config added successfully",
+            data:userDashboardConfig
+        })
+    } catch (error) {
+        return res.status(500).json({
+            isSuccess:false,
+            message:"Failed to add user dashboard config",
+            error:error.message
+        })
+    }
+}
 module.exports = {
-    addGlobalAdmin
+    addGlobalAdmin,
+    addPlans,
+    addAdminDashboardConfig,
+    addUserDashboardConfig
 }

@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader,
+  X,
 } from "lucide-react";
 import { RiDeleteBinFill } from "react-icons/ri";
 import { FiEdit3 } from "react-icons/fi";
@@ -23,20 +24,19 @@ import api from "../../../services/api";
 import { useNavigate } from "react-router-dom";
 import AddOrganizationFormModal from "./AddOrganizationModal";
 import OrganizationDetails from "./OrganizationDetails";
-import CustomLoader from "../../../components/common/Loading/CustomLoader";
 import './OrganizationManagement.css'
 import LoadingScreen from "../../../components/common/Loading/Loading";
 
 const OrganizationManagement = () => {
   const dispatch = useDispatch();
-  const { organizations, loading, filters } = useSelector((state) => state.organizations);
+  const { organizations, loading, filters,error } = useSelector((state) => state.organizations);
   const [plans, setPlans] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedLogo, setSelectedLogo] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [currentOrg, setCurrentOrg] = useState(null);
-  const [orgId, setOrgId] = useState(null);
+  const [org, setOrg] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
   const [showOrgModal, setShowOrgModal] = useState(false);
   const [plan, setPlan] = useState(null);
@@ -47,26 +47,33 @@ const OrganizationManagement = () => {
     email: "",
     status: "Active",
     logo: null,
-    documents: [],
+    invoice: "",
+    receipt: "",
+    document3: "",
+    document4: "",
     planId: "",
     start_date: "",
     end_date: "",
     adminRoleId: "",
   });
   const navigate = useNavigate();
-  useEffect(() => {
-    // console.log("Updated logo:", formData.logo);
-  }, [formData.logo]);
-  
-  useEffect(() => {
+
+
+useEffect(() => {
+  if (filters.name && filters.name.length > 3) {
     const timeoutId = setTimeout(() => {
       dispatch(fetchOrganizations(filters));
       fetchPlans();
-    }, 500); // Delay in milliseconds
-  
-    return () => clearTimeout(timeoutId); // Cleanup on unmount or dependency change
-  }, [dispatch, filters]);
-  
+    }, 200); // delay for debounce
+
+    return () => clearTimeout(timeoutId);
+  }
+  if(filters.name === ""){
+    dispatch(fetchOrganizations(filters));
+    fetchPlans();
+  }
+}, [dispatch, filters]);
+
   const fetchPlans = async () => {
     const response = await api.get("/api/globalAdmin/getPlans");
     const data = response.data.data;
@@ -83,7 +90,10 @@ const OrganizationManagement = () => {
         email: org.email || "",
         status: org.status || "Active",
         logo: org.logo_url || "",
-        documents: org.documents || [],
+        invoice: org.invoice_url || "",
+        receipt: org.receipt_url || "",
+        document3: org.document3 || "",
+        document4: org.document4 || "",
         planId: org.plan || "",
         start_date: org.start_date
           ? new Date(org.start_date).toISOString().split("T")[0]
@@ -102,7 +112,10 @@ const OrganizationManagement = () => {
         email: "",
         status: "Active",
         logo: null,
-        documents: [],
+        invoice: "",
+        receipt: "",
+        document3: "",
+        document4: "",
         planId: "",
         start_date: "",
         end_date: "",
@@ -136,31 +149,49 @@ const OrganizationManagement = () => {
   };
   
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // console.log(formData)
+  
+    console.log(formData);
+  
     if (editMode) {
-      dispatch(updateOrganization({ id: currentOrg.uuid, data: formData }));
+      try {
+        const resultAction = await dispatch(updateOrganization({ id: currentOrg.uuid, data: formData }));
+        if (updateOrganization.fulfilled.match(resultAction)) {
+          closeForm();
+        } else {
+          // Handle errors here (optional)
+          alert(resultAction.payload?.message || 'Failed to update organization');
+        }
+      } catch (error) {
+        alert('Failed to update organization');
+      }
     } else {
-      if(formData.documents.length === 0 || formData.documents === null){
-        alert("Please upload at least one document.")
+      if(!formData.invoice || !formData.receipt){
+        alert("Please upload invoice and receipt.");
         return;
       }
-      if(formData.logo === null){
-        alert("Please upload a logo.")
+      if (!formData.logo) {
+        alert("Please upload a logo.");
         return;
       }
-      if(formData.planId === ""){
-        alert("Please select a plan.")
+      if (!formData.planId) {
+        alert("Please select a plan.");
         return;
       }
-      dispatch(createOrganization(formData));
+      try {
+        const resultAction = await dispatch(createOrganization(formData));
+        if (createOrganization.fulfilled.match(resultAction)) {
+          closeForm();
+        } else {
+          alert(resultAction.payload?.message || 'Failed to create organization');
+        }
+      } catch (error) {
+        alert('Failed to create organization');
+      }
     }
-    if(!loading){
-      closeForm();
-    }
-    // closeForm();
   };
+  
 
   const handleCheckboxChange = (id) => {
     setSelectedItems((prev) =>
@@ -182,8 +213,8 @@ const OrganizationManagement = () => {
     dispatch(clearFilters());
   };
 
-  const handleOpenOrg = (Id) => {
-    setOrgId(Id);
+  const handleOpenOrg = (org) => {
+    setOrg(org);
     setShowOrgModal(true);
   };
   const handleCloseOrgModal = () => {
@@ -229,17 +260,19 @@ const OrganizationManagement = () => {
         console.error(error);
       }
     }
+    setShowBulkAction(false);
+    setSelectedItems([]);
   }
 
   return (
     <>
-      {loading ? <LoadingScreen text="Loading Organizations..."/> : (
+      {loading && filters.name === ""  ? <LoadingScreen text="Loading Organizations..."/> : (
       <div className="app-container">
         {/* Main Content */}
         <div className="main-content">
           {showOrgModal && (
             <OrganizationDetails
-              orgId={orgId}
+              org={org}
               isOpen={showOrgModal}
               onClose={handleCloseOrgModal}
             />
@@ -281,7 +314,7 @@ const OrganizationManagement = () => {
             </div>
             {showFilters && (
               <div className="filter-panel">
-                {/* Status Filter */}
+                <span style={{cursor: "pointer", position: "absolute", right: "10px", top: "10px"}} onClick={() => setShowFilters(false)}><X size={16} color="#6b7280" /></span>
                 <div className="filter-group">
                   <label>Status</label>
                   <select
@@ -358,7 +391,7 @@ const OrganizationManagement = () => {
                     key={org.uuid}
                   />
                   <div className="planId">{org.planId}</div>
-                  <div className="user-cell" >
+                  <div className="user-cell" onClick={() => handleOpenOrg(org)}>
                     <div
                       className="user-avatar-cell"
                       style={{ backgroundColor: "#FFC107" }}
@@ -471,6 +504,7 @@ const OrganizationManagement = () => {
         plans={plans}
         plan={plan}
         loading={loading}
+        error={error}
       />}
 
     </>

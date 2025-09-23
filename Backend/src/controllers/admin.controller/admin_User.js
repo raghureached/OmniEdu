@@ -270,7 +270,6 @@ const getUsers = async (req, res) => {
 
   const getUserbyId = async (req, res) => {
     try {
-      // console.log(req.params.id)
       const user = await User.findOne({uuid:req.params.id}).lean();
       if (!user) {
         return res.status(404).json({

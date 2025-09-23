@@ -49,14 +49,29 @@ const organizationSchema = new mongoose.Schema(
     end_date: {
       type: Date,
     },
-    documents: {
-      type: [String], 
-      default: [],
+    receipt_url: {
+      type: String,
+    },
+    invoice_url: {
+      type: String,
+    },
+    document3:{
+      type: String,
+    },
+    document4:{
+      type: String,
     },
     roles:{
-      type: [mongoose.Schema.Types.ObjectId],
-      ref:"GlobalRole",
-      default: [],
+      type : [mongoose.Schema.Types.ObjectId],
+      ref:"Role"
+    },
+    adminDashboardConfig:{
+      type : [mongoose.Schema.Types.ObjectId],
+      ref:"AdminDashboardConfig"
+    },
+    userDashboardConfig:{
+      type : [mongoose.Schema.Types.ObjectId],
+      ref:"UserDashboardConfig"
     }
   },
   { timestamps: true }

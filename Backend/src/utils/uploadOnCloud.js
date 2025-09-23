@@ -38,7 +38,7 @@ const uploadToCloudinary = (folder) => {
 const uploadMultipleToCloudinary = async (req, res, next) => {
     try {
       if (!req.files) return next();
-  
+      // console.log(req.files)
       req.uploadedFiles = {}; // object to hold uploaded data
   
       // Loop through each field
@@ -52,9 +52,14 @@ const uploadMultipleToCloudinary = async (req, res, next) => {
             resource_type: "auto",
           });
   
-          // delete local file after upload
-          fs.unlinkSync(file.path);
-  
+          try {
+            if (fs.existsSync(file.path)) {
+              fs.unlinkSync(file.path);
+            }
+          } catch (err) {
+            // Log the error, but do not crash the app
+            console.warn(`Could not delete file at ${file.path}`, err);
+          }
           req.uploadedFiles[fieldName].push({
             url: result.secure_url,
             public_id: result.public_id,
@@ -66,6 +71,7 @@ const uploadMultipleToCloudinary = async (req, res, next) => {
   
       next();
     } catch (error) {
+      console.log(error)
       return res.status(500).json({
         isSuccess: false,
         message: "Cloudinary upload failed",

@@ -1,4 +1,4 @@
-const Content = require("../../models/content_model");
+const GlobalModule = require("../../models/globalModule_model");
 const { z } = require("zod");
 const { logGlobalAdminActivity } = require("./globalAdmin_activity");
 
@@ -89,7 +89,7 @@ const addContent = async (req, res) => {
     // }
 
 
-    const newContent = new Content({
+    const newModule = new GlobalModule({
       title,
       type,
       content: type === 'Theory' ? content : null,
@@ -99,12 +99,12 @@ const addContent = async (req, res) => {
       created_by
     });
 
-    await newContent.save();
-    await logGlobalAdminActivity(req,"Create Content","content",`Content created successfully ${newContent.title}`)
+    await newModule.save();
+    await logGlobalAdminActivity(req,"Create Content","content",`Content created successfully ${newModule.title}`)
     return res.status(201).json({
       success: true,
       message: 'Content added successfully.',
-      data: newContent
+      data: newModule
     });
 
   } catch (error) {
@@ -121,8 +121,8 @@ const getContent = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = 50;
     const skip = (page - 1) * limit;
-    const content = await Content.find().skip(skip).limit(limit)
-    const total = await Content.countDocuments()
+    const content = await GlobalModule.find().skip(skip).limit(limit)
+    const total = await GlobalModule.countDocuments()
     // await logGlobalAdminActivity(req,"Get Content","content", `Content fetched successfully ${content.title}`)
     return res.status(200).json({
       success: true,
@@ -146,7 +146,7 @@ const getContent = async (req, res) => {
 };
 const getContentById = async (req, res) => {
   try {
-    const content = await Content.findOne({ uuid: req.params.id });
+    const content = await GlobalModule.findOne({ uuid: req.params.id });
     // await logGlobalAdminActivity(req,"Get Content","content",`Content fetched successfully ${content.title}`)
     return res.status(200).json({ success: true, message: 'Content fetched successfully.', data: content });
   } catch (error) {
@@ -169,22 +169,22 @@ const editContent = async (req, res) => {
     //     errors: bodyParsed.error.flatten(),
     //   });
     // }
-    const updatedContent = await Content.findOneAndUpdate(
+    const updatedModule = await GlobalModule.findOneAndUpdate(
       { uuid: req.params.id },
       { title, type, content, file_url, is_active, pushable_to_orgs },
       { new: true }
     );
-    if (!updatedContent) {
+    if (!updatedModule) {
       return res.status(404).json({
         success: false,
         message: "Content not found"
       })
     }
-    await logGlobalAdminActivity(req,"Edit Content","content",`Content updated successfully ${updatedContent.title}`)
+    await logGlobalAdminActivity(req,"Edit Content","content",`Content updated successfully ${updatedModule.title}`)
     return res.status(200).json({
       success: true,
       message: "Content updated successfully",
-      data: updatedContent
+      data: updatedModule
     })
   } catch (error) {
     console.log(error)
@@ -198,18 +198,18 @@ const editContent = async (req, res) => {
 
 const deleteContent = async (req, res) => {
   try {
-    const deletedContent = await Content.findOneAndDelete({ uuid: req.params.id })
-    if (!deletedContent) {
+    const deletedModule = await GlobalModule.findOneAndDelete({ uuid: req.params.id })
+    if (!deletedModule) {
       return res.status(404).json({
         success: false,
         message: "Content not found"
       })
     }
-    await logGlobalAdminActivity(req,"Delete Content","content",`Content deleted successfully ${deletedContent.title}`)
+    await logGlobalAdminActivity(req,"Delete Content","content",`Content deleted successfully ${deletedModule.title}`)
     return res.status(200).json({
       success: true,
       message: "Content deleted successfully",
-      data: deletedContent
+      data: deletedModule
     })
   } catch (error) {
     return res.status(500).json({

@@ -1,9 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
-// import bpo from "../../../images/bpo.png"
-// import sales from "../../../images/sales.png"
-// import it from "../../../images/it.jpg"
-
 
 // Async thunks for organization management
 export const fetchOrganizations = createAsyncThunk(
@@ -34,7 +30,6 @@ export const fetchOrganizationById = createAsyncThunk(
     }
 );
 
-// export const createOrganization = createAsyncThunk(
 //     'organizations/createOrganization',
 //     async(organizationData, { rejectWithValue }) => {
 //         try {
@@ -71,7 +66,7 @@ export const createOrganization = createAsyncThunk(
   "organizations/createOrganization",
   async (organizationData, { rejectWithValue }) => {
     try {
-      // console.log(organizationData)
+      console.log(organizationData)
       const formData = new FormData();
       // Append all fields properly
       Object.keys(organizationData).forEach((key) => {
@@ -129,22 +124,6 @@ export const updateOrganization = createAsyncThunk(
     'organizations/updateOrganization',
     async({ id, data }, { rejectWithValue }) => {
         try {
-            // Handle file upload for logo if present
-            // console.log(data)
-            // let formData = null;
-            // if (data.logo instanceof File) {
-            //     formData = new FormData();
-            //     Object.keys(data).forEach(key => {
-            //       // console.log(key, data[key]);
-            //         if (key === 'logo') {
-            //             formData.append('logo', data.logo);
-            //         } else {
-            //             formData.append(key, data[key]);
-            //         }
-            //     });
-            // }
-            // console.log('formData', formData)
-            // console.log(data)
             const response = await api.put(
               `/api/globalAdmin/editOrganization/${id}`,
              data,
@@ -317,7 +296,7 @@ const organizationSlice = createSlice({
           })
           .addCase(createOrganization.rejected, (state, action) => {
             state.loading = false;
-            state.error = action.payload || "Failed to create organization";
+            state.error = action.payload.message || "Failed to create organization";
           })
 
           // Update organization

@@ -1,196 +1,195 @@
 /* Modal overlay */
-.org-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.65); /* Slightly darker overlay for focus */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1200;
-    backdrop-filter: blur(4px); /* Soft background blur */
-  }
-  
-  /* Modal box */
-  .org-modal {
-    background: #fff;
-    padding: 32px 40px;
-    border-radius: 16px;
-    width: 650px;
-    max-height: 90vh;
-    overflow-y: auto;
-    position: relative;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
-    animation: fadeIn 0.35s ease forwards;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #222;
-  }
-  
-  /* Close button */
-  .org-close-btn {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    background: #e02424;
-    color: white;
-    border: none;
-    font-size: 1.6rem;
-    font-weight: 700;
-    border-radius: 50%;
-    cursor: pointer;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: background 0.25s ease;
-  }
-  .org-close-btn:hover {
-    background: #b81919;
-  }
-  
-  /* Section styling */
-  .org-details-section {
-    margin: 28px 0;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #e5e5e5;
-  }
-  
-  /* Header */
-  .org-details-header h2 {
-    margin: 0;
-    font-size: 2rem;
-    font-weight: 700;
-    color: #2c3e50;
-  }
-  .org-details-header p {
-    color: #555;
-    font-weight: 500;
-    font-size: 1rem;
-    margin-top: 6px;
-  }
-  
-  /* Logo */
-  .org-details-logo {
-    max-width: 220px;
-    max-height: 120px;
-    display: block;
-    margin-top: 12px;
-    border: 2px solid #d1d5db;
-    border-radius: 12px;
-    box-shadow: 0 5px 12px rgba(0,0,0,0.1);
-    object-fit: contain;
-    transition: box-shadow 0.3s ease;
-  }
-  .org-details-logo:hover {
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-  }
-  
-  /* Info list styling */
-  .org-details-section ul {
-    list-style: none;
-    padding: 0;
-    margin: 12px 0 0 0;
-    font-size: 1rem;
-    color: #333;
-  }
-  .org-details-section ul li {
-    margin: 8px 0;
-    font-weight: 500;
-  }
-  .org-details-section ul li strong {
-    color: #5570F1;
-    margin-right: 6px;
-  }
-  
-  /* Document icons container */
-  .org-details-documents {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    margin-top: 12px;
-  }
-  
-  /* Document icon */
-  .org-doc-icon {
-    font-size: 2.4rem;
-    cursor: pointer;
-    padding: 14px;
-    border: 2px solid #ccd6f6;
-    border-radius: 10px;
-    background: #f4f7ff;
-    box-shadow: 0 2px 6px rgba(85,112,241,0.15);
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #5570F1;
-    user-select: none;
-    width: 56px;
-    height: 56px;
-  }
-  .org-doc-icon:hover {
-    background: #e0e6ff;
-    box-shadow: 0 4px 14px rgba(85,112,241,0.3);
-    transform: translateY(-3px);
-  }
-  
-  /* Document preview modal overlay */
-  .org-doc-preview-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.75);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1300;
-    backdrop-filter: blur(5px);
-  }
-  
-  /* Document preview content */
-  .org-doc-preview-content {
-    background: #fff;
-    padding: 24px;
-    border-radius: 16px;
-    width: 85vw;
-    max-width: 900px;
-    height: 85vh;
-    box-shadow: 0 16px 48px rgba(0,0,0,0.25);
-    position: relative;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  /* Close button inside preview modal */
-  .org-doc-close-btn {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    background: #e02424;
-    color: white;
-    border: none;
-    font-size: 1.6rem;
-    border-radius: 50%;
-    cursor: pointer;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: background 0.3s ease;
-    font-weight: 700;
-    z-index: 10;
-  }
-  .org-doc-close-btn:hover {
-    background: #ad1b1b;
-  }
-  
-  /* Iframe inside preview */
-  .org-doc-preview-content iframe {
-    flex: 1;
-    border-radius: 12px;
-    border: none;
-  }
-  
+.orgDetail-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1200;
+  backdrop-filter: blur(4px);
+}
+
+/* Modal box */
+.orgDetail-modal {
+  background: #fff;
+  padding: 32px 40px;
+  border-radius: 16px;
+  width: 650px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.35s ease forwards;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #222;
+}
+
+/* Close button */
+.orgDetail-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #e02424;
+  color: white;
+  border: none;
+  font-size: 1.6rem;
+  font-weight: 700;
+  border-radius: 50%;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background 0.25s ease;
+}
+.orgDetail-close-btn:hover {
+  background: #b81919;
+}
+
+/* Section styling */
+.orgDetail-section {
+  margin: 28px 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+/* Header */
+.orgDetail-header h2 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+.orgDetail-header p {
+  color: #555;
+  font-weight: 500;
+  font-size: 1rem;
+  margin-top: 6px;
+}
+
+/* Logo */
+.orgDetail-logo {
+  max-width: 220px;
+  max-height: 120px;
+  display: block;
+  margin-top: 12px;
+  border: 2px solid #d1d5db;
+  border-radius: 12px;
+  box-shadow: 0 5px 12px rgba(0,0,0,0.1);
+  object-fit: contain;
+  transition: box-shadow 0.3s ease;
+}
+.orgDetail-logo:hover {
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+/* Info list styling */
+.orgDetail-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0 0;
+  font-size: 1rem;
+  color: #333;
+}
+.orgDetail-section ul li {
+  margin: 8px 0;
+  font-weight: 500;
+}
+.orgDetail-section ul li strong {
+  color: #5570F1;
+  margin-right: 6px;
+}
+
+/* Document icons container */
+.orgDetail-documents {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+/* Document icon */
+.orgDetail-doc-icon {
+  font-size: 2.4rem;
+  cursor: pointer;
+  padding: 14px;
+  border: 2px solid #ccd6f6;
+  border-radius: 10px;
+  background: #f4f7ff;
+  box-shadow: 0 2px 6px rgba(85,112,241,0.15);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5570F1;
+  user-select: none;
+  width: 56px;
+  height: 56px;
+}
+.orgDetail-doc-icon:hover {
+  background: #e0e6ff;
+  box-shadow: 0 4px 14px rgba(85,112,241,0.3);
+  transform: translateY(-3px);
+}
+
+/* Document preview modal overlay */
+.orgDetail-doc-preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1300;
+  backdrop-filter: blur(5px);
+}
+
+/* Document preview content */
+.orgDetail-doc-preview-content {
+  background: #fff;
+  padding: 24px;
+  border-radius: 16px;
+  width: 85vw;
+  max-width: 900px;
+  height: 85vh;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Close button inside preview modal */
+.orgDetail-doc-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #e02424;
+  color: white;
+  border: none;
+  font-size: 1.6rem;
+  border-radius: 50%;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background 0.3s ease;
+  font-weight: 700;
+  z-index: 10;
+}
+.orgDetail-doc-close-btn:hover {
+  background: #ad1b1b;
+}
+
+/* Iframe inside preview */
+.orgDetail-doc-preview-content iframe {
+  flex: 1;
+  border-radius: 12px;
+  border: none;
+}

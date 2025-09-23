@@ -274,7 +274,7 @@
 
 // ✅ roleSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import api from '../../services/api';
+import api from '../../services/api.js';
 
 // ------------------- THUNKS -------------------
 
@@ -283,9 +283,12 @@ export const fetchRoles = createAsyncThunk(
   'roles/fetchRoles',
   async (currentOrg ,{ rejectWithValue }) => {
     try {
-      // console.log(currentOrg)
+      if(!currentOrg){
+        return rejectWithValue("No organization provided");
+      }
       const endpoint = `/api/globalAdmin/getRoles/${currentOrg}`
       const response = await api.get(endpoint);
+      // console.log(response.data)
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -312,10 +315,10 @@ export const createRole = createAsyncThunk(
   async ({ roleData, isGlobalAdmin = false }, { rejectWithValue }) => {
     try {
       // console.log(roleData)
-      const endpoint = '/api/globalAdmin/createRoleOrg'
+      const endpoint = '/api/globalAdmin/addRole'
       const response = await api.post(endpoint, roleData);
       // console.log(response.data)
-      return response.data.role;
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -336,6 +339,20 @@ export const updateRole = createAsyncThunk(
   }
 );
 
+export const updateOrgRole = createAsyncThunk(
+  'roles/updateOrgRole',
+  async ({ id, orgId }, { rejectWithValue }) => {
+    try {
+      console.log(id,orgId)
+      const endpoint = `/api/globalAdmin/editOrgRole/${orgId}`
+      const response = await api.put(endpoint, {id});
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 // Delete Role
 export const deleteRole = createAsyncThunk(
   'roles/deleteRole',
@@ -343,7 +360,7 @@ export const deleteRole = createAsyncThunk(
     try {
       const endpoint = `/api/globalAdmin/deleteRole/${_id}`;
       const response = await api.delete(endpoint);
-      // console.log(response.data.data._id)
+      // console.log(response.data)
       return response.data.data._id; // return deleted role id
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -356,7 +373,7 @@ export const deleteRole = createAsyncThunk(
 const roleSlice = createSlice({
   name: 'roles',
   initialState: {
-    adminRoles: [],
+    orgRoles: [],
     globalRoles: [],
     loading: false,
     error: null,
@@ -375,10 +392,12 @@ const roleSlice = createSlice({
       })
       .addCase(fetchRoles.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.meta.arg) {
+        if (action.meta.arg === "global") {
           state.globalRoles = action.payload;
+          // console.log(state.globalRoles)
         } else {
-          state.adminRoles = action.payload;
+          state.orgRoles = action.payload;
+          // console.log(state.orgRoles)
         }
       })
       .addCase(fetchRoles.rejected, (state, action) => {
@@ -404,11 +423,7 @@ const roleSlice = createSlice({
       })
       .addCase(createRole.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.meta.arg.isGlobalAdmin) {
-          state.globalRoles.push(action.payload);
-        } else {
-          state.adminRoles.push(action.payload);
-        }
+        state.globalRoles.push(action.payload)
         // console.log(action.payload)
       })
       .addCase(createRole.rejected, (state, action) => {
@@ -423,10 +438,13 @@ const roleSlice = createSlice({
       })
       .addCase(updateRole.fulfilled, (state, action) => {
         state.loading = false;
+        // console.log(action.payload) 
+        // console.log(state.globalRoles)
           const index = state.globalRoles.findIndex(
-            (role) => role._id === action.payload._id
+            (role) => String(role.uuid) === String(action.payload.uuid)
           );
-          
+          // console.log(state.globalRoles.map(role=>role.uuid))
+          // console.log(action.payload.uuid)
           if (index !== -1) state.globalRoles[index] = action.payload;
       })
       .addCase(updateRole.rejected, (state, action) => {
@@ -434,6 +452,19 @@ const roleSlice = createSlice({
         state.error = action.payload?.message || 'Failed to update role';
       })
 
+      .addCase(updateOrgRole.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateOrgRole.fulfilled, (state, action) => {
+        state.loading = false;
+        // console.log(state.globalRoles)
+        state.orgRoles = action.payload
+      })
+      .addCase(updateOrgRole.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.message || 'Failed to update role';
+      })
       // Delete Role
       .addCase(deleteRole.pending, (state) => {
         state.loading = true;

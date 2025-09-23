@@ -22,8 +22,6 @@ const createRoleSchema = z.object({
     .nonempty("At least one section is required"),
 });
 
-// ✅ Create role with sections & permissions
-///Global ROLES
 const addRole = async (req, res) => {
   try {
     const { name, description, permissions } = req.body;
@@ -43,15 +41,13 @@ const addRole = async (req, res) => {
           message: `One or more permissions are invalid for section: ${permBlock.section}`
         });
       }
-    }
-
+    } 
     // Create role
     const newRole = await Role.create({
       name,
       description,
       permissions
     });
-
     res.status(201).json({
       success: true,
       message: "Role created successfully",
@@ -62,51 +58,6 @@ const addRole = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error", error });
   }
 };
-
-////OrganizationRoles
-
-const createRole = async(req,res)=>{
-  try { 
-    const { name, description, permissions,orgId } = req.body;
-    // console.log(orgId)
-    for (const permBlock of permissions) {
-      const sectionExists = await Section.findById(permBlock.section);
-      if (!sectionExists) {
-        return res.status(400).json({ message: `Section not found: ${permBlock.section}` });
-      }
-
-      const validPermissions = await Permission.find({
-        _id: { $in: permBlock.allowed },
-        section: permBlock.section
-      });
-
-      if (validPermissions.length !== permBlock.allowed.length) {
-        return res.status(400).json({
-          message: `One or more permissions are invalid for section: ${permBlock.section}`
-        });
-      }
-    }
-    const newOrgRole = await OrganizationRole.create({
-      name,
-      description,
-      permissions,
-      organization_id:orgId 
-    });
-    await logGlobalAdminActivity(req,"Create Role","role",`Role created successfully ${newOrgRole.name}`)
-    return res.status(200).json({
-      message: "Role updated successfully",
-      role: newOrgRole
-    });
-  } catch(error){
-    console.log(error)
-    return res.status(500).json({
-      message: "Failed to update role",
-      error: error.message
-    });
-  }
-}
-
-
 
 // ✅ Update Role
 const editRole = async (req, res) => {
@@ -143,7 +94,7 @@ const editRole = async (req, res) => {
       }
     }
     // 🔹 Update role
-    const updatedRole = await OrganizationRole.findOneAndUpdate(
+    const updatedRole = await Role.findOneAndUpdate(
       { uuid: req.params.id },
       { name, description, permissions },
       { new: true, runValidators: true }
@@ -174,7 +125,7 @@ const editRole = async (req, res) => {
 
 const deleteRole = async(req, res) => {
     try {
-        const deletedRole = await OrganizationRole.findOneAndDelete({ uuid: req.params.id })
+        const deletedRole = await Role.findOneAndDelete({ uuid: req.params.id })
         await logGlobalAdminActivity(req,"Delete Role","role",`Role deleted successfully ${deletedRole.name}`)
         return res.status(200).json({
             success: true,
@@ -192,16 +143,15 @@ const deleteRole = async(req, res) => {
 // ✅ Get all roles with populated sections + permissions
 const getRoles = async (req, res) => {
   try {
-    const orgId = await Organization.findOne({uuid:req.params.orgId}).lean().select("_id");
-    // console.log(roleIds.roles)
-    const orgRoles = await OrganizationRole.find({organization_id:orgId._id})
+    let formatted = []
+    if(req.params.id === "global"){
+      const GlobalRoles = await Role.find({})
       .populate({
         path: "permissions",
         select: "section allowed", 
       });
-    // await logGlobalAdminActivity(req,"Get Roles","role","Roles fetched successfully")
-    // ✅ Transform to required format
-    const formatted = orgRoles.map(role => ({
+     formatted = GlobalRoles.map(role => ({
+      _id:role._id,
       uuid: role.uuid,
       name: role.name,
       description: role.description,
@@ -210,7 +160,10 @@ const getRoles = async (req, res) => {
         allowed: perm.allowed?.map(a => a._id?.toString()) || [] // array of IDs
       }))
     })).sort((a, b) => a.name.localeCompare(b.name));
-
+  }else{
+    const orgRolesIds = await Organization.findOne({uuid:req.params.id}).select("roles")
+    formatted = orgRolesIds.roles;
+  }
     res.status(200).json({ success: true, data: formatted });
   } catch (error) {
     console.error("Error fetching roles:", error);
@@ -220,6 +173,61 @@ const getRoles = async (req, res) => {
 
 
 
+//////Edit Org Role
+
+const editOrgRole = async (req, res) => {
+  try {
+    const orgId = req.params.orgId;
+    const roleId = req.body.id;
+    // console.log(orgId,roleId)
+    if (!roleId) {
+      return res.status(400).json({ success: false, message: "Role ID missing" });
+    }
+
+    // Find role by UUID
+    const role = await Role.findOne({ uuid: roleId });
+    if (!role) {
+      return res.status(404).json({ success: false, message: "Role not found" });
+    }
+
+    // Find org document by UUID
+    const organization = await Organization.findOne({ uuid: orgId });
+    if (!organization) {
+      return res.status(404).json({ success: false, message: "Organization not found" });
+    }
+
+    // Check if role already assigned to org, toggle accordingly
+    const roleExists = organization.roles.includes(role._id);
+    if (roleExists) {
+      // Remove role from array
+      organization.roles.pull(role._id);
+    } else {
+      // Add role to array (using $addToSet-like logic)
+      organization.roles.push(role._id);
+    }
+
+    // Save updated organization document
+    await organization.save();
+
+    // Log the role update
+    await logGlobalAdminActivity(
+      req, 
+      "Edit Role", 
+      "role", 
+      `${roleExists ? "Removed" : "Added"} ${role.name} role for organization ${organization.uuid}`
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `Role ${roleExists ? "removed" : "added"} successfully`,
+      data: organization.roles,
+    });
+
+  } catch (error) {
+    console.error("Error editing org role:", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
 
 const addPermissions = async (req, res) => {
   try {
@@ -349,11 +357,12 @@ const getPermissions = async (req, res) => {
 };
 
 
+
 module.exports = {
     addRole,
-    createRole,
     editRole,
     deleteRole,
+    editOrgRole,
     getRoles,
     addPermissions,
     getPermissions

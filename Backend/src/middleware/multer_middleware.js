@@ -1,6 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { error } = require('console');
 
 // Helper to ensure folder exists
 const ensureFolder = (folderPath) => {
@@ -15,11 +16,23 @@ ensureFolder(uploadsDir);
 
 const diskStorageUploads = multer.diskStorage({
   destination: function (req, file, cb) {
+    console.log("file",file)
     cb(null, uploadsDir);
   },
   filename: function (req, file, cb) {
     // console.log(file)    
-    const filePrefix = file.fieldname === 'logo' ? 'logo' : 'documents';
+    let filePrefix = "";
+    if(file.fieldname === 'logo'){
+      filePrefix = "logo";
+    }else if(file.fieldname === 'invoice'){
+      filePrefix = "invoice";
+    }else if(file.fieldname === 'receipt'){
+      filePrefix = "receipt";
+    }else if(file.fieldname === 'document3'){
+      filePrefix = "document3";
+    }else if(file.fieldname === 'document4'){
+      filePrefix = "document4";
+    }
     const { name = 'org' } = req.body;
     const timestamp = Date.now();
     cb(null, `${filePrefix}-${timestamp}-${name}${path.extname(file.originalname)}`);
@@ -29,56 +42,57 @@ const diskStorageUploads = multer.diskStorage({
 const upload = multer({ storage: diskStorageUploads,
   limits: {
     fileSize: 2 * 1024 * 1024 ,
+
   },
   fileFilter: (req, file, cb) => {
     // Optional: restrict file types
-    // const allowed = ["image/jpeg", "image/png", "application/pdf"];
-    // if (!allowed.includes(file.mimetype)) {
-    //   return cb(new Error("Only JPEG, PNG, and PDF files are allowed"), false);
-    // }
+    const allowed = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowed.includes(file.mimetype)) {
+      return cb(new Error("Only JPEG, PNG, and PDF files are allowed"), false);
+    }
     cb(null, true);
+  
   },
  });
 
 
-// ========== Storage 2: For org content ==========
-const contentDir = path.join(__dirname, '../content/');
-ensureFolder(contentDir);
-
-const diskStorageContent = multer.diskStorage({
-  destination: function (req, file, cb) {
-    ensureFolder(contentDir);
-    console.log("file",file)
-    // console.log(contentDir);
-    
-    cb(null, contentDir);
-  },
-  filename: function (req, file, cb) {
-    const timestamp = Date.now();
-    // TODO: later replace with org id if required
-    cb(null, `content-${timestamp}-${file.originalname}`);
-  },
-});
-
-// Multer instance with limits + fileFilter
-const uploadContent = multer({
-  storage: diskStorageContent,
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB max
-  fileFilter: (req, file, cb) => {
-    // Example: only allow videos, images, and PDFs
-    const allowed = [
-      "image/jpeg",
-      "image/png",
-      "application/pdf",
-      "video/mp4",
-    ];
-
-    if (!allowed.includes(file.mimetype)) {
-      return cb(new Error("Invalid file type"), false);
-    }
-    cb(null, true);
-  },
-});
+ const contentDir = path.join(__dirname, '../content/');
+ ensureFolder(contentDir);
+ 
+ const diskStorageContent = multer.diskStorage({
+   destination: function (req, file, cb) {
+     ensureFolder(contentDir);
+     console.log("file",file)
+     // console.log(contentDir);
+     
+     cb(null, contentDir);
+   },
+   filename: function (req, file, cb) {
+     const timestamp = Date.now();
+     // TODO: later replace with org id if required
+     cb(null, `content-${timestamp}-${file.originalname}`);
+   },
+ });
+ 
+ // Multer instance with limits + fileFilter
+ const uploadContent = multer({
+   storage: diskStorageContent,
+   limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB max
+   fileFilter: (req, file, cb) => {
+     // Example: only allow videos, images, and PDFs
+     const allowed = [
+       "image/jpeg",
+       "image/png",
+       "application/pdf",
+       "video/mp4",
+     ];
+ 
+     if (!allowed.includes(file.mimetype)) {
+       return cb(new Error("Invalid file type"), false);
+     }
+     cb(null, true);
+   },
+ });
 
 const AssessmentDir = path.join(__dirname, '../assessments/');
 ensureFolder(AssessmentDir);

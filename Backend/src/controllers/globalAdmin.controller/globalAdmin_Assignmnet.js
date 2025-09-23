@@ -1,12 +1,12 @@
 const GlobalAssignment = require("../../models/global_Assignment")
-const Content = require("../../models/content_model")
+const GlobalModule = require("../../models/globalModule_model")
 const Organization = require("../../models/organization_model")
 const { logGlobalAdminActivity } = require("./globalAdmin_activity")
 const createAssignment = async(req,res)=>{
     try {
         const {assignType,assignDate,assignTime,dueDate,dueTime,notifyUsers,isRecurring,contentId} = req.body
-        const content = await Content.findOne({uuid:contentId}).populate("title")
-        if(!content){
+        const Module = await GlobalModule.findOne({uuid:contentId}).populate("title")
+        if(!Module){
             return res.status(404).json({
                 isSuccess:false,
                 message:"Content not found"
@@ -19,8 +19,8 @@ const createAssignment = async(req,res)=>{
             dueTime,
             notifyUsers,
             isRecurring,
-            contentId:content._id,
-        contentName:content.title
+            contentId:Module._id,
+        contentName:Module.title
         })
         await logGlobalAdminActivity(req,"Create Assignment","assignment",`Assignment created successfully`)
         return res.status(201).json({

@@ -5,6 +5,7 @@ import {
   deleteRole,
   createRole,
   updateRole,
+  updateOrgRole,
 } from "../../../store/slices/roleSlice";
 import './GlobalRolesManagement.css'
 import api from "../../../services/api";
@@ -16,7 +17,7 @@ import LoadingScreen from "../../../components/common/Loading/Loading";
 
 const GlobalRolesManagement = () => {
   const dispatch = useDispatch();
-  const { globalRoles, loading } = useSelector((state) => state.roles);
+  const { globalRoles, orgRoles, loading } = useSelector((state) => state.roles);
   const [availablePermissions, setAvailablePermissions] = useState([]); // sections + permissions
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -25,19 +26,22 @@ const GlobalRolesManagement = () => {
     name: "",
     description: "",
   });
-  const [org,setOrg] = useState(null)
-  const [currentOrg,setCurrentOrg] = useState(null)
-  const [orgRoles,setOrgRoles] = useState([])
+  const [currentOrg, setCurrentOrg] = useState(null)
   const [permissions, setPermissions] = useState([]);
-  const [organization,setOrganization] = useState(null)
-  const {organizations } = useSelector(state => state.organizations);
+  const [organization, setOrganization] = useState(null)
+  const { organizations } = useSelector(state => state.organizations);
+
+  useEffect(() => {
+    dispatch(fetchRoles("global"));
+  }, [])
 
   useEffect(() => {
     dispatch(fetchRoles(currentOrg));
     fetchPermissions();
-  }, [dispatch,currentOrg]);
 
-  
+  }, [dispatch, currentOrg]);
+
+
   const fetchPermissions = async () => {
     const response = await api.get("/api/globalAdmin/getPermissions");
     setAvailablePermissions(response.data.data);
@@ -52,7 +56,6 @@ const GlobalRolesManagement = () => {
 
   const handleEditRole = (role) => {
     setCurrentRole(role);
-    // console.log(role.sections)
     setPermissions(role.permissions)
     setFormData({
       name: role.name || "",
@@ -85,14 +88,20 @@ const GlobalRolesManagement = () => {
       }
     });
   };
-  const handleSelectOrg = (orgId) =>{
-    // console.log("orgId",orgId)
-    setOrganization((prev) => (prev === orgId ? null : orgId)); 
-  } 
-  const handleSelectCurrentOrg = (orgId) =>{
-    // console.log("orgId",orgId)
-    setCurrentOrg((prev) => (prev === orgId ? null : orgId)); 
-  } 
+  const handleSelectOrg = (orgId) => {
+    setOrganization((prev) => (prev === orgId ? null : orgId));
+  }
+  const handleSelectCurrentOrg = (orgId) => {
+    setCurrentOrg((prev) => (prev === orgId ? null : orgId));
+  }
+  const handleToggleRole = (orgId,roleId) => {
+    dispatch(
+      updateOrgRole({
+        id: roleId,
+        orgId:currentOrg,
+      })
+    );
+  };
 
   const handleSaveRole = (e) => {
     e.preventDefault();
@@ -102,7 +111,6 @@ const GlobalRolesManagement = () => {
       description: formData.description,
       organization: organization,
       permissions: permissions, // section-based permissions
-      orgId:organization
     };
 
     if (currentRole) {
@@ -110,26 +118,25 @@ const GlobalRolesManagement = () => {
         updateRole({
           id: currentRole.uuid,
           roleData,
-          isGlobalAdmin: true,
         })
       );
     } else {
-      dispatch(createRole({ roleData, isGlobalAdmin: true }));
+      dispatch(createRole({ roleData }));
     }
     setFormData({ name: "", description: "" });
     setPermissions([]);
     setCurrentRole(null);
     setShowForm(false);
   };
-  if(loading){
-    return <LoadingScreen text="Loading Roles..."/>
+  if (loading) {
+    return <LoadingScreen text="Loading Roles..." />
   }
 
   return (
     <div className="global-roles-management">
       <div className="roles-management-toolbar">
         <div className="roles-search-bar">
-        <Search size={16} color="#6b7280" className="search-icon" />
+          <Search size={16} color="#6b7280" className="search-icon" />
           <input
             type="text"
             placeholder="Search roles..."
@@ -137,28 +144,28 @@ const GlobalRolesManagement = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        {currentRole ? "" : <div className="form-group  ">
-                <select
-                  style={{marginTop:"20px"}}
-                  value={currentOrg}
-                  onChange={(e) =>
-                    handleSelectCurrentOrg(e.target.value)
-                  }
-                > 
-                <option>Select Organization</option>
-                  {
-                    organizations.map((organization) => (
-                      <option key={organization.id} value={organization.uuid}>
-                        {organization.name} 
-                      </option>
-                    ))
-                  }
-                </select>
-                
-              </div>}
-        <button className="roles-quick-add-btn" onClick={handleAddRole}>
+        <div className="form-group  ">
+          <select
+            style={{ marginTop: "20px" }}
+            value={currentOrg}
+            onChange={(e) =>
+              handleSelectCurrentOrg(e.target.value)
+            }
+          >
+            <option value="global">Roles Available for All Organizations</option>
+            {
+              organizations.map((organization) => (
+                <option key={organization.id} value={organization.uuid}>
+                  {organization.name}
+                </option>
+              ))
+            }
+          </select>
+
+        </div>
+        {currentOrg === "global" || currentOrg === null ? <button className="roles-quick-add-btn" onClick={handleAddRole}>
           + Add Role
-        </button>
+        </button> : null}
       </div>
       {showForm && (
         <div className="roles-modal-overlay">
@@ -189,25 +196,6 @@ const GlobalRolesManagement = () => {
                   }
                 />
               </div>
-              {currentRole ? "" : <div className="form-group">
-                <label>Organization</label>
-                <select
-                  value={formData.organization}
-                  onChange={(e) =>
-                    handleSelectOrg(e.target.value)
-                  }
-                > 
-                <option>Select Organization</option>
-                  {
-                    organizations.map((organization) => (
-                      <option key={organization.id} value={organization._id}>
-                        {organization.name}
-                      </option>
-                    ))
-                  }
-                </select>
-                
-              </div>}
 
               <div className="form-group">
                 <label>Permissions</label>
@@ -221,7 +209,7 @@ const GlobalRolesManagement = () => {
                             (s) =>
                               s.section === section.sectionId &&
                               s.allowed.includes(perm._id)
-                          );                          
+                          );
                           return (
                             <div key={perm._id} className="permission-item">
                               <span>{perm.name}</span>
@@ -270,9 +258,7 @@ const GlobalRolesManagement = () => {
 
       {/* Table */}
       <div className="roles-table-container">
-        {globalRoles.length === 0 ? (
-          <h3 style={{textAlign:"center"}}>No Roles Assigned</h3>
-        ) : (
+          <div className="roles-table-container">
           <table className="roles-table">
             <thead>
               <tr>
@@ -306,62 +292,7 @@ const GlobalRolesManagement = () => {
                         )}
                       </span>
                     </td>
-                    <td className="roles-action-cell">
-                      <button
-                        className="roles-btn-delete"
-                        onClick={() => handleDeleteRole(role.uuid)}
-                      >
-                        <span style={{display:"flex",alignItems:"center",justifyContent:"center", gap:"2px"}}><RiDeleteBinFill size={16} color="red" />Delete</span>
-                      </button>
-                      <button
-                        className="roles-btn-edit"
-                        onClick={() => handleEditRole(role)}
-                      >
-                        <span style={{display:"flex",alignItems:"center",justifyContent:"center", gap:"2px"}}><FiEdit3 size={16} color="#67280" />Edit</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-      {org && 
-      <div className="roles-table-container">
-          <table className="roles-table">
-            <thead>
-              <tr>
-                <th>Role Name</th>
-                <th>Description</th>
-                <th>Permissions</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {globalRoles
-                .filter((role) =>
-                  role.name?.toLowerCase().includes(searchTerm.toLowerCase())
-                )
-                .map((role) => (
-                  <tr key={role._id}>
-                    <td className="role-name">{role.name}</td>
-                    <td className="role-description">
-                      {role.description || "No description"}
-                    </td>
-                    <td>
-                      <span className="roles-permission-count">
-                        {role.permissions?.reduce(
-                          (total, sec) => total + sec.allowed.length,
-                          0
-                        ) || 0}{" "}
-                        /{" "}
-                        {availablePermissions.reduce(
-                          (total, section) => total + section.permissions.length,
-                          0
-                        )}
-                      </span>
-                    </td>
-                    <td className="roles-action-cell">
+                    {currentOrg === "global" || currentOrg === null ? <td className="roles-action-cell">
                       <button
                         className="roles-btn-delete"
                         onClick={() => handleDeleteRole(role.uuid)}
@@ -374,12 +305,29 @@ const GlobalRolesManagement = () => {
                       >
                         Edit
                       </button>
-                    </td>
+                    </td> : 
+                    <td className="roles-action-cell">
+                    <div key={role._id} className="permission-item">
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={
+                          orgRoles.includes(role._id)
+                        }
+                        onChange={() => handleToggleRole(currentOrg,role.uuid)}
+                      />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+                  </td>
+                    }
                   </tr>
                 ))}
             </tbody>
           </table>
-      </div>}
+        </div>
+        
+      </div>
     </div>
   );
 };

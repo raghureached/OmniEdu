@@ -32,6 +32,7 @@ const GlobalMessageBoard = () => {
 
 
   const handleDeleteMessage = (id) => {
+    // console.log(id)
     dispatch(deleteMessage(id));
     toast.info("Message deleted");
   };
