@@ -1,6 +1,6 @@
 const SurveyResponses = require("../../models/global_surveyResponses_model");
-const Surveys = require("../../models/global_surveys_model");
-const GlobalSurveyQuestion = require("../../models/global_surveys_Questions_model");
+const Surveys = require("../../models/global_surveys_modelOld");
+const GlobalSurveyQuestion = require("../../models/global_surveys_Questions_modelOld");
 const { v4: uuidv4 } = require("uuid");
 const { logGlobalAdminActivity } = require("./globalAdmin_activity");
 
@@ -44,17 +44,7 @@ const createSurvey = async (req, res) => {
     const { title, description, questions, survey_type, start_date, end_date, is_active, created_by } = req.body;
 
     // Insert questions
-    //const createdQuestions = await GlobalSurveyQuestion.insertMany(questions);
-    const createdQuestions = await GlobalSurveyQuestion.insertMany(
-  questions.map((q) => ({
-    question_type: q.question_type,
-    question_text:  q.question_text ,
-    info_text: q.question_type === "info" ? q.info_text : "",
-    options: q.question_type === "multiple_choice" ? q.options || [] : [],
-    position: q.position || 0,
-  }))
-);
-
+    const createdQuestions = await GlobalSurveyQuestion.insertMany(questions);
     const questionIds = createdQuestions.map(q => q._id);
 
     // Create survey
@@ -92,7 +82,7 @@ const editSurvey = async (req, res) => {
     //   return res.status(400).json({
     //     success: false,
     //     message: "Validation error",
-    //     errors: parsed.error.errors, 
+    //     errors: parsed.error.errors,
     //   });
     // }
 
@@ -102,85 +92,19 @@ const editSurvey = async (req, res) => {
 
     if (questions && questions.length > 0) {
       for (const q of questions) {
-        // if (q._id) {
-        //   // Update existing question
-        //   const updated = await GlobalSurveyQuestion.findByIdAndUpdate(
-        //     q._id,
-        //     { question_text: q.question_text, question_type: q.question_type, options: q.options || [], position: q.position || 0 },
-        //     { new: true }
-        //   );
-        //   questionIds.push(updated._id);
-        // } else {
-        //   // Create new question
-        //   const newQ = await GlobalSurveyQuestion.create(q);
-        //   questionIds.push(newQ._id);
-        // }
-//         if (q._id) {
-//           const updateData = {
-//     question_type: q.question_type,
-//     question_text: q.question_text,
-//     options: q.question_type === "multiple_choice" ? q.options || [] : [],
-//     position: q.position || 0,
-//   };
-// if (q.question_type === "info") {
-//     updateData.info_text = q.info_text; // ✅ only set if info box
-//   }
-//   const updated = await GlobalSurveyQuestion.findByIdAndUpdate(
-//     q._id,
-//     {
-//       question_type: q.question_type,
-//       question_text: q.question_text ,
-//       info_text: q.question_type === "info" ? q.info_text : "",
-//       options: q.question_type === "multiple_choice" ? q.options || [] : [],
-//       position: q.position || 0,
-//     },
-//     { new: true }
-//   );
-//   questionIds.push(updated._id);
-// } else {
-//   const newQ = await GlobalSurveyQuestion.create({
-//     question_type: q.question_type,
-//     question_text:  q.question_text ,
-//     info_text: q.question_type === "info" ? q.info_text : "",
-//     options: q.question_type === "multiple_choice" ? q.options || [] : [],
-//     position: q.position || 0,
-//   });
-//   questionIds.push(newQ._id);
-// }
-if (q._id) {
-  const updateData = {
-    question_type: q.question_type,
-    question_text: q.question_text,
-    options: q.question_type === "multiple_choice" ? q.options || [] : [],
-    position: q.position || 0,
-  };
-
-  if (q.question_type === "info") {
-    updateData.info_text = q.info_text; // ✅ only set if info box
-  }
-
-  const updated = await GlobalSurveyQuestion.findByIdAndUpdate(
-    q._id,
-    updateData,
-    { new: true }
-  );
-  questionIds.push(updated._id);
-} else {
-  const createData = {
-    question_type: q.question_type,
-    question_text: q.question_text,
-    options: q.question_type === "multiple_choice" ? q.options || [] : [],
-    position: q.position || 0,
-  };
-
-  if (q.question_type === "info") {
-    createData.info_text = q.info_text; // ✅ only set if info box
-  }
-
-  const newQ = await GlobalSurveyQuestion.create(createData);
-  questionIds.push(newQ._id);
-}
-
+        if (q._id) {
+          // Update existing question
+          const updated = await GlobalSurveyQuestion.findByIdAndUpdate(
+            q._id,
+            { question_text: q.question_text, question_type: q.question_type, options: q.options || [], position: q.position || 0 },
+            { new: true }
+          );
+          questionIds.push(updated._id);
+        } else {
+          // Create new question
+          const newQ = await GlobalSurveyQuestion.create(q);
+          questionIds.push(newQ._id);
+        }
       }
     }
 
@@ -234,125 +158,6 @@ if (q._id) {
     });
   }
 };
-// const createSurvey = async (req, res) => {
-//   try {
-//     const { title, description, questions, survey_type, start_date, end_date, is_active, created_by } = req.body;
-
-//     // Insert questions with info_text support
-//     const createdQuestions = await GlobalSurveyQuestion.insertMany(
-//       questions.map(q => ({
-//         info_text: q.info_text || null, // ✅ include info_text
-//         question_text: q.question_text || "", // keep empty string if info only
-//         question_type: q.question_type,
-//         options: q.options || [],
-//         position: q.position || 0,
-//       }))
-//     );
-
-//     const questionIds = createdQuestions.map(q => q._id);
-
-//     // Create survey
-//     const survey = await Surveys.create({
-//       uuid: uuidv4(),
-//       title,
-//       description,
-//       questions: questionIds,
-//       survey_type,
-//       start_date,
-//       end_date,
-//       is_active,
-//       created_by,
-//     });
-
-//     await logGlobalAdminActivity(req, "Create Survey", "survey", `Survey created successfully ${survey.title}`);
-
-//     return res.status(201).json({
-//       success: true,
-//       message: "Survey created successfully",
-//       data: survey,
-//     });
-//   } catch (error) {
-//     return res.status(500).json({
-//       success: false,
-//       message: "Failed to create survey",
-//       error: error.message,
-//     });
-//   }
-// };
-
-// const editSurvey = async (req, res) => {
-//   try {
-//     const { title, description, questions, survey_type, start_date, end_date, is_active, created_by } = req.body;
-
-//     let questionIds = [];
-
-//     if (questions && questions.length > 0) {
-//       for (const q of questions) {
-//         if (q._id) {
-//           // Update existing question with info_text
-//           const updated = await GlobalSurveyQuestion.findByIdAndUpdate(
-//             q._id,
-//             {
-//               info_text: q.info_text || null,
-//               question_text: q.question_text || "",
-//               question_type: q.question_type,
-//               options: q.options || [],
-//               position: q.position || 0,
-//             },
-//             { new: true }
-//           );
-//           questionIds.push(updated._id);
-//         } else {
-//           // Create new question
-//           const newQ = await GlobalSurveyQuestion.create({
-//             info_text: q.info_text || null,
-//             question_text: q.question_text || "",
-//             question_type: q.question_type,
-//             options: q.options || [],
-//             position: q.position || 0,
-//           });
-//           questionIds.push(newQ._id);
-//         }
-//       }
-//     }
-
-//     const updatedSurvey = await Surveys.findOneAndUpdate(
-//       { uuid: req.params.id },
-//       {
-//         ...(title && { title }),
-//         ...(description && { description }),
-//         ...(questionIds.length > 0 && { questions: questionIds }),
-//         ...(survey_type && { survey_type }),
-//         ...(start_date && { start_date: new Date(start_date) }),
-//         ...(end_date && { end_date: new Date(end_date) }),
-//         ...(is_active !== undefined && { is_active }),
-//         ...(created_by && { created_by }),
-//       },
-//       { new: true }
-//     ).populate("questions");
-
-//     if (!updatedSurvey) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Survey not found",
-//       });
-//     }
-
-//     await logGlobalAdminActivity(req, "Edit Survey", "survey", `Survey updated successfully ${updatedSurvey.title}`);
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "Survey updated successfully",
-//       data: { updatedSurvey, questions },
-//     });
-//   } catch (error) {
-//     return res.status(500).json({
-//       success: false,
-//       message: "Failed to update survey",
-//       error: error.message,
-//     });
-//   }
-// };
 
 
 

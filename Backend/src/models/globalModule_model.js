@@ -14,16 +14,32 @@ const GlobalModuleSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    tags:{
+      type: [String],
+      default: []
+    },
     type: {
       type: String,
       required: true,
     },
     content: {
-      type: String, // For theory-based text content
+      type: String,
       default: null,
     },
-    file_url: {
-      type: String, // S3 or external URL
+    video_url: {
+      type: String,
+      default: null,
+    },
+    pdf_url: {
+      type: String,
+      default: null,
+    },
+    docx_url: {
+      type: String,
+      default: null,
+    },
+    image_url: {
+      type: String,
       default: null,
     },
     is_active: {
@@ -33,6 +49,14 @@ const GlobalModuleSchema = new mongoose.Schema(
     pushable_to_orgs: {
       type: Boolean,
       default: true,
+    },
+    credits: {
+      type: Number,
+      default: 2,
+    },
+    duration: {
+      type: Number,
+      default: 0,
     },
     created_by: {
       type: String,
@@ -45,6 +69,6 @@ const GlobalModuleSchema = new mongoose.Schema(
   }
 );
 
-const GlobalModule = mongoose.model("Content", GlobalModuleSchema);
+const GlobalModule = mongoose.model("GlobalModule", GlobalModuleSchema);
 
 module.exports = GlobalModule;

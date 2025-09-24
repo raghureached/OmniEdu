@@ -224,7 +224,7 @@ const GlobalAdminLayout = () => {
                         {!sidebarCollapsed && <div className="globaladmin_section_title">Global Library </div>}
                     </li>
                     <li>
-                        <Link to="/global-admin/content" className={isActive("/global-admin/content") ? "globaladmin_link_active" : ""}>
+                        <Link to="/global-admin/module" className={isActive("/global-admin/module") ? "globaladmin_link_active" : ""}>
                             <BookOpen size={20} />
                             {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Modules</span>}
                         </Link>
@@ -323,7 +323,9 @@ const GlobalAdminLayout = () => {
                             {location.pathname.includes('/global-admin/admindashboard') && 'Global Admin Dashboard Configuration'}
                             {location.pathname.includes('/global-admin/organizations') && 'Manage Organizations'}
                             {location.pathname.includes('/global-admin/roles') && 'Manage Roles'}
-                            {location.pathname.includes('/global-admin/content') && 'Manage Content'}
+                            {location.pathname.includes('/global-admin/module') && 'Manage Modules'}
+                            {location.pathname.includes('/global-admin/assessments') && 'Manage Assessments'}
+                            {location.pathname.includes('/global-admin/users') && 'Manage Users'}
                             {location.pathname.includes('/global-admin/surveys') && 'Manage Surveys'}
                             {location.pathname.includes('/global-admin/profile') && 'Manage Profile'}
                             {location.pathname.includes('/global-admin/activity-log') && 'Manage Activity History'}

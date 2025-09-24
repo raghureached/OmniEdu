@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchContent, deleteContent, createContent, updateContent } from '../../../store/slices/contentSlice';
 import "./GlobalModuleManagement.css"
 import { useNavigate } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { FileText, Search, Users } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading'
 import { RiDeleteBinFill } from "react-icons/ri";
 import { FiEdit3 } from "react-icons/fi";
@@ -27,7 +27,7 @@ const GlobalModuleManagement = () => {
   const navigate = useNavigate()
   useEffect(() => {
     dispatch(fetchContent());
-  }, [dispatch,]);
+  }, [dispatch]);
 
   const handleDeleteContent = (contentId) => {
     if (window.confirm("Are you sure you want to delete this content?")) {
@@ -42,8 +42,6 @@ const GlobalModuleManagement = () => {
     const matchesType = contentType === "all" || item.type === contentType;
     return matchesSearch && matchesType;
   }) || [];
-
-
 
   //pagination code
   const [currentPage, setCurrentPage] = useState(1);
@@ -98,7 +96,7 @@ const GlobalModuleManagement = () => {
       title: content.title,
       type: content.type,
       content: content.content,
-      file: content.file_url, // Reset file unless user uploads a new one
+      file: content.file_url,
     });
     setEditContentId(content.uuid);
     setShowEditModal(true);
@@ -121,16 +119,44 @@ const GlobalModuleManagement = () => {
   if(loading){
     return <LoadingScreen text={"Loading Global Content..."}/>
   }
-  
+  const assessments = items?.filter(item => item.type === "assessment") || [];
   return (
     <div className="global-content-management">
+      <div className="global-content-header">
+      <div className="global-content-header-content">
+          <div className="global-content-header-info">
+            <h1 className="global-content-page-title">Modules Management</h1>
+            <p className="global-content-page-subtitle">Create, manage and organize your modules</p>
+          </div>
+          <div className="global-content-stats">
+            <div className="global-content-stat-card">
+              <div className="global-content-stat-icon">
+                <FileText size={20} />
+              </div>
+              <div className="global-content-stat-info">
+                <span className="global-content-stat-number">{assessments.length}</span>
+                <span className="global-content-stat-label">Total Modules</span>
+              </div>
+            </div>
+            <div className="global-content-stat-card">
+              <div className="global-content-stat-icon published">
+                <Users size={20} />
+              </div>
+              <div className="global-content-stat-info">
+                <span className="global-content-stat-number">{assessments.filter(a => a.status === 'Published').length}</span>
+                <span className="global-content-stat-label">Published</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div className="filter-section">
         <div className="search-box-content" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
           <Search size={16} color="#6b7280" className="search-icon" />
           <input
             type="text"
             class
-            placeholder="Search content..."
+            placeholder="Search Modules..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -318,7 +344,7 @@ const GlobalModuleManagement = () => {
             {currentContent.length === 0 && (
               <tr>
                 <td colSpan="6" className="no-results">
-                  No global content found.
+                  No Global Modules found.
                 </td>
               </tr>
             )}

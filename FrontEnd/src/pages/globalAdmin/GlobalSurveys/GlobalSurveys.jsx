@@ -13,8 +13,11 @@ import "./GlobalSurveys.css";
 import SurveyPreview from "./SurveyPreview";
 import SurveyForm from "./SurveyForm";
 import SearchImage from "../../../images/Search Not Found 1.png";
-import { Search } from "lucide-react";
+import { FileText, Search, Users } from "lucide-react";
 import LoadingScreen from "../../../components/common/Loading/Loading";
+import { useLocation } from "react-router-dom";
+
+
 const GlobalSurveys = () => {
   const dispatch = useDispatch();
   const { surveys, loading, error } = useSelector((state) => state.surveys);
@@ -25,16 +28,31 @@ const GlobalSurveys = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [previewSurvey, setPreviewSurvey] = useState(null);
-
+  const location = useLocation();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    survey_type: "Short Answer",
+    survey_type: "Multiple Choice",
     start_date: "",
     end_date: "",
     is_active: true,
-    questions: [{ question_text: "", question_type: "text", options: [] }],
+    // questions: [{ question_text: "", question_type: "multiple_choice", options: [] }],
+    questions: [
+  { question_text: "", question_type: "multiple_choice", options: [] },
+  { question_text: "", info_text: "", question_type: "info", options: [] },
+],
+
   });
+
+  useEffect(() => {
+  if (location.state?.openForm && location.state.formData) {
+    setFormData(location.state.formData);
+    setEditingSurvey(null); // optional: treat it as new/edit depending on your logic
+    setShowForm(true);
+    // Clear the state so refreshing doesn't reopen the form
+    window.history.replaceState({}, document.title);
+  }
+}, [location.state]);
 
   // Fetch surveys on mount
   useEffect(() => {
@@ -56,15 +74,28 @@ const GlobalSurveys = () => {
   };
 
   // add question
+  // const addQuestion = () => {
+  //   setFormData({
+  //     ...formData,
+  //     questions: [
+  //       ...formData.questions,
+  //       { question_text: "", question_type: "multiple_choice", options: [] },
+  //     ],
+  //   });
+  // };
   const addQuestion = () => {
-    setFormData({
-      ...formData,
-      questions: [
-        ...formData.questions,
-        { question_text: "", question_type: "text", options: [] },
-      ],
-    });
-  };
+  const newQuestions = [
+    ...formData.questions,
+    { question_text: "", question_type: "multiple_choice", options: [] },
+  ];
+
+  // Automatically add an info box after every 5 questions
+ 
+   
+
+  setFormData({ ...formData, questions: newQuestions });
+};
+
 
   // remove question
   const removeQuestion = (index) => {
@@ -131,8 +162,9 @@ const GlobalSurveys = () => {
       questions: formData.questions.map((q) => ({
         question_text: q.question_text,
         question_type: q.question_type,
+        info_text: q.info_text || "",
         options:
-          q.question_type === "multiple_choice" || q.question_type === "rating"
+          q.question_type === "multiple_choice" 
             ? q.options.filter((opt) => typeof opt === "string" && opt.trim() !== "")
             : [],
       })),
@@ -161,91 +193,18 @@ const GlobalSurveys = () => {
       setFormData({
         title: "",
         description: "",
-        survey_type: "Short Answer",
+        survey_type: "Multiple Choice",
         start_date: "",
         end_date: "",
         is_active: true,
-        questions: [{ question_text: "", question_type: "text", options: [] }],
+        questions: [{ question_text: "", question_type: "multiple_choice", options: [] }, { type: "info", info_text: "" },],
       });
     } catch (err) {
       console.error("Failed to submit survey", err);
     }
   };
 
-
-  // submit form
-  // const handleSubmit = (e) => {
-  //   e.preventDefault();
-  //   const payload = {
-  //     title: formData.title,
-  //     description: formData.description,
-  //     survey_type: formData.survey_type,
-  //     start_date: formData.start_date || null,
-  //     end_date: formData.end_date || null,
-  //     is_active: formData.is_active,
-  //     questions: formData.questions.map((q) => ({
-  //       question_text: q.question_text,
-  //       question_type: q.question_type,
-  //       options:
-  //         q.question_type === "multiple_choice"
-  //           ? q.options.filter((opt) => opt.trim() !== "")
-  //           : [],
-  //     })),
-  //   };
-  // submit form
-  //   const handleSubmit = (e) => {
-  //     e.preventDefault();
-
-  //     const payload = {
-  //       title: formData.title,
-  //       description: formData.description,
-  //       survey_type: formData.survey_type,
-  //       start_date: formData.start_date || null,
-  //       end_date: formData.end_date || null,
-  //       is_active: formData.is_active,
-  //       created_by: "admin-user-uuid", // replace with actual logged-in user uuid
-  //       questions: formData.questions.map((q) => ({
-  //   question_text: q.question_text,
-  //   question_type: q.question_type,
-  //   options:
-  //     q.question_type === "multiple_choice" || q.question_type === "rating"
-  //       ? q.options.filter((opt) => opt.trim() !== "")
-  //       : [],
-  // })),
-
-
-  //     };
-  // if (editingSurvey) {
-  //   dispatch(
-  //     updateSurvey({
-  //       id: editingSurvey._id || editingSurvey.uuid,
-  //       data: payload,
-  //     })
-  //   );
-  //       if (editingSurvey) {
-  //   dispatch(
-  //     updateSurvey({
-  //       uuid: editingSurvey.uuid,   // ✅ always use uuid
-  //       data: payload,
-  //     })
-  //   );
-  // }    else {
-  //         dispatch(createSurvey(payload));
-  //       }
-
-  //       // Reset after submit
-  //       setShowForm(false);
-  //       setEditingSurvey(null);
-  //       setFormData({
-  //         title: "",
-  //         description: "",
-  //         survey_type: "Short Answer",
-  //         start_date: "",
-  //         end_date: "",
-  //         is_active: true,
-  //         questions: [{ question_text: "", question_type: "text", options: [] }],
-  //       });
-  //     };
+  
   // Delete handler
   const handleDeleteSurvey = (id) => {
     if (window.confirm("Are you sure you want to delete this survey?")) {
@@ -253,16 +212,7 @@ const GlobalSurveys = () => {
     }
   };
 
-  // Filtering
-  // const filteredSurveys = surveys.filter((survey) => {
-  //   const matchesSearch = survey.title
-  //     ?.toLowerCase()
-  //     .includes(searchTerm.toLowerCase());
-  //   const matchesStatus =
-  //     statusFilter === "all" || survey.status === statusFilter;
-  //   return matchesSearch && matchesStatus;
-  // });
-// Filtering
+
 const filteredSurveys = surveys.filter((survey) => {
   // Search by title (safe check)
   const matchesSearch = survey.title
@@ -292,6 +242,34 @@ const filteredSurveys = surveys.filter((survey) => {
   return (
     <div className="survey-container">
       <div>
+      <div className="global-content-header">
+        <div className="global-content-header-content">
+          <div className="global-content-header-info">
+            <h1 className="global-content-page-title">Modules Management</h1>
+            <p className="global-content-page-subtitle">Create, manage and organize your modules</p>
+          </div>
+          <div className="global-content-stats">
+            <div className="global-content-stat-card">
+              <div className="global-content-stat-icon">
+                <FileText size={20} />
+              </div>
+              <div className="global-content-stat-info">
+                <span className="global-content-stat-number">{currentSurveys.length}</span>
+                <span className="global-content-stat-label">Total Modules</span>
+              </div>
+            </div>
+            <div className="global-content-stat-card">
+              <div className="global-content-stat-icon published">
+                <Users size={20} />
+              </div>
+              <div className="global-content-stat-info">
+                <span className="global-content-stat-number">{currentSurveys.filter(a => a.is_active === true).length}</span>
+                <span className="global-content-stat-label">Published</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
         {/* Filters */}
         <div className="survey-top-controls">
           <div className="survey-filters">
@@ -316,14 +294,13 @@ const filteredSurveys = surveys.filter((survey) => {
             <option value="closed">Closed</option>
           </select>  */}
           <select
-  value={statusFilter}
-  onChange={(e) => setStatusFilter(e.target.value)}
-  className="survey-select"
->
-  <option value="all">All</option>
-  <option value="active">Active</option>
-  <option value="inactive">Inactive</option>
-</select>
+       value={statusFilter}
+       onChange={(e) => setStatusFilter(e.target.value)}
+       className="survey-select">
+       <option value="all">All</option>
+       <option value="active">Active</option>
+       <option value="inactive">Inactive</option>
+        </select>
 
           </div>
           <div>
@@ -334,11 +311,11 @@ const filteredSurveys = surveys.filter((survey) => {
             setFormData({
               title: "",
               description: "",
-              survey_type: "Short Answer",
+              survey_type: "Multiple Choice",
               start_date: "",
               end_date: "",
               is_active: true,
-              questions: [{ question_text: "", question_type: "text", options: [] }],
+              questions: [],
             });
             setShowForm(true);
           }}
@@ -350,43 +327,12 @@ const filteredSurveys = surveys.filter((survey) => {
         </div>
         
       </div>
-      {/* Loading & Error States */}
+     
 
 
-      {(loading) ? (
-        <div className="loading-screen">
-          <div className='image-div'>
-            <img
-              src={SearchImage}
-              className='loading image'
-
-            />
-            <h3>No Surveys Yet?</h3>
-            <p>Add Surveys to your panel and start to see them here</p>
-            {/* <button onClick={() => openForm()} className="btn-primary">
-              Add Surveys
-             </button> */}
-            <button
-              className="survey-btn-primary"
-              onClick={() => {
-                setEditingSurvey(null); // make sure not in edit mode
-                setFormData({
-                  title: "",
-                  description: "",
-                  survey_type: "Short Answer",
-                  start_date: "",
-                  end_date: "",
-                  is_active: true,
-                  questions: [{ question_text: "", question_type: "text", options: [] }],
-                });
-                setShowForm(true);
-              }}
-            >
-              + Create Survey
-            </button>
-          </div>
-        </div>
-      ) : (
+      
+  
+      
         <div className="survey-table-container">
           {currentSurveys.length === 0 ? (
             <div className="survey-no-data">No surveys found</div>
@@ -457,12 +403,22 @@ const filteredSurveys = surveys.filter((survey) => {
                               ? new Date(survey.end_date).toISOString().split("T")[0]
                               : "",
                             is_active: survey.is_active,
+                            // questions: survey.questions
+                            //   ? survey.questions.map((q) => ({
+                            //     ...q,
+                            //     options: q.options ? [...q.options] : [],
+                            //   }))
+                            //   : [],
                             questions: survey.questions
-                              ? survey.questions.map((q) => ({
-                                ...q,
-                                options: q.options ? [...q.options] : [],
-                              }))
-                              : [],
+  ? survey.questions.map((q) => ({
+      question_type: q.question_type,
+      question_text: q.question_text || "",
+      info_text: q.info_text || "",
+      options: q.options ? [...q.options] : [],
+      position: q.position || 0,
+    }))
+  : [],
+
                           });
                           setShowForm(true);
                         }}
@@ -478,7 +434,7 @@ const filteredSurveys = surveys.filter((survey) => {
             </table>
           )}
         </div>
-      )}
+      
       {previewSurvey && (
         <SurveyPreview
           survey={previewSurvey}

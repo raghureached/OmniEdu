@@ -155,7 +155,7 @@ function App() {
             <Route path="organizations" element={<OrganizationManagement />} />
             <Route path="message-board" element={<GlobalMessageBoard />} />
             <Route path="roles" element={<GlobalRolesManagement />} />
-            <Route path="modules" element={<GlobalModuleManagement />} />
+            <Route path="module" element={<GlobalModuleManagement />} />
             <Route path="modules/:moduleId" element={<GlobalModuleDetail />} />
             <Route path="assessments" element={<GlobalAssessments />} />
             <Route path="surveys" element={<GlobalSurveys />} />

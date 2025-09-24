@@ -1,7 +1,7 @@
 const {addOrganization, editOrganization, deleteOrganization, getOrganizations, getOrganizationById, deleteOrganizations} = require("../controllers/globalAdmin.controller/globalAdmin_organization");
 const {addRole, editRole, deleteRole, getRoles, addPermissions, getPermissions, createRole, editOrgRole} = require("../controllers/globalAdmin.controller/globalAdmin_Roles");
-const {addContent, editContent, deleteContent, getContent, getContentById} = require("../controllers/globalAdmin.controller/globalAdmin_content");
-const {createSurvey, editSurvey, deleteSurvey, getSurveys, getSurvey} = require("../controllers/globalAdmin.controller/globalAdmin_Surveys");
+const {addContent, editContent, deleteContent, getContent, getContentById} = require("../controllers/globalAdmin.controller/globalAdmin_Module");
+const {createSurvey, editSurvey, deleteSurvey, getSurveys, getSurvey} = require("../controllers/globalAdmin.controller/globalAdmin_SurveysOld");
 const {upload,uploadContent, uploadAssessment} = require("../middleware/multer_middleware");
 const { uploadMultipleToCloudinary, uploadToCloudinary } = require("../utils/uploadOnCloud");
 const { setMessage, editMessage, deleteMessage, getMessage } = require("../controllers/globalAdmin.controller/globalAdmin_message");

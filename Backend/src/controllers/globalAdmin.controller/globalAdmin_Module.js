@@ -52,11 +52,10 @@ const addContent = async (req, res) => {
     //   });
     // }
 
-    const { title, type, content, is_active, pushable_to_orgs } =
+    const { title, type, content, is_active, pushable_to_orgs, tags, duration } =
       req.body;
 
-    // Optional: set this from auth middleware
-    const created_by = req.user?.id || null;
+    const created_by = req.user?._id || null;
 
     // Validate required fields
     // if (!title || !type) {
@@ -94,8 +93,13 @@ const addContent = async (req, res) => {
       type,
       content: type === 'Theory' ? content : null,
       file_url: req.uploadedFile?.url,
+      image_url: req.uploadedFile?.url,
+      pdf_url: req.uploadedFile?.url,
+      docx_url: req.uploadedFile?.url,
       is_active: is_active !== undefined ? is_active : true,
       pushable_to_orgs: pushable_to_orgs !== undefined ? pushable_to_orgs : true,
+      tags,
+      duration,
       created_by
     });
 
