@@ -119,7 +119,6 @@ const checkAuth = async (req,res) => {
         const role = req.user.role;
         if(role === "GlobalAdmin"){
             const globalAdmin = await GlobalAdmin.findById(userId)
-            console.log(globalAdmin)
             return res.status(200).json({
                 isSuccess:true,
                 message:"User authenticated successfully",

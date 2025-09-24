@@ -1,5 +1,6 @@
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+
 import './App.css';
 // Import pages
 import Login from './pages/auth/Login/Login';
@@ -59,6 +60,7 @@ import AnalyticsView from './pages/globalAdmin/Analyticsview/AnalyticsView';
 import GlobalAdminDashboard from './pages/globalAdmin/GlobalAdminDashboard/GlobalAdminDashboard';
 import GlobalAssessments from './pages/globalAdmin/GlobalAssessments/GlobalAssessments';
 import GlobalModuleManagement from './pages/globalAdmin/GlobalModuleManagement/GlobalModuleManagement';
+
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, loading, role } = useSelector((state) => state.auth);
 
@@ -70,10 +72,11 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 };
 
 function App() {
+  // console.log(process.env);
   const dispatch = useDispatch();
   const { isAuthenticated, role, loading } = useSelector((state) => state.auth);
   useEffect(() => {
-    if (!isAuthenticated && localStorage.getItem('token')) {
+    if (!isAuthenticated && localStorage.getItem('authState')) {
       dispatch(checkAuth());
     }
   }, [dispatch, isAuthenticated]);
