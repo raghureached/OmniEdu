@@ -60,6 +60,7 @@ import AnalyticsView from './pages/globalAdmin/Analyticsview/AnalyticsView';
 import GlobalAdminDashboard from './pages/globalAdmin/GlobalAdminDashboard/GlobalAdminDashboard';
 import GlobalAssessments from './pages/globalAdmin/GlobalAssessments/GlobalAssessments';
 import GlobalModuleManagement from './pages/globalAdmin/GlobalModuleManagement/GlobalModuleManagement';
+import ModulePreview from './pages/globalAdmin/GlobalModuleManagement/ModulePreview';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, loading, role } = useSelector((state) => state.auth);
@@ -160,6 +161,7 @@ function App() {
             <Route path="roles" element={<GlobalRolesManagement />} />
             <Route path="module" element={<GlobalModuleManagement />} />
             <Route path="modules/:moduleId" element={<GlobalModuleDetail />} />
+            <Route path="module-preview" element={<ModulePreview />} />
             <Route path="assessments" element={<GlobalAssessments />} />
             <Route path="surveys" element={<GlobalSurveys />} />
             <Route path="assignments" element={<GlobalCreateAssignment />} />

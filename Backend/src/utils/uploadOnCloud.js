@@ -39,16 +39,22 @@ const uploadMultipleToCloudinary = async (req, res, next) => {
     try {
       if (!req.files) return next();
       // console.log(req.files)
-      req.uploadedFiles = {}; // object to hold uploaded data
+      req.uploadedFiles = {};
   
-      // Loop through each field
       for (const fieldName of Object.keys(req.files)) {
         const files = req.files[fieldName];
         req.uploadedFiles[fieldName] = [];
   
         for (const file of files) {
+          let folderName = "";
+          if(fieldName === "logo") folderName = "logos";
+          else if(fieldName === "documentFiles") folderName = "documents";
+          else if(fieldName === "videoFile") folderName = "videos";
+          else{
+            folderName = fieldName
+          }
           const result = await cloudinary.uploader.upload(file.path, {
-            folder: fieldName === "logo" ? "logos" : "documents",
+            folder: folderName,
             resource_type: "auto",
           });
   
@@ -66,6 +72,7 @@ const uploadMultipleToCloudinary = async (req, res, next) => {
             format: result.format,
             size: result.bytes,
           });
+          // console.log(req.uploadedFiles)
         }
       }
   

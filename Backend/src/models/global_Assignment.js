@@ -20,6 +20,16 @@ const globalAssignmentSchema = new mongoose.Schema({
         ref: "Content",
         required: true,
     },
+    surveyId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Survey",
+        required: true,
+    },
+    assessmentId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Assessment",
+        required: true,
+    },
     contentName: {
         type: String,
         required: true,
@@ -36,11 +46,11 @@ const globalAssignmentSchema = new mongoose.Schema({
         type: Boolean,
         required: true,
     },
-    // organizationId: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "Organization",
-    //     required: true,
-    // },
+    orgId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Organization",
+        required: true,
+    },
 })
 
 const GlobalAssingnment = mongoose.model("GlobalAssignment", globalAssignmentSchema);

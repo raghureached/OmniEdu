@@ -290,17 +290,37 @@ const SurveyPreview = ({ formData, onClosePreview }) => {
 
       {/* Render questions & info boxes in the same style */}
       {formData.questions.map((q, index) => {
-        if (q.question_type === "info") {
+       if (q.question_type === "info") {
           return (
             <div key={index} className="Survey-preview-question-card info-box">
               <div className="Survey-preview-info-text">
                 <h4>{q.question_text}</h4>
               
               </div>
-                <p>{q.info_text}</p>
-            </div>
+                <p style={{whiteSpace: "pre-wrap", }}>{q.info_text}</p>
+             </div>
           );
-        } else {
+        }else if (q.question_type === "text") {
+  return (
+    <div key={index} className="Survey-preview-question-card info-box">
+      <div className="Survey-preview-info-text">
+        {/* optional heading if you have one */}
+      </div>
+      <textarea
+        placeholder="Enter your response here..."
+        value={q.question_text} // or "" if you want empty by default
+        readOnly={true} // allow editing in preview
+        style={{
+          width: "100%",
+          minHeight: "80px",
+          padding: "8px",
+          resize: "vertical",
+        }}
+      />
+    </div>
+  );
+}
+ else {
           questionNumber++;
           return (
             <div className="Survey-preview-question-card" key={index}>

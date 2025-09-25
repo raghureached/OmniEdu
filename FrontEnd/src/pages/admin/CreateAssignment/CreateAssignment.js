@@ -11,21 +11,17 @@ const CreateAssignment = () => {
     contentType: '',
     contentId: '',
     contentName: '',
-    
     // Step 2: Target Audience
     assignType: 'individual', // 'individual' or 'group'
     selectedUsers: [],
     selectedGroup: '',
-    
     // Step 3: Dates
     assignDate: '',
     assignTime: '',
     dueDate: '',
     dueTime: '',
-    
     // Step 5: Notification
     notifyUsers: false,
-    
     // Step 6: Recurring
     isRecurring: false
   });

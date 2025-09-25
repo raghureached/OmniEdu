@@ -13,8 +13,10 @@ const cors = require("cors");
 //   credentials: true,
 // };
 
+const Origin = process.env.prod === "true" ? process.env.ORIGIN : "http://localhost:3000";
+
 const corsMiddleware = cors({
-  origin: "http://localhost:3000", // allowed origins or using "*" for all sites || whitelisted sites
+  origin: Origin, // allowed origins or using "*" for all sites || whitelisted sites
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true, // if you use cookies or tokens

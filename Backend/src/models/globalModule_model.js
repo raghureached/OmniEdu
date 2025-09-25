@@ -30,21 +30,17 @@ const GlobalModuleSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-    pdf_url: {
-      type: String,
+    doc_url:{
+      type: [String],
       default: null,
     },
-    docx_url: {
-      type: String,
-      default: null,
+    additional_resources:{
+      type: [String],
+      default: []
     },
-    image_url: {
-      type: String,
-      default: null,
-    },
-    is_active: {
-      type: Boolean,
-      default: true,
+    learning_outcomes:{
+      type: [String],
+      default: []
     },
     pushable_to_orgs: {
       type: Boolean,
@@ -62,6 +58,11 @@ const GlobalModuleSchema = new mongoose.Schema(
       type: String,
       ref: "Users",
       default: null,
+    },
+    status: {
+      type: String,
+      enum: ["Published", "Draft"],
+      default: "Draft",
     },
   },
   {

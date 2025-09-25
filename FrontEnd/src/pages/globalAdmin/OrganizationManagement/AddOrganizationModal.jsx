@@ -33,7 +33,7 @@ const AddOrganizationModal = ({
   const [logoPreviewUrl, setLogoPreviewUrl] = useState(null);
   const [docPreviewUrl, setDocPreviewUrl] = useState(null);
   const [dragOver, setDragOver] = useState(null);
-  console.log(formData)
+  // console.log(formData)
   useEffect(() => {
     if (formData.start_date && formData.end_date) {
       setDateRange([new Date(formData.start_date), new Date(formData.end_date)]);

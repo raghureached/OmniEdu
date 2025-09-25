@@ -156,6 +156,7 @@
 }
 /* ✅ Info Box Card - same style as question but slightly different */
 .Survey-preview-question-card.info-box {
+
   background: #f9f9ff; /* light blue-gray background */
   /* border-left: 4px solid #1a1aff;  */
 
@@ -163,14 +164,23 @@
 }
 
 .Survey-preview-question-card.info-box .Survey-preview-question-text {
+ 
   font-weight: 500;
   font-size: 1rem;
   margin-bottom: 0; /* no gap needed like questions */
 }
 .Survey-preview-info-text
 {
+  
   font-size: 1rem;
   font-weight: 600;
   margin-bottom: 12px;
   
+}
+.Survey-preview-info-text h4 {
+  font-size: 16px;
+  margin: 0 0 6px 0;
+  word-wrap: break-word;      /* wrap long words */
+  overflow-wrap: break-word;  /* extra support */
+  white-space: pre-wrap;      /* preserve line breaks */
 }

@@ -1,7 +1,7 @@
 const {addOrganization, editOrganization, deleteOrganization, getOrganizations, getOrganizationById, deleteOrganizations} = require("../controllers/globalAdmin.controller/globalAdmin_organization");
 const {addRole, editRole, deleteRole, getRoles, addPermissions, getPermissions, createRole, editOrgRole} = require("../controllers/globalAdmin.controller/globalAdmin_Roles");
 const {addContent, editContent, deleteContent, getContent, getContentById} = require("../controllers/globalAdmin.controller/globalAdmin_Module");
-const {createSurvey, editSurvey, deleteSurvey, getSurveys, getSurvey} = require("../controllers/globalAdmin.controller/globalAdmin_SurveysOld");
+const {createSurvey, editSurvey, deleteSurvey, getSurveys, getSurvey} = require("../controllers/globalAdmin.controller/globalAdmin_Surveys");
 const {upload,uploadContent, uploadAssessment} = require("../middleware/multer_middleware");
 const { uploadMultipleToCloudinary, uploadToCloudinary } = require("../utils/uploadOnCloud");
 const { setMessage, editMessage, deleteMessage, getMessage } = require("../controllers/globalAdmin.controller/globalAdmin_message");
@@ -37,11 +37,11 @@ router.route('/addPermissions').post(addPermissions)
 router.route('/getPermissions').get(getPermissions)
 //////////////Global Content////////////
 
-router.route('/addContent').post(uploadContent.single('file'),uploadToCloudinary("globalContent"),addContent)
+router.route('/addContent').post(uploadContent.fields([{name:'videoFile',maxCount:1},{name:'documentFiles',maxCount:5}]),uploadMultipleToCloudinary,addContent)
 router.route('/getContent').get(getContent)
 router.route('/getContentById/:id').get(getContentById)
 //Some changes
-router.route('/editContent/:id').put(uploadContent.single('file'),uploadToCloudinary("globalContent"),editContent)
+router.route('/editContent/:id').put(uploadContent.fields([{name:'videoFile',maxCount:1},{name:'documentFiles',maxCount:5}]),uploadMultipleToCloudinary,editContent)
 router.route('/deleteContent/:id').delete(deleteContent)
 
 /////////////Global Assesments////////////
@@ -56,7 +56,6 @@ router.route('/getQuestions/:id').get(getQuestions)
 router.route('/getQuestionsRandom/:id').get(getQuestionsRandom)
 router.route('/editQuestion/:id').put(editQuestion)
 router.route('/deleteQuestion/:id').delete(deleteQuestion)
-
 
 //////////////Global Surveys////////////
 

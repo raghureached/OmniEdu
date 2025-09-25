@@ -30,13 +30,10 @@ export const fetchContentById = createAsyncThunk(
 
 export const createContent = createAsyncThunk(
   'content/createContent',
-  async (contentData, { rejectWithValue }) => {
-    console.log(contentData);
-    
+  async (formData, { rejectWithValue }) => {
     try {
-      const response = await api.post('/api/globalAdmin/addcontent', contentData,
-        {headers: { 'Content-Type': 'multipart/form-data' }}
-      );
+      // Do not set Content-Type here!
+      const response = await api.post('/api/globalAdmin/addcontent', formData,{headers:{'Content-Type':'multipart/form-data'}});
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);

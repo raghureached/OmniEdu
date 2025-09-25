@@ -7,6 +7,7 @@ import { FileText, Search, Users } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading'
 import { RiDeleteBinFill } from "react-icons/ri";
 import { FiEdit3 } from "react-icons/fi";
+import GlobalModuleModal from './GlobalModuleModal';
 
 
 const GlobalModuleManagement = () => {
@@ -19,16 +20,21 @@ const GlobalModuleManagement = () => {
   const [editContentId, setEditContentId] = useState(null);
   const [newContent, setNewContent] = useState({
     title: "",
-    type: "theory",
+    type: "",
     content: "",
-    file: null,
+    duration: "",
+    tags: [],
+    learningOutcomes: [''],
+    additionalResources: "",
+    difficultyLevel: "",
+    prerequisites: ""
   });
-  const [uploading,setUploading] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const navigate = useNavigate()
   useEffect(() => {
     dispatch(fetchContent());
   }, [dispatch]);
-
+  
   const handleDeleteContent = (contentId) => {
     if (window.confirm("Are you sure you want to delete this content?")) {
       dispatch(deleteContent(contentId));
@@ -56,12 +62,18 @@ const GlobalModuleManagement = () => {
   };
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === "file") {
-      setNewContent({ ...newContent, file: files[0] });
-    } else {
+    
+    if (files) {
+      if (name === "videoFile") {
+        setNewContent({ ...newContent, videoFile: files[0] });
+      } else if (name === "documentFiles") {
+        setNewContent({ ...newContent, [name]: files });
+      }
+    }else{
       setNewContent({ ...newContent, [name]: value });
     }
   };
+  
   const handleOpenContent = (contentId) => {
     navigate(`/global-admin/content/${contentId}`);
   };
@@ -70,60 +82,113 @@ const GlobalModuleManagement = () => {
   };
 
   const handleAddContent = async () => {
-    if (!editContentId &&(!newContent.title || !newContent.type || !newContent.content || !newContent.file)) {
+    if (!newContent.title || !newContent.type || !newContent.content) {
       alert("Please fill all required fields");
       return;
     }
-    setUploading(true)
-    dispatch(
-      createContent({
+  
+    setUploading(true);
+  
+    try {
+      // Build FormData
+      const formData = new FormData();
+  
+      const moduleData = {
         ...newContent,
         id: Date.now(), // temporary id
-        status: "active",
-        organizations: "All",
+        status: "Draft",
         createdDate: new Date().toISOString(),
-      })
-    );
-    // Close modal and reset form
-    setShowModal(false);
-    setUploading(false)
-    setNewContent({ title: "", type: "theory", content: "", file: null });
+      };
+  
+      // Append fields properly
+      Object.entries(moduleData).forEach(([key, value]) => {
+        if (key === "documentFiles" && value && value.length > 0) {
+          Array.from(value).forEach((file) => {
+            formData.append("documentFiles", file);
+          });
+        } else if (key === "videoFile" && value) {
+          formData.append("videoFile", value);
+        } else if (Array.isArray(value)) {
+          // For arrays like tags, learningOutcomes
+          value.forEach((item) => formData.append(`${key}[]`, item));
+        } else if (value !== undefined && value !== null) {
+          formData.append(key, value);
+        }
+      });
+  
+      // ✅ Dispatch or API call with formData
+      dispatch(createContent(formData));
+  
+      // Close modal & reset form if needed
+      // setShowModal(false);
+      // setNewContent({
+      //   title: "",
+      //   type: "",
+      //   content: "",
+      //   duration: "",
+      //   tags: [],
+      //   learningOutcomes: [""],
+      //   additionalResources: "",
+      //   difficultyLevel: "",
+      //   prerequisites: "",
+      //   videoFile: null,
+      //   documentFiles: [],
+      // });
+    } catch (err) {
+      console.error("Error uploading content:", err);
+      alert("Upload failed");
+    } finally {
+      setUploading(false);
+    }
   };
-
   const openEditModal = (content) => {
-    // console.log(content)
     setNewContent({
       title: content.title,
       type: content.type,
       content: content.content,
-      file: content.file_url,
+      duration: content.duration || "",
+      tags: content.tags || [],
+      learningOutcomes: content.learningOutcomes || [''],
+      additionalResources: content.additionalResources || "",
+      difficultyLevel: content.difficultyLevel || "",
+      prerequisites: content.prerequisites || ""
     });
     setEditContentId(content.uuid);
     setShowEditModal(true);
   };
 
-  const handleEditContent = () => { 
+  const handleEditContent = () => {
     dispatch(updateContent({ id: editContentId, updatedData: newContent }));
     setShowEditModal(false);
     setEditContentId(null);
-    setNewContent({ title: "", type: "theory", content: "", file: null });
+    setNewContent({ title: "", type: "theory", content: "" });
   };
 
   const handleOpenModal = () => {
     setShowModal(true);
-    setNewContent({ title: "", type: "", content: "", file: null });
+    setNewContent({
+      title: "",
+      type: "",
+      content: "",
+      duration: "",
+      tags: [],
+      learningOutcomes: [''],
+      additionalResources: "",
+      difficultyLevel: "",
+      prerequisites: ""
+    });
   };
-  if(uploading){
-    return <LoadingScreen text={"Uploading Global Content..."}/>
+  if (uploading) {
+    return <LoadingScreen text={"Uploading Global Content..."} />
   }
-  if(loading){
-    return <LoadingScreen text={"Loading Global Content..."}/>
+  if (loading) {
+    return <LoadingScreen text={"Loading Global Content..."} />
   }
   const assessments = items?.filter(item => item.type === "assessment") || [];
   return (
     <div className="global-content-management">
       <div className="global-content-header">
-      <div className="global-content-header-content">
+        <div className="global-content-header-content">
           <div className="global-content-header-info">
             <h1 className="global-content-page-title">Modules Management</h1>
             <p className="global-content-page-subtitle">Create, manage and organize your modules</p>
@@ -163,70 +228,7 @@ const GlobalModuleManagement = () => {
           <button className="btn-primary" onClick={() => handleOpenModal()}> + Add Module</button>
         </div>
       </div>
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h2>Add Module</h2>
-            <label>
-              Title
-              <input
-                type="text"
-                name="title"
-                value={newContent.title}
-                onChange={handleInputChange}
-                className="modal-input"
-              />
-            </label>
-            {/* <label>
-              Type
-              <select
-                name="type"
-                value={newContent.type}
-                onChange={handleInputChange}
-                className="modal-input"
-              > 
-                <option value="">Select Type</option>
-                <option value="theory">Theory</option>
-                <option value="module">Module</option>
-              </select>
-            </label> */}
-            <label>
-              Content
-              <textarea
-                name="content"
-                value={newContent.content}
-                onChange={handleInputChange}
-                rows={4}
-                className="modal-input"
-              ></textarea>
-            </label>
-            <label>
-              Upload File
-              <input
-                type="file"
-                name="file"
-                onChange={handleInputChange}
-                className="modal-input"
-              />
-            </label>
-
-            <div className="modal-buttons">
-              <button
-                className="btn-cancel"
-                onClick={() => setShowModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn-add"
-                onClick={handleAddContent}
-              >
-                Add Content
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {showModal && <GlobalModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} />}
       {showEditModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -279,7 +281,7 @@ const GlobalModuleManagement = () => {
             </label>
             <label>
               Uploaded File
-              <span onClick={() => handleFileClick(newContent.file)} style={{ cursor: "pointer" ,fontWeight:"lighter " ,fontSize:"15px",marginLeft:"10px"}}>View File</span>
+              <span onClick={() => handleFileClick(newContent.file)} style={{ cursor: "pointer", fontWeight: "lighter ", fontSize: "15px", marginLeft: "10px" }}>View File</span>
             </label>
             <label>
               Upload New File
@@ -290,7 +292,6 @@ const GlobalModuleManagement = () => {
                 className="modal-input"
               />
             </label>
-
             <div className="modal-buttons">
               <button className="btn-cancel" onClick={() => setShowEditModal(false)}>
                 Cancel
@@ -320,8 +321,8 @@ const GlobalModuleManagement = () => {
                 <td style={{ cursor: "pointer" }} onClick={() => handleOpenContent(content.uuid)}>{content.title}</td>
                 <td>{content.type}</td>
                 <td>
-                  <span className={`status-badge ${content.is_active ? 'active' : 'inactive'}`}>
-                    {content.is_active ? '✓ Active' : '✕ Inactive'}
+                  <span className={`status-badge ${content.status === 'Published' ? 'active' : 'inactive'}`}>
+                    {content.status === 'Published' ? '✓ Published' : 'Draft'}
                   </span>
                 </td>
                 <td>{content.organizations || "All"}</td>

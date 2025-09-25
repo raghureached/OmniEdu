@@ -13,7 +13,7 @@ import "./GlobalSurveys.css";
 import SurveyPreview from "./SurveyPreview";
 import SurveyForm from "./SurveyForm";
 import SearchImage from "../../../images/Search Not Found 1.png";
-import { FileText, Search, Users } from "lucide-react";
+import { Search } from "lucide-react";
 import LoadingScreen from "../../../components/common/Loading/Loading";
 import { useLocation } from "react-router-dom";
 
@@ -242,34 +242,6 @@ const filteredSurveys = surveys.filter((survey) => {
   return (
     <div className="survey-container">
       <div>
-      <div className="global-content-header">
-        <div className="global-content-header-content">
-          <div className="global-content-header-info">
-            <h1 className="global-content-page-title">Modules Management</h1>
-            <p className="global-content-page-subtitle">Create, manage and organize your modules</p>
-          </div>
-          <div className="global-content-stats">
-            <div className="global-content-stat-card">
-              <div className="global-content-stat-icon">
-                <FileText size={20} />
-              </div>
-              <div className="global-content-stat-info">
-                <span className="global-content-stat-number">{currentSurveys.length}</span>
-                <span className="global-content-stat-label">Total Modules</span>
-              </div>
-            </div>
-            <div className="global-content-stat-card">
-              <div className="global-content-stat-icon published">
-                <Users size={20} />
-              </div>
-              <div className="global-content-stat-info">
-                <span className="global-content-stat-number">{currentSurveys.filter(a => a.is_active === true).length}</span>
-                <span className="global-content-stat-label">Published</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
         {/* Filters */}
         <div className="survey-top-controls">
           <div className="survey-filters">

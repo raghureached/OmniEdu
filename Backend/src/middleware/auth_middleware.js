@@ -3,7 +3,7 @@ const authenticate = (req,res,next)=>{
     const token = req.cookies.accessToken;
     // console.log(token)
     if(!token){
-        console.log("No token found")
+        console.log("No token found")   
         return res.status(401).json({
             isSuccess:false,
             message:"Unauthorized"

@@ -61,15 +61,12 @@ const upload = multer({ storage: diskStorageUploads,
  
  const diskStorageContent = multer.diskStorage({
    destination: function (req, file, cb) {
-     ensureFolder(contentDir);
      console.log("file",file)
-     // console.log(contentDir);
-     
+     ensureFolder(contentDir);
      cb(null, contentDir);
    },
    filename: function (req, file, cb) {
      const timestamp = Date.now();
-     // TODO: later replace with org id if required
      cb(null, `content-${timestamp}-${file.originalname}`);
    },
  });
@@ -77,9 +74,8 @@ const upload = multer({ storage: diskStorageUploads,
  // Multer instance with limits + fileFilter
  const uploadContent = multer({
    storage: diskStorageContent,
-   limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB max
+   limits: { fileSize: 20 * 1024 * 1024 },
    fileFilter: (req, file, cb) => {
-     // Example: only allow videos, images, and PDFs
      const allowed = [
        "image/jpeg",
        "image/png",

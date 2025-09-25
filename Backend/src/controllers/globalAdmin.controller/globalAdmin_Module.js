@@ -38,12 +38,10 @@ const addContent = async (req, res) => {
     //   is_active,
     //   pushable_to_orgs,
     // } = req.body;
-
     // const parsed = createContentSchema.safeParse({
     //   ...req.body,
     //   file_url: req.uploadedFile?.url || req.body.file_url,
     // });
-
     // if (!parsed.success) {
     //   return res.status(400).json({
     //     success: false,
@@ -52,11 +50,8 @@ const addContent = async (req, res) => {
     //   });
     // }
 
-    const { title, type, content, is_active, pushable_to_orgs, tags, duration } =
-      req.body;
-
+    const { title, type, content, pushable_to_orgs, tags, duration,learning_outcomes } = req.body;
     const created_by = req.user?._id || null;
-
     // Validate required fields
     // if (!title || !type) {
     //   return res.status(400).json({
@@ -64,14 +59,12 @@ const addContent = async (req, res) => {
     //     message: 'Title and type are required.'
     //   });
     // }
-
     // if (!['PDF', 'DOCX', 'Theory'].includes(type)) {
     //   return res.status(400).json({
     //     success: false,
     //     message: 'Invalid content type. Must be PDF, DOCX, or Theory.'
     //   });
     // }
-
     // // At least one of content or file_url should be present
     // if (type === 'Theory' && !content) {
     //   return res.status(400).json({
@@ -79,25 +72,21 @@ const addContent = async (req, res) => {
     //     message: 'Theory content requires a text body.'
     //   });
     // }
-
     // if ((type === 'PDF' || type === 'DOCX') && !file_url) {
     //   return res.status(400).json({
     //     success: false,
     //     message: `${type} content requires a file URL.`
     //   });
     // }
-
-
+    const docUrls = req.uploadedFiles?.documentFiles.filter((doc) => doc.url).map((doc) => doc.url)
     const newModule = new GlobalModule({
       title,
       type,
-      content: type === 'Theory' ? content : null,
-      file_url: req.uploadedFile?.url,
-      image_url: req.uploadedFile?.url,
-      pdf_url: req.uploadedFile?.url,
-      docx_url: req.uploadedFile?.url,
-      is_active: is_active !== undefined ? is_active : true,
-      pushable_to_orgs: pushable_to_orgs !== undefined ? pushable_to_orgs : true,
+      content,
+      video_url: req.uploadedFiles.videoFile[0].url,
+      doc_url: docUrls,
+      pushable_to_orgs,
+      learning_outcomes,
       tags,
       duration,
       created_by
@@ -107,14 +96,14 @@ const addContent = async (req, res) => {
     await logGlobalAdminActivity(req,"Create Content","content",`Content created successfully ${newModule.title}`)
     return res.status(201).json({
       success: true,
-      message: 'Content added successfully.',
+      message: 'Module added successfully.',
       data: newModule
     });
-
   } catch (error) {
+    console.log(error)
     return res.status(500).json({
       success: false,
-      message: 'Failed to add content.',
+      message: 'Failed to add module.',
       error: error.message
     });
   }
@@ -130,7 +119,7 @@ const getContent = async (req, res) => {
     // await logGlobalAdminActivity(req,"Get Content","content", `Content fetched successfully ${content.title}`)
     return res.status(200).json({
       success: true,
-      message: 'Content fetched successfully.',
+      message: 'Modules fetched successfully.',
       data: content,
       pagination: {
         total,
@@ -143,18 +132,19 @@ const getContent = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: 'Failed to fetch content.',
+      message: 'Failed to fetch modules.',
       error: error.message
     });
   }
 };
+
 const getContentById = async (req, res) => {
   try {
     const content = await GlobalModule.findOne({ uuid: req.params.id });
-    // await logGlobalAdminActivity(req,"Get Content","content",`Content fetched successfully ${content.title}`)
-    return res.status(200).json({ success: true, message: 'Content fetched successfully.', data: content });
+    // await logGlobalAdminActivity(req,"Get Content","content",`Module fetched successfully ${content.title}`)
+    return res.status(200).json({ success: true, message: 'Module fetched successfully.', data: content });
   } catch (error) {
-    return res.status(500).json({ success: false, message: 'Failed to fetch content.', error: error.message });
+    return res.status(500).json({ success: false, message: 'Failed to fetch module.', error: error.message });
   } 
 }
 

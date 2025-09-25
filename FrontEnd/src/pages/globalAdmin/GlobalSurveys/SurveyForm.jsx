@@ -102,6 +102,19 @@ const addInfoBoxAtIndex = (index) => {
   ];
   setFormData({ ...formData, questions: updatedQuestions });
 };
+const addTextQuestionAtIndex = (index) => {
+  const newQuestion = {
+    question_text: "",
+    question_type: "text",
+    options: [], // text questions don't have options
+  };
+  const updatedQuestions = [
+    ...formData.questions.slice(0, index + 1),
+    newQuestion,
+    ...formData.questions.slice(index + 1),
+  ];
+  setFormData({ ...formData, questions: updatedQuestions });
+};
 
 
 
@@ -317,6 +330,9 @@ const addInfoBox = () => {
         >
           + Add Info Box
         </button>
+         <button type="button" className="add-question-btn" onClick={() => addTextQuestionAtIndex(-1)}>
+      + Add Text 
+    </button>
       </div>
     );
   }
@@ -338,6 +354,7 @@ const addInfoBox = () => {
   >
     + Add Info Box
   </button>
+  
   </div>
     );
     if (q.question_type === "info") {
@@ -362,6 +379,7 @@ const addInfoBox = () => {
             onChange={(e) =>
               handleQuestionChange(index, "question_text", e.target.value)
             }
+            
            
           />
         
@@ -372,7 +390,10 @@ const addInfoBox = () => {
             value={q.info_text || ""}
             onChange={(e) =>
               handleQuestionChange(index, "info_text", e.target.value)
-            }
+            }onInput={(e) => {
+    e.target.style.height = "auto"; // reset height
+    e.target.style.height = e.target.scrollHeight + "px"; // set height to content
+  }}
             style={{
               backgroundColor: "#f9f9f9",
               fontStyle: "normal",
@@ -384,7 +405,38 @@ const addInfoBox = () => {
           {renderButtons}
         </div>
       );
-    } else {
+    } else if (q.question_type === "text") {
+
+  return (
+    <div key={index} className="question-box">
+      <div className="question-header">
+        <span className="question-label">Text</span>
+        <button
+          type="button"
+          className="remove-btn"
+          onClick={() => removeQuestion(index)}
+        >
+          ✖
+        </button>
+      </div>
+      <textarea
+        placeholder="Enter text question here..."
+        value={q.question_text}
+        onChange={(e) =>
+          handleQuestionChange(index, "question_text", e.target.value)
+        }
+        onInput={(e) => {
+    e.target.style.height = "auto"; // reset height
+    e.target.style.height = e.target.scrollHeight + "px"; // set height to content
+  }}
+        style={{ width: "100%", minHeight: "60px", padding: "6px" }}
+        required
+      />
+      {/* Buttons under this question */}
+      {renderButtons}
+    </div>
+  );
+}else {
       questionNumber++; // ✅ increment only for actual questions
       return (
         <div key={index} className="question-box">
@@ -454,12 +506,21 @@ const addInfoBox = () => {
           )}
             {renderButtons}
         </div>
+        
       );
+      
     }
-  });
-})()}
+    
+  }
+);
 
+})
 
+()}
+
+<button type="button" className="add-question-btn" onClick={() => addTextQuestionAtIndex(formData.questions.length - 1)}>
+      + Add Text 
+    </button>
 
       
 
