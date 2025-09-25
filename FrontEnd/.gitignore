@@ -6,6 +6,7 @@
 .pnp.js
 .env
 .DS_Store
+.firebaserc
 # testing
 /coverage
 
