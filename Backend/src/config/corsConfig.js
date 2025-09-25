@@ -13,10 +13,10 @@ const cors = require("cors");
 //   credentials: true,
 // };
 
-const Origin = process.env.prod === "true" ? process.env.ORIGIN : "http://localhost:3000";
+const allowedOrigins = ['http://localhost:3000', 'https://omniedu-fe587.web.app'];
 
 const corsMiddleware = cors({
-  origin: Origin, // allowed origins or using "*" for all sites || whitelisted sites
+  origin: allowedOrigins, // allowed origins or using "*" for all sites || whitelisted sites
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true, // if you use cookies or tokens
