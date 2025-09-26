@@ -19,6 +19,9 @@ const helmetMiddleware = helmet({
     preload: true,
   },
   crossOriginEmbedderPolicy: false, // Optional, depending on your frontend needs
+  // Allow frontend on a different origin (e.g., http://localhost:3000) to embed images/audio/video/PDFs
+  // from this backend (http://localhost:5003). This prevents Chrome's NotSameOrigin blocking.
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
 });
 
 module.exports = helmetMiddleware;
