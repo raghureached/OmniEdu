@@ -11,8 +11,22 @@ const { getGlobalAdminActivity } = require("../controllers/globalAdmin.controlle
 const { getGlobalProfile, changeGlobalPassword } = require("../controllers/globalAdmin.controller/globalAdmin_profile");
 const { userDashBoardSettings, getUserDashBoardSettings, updateUserDashBoardConfig, getUserDashBoardConfig, getUserDashBoardPermissions } = require("../controllers/globalAdmin.controller/globalAdmin_userDashBoard");
 const { updateAdminDashboardConfig, getAdminDashboardConfig, getAdminDashboardPermissions } = require("../controllers/globalAdmin.controller/globalAdmin_adminDashboard");
-const { createAssessment, editAssessment, deleteAssessment, getAssessments, getAssessmentById, getQuestions, getQuestionsRandom, editQuestion, deleteQuestion, uploadAssessmentCSV } = require("../controllers/globalAdmin.controller/globalAdmin_Assessments");
+//const { createAssessment, editAssessment, deleteAssessment, getAssessments, getAssessmentById, getQuestions, getQuestionsRandom, editQuestion, deleteQuestion, uploadAssessmentCSV } = require("../controllers/globalAdmin.controller/globalAdmin_Assessments");
 // const csvStream = require("../utils/csvParser");
+const {
+    createAssessment,
+    editAssessment,
+    deleteAssessment,
+    getAssessments,
+    getAssessmentById,
+    getQuestions,
+    getQuestionsRandom,
+    editQuestion,
+    deleteQuestion,
+    uploadAssessmentCSV,
+    fileUploadMiddleware,
+    fileUploadHandler,
+  } = require("../controllers/globalAdmin.controller/globalAdmin_Assessments");
 
 const router = require("express").Router();
 
@@ -56,7 +70,8 @@ router.route('/getQuestions/:id').get(getQuestions)
 router.route('/getQuestionsRandom/:id').get(getQuestionsRandom)
 router.route('/editQuestion/:id').put(editQuestion)
 router.route('/deleteQuestion/:id').delete(deleteQuestion)
-
+router.post('/uploadFile', fileUploadMiddleware, fileUploadHandler);
+////
 //////////////Global Surveys////////////
 
 router.route('/createSurvey').post(createSurvey)

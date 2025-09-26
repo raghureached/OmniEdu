@@ -32,6 +32,9 @@ app.use((req, res, next) => {
 });
 // app.use(logActivity)
 
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 app.use('/api/globalAdmin',authenticate,authorize(['GlobalAdmin']),globalAdminRouter)
 // app.use('/api/globalAdmin',globalAdminRouter)
 app.use('/auth',authRouter)

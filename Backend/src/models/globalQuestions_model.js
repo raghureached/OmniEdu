@@ -7,7 +7,7 @@ const globalQuestionSchema = new mongoose.Schema({
   },
   type:{
     type:String,
-    enum:["Multiple Choice","Blank","Answer"],
+    enum:["Multiple Choice","Multi Select"],
     required:true
   },
   file_url:{
@@ -23,7 +23,7 @@ const globalQuestionSchema = new mongoose.Schema({
   total_points:{
     type:Number,
     default:1,
-  },
+  },instructions: { type: String, default: '' } ,// NEW
   options: {
     type: [String],
     required: true,

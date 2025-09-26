@@ -32,6 +32,18 @@ const teamSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Ensure virtuals are included when converting documents to JSON/objects
+teamSchema.set("toObject", { virtuals: true });
+teamSchema.set("toJSON", { virtuals: true });
+
+// Virtual to populate sub-teams for a team
+teamSchema.virtual("subTeams", {
+  ref: "SubTeam",
+  localField: "_id",
+  foreignField: "team_id",
+  justOne: false,
+});
+
 const Team = mongoose.model("Team", teamSchema);
 
 module.exports = Team;
