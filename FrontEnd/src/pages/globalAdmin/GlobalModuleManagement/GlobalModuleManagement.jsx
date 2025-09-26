@@ -114,14 +114,16 @@ const GlobalModuleManagement = () => {
     }
   };
   const openEditModal = (content) => {
+    setEditContentId(content.uuid)
     setNewContent({
       title: content.title,
-      type: content.type,
+      primaryFile: content.primaryFile,
       duration: content.duration || "",
       tags: content.tags || [],
-      learningOutcomes: content.learningOutcomes || [''],
-      additionalResources: content.additionalResources || null,
-      difficultyLevel: content.difficultyLevel || "",
+      description: content.description || "",
+      learningOutcomes: content.learning_outcomes || [''],
+      additionalFile: content.additionalFile || null,
+      difficultyLevel: content.difficulty_level || "",
       prerequisites: content.prerequisites || "",
       credits: content.credits || 0,
       stars: content.stars || 0,
@@ -133,15 +135,7 @@ const GlobalModuleManagement = () => {
       externalResource: content.externalResource || "",
       enableFeedback: !!content.enableFeedback,
     });
-    setEditContentId(content.uuid);
     setShowEditModal(true);
-  };
-
-  const handleEditContent = () => {
-    dispatch(updateContent({ id: editContentId, updatedData: newContent }));
-    setShowEditModal(false);
-    setEditContentId(null);
-    setNewContent({ title: "", type: "theory", content: "" });
   };
 
   const handleOpenModal = () => {
@@ -169,7 +163,7 @@ const GlobalModuleManagement = () => {
   // if (loading && !uploading) {
   //   return <LoadingScreen text={"Loading Global Content..."} />
   // }
-  const assessments = items?.filter(item => item.type === "assessment") || [];
+  // const modules = items?.filter(item => item.type === "module") || [];
   return (
     <div className="global-content-management">
       <div className="global-content-header">
@@ -184,7 +178,7 @@ const GlobalModuleManagement = () => {
                 <FileText size={20} />
               </div>
               <div className="global-content-stat-info">
-                <span className="global-content-stat-number">{assessments.length}</span>
+                <span className="global-content-stat-number">{items.length}</span>
                 <span className="global-content-stat-label">Total Modules</span>
               </div>
             </div>
@@ -193,7 +187,7 @@ const GlobalModuleManagement = () => {
                 <Users size={20} />
               </div>
               <div className="global-content-stat-info">
-                <span className="global-content-stat-number">{assessments.filter(a => a.status === 'Published').length}</span>
+                <span className="global-content-stat-number">{items.filter(a => a.status === 'Published').length}</span>
                 <span className="global-content-stat-label">Published</span>
               </div>
             </div>
@@ -214,80 +208,7 @@ const GlobalModuleManagement = () => {
         </div>
       </div>
       {showModal && <GlobalModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading}/>}
-      {showEditModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h2>Edit Global Content</h2>
-            <label>
-              Title
-              <input
-                type="text"
-                name="title"
-                value={newContent.title}
-                onChange={handleInputChange}
-                className="modal-input"
-              />
-            </label>
-            <label>
-              Type
-              <select
-                name="type"
-                value={newContent.type}
-                onChange={handleInputChange}
-                className="modal-input"
-              >
-                <option value="theory">Theory</option>
-                <option value="module">Module</option>
-                <option value="assessment">Assessment</option>
-                <option value="learning_path">Learning Path</option>
-              </select>
-            </label>
-            <label>
-              Content
-              <textarea
-                name="content"
-                value={newContent.content}
-                onChange={handleInputChange}
-                rows={4}
-                className="modal-input"
-              ></textarea>
-            </label>
-            <label>
-              Status
-              <select
-                name="status"
-                value={newContent.status}
-                onChange={handleInputChange}
-                className="modal-input"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </label>
-            <label>
-              Uploaded File
-              <span onClick={() => handleFileClick(newContent.file)} style={{ cursor: "pointer", fontWeight: "lighter ", fontSize: "15px", marginLeft: "10px" }}>View File</span>
-            </label>
-            <label>
-              Upload New File
-              <input
-                type="file"
-                name="file"
-                onChange={handleInputChange}
-                className="modal-input"
-              />
-            </label>
-            <div className="modal-buttons">
-              <button className="btn-cancel" onClick={() => setShowEditModal(false)}>
-                Cancel
-              </button>
-              <button className="btn-add" onClick={handleEditContent}>
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {showEditModal && <GlobalModuleModal showModal={showEditModal} setShowModal={setShowEditModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} showEditModal={showEditModal} setShowEditModal={setShowEditModal} editContentId={editContentId} />}
       <div className="table-container">
         <table className="data-table">
           <thead>
@@ -295,7 +216,7 @@ const GlobalModuleManagement = () => {
               <th>Title</th>
               <th>Credits</th>
               <th>Status</th>
-              <th>Organizations</th>
+              <th>Team</th>
               <th>Created Date</th>
               <th>Actions</th>
             </tr>
@@ -310,7 +231,7 @@ const GlobalModuleManagement = () => {
                     {content.status === 'Published' ? '✓ Published' : 'Draft'}
                   </span>
                 </td>
-                <td>{content.organizations || "All"}</td>
+                <td>{content.team || "All"}</td>
                 <td>{new Date(content.createdAt).toLocaleDateString()}</td>
                 <td>
                   <button
@@ -319,7 +240,10 @@ const GlobalModuleManagement = () => {
                   >
                     <span style={{ display: "flex", alignItems: "center", gap: "2px" }}><RiDeleteBinFill size={16} />Delete </span>
                   </button>
-                  <button className="edit-btn action-btn" onClick={() => openEditModal(content)}>
+                  <button className="edit-btn action-btn" onClick={() => {
+                    setEditContentId(content.uuid)
+                    openEditModal(content);
+                  }}>
                     <span style={{ display: "flex", alignItems: "center", gap: "2px" }}><FiEdit3 size={16} />Edit </span>
                   </button>
 

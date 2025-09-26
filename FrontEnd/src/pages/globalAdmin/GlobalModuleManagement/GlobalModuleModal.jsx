@@ -3,8 +3,9 @@ import { ChevronLeft, ChevronRight, EyeIcon, Loader, Plus, X } from 'lucide-reac
 import './GlobalModuleModal.css';
 import { RiDeleteBin2Fill } from 'react-icons/ri';
 import { useDispatch, useSelector } from 'react-redux';
-import { createContent } from '../../../store/slices/contentSlice';
+import { createContent, updateContent } from '../../../store/slices/contentSlice';
 import CustomLoader2 from '../../../components/common/Loading/CustomLoader2';
+import ModulePreview from './ModulePreview';
 const categories = [
     "Select Category",
     "Cyber Security",
@@ -37,7 +38,7 @@ const teams = [
 ];
 
 const GlobalModuleModal = ({
-    showModal, setShowModal, newContent, handleInputChange,
+    showModal, setShowModal, newContent, handleInputChange,showEditModal,setShowEditModal,editContentId
 }) => {
     const [currentStep, setCurrentStep] = useState(1);
     const [learningOutcomes, setLearningOutcomes] = useState(newContent.learningOutcomes || ['']);
@@ -48,6 +49,7 @@ const GlobalModuleModal = ({
     const [isValidUrl, setIsValidUrl] = useState(false);
     const [showIframe, setShowIframe] = useState(false);
     const { uploading } = useSelector((state) => state.content);
+    const [preview, setPreview] = useState(false);
     const validateUrl = (url) => {
         try {
             const _url = new URL(url);
@@ -125,7 +127,6 @@ const GlobalModuleModal = ({
     const dispatch = useDispatch();
     const handleAddContent = async () => {
 
-
         try {
             // Build FormData
             const formData = new FormData();
@@ -143,13 +144,18 @@ const GlobalModuleModal = ({
                 setShowModal(false);
             });
         } catch (err) {
-            
             console.error("Error uploading content:", err);
             alert("Upload failed");
         } finally {
             
         }
     };
+    const handleEditContent = () => {
+        dispatch(updateContent({ id: editContentId, updatedData: newContent }));
+        setShowEditModal(false);
+        // setEditContentId(null);
+        // setNewContent({});
+      };
     /* File Preview */
     const handlePreviewFile = (file) => {
         if (!file) return;
@@ -673,12 +679,13 @@ const GlobalModuleModal = ({
                                 </label>
                             </div>
                             <div className="module-overlay__form-group" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                                <button className='module-overlay__btn-save'>Save Draft</button>
-                                <button className='module-overlay__btn-preview'>Preview</button>
+                                <button className='module-overlay__btn-save' onClick={() => alert("Integration Pending")}>Save Draft</button>
+                                <button className='module-overlay__btn-preview' onClick={() => alert("Integration Pending")}>Preview</button>
                             </div>
                         </div>
                     )}
                 </div>
+                {/* {preview && <ModulePreview content={newContent} onClose={() => setPreview(false)} />} */}
 
                 {/* FOOTER ACTIONS */}
                 <div className="module-overlay__footer">
@@ -717,11 +724,11 @@ const GlobalModuleModal = ({
                                 <button
                                     type="button"
                                     className="module-overlay__btn-add"
-                                    onClick={handleAddContent}
+                                    onClick={showEditModal ? handleEditContent : handleAddContent}
                                     disabled={uploading}
                                     aria-label="Create Module"
                                 >
-                                    {uploading ?(<CustomLoader2 size={16} color="#5570f1" strokeWidth={3} />): 'Create Module'}
+                                    {uploading ?(<CustomLoader2 size={16} color="#5570f1" strokeWidth={3} />): showEditModal ? 'Update Module' : 'Create Module'}
                                 </button>
                             )}
                         </div>

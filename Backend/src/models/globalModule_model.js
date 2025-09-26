@@ -74,6 +74,14 @@ const GlobalModuleSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    prerequisites: {
+      type: [String],
+      default: [],
+    },
+    instructions: {
+      type: String,
+      default: null,
+    },
     created_by: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "GlobalAdmin",

@@ -16,7 +16,15 @@
     align-items: flex-start;
     gap: 32px;
   }
-  
+  .inactive{
+    background-color: gray;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-block;
+  }
   .global-content-header-info h1.global-content-page-title {
     font-size: 2rem;
     font-weight: 700;

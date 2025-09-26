@@ -50,7 +50,7 @@ const addContent = async (req, res) => {
     //   });
     // }
 
-    const { title,trainingType,team,category, badges,stars,credits,description,enableFeedback,externalResource, pushable_to_orgs, tags, duration,learningOutcomes, } = req.body;
+    const { title,trainingType,team,category,instructions, badges,stars,credits,description,enableFeedback,externalResource, pushable_to_orgs, tags, duration,learningOutcomes,prerequisites } = req.body;
     const created_by = req.user?._id || null;
     const newModule = new GlobalModule({
       title,
@@ -67,6 +67,8 @@ const addContent = async (req, res) => {
       additionalFile:req.uploadedFiles?.additionalFile[0].url,
       pushable_to_orgs,
       learning_outcomes:learningOutcomes,
+      prerequisites:prerequisites.split(","),
+      instructions,
       tags,
       duration,
       created_by

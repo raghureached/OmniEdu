@@ -47,6 +47,7 @@ export const updateContent = createAsyncThunk(
     try {
       // console.log(updatedData)
       const response = await api.put(`/api/globalAdmin/editContent/${id}`, updatedData);
+      // console.log(response.data.data)
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);

@@ -1,208 +1,247 @@
 import React, { useState, useEffect } from 'react';
-import { Play, FileText, Clock, Award, Calendar, Tag, Globe, Eye, Download } from 'lucide-react';
+import { Play, FileText, Clock, Award, Calendar, Tag, Globe, Eye, Download, X, Star, Users, BookOpen, Target, CheckCircle, ExternalLink, MessageCircle, Zap } from 'lucide-react';
 import './ModulePreview.css';
 
-const ModulePreview = ({ moduleData, onEdit, onClose }) => {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-  const [videoPreviewUrl, setVideoPreviewUrl] = useState(null);
-  const [docPreviewUrls, setDocPreviewUrls] = useState([]);
+const ModulePreview = ({ moduleData, onClose }) => {
+  const [isVisible, setIsVisible] = useState(false);
 
-  const module = moduleData;
-
-  // Handle local video preview
   useEffect(() => {
-    if (module.videoFile instanceof File) {
-      const url = URL.createObjectURL(module.videoFile);
-      setVideoPreviewUrl(url);
-      return () => URL.revokeObjectURL(url);
-    } else {
-      setVideoPreviewUrl(null);
-    }
-  }, [module.videoFile]);
-
-  // Handle local document previews
-  useEffect(() => {
-    if (module.documentFiles && module.documentFiles.length > 0) {
-      const urls = Array.from(module.documentFiles).map(file => ({
-        name: file.name,
-        url: URL.createObjectURL(file),
-        type: file.type
-      }));
-      setDocPreviewUrls(urls);
-      return () => urls.forEach(u => URL.revokeObjectURL(u.url));
-    } else {
-      setDocPreviewUrls([]);
-    }
-  }, [module.documentFiles]);
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
-  const formatDuration = (minutes) => {
-    if (!minutes) return "N/A";
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-  };
-
-  const getStatusColor = (status) => {
-    const statusMap = {
-      'Draft': 'preview-status--draft',
-      'Published': 'preview-status--published',
-      'Archived': 'preview-status--archived'
+    setIsVisible(true);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'auto';
     };
-    return statusMap[status] || 'preview-status--default';
+  }, []);
+
+  const handleClose = () => {
+    setIsVisible(false);
+    setTimeout(onClose, 300);
+  };
+
+  if (!moduleData) return null;
+
+  const {
+    title = "Module Title",
+    primaryFile = null,
+    duration = "2 hours",
+    tags = ["JavaScript", "React", "Frontend"],
+    description = "This is a comprehensive module that covers advanced concepts and practical implementations.",
+    learningOutcomes = ["Understand core concepts", "Apply practical skills", "Build real projects"],
+    additionalFile = null,
+    difficultyLevel = "Intermediate",
+    prerequisites = "Basic knowledge of HTML, CSS, and JavaScript",
+    credits = 3,
+    stars = 4.8,
+    badges = 2,
+    team = "Development Team",
+    category = "Web Development",
+    trainingType = "Interactive",
+    instructions = "Complete all sections and submit the final project for evaluation.",
+    externalResource = "https://example.com/resources",
+    enableFeedback = true
+  } = moduleData;
+
+  const getDifficultyClass = (level) => {
+    switch (level.toLowerCase()) {
+      case 'beginner': return 'difficulty-beginner';
+      case 'intermediate': return 'difficulty-intermediate';
+      case 'advanced': return 'difficulty-advanced';
+      default: return 'difficulty-default';
+    }
+  };
+
+  const renderStars = (rating) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star 
+        key={i} 
+        className={`star ${i < Math.floor(rating) ? 'star-filled' : 'star-empty'}`}
+      />
+    ));
   };
 
   return (
-    <div className="module-preview-overlay">
-      <div className="module-preview-container">
-        
+    <div className={`modal-overlay ${isVisible ? 'visible' : ''}`}>
+      <div className={`modal-container ${isVisible ? 'visible' : ''}`}>
         {/* Header */}
-        <div className="module-preview-header">
-          <div className="module-preview-header-left">
-            <h1 className="module-preview-title">{module.title}</h1>
-            <div className={`module-preview-status ${getStatusColor(module.status)}`}>
-              {module.status}
-            </div>
-          </div>
-          <div className="module-preview-header-actions">
-            <button className="module-preview-btn module-preview-btn--primary" onClick={onClose}>
-              <Eye size={16} />
-              Close Preview
-            </button>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="module-preview-tabs">
-          {['overview','content','resources','details'].map(tab => (
-            <button
-              key={tab}
-              className={`module-preview-tab ${activeTab === tab ? 'module-preview-tab--active' : ''}`}
-              onClick={() => setActiveTab(tab)}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
-        </div>
-
-        {/* Tab Content */}
-        <div className="module-preview-content">
+        <div className="modal-header">
+          <button onClick={handleClose} className="close-button">
+            <X className="close-icon" />
+          </button>
           
-          {/* Overview */}
-          {activeTab === 'overview' && (
-            <div className="module-preview-overview">
-              <div className="module-preview-main-content">
-                <h3 className="module-preview-section-title">Description</h3>
-                <p>{module.content || "No description available for this module."}</p>
-
-                {module.learning_outcomes?.length > 0 && (
-                  <>
-                    <h3 className="module-preview-section-title">Learning Outcomes</h3>
-                    <ul>
-                      {module.learning_outcomes.map((outcome, i) => (
-                        <li key={i}>{outcome}</li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-
-                {module.tags?.length > 0 && (
-                  <>
-                    <h3 className="module-preview-section-title">Tags</h3>
-                    <div>
-                      {module.tags.map((tag, i) => (
-                        <span key={i} className="module-preview-tag">
-                          <Tag size={12} /> {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </>
-                )}
+          <div className="header-content">
+            <div className="category-badge">
+              <BookOpen className="category-icon" />
+              <span className="category-text">{category}</span>
+            </div>
+            <h1 className="module-title">{title}</h1>
+            
+            <div className="module-info">
+              <div className="info-item">
+                <Clock className="info-icon" />
+                <span>{duration}</span>
+              </div>
+              <div className="info-item">
+                <Users className="info-icon" />
+                <span>{team}</span>
+              </div>
+              <div className="info-item rating">
+                {renderStars(stars)}
+                <span className="rating-number">{stars}</span>
               </div>
             </div>
-          )}
+          </div>
+        </div>
 
-          {/* Content */}
-          {activeTab === 'content' && (
-            <div className="module-preview-content-tab">
-              {(videoPreviewUrl || module.video_url) && (
-                <div className="module-preview-video-section">
-                  <h3 className="module-preview-section-title">Video Content</h3>
-                  <div className="module-preview-video-container">
-                    {isVideoPlaying ? (
-                      <video
-                        controls
-                        className="module-preview-video"
-                        src={videoPreviewUrl || module.video_url}
-                        onEnded={() => setIsVideoPlaying(false)}
-                      />
-                    ) : (
-                      <div className="module-preview-video-placeholder" onClick={() => setIsVideoPlaying(true)}>
-                        <Play size={48} />
-                        <p>Click to play video</p>
-                      </div>
-                    )}
-                  </div>
+        {/* Content */}
+        <div className="modal-content">
+          <div className="content-inner">
+            {/* Stats Row */}
+            <div className="stats-grid">
+              <div className="stat-card credits">
+                <Award className="stat-icon" />
+                <div className="stat-number">{credits}</div>
+                <div className="stat-label">Credits</div>
+              </div>
+              <div className="stat-card badges">
+                <Zap className="stat-icon" />
+                <div className="stat-number">{badges}</div>
+                <div className="stat-label">Badges</div>
+              </div>
+              <div className="stat-card training">
+                <Target className="stat-icon" />
+                <div className="stat-text">{trainingType}</div>
+                <div className="stat-sublabel">Training Type</div>
+              </div>
+              <div className="stat-card difficulty">
+                <div className={`difficulty-badge ${getDifficultyClass(difficultyLevel)}`}>
+                  {difficultyLevel}
                 </div>
-              )}
-              <div>
-                <h3 className="module-preview-section-title">Module Content</h3>
-                <p>{module.content || "No detailed content available."}</p>
+                <div className="stat-sublabel">Difficulty</div>
               </div>
             </div>
-          )}
 
-          {/* Resources */}
-          {activeTab === 'resources' && (
-            <div className="module-preview-resources-tab">
-              {(docPreviewUrls.length > 0 || module.doc_url?.length > 0) ? (
-                <div className="module-preview-documents-section">
-                  <h3 className="module-preview-section-title">Documents</h3>
-                  <div>
-                    {docPreviewUrls.map((doc, i) => (
-                      <div key={i}>
-                        <FileText size={20} /> {doc.name}
-                        <button onClick={() => window.open(doc.url, "_blank")}>
-                          <Eye size={14} /> View
-                        </button>
-                      </div>
-                    ))}
-                    {module.doc_url?.map((doc, i) => (
-                      <div key={i}>
-                        <FileText size={20} /> Document {i+1}
-                        <button onClick={() => window.open(doc, "_blank")}>
-                          <Eye size={14} /> View
-                        </button>
-                      </div>
-                    ))}
+            {/* Description */}
+            <div className="section description-section">
+              <h3 className="section-title">
+                <FileText className="section-icon" />
+                Description
+              </h3>
+              <p className="description-text">{description}</p>
+            </div>
+
+            {/* Learning Outcomes */}
+            <div className="section">
+              <h3 className="section-title outcomes-title">
+                <Target className="section-icon outcomes-icon" />
+                Learning Outcomes
+              </h3>
+              <div className="outcomes-list">
+                {learningOutcomes.map((outcome, index) => (
+                  <div key={index} className="outcome-item">
+                    <CheckCircle className="outcome-check" />
+                    <span className="outcome-text">{outcome}</span>
                   </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Prerequisites */}
+            {prerequisites && (
+              <div className="section">
+                <h3 className="section-title prerequisites-title">
+                  <BookOpen className="section-icon prerequisites-icon" />
+                  Prerequisites
+                </h3>
+                <p className="prerequisites-text">{prerequisites}</p>
+              </div>
+            )}
+
+            {/* Instructions */}
+            {instructions && (
+              <div className="section">
+                <h3 className="section-title instructions-title">
+                  <Eye className="section-icon instructions-icon" />
+                  Instructions
+                </h3>
+                <p className="instructions-text">{instructions}</p>
+              </div>
+            )}
+
+            {/* Tags */}
+            {tags.length > 0 && (
+              <div className="section">
+                <h3 className="section-title tags-title">
+                  <Tag className="section-icon tags-icon" />
+                  Tags
+                </h3>
+                <div className="tags-container">
+                  {tags.map((tag, index) => (
+                    <span key={index} className="tag-badge">
+                      {tag}
+                    </span>
+                  ))}
                 </div>
-              ) : (
-                <p>No resources available</p>
+              </div>
+            )}
+
+            {/* Files and Resources */}
+            <div className="resources-grid">
+              {primaryFile && (
+                <div className="resource-card primary-file">
+                  <h4 className="resource-title">
+                    <FileText className="resource-icon" />
+                    Primary File
+                  </h4>
+                  <p className="resource-text">{primaryFile}</p>
+                </div>
+              )}
+              
+              {additionalFile && (
+                <div className="resource-card additional-file">
+                  <h4 className="resource-title">
+                    <Download className="resource-icon" />
+                    Additional File
+                  </h4>
+                  <p className="resource-text">{additionalFile}</p>
+                </div>
+              )}
+              
+              {externalResource && (
+                <div className="resource-card external-resource">
+                  <h4 className="resource-title">
+                    <Globe className="resource-icon" />
+                    External Resource
+                  </h4>
+                  <a href={externalResource} target="_blank" rel="noopener noreferrer" className="resource-link">
+                    View Resource <ExternalLink className="external-icon" />
+                  </a>
+                </div>
+              )}
+              
+              {enableFeedback && (
+                <div className="resource-card feedback">
+                  <h4 className="resource-title">
+                    <MessageCircle className="resource-icon" />
+                    Feedback Enabled
+                  </h4>
+                  <p className="resource-text">Students can provide feedback on this module</p>
+                </div>
               )}
             </div>
-          )}
+          </div>
 
-          {/* Details */}
-          {activeTab === 'details' && (
-            <div className="module-preview-details-tab">
-              <h4>Configuration</h4>
-              <p>Duration: {formatDuration(module.duration)}</p>
-              <p>Credits: 2</p>
-              <p>Pushable: {module.pushable_to_orgs ? "Yes" : "No"}</p>
-              <p>Created: {formatDate(module.createdAt)}</p>
+          {/* Action Buttons */}
+          <div className="modal-footer">
+            <div className="button-group">
+              <button onClick={handleClose} className="button button-secondary">
+                Close
+              </button>
+              <button className="button button-primary">
+                <Play className="button-icon" />
+                Start Module
+              </button>
             </div>
-          )}
-
+          </div>
         </div>
       </div>
     </div>
