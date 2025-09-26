@@ -30,10 +30,10 @@ export const fetchContentById = createAsyncThunk(
 
 export const createContent = createAsyncThunk(
   'content/createContent',
-  async (formData, { rejectWithValue }) => {
+  async (moduleData, { rejectWithValue }) => {
     try {
       // Do not set Content-Type here!
-      const response = await api.post('/api/globalAdmin/addcontent', formData,{headers:{'Content-Type':'multipart/form-data'}});
+      const response = await api.post('/api/globalAdmin/addcontent', moduleData,{headers:{'Content-Type':'multipart/form-data'}});
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -47,7 +47,6 @@ export const updateContent = createAsyncThunk(
     try {
       // console.log(updatedData)
       const response = await api.put(`/api/globalAdmin/editContent/${id}`, updatedData);
-      console.log(response)
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -72,6 +71,7 @@ const contentSlice = createSlice({
   name: 'content',
   initialState: {
     items: [],
+    uploading: false,
     loading: false,
     error: null,
     filters: {},
@@ -117,13 +117,16 @@ const contentSlice = createSlice({
       // Create content
       .addCase(createContent.pending, (state) => {
         state.loading = true;
+        state.uploading = true;
       })
       .addCase(createContent.fulfilled, (state, action) => {
         state.loading = false;
         state.items.push(action.payload);
+        state.uploading = false;
       })
       .addCase(createContent.rejected, (state, action) => {
         state.loading = false;
+        state.uploading = false;
         state.error = action.payload?.message || 'Failed to create content';
       })
       

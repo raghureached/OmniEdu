@@ -49,7 +49,8 @@ const uploadMultipleToCloudinary = async (req, res, next) => {
           let folderName = "";
           if(fieldName === "logo") folderName = "logos";
           else if(fieldName === "documentFiles") folderName = "documents";
-          else if(fieldName === "videoFile") folderName = "videos";
+          else if(fieldName === "primaryFile") folderName = "primaryFiles";
+          else if(fieldName === "additionalFile") folderName = "additionalFiles";
           else{
             folderName = fieldName
           }

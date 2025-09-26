@@ -50,43 +50,23 @@ const addContent = async (req, res) => {
     //   });
     // }
 
-    const { title, type, content, pushable_to_orgs, tags, duration,learning_outcomes } = req.body;
+    const { title,trainingType,team,category, badges,stars,credits,description,enableFeedback,externalResource, pushable_to_orgs, tags, duration,learningOutcomes, } = req.body;
     const created_by = req.user?._id || null;
-    // Validate required fields
-    // if (!title || !type) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: 'Title and type are required.'
-    //   });
-    // }
-    // if (!['PDF', 'DOCX', 'Theory'].includes(type)) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: 'Invalid content type. Must be PDF, DOCX, or Theory.'
-    //   });
-    // }
-    // // At least one of content or file_url should be present
-    // if (type === 'Theory' && !content) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: 'Theory content requires a text body.'
-    //   });
-    // }
-    // if ((type === 'PDF' || type === 'DOCX') && !file_url) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: `${type} content requires a file URL.`
-    //   });
-    // }
-    const docUrls = req.uploadedFiles?.documentFiles.filter((doc) => doc.url).map((doc) => doc.url)
     const newModule = new GlobalModule({
       title,
-      type,
-      content,
-      video_url: req.uploadedFiles.videoFile[0].url,
-      doc_url: docUrls,
+      description,
+      trainingType,
+      team,
+      category,
+      badges,
+      stars,
+      credits,
+      enableFeedback,
+      externalResource,
+      primaryFile:req.uploadedFiles?.primaryFile[0].url,
+      additionalFile:req.uploadedFiles?.additionalFile[0].url,
       pushable_to_orgs,
-      learning_outcomes,
+      learning_outcomes:learningOutcomes,
       tags,
       duration,
       created_by

@@ -1,169 +1,208 @@
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
-import './GlobalModuleModal.css'
-import ModulePreview from './ModulePreview';
+import React, { useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight, EyeIcon, Loader, Plus, X } from 'lucide-react';
+import './GlobalModuleModal.css';
+import { RiDeleteBin2Fill } from 'react-icons/ri';
+import { useDispatch, useSelector } from 'react-redux';
+import { createContent } from '../../../store/slices/contentSlice';
+import CustomLoader2 from '../../../components/common/Loading/CustomLoader2';
+const categories = [
+    "Select Category",
+    "Cyber Security",
+    "POSH (Prevention of Sexual Harassment)",
+    "Compliance & Regulations",
+    "Safety & Health",
+    "Technical Skills",
+    "Soft Skills",
+    "Leadership & Management",
+    "Product Knowledge",
+    "Process & Procedures",
+];
+const trainingTypes = [
+    "Select Training Type",
+    "Mandatory Training",
+    "Continuous Learning",
+    "Micro Learning/Learning Byte",
+    "Initial/Onboarding Training",
+];
+const teams = [
+    "Select Team/Sub Team",
+    "All Employees",
+    "Development Team",
+    "Design Team",
+    "Marketing Team",
+    "Sales Team",
+    "Human Resources",
+    "Finance Team",
+    "Operations Team",
+];
 
-const GlobalModuleModal = ({ showModal, setShowModal, newContent, handleInputChange, handleAddContent }) => {
+const GlobalModuleModal = ({
+    showModal, setShowModal, newContent, handleInputChange,
+}) => {
     const [currentStep, setCurrentStep] = useState(1);
+    const [learningOutcomes, setLearningOutcomes] = useState(newContent.learningOutcomes || ['']);
     const [tags, setTags] = useState(newContent.tags || []);
     const [tagInput, setTagInput] = useState('');
-    const [learningOutcomes, setLearningOutcomes] = useState(newContent.learningOutcomes || ['']);
-    const [openPreview, setOpenPreview] = useState(false);
-
-    const totalSteps = 4;
-
-    // Handle tag input
-    const handleTagInputChange = (e) => {
-        setTagInput(e.target.value);
-    };
-
-    // Add tag when Enter is pressed or comma is typed
-    const handleTagInputKeyDown = (e) => {
-        if (e.key === 'Enter' || e.key === ',') {
-            e.preventDefault();
-            addTag();
+    const [contentType, setContentType] = useState('Upload File');
+    const totalSteps = 3;
+    const [isValidUrl, setIsValidUrl] = useState(false);
+    const [showIframe, setShowIframe] = useState(false);
+    const { uploading } = useSelector((state) => state.content);
+    const validateUrl = (url) => {
+        try {
+            const _url = new URL(url);
+            return _url.protocol === "http:" || _url.protocol === "https:";
+        } catch (e) {
+            return false;
         }
     };
 
-    // Add a new tag
-    const addTag = () => {
-        const trimmedTag = tagInput.trim();
-        if (trimmedTag && !tags.includes(trimmedTag)) {
-            const newTags = [...tags, trimmedTag];
-            setTags(newTags);
-            setTagInput('');
-            // Update parent component
-            handleInputChange({
-                target: {
-                    name: 'tags',
-                    value: newTags
-                }
-            });
+    // Run URL validation when externalResource changes
+    useEffect(() => {
+        setShowIframe(false); // hide iframe whenever URL changes
+        if (newContent.externalResource && validateUrl(newContent.externalResource)) {
+            setIsValidUrl(true);
+        } else {
+            setIsValidUrl(false);
         }
-    };
+    }, [newContent.externalResource]);
 
-    // Remove a tag
-    const removeTag = (tagToRemove) => {
-        const newTags = tags.filter(tag => tag !== tagToRemove);
-        setTags(newTags);
-        handleInputChange({
-            target: {
-                name: 'tags',
-                value: newTags
-            }
-        });
-    };
-
-    // Handle learning outcomes
+    /* Learning Outcomes handlers */
     const addLearningOutcome = () => {
         const newOutcomes = [...learningOutcomes, ''];
         setLearningOutcomes(newOutcomes);
-        handleInputChange({
-            target: {
-                name: 'learningOutcomes',
-                value: newOutcomes
-            }
-        });
+        handleInputChange({ target: { name: 'learningOutcomes', value: newOutcomes } });
     };
 
     const removeLearningOutcome = (index) => {
         const newOutcomes = learningOutcomes.filter((_, i) => i !== index);
         setLearningOutcomes(newOutcomes);
-        handleInputChange({
-            target: {
-                name: 'learningOutcomes',
-                value: newOutcomes
-            }
-        });
+        handleInputChange({ target: { name: 'learningOutcomes', value: newOutcomes } });
     };
 
     const updateLearningOutcome = (index, value) => {
         const newOutcomes = [...learningOutcomes];
         newOutcomes[index] = value;
         setLearningOutcomes(newOutcomes);
-        handleInputChange({
-            target: {
-                name: 'learningOutcomes',
-                value: newOutcomes
-            }
-        });
-    };
-
-    // Navigation functions
-    const nextStep = () => {
-        if (currentStep < totalSteps) {
-            setCurrentStep(currentStep + 1);
-        }
-    };
-
-    const prevStep = () => {
-        if (currentStep > 1) {
-            setCurrentStep(currentStep - 1);
-        }
+        handleInputChange({ target: { name: 'learningOutcomes', value: newOutcomes } });
     };
 
     const canProceed = () => {
         switch (currentStep) {
             case 1:
-                return newContent.title && newContent.type;
+                return newContent.title && newContent.description && newContent.learningOutcomes.length > 0 && newContent.tags.length > 0 && newContent.prerequisites !== "";
             case 2:
-                return newContent.content;
+                return contentType === "Upload File" ? newContent.primaryFile : newContent.externalResource;
             case 3:
-                return true; // Files are optional
-            case 4:
-                return true; // Metadata is optional
+                return newContent.moduleType && newContent.category && newContent.team 
             default:
-                return false;
+                return true;
         }
     };
 
-    const getStepTitle = () => {
-        switch (currentStep) {
-            case 1:
-                return "Basic Information";
-            case 2:
-                return "Content & Learning Outcomes";
-            case 3:
-                return "Files & Resources";
-            case 4:
-                return "Metadata & Settings";
-            default:
-                return "";
+    /* Tag input handlers */
+    const handleTagInputChange = (e) => setTagInput(e.target.value);
+    const addTag = () => {
+        const trimmedTag = tagInput.trim();
+        if (trimmedTag && !tags.includes(trimmedTag)) {
+            const newTags = [...tags, trimmedTag];
+            setTags(newTags);
+            setTagInput('');
+            handleInputChange({ target: { name: 'tags', value: newTags } });
         }
     };
+    const removeTag = (tagToRemove) => {
+        const newTags = tags.filter(tag => tag !== tagToRemove);
+        setTags(newTags);
+        handleInputChange({ target: { name: 'tags', value: newTags } });
+    };
+    const handleTagInputKeyDown = (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            addTag();
+        }
+    };
+    const dispatch = useDispatch();
+    const handleAddContent = async () => {
+
+
+        try {
+            // Build FormData
+            const formData = new FormData();
+
+            const moduleData = {
+                ...newContent,
+                id: Date.now(), // temporary id
+                status: "Draft",
+                createdDate: new Date().toISOString(),
+            };
+
+            // console.log(moduleData)
+            // ✅ Dispatch or API call with formData
+            dispatch(createContent(moduleData)).then(() => {
+                setShowModal(false);
+            });
+        } catch (err) {
+            
+            console.error("Error uploading content:", err);
+            alert("Upload failed");
+        } finally {
+            
+        }
+    };
+    /* File Preview */
+    const handlePreviewFile = (file) => {
+        if (!file) return;
+        const fileUrl = typeof file === 'string' ? file : URL.createObjectURL(file);
+        window.open(fileUrl, '_blank', 'noopener,noreferrer');
+    };
+
+    const handleRemoveFile = () => {
+        handleInputChange({ target: { name: 'primaryFile', value: null } });
+    };
+    const handleRemoveAdditionalFile = () => {
+        handleInputChange({ target: { name: 'additionalFile', value: null } });
+    };
+
+
+    const nextStep = () => currentStep < totalSteps && setCurrentStep(currentStep + 1);
+    const prevStep = () => currentStep > 1 && setCurrentStep(currentStep - 1);
 
     if (!showModal) return null;
 
     return (
-        <div className="module-overlay">
-            {openPreview && <ModulePreview openPreview={openPreview} onClose={() => setOpenPreview(false)} moduleData={newContent}/>}
+        <div className="module-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
             <div className="module-overlay__content">
+                {/* HEADER */}
                 <div className="module-overlay__header">
                     <div>
-                        <h2 className="module-overlay__title">Add New Module</h2>
+                        <h2 id="modalTitle" className="module-overlay__title">Add New Module</h2>
                         <div className="module-overlay__step-indicator">
-                            Step {currentStep} of {totalSteps}: {getStepTitle()}
+                            Step {currentStep} of {totalSteps}: {currentStep === 1 ? "Basic Information" : currentStep === 2 ? "Files and Resources" : "Configurations & Metadata"}
                         </div>
                     </div>
-                    <button className="module-overlay__close" onClick={() => setShowModal(false)}>
+                    <button
+                        type="button"
+                        className="module-overlay__close"
+                        onClick={() => setShowModal(false)}
+                        aria-label="Close Modal"
+                    >
                         <X size={20} />
                     </button>
                 </div>
 
-                {/* Progress Bar */}
+                {/* PROGRESS BAR */}
                 <div className="module-overlay__progress">
-                    <div 
-                        className="module-overlay__progress-bar" 
+                    <div
+                        className="module-overlay__progress-bar"
                         style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-                    ></div>
+                    />
                 </div>
 
-                <div className="module-overlay__body">
-                    {/* Step 1: Basic Information */}
+                {/* BODY */}
+                <div className="module-overlay__body" style={{ overflowY: 'auto', height: 'calc(100vh - 180px)' }}>
                     {currentStep === 1 && (
                         <div className="module-overlay__step">
-                            <h3 className="module-overlay__step-title">Basic Module Information</h3>
-                            
                             <div className="module-overlay__form-group">
                                 <label className="module-overlay__form-label">
                                     Module Title <span className="module-overlay__required">*</span>
@@ -174,79 +213,32 @@ const GlobalModuleModal = ({ showModal, setShowModal, newContent, handleInputCha
                                     value={newContent.title || ''}
                                     onChange={handleInputChange}
                                     className="module-overlay__form-input"
-                                    placeholder="Enter a clear and descriptive module title"
+                                    placeholder="Enter module title"
                                     required
+                                    autoComplete="off"
                                 />
                             </div>
 
-                            <div className="module-overlay__form-group">
-                                <label className="module-overlay__form-label">
-                                    Module Description <span className="module-overlay__required">*</span>
-                                </label>
-                                <select
-                                    name="type"
-                                    value={newContent.type || ''}
-                                    onChange={handleInputChange}
-                                    className="module-overlay__form-select"
-                                    required
-                                >
-                                    <option value="">Select module type</option>
-                                    <option value="video">Video Module</option>
-                                    <option value="document">Document Module</option>
-                                    <option value="interactive">Interactive Module</option> 
-                                    <option value="theory">Theory Module</option>
-                                </select>
-                            </div>
-
-                            <div className="module-overlay__form-group">
-                                <label className="module-overlay__form-label">Duration (minutes)</label>
-                                <input
-                                    type="number"
-                                    name="duration"
-                                    value={newContent.duration || ''}
-                                    onChange={handleInputChange}
-                                    className="module-overlay__form-input"
-                                    placeholder="Estimated completion time"
-                                    min="1"
-                                />
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Step 2: Content & Learning Outcomes */}
-                    {currentStep === 2 && (
-                        <div className="module-overlay__step">
-                            <h3 className="module-overlay__step-title">Content & Learning Outcomes</h3>
-                            
                             <div className="module-overlay__form-group">
                                 <label className="module-overlay__form-label">
                                     Module Description <span className="module-overlay__required">*</span>
                                 </label>
                                 <textarea
-                                    name="content"
-                                    value={newContent.content || ''}
+                                    name="description"
+                                    value={newContent.description || ''}
                                     onChange={handleInputChange}
                                     rows={4}
                                     className="module-overlay__form-textarea"
-                                    placeholder="Provide a detailed description of what this module covers"
+                                    placeholder="Describe the intent, target audience, and what learners will gain"
                                     required
                                 />
                             </div>
 
                             <div className="module-overlay__form-group">
-                                <label className="module-overlay__form-label">
-                                    Learning Outcomes
-                                </label>
-                                <p className="module-overlay__form-helper">
-                                    Define what learners will be able to do after completing this module
-                                </p>
-                                
+                                <label className="module-overlay__form-label">Learning Outcomes</label>
                                 <div className="module-overlay__learning-outcomes">
                                     {learningOutcomes.map((outcome, index) => (
                                         <div key={index} className="module-overlay__learning-outcome-item">
-                                            <div className="module-overlay__learning-outcome-number">
-                                                {index + 1}
-                                            </div>
                                             <input
                                                 type="text"
                                                 value={outcome}
@@ -259,261 +251,464 @@ const GlobalModuleModal = ({ showModal, setShowModal, newContent, handleInputCha
                                                     type="button"
                                                     onClick={() => removeLearningOutcome(index)}
                                                     className="module-overlay__learning-outcome-remove"
+                                                    aria-label={`Remove learning outcome ${index + 1}`}
                                                 >
                                                     <X size={16} />
                                                 </button>
                                             )}
                                         </div>
                                     ))}
-                                    
                                     <button
                                         type="button"
                                         onClick={addLearningOutcome}
                                         className="module-overlay__add-outcome-btn"
                                     >
-                                        <Plus size={16} />
-                                        Add Learning Outcome
+                                        <Plus size={16} /> Add Learning Outcome
                                     </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Step 3: Files & Resources */}
-                    {currentStep === 3 && (
-                        <div className="module-overlay__step">
-                            <h3 className="module-overlay__step-title">Files & Resources</h3>
-                            
-                            <div className="module-overlay__form-row">
-                                <div className="module-overlay__form-group module-overlay__form-group--half">
-                                    <label className="module-overlay__form-label">Video File</label>
-                                    <p className="module-overlay__form-helper">Upload video content for this module</p>
-                                    <input
-                                        type="file"
-                                        name="videoFile"
-                                        onChange={handleInputChange}
-                                        accept="video/*"
-                                        className="module-overlay__form-file"
-                                    />
-                                    {newContent.videoFile && (
-                                        <div className="module-overlay__file-preview">
-                                            <span className="module-overlay__file-name">
-                                                {newContent.videoFile.name}
-                                            </span>
-                                            <div className="module-overlay__file-actions">
-                                                <button 
-                                                    type="button"
-                                                    className="module-overlay__btn-preview"
-                                                    onClick={() => {
-                                                        const url = URL.createObjectURL(newContent.videoFile);
-                                                        window.open(url, '_blank');
-                                                    }}
-                                                >
-                                                    Preview
-                                                </button>
-                                                <button 
-                                                    type="button"
-                                                    className="module-overlay__btn-remove"
-                                                    onClick={() => handleInputChange({
-                                                        target: { name: 'videoFile', value: null }
-                                                    })}
-                                                >
-                                                    Remove
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="module-overlay__form-group module-overlay__form-group--half">
-                                    <label className="module-overlay__form-label">Document Files</label>
-                                    <p className="module-overlay__form-helper">Upload supporting documents (PDF, DOC, PPT)</p>
-                                    <input
-                                        type="file"
-                                        name="documentFiles"
-                                        onChange={handleInputChange}
-                                        accept=".pdf,.doc,.docx,.txt,.ppt,.pptx"
-                                        multiple
-                                        className="module-overlay__form-file"
-                                    />
-                                    {newContent.documentFiles && newContent.documentFiles.length > 0 && (
-                                        <div className="module-overlay__files-preview">
-                                            {Array.from(newContent.documentFiles).map((file, index) => (
-                                                <div key={index} className="module-overlay__file-preview">
-                                                    <span className="module-overlay__file-name">
-                                                        {file.name}
-                                                    </span>
-                                                    <div className="module-overlay__file-actions">
-                                                        <button 
-                                                            type="button"
-                                                            className="module-overlay__btn-preview"
-                                                            onClick={() => {
-                                                                const url = URL.createObjectURL(file);
-                                                                window.open(url, '_blank');
-                                                            }}
-                                                        >
-                                                            Preview
-                                                        </button>
-                                                        <button 
-                                                            type="button"
-                                                            className="module-overlay__btn-remove"
-                                                            onClick={() => {
-                                                                const newFiles = Array.from(newContent.documentFiles).filter((_, i) => i !== index);
-                                                                handleInputChange({
-                                                                    target: { name: 'documentFiles', files: newFiles.length > 0 ? newFiles : null }
-                                                                });
-                                                            }}
-                                                        >
-                                                            Remove
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
                                 </div>
                             </div>
 
                             <div className="module-overlay__form-group">
-                                <label className="module-overlay__form-label">Additional Resources</label>
-                                <textarea
-                                    name="additionalResources"
-                                    value={newContent.additionalResources || ''}
+                                <label className="module-overlay__form-label">Tags</label>
+                                <input
+                                    type="text"
+                                    value={tagInput}
+                                    onChange={handleTagInputChange}
+                                    onKeyDown={handleTagInputKeyDown}
+                                    className="module-overlay__form-input"
+                                    placeholder="Type a tag and press Enter or comma"
+                                    autoComplete="off"
+                                />
+                                <div className="module-overlay__tags-container">
+                                    {tags.map((tag, index) => (
+                                        <span key={index} className="module-overlay__tag">
+                                            {tag}
+                                            <button
+                                                type="button"
+                                                onClick={() => removeTag(tag)}
+                                                className="module-overlay__tag-remove"
+                                                aria-label={`Remove tag ${tag}`}
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="module-overlay__form-group">
+                                <label className="module-overlay__form-label">Prerequisites</label>
+                                <input
+                                    type="text"
+                                    name="prerequisites"
+                                    value={newContent.prerequisites || ''}
                                     onChange={handleInputChange}
-                                    rows={3}
-                                    className="module-overlay__form-textarea"
-                                    placeholder="Add links to external resources, reading materials, or additional references"
+                                    className="module-overlay__form-input"
+                                    placeholder="Required prior knowledge"
+                                    autoComplete="off"
                                 />
                             </div>
                         </div>
                     )}
 
-                    {/* Step 4: Metadata & Settings */}
-                    {currentStep === 4 && (
+                    {currentStep === 2 && (
                         <div className="module-overlay__step">
-                            <h3 className="module-overlay__step-title">Metadata & Settings</h3>
-                            
-                            <div className="module-overlay__form-group">
-                                <label className="module-overlay__form-label">Tags</label>
-                                <p className="module-overlay__form-helper">Add tags to help organize and search for this module</p>
-                                <div className="module-overlay__tag-input-container">
+                            <div className="module-overlay__content-type-buttons">
+                                <button
+                                    type="button"
+                                    className={`module-overlay__content-type-btn ${contentType === 'Upload File' ? 'active' : ''}`}
+                                    onClick={() => setContentType('Upload File')}
+                                    aria-pressed={contentType === 'Upload File'}
+                                >
+                                    Upload File
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`module-overlay__content-type-btn ${contentType === 'Text / External URL' ? 'active' : ''}`}
+                                    onClick={() => setContentType('Text / External URL')}
+                                    aria-pressed={contentType === 'Text / External URL'}
+                                >
+                                    Text / External URL
+                                </button>
+                            </div>
+
+                            {contentType === 'Upload File' ? (
+                                <div className="module-overlay__form-group">
+                                    <label className="module-overlay__form-label">Upload Files</label>
                                     <input
-                                        type="text"
-                                        value={tagInput}
-                                        onChange={handleTagInputChange}
-                                        onKeyDown={handleTagInputKeyDown}
-                                        className="module-overlay__form-input"
-                                        placeholder="Type a tag and press Enter or comma to add"
+                                        type="file"
+                                        name="primaryFile"
+                                        onChange={handleInputChange}
+                                        style={{ display: 'none' }}
+                                        accept=".pdf,.doc,.docx,.mp4,.mp3,.scorm"
+                                        id="uploadFiles"
                                     />
-                                    <div className="module-overlay__tags-container">
-                                        {tags.map((tag, index) => (
-                                            <span key={index} className="module-overlay__tag">
-                                                {tag}
+                                    {newContent.primaryFile ? (
+                                        <div className="module-overlay__uploaded-file-container">
+                                            <span className="module-overlay__uploaded-file-name" title={typeof newContent.primaryFile === 'string' ? newContent.primaryFile.split('/').pop() : newContent.primaryFile.name}>
+                                                {typeof newContent.primaryFile === 'string' ? newContent.primaryFile.split('/').pop() : newContent.primaryFile.name}
+                                            </span>
+                                            <div className="module-overlay__file-actions">
                                                 <button
                                                     type="button"
-                                                    onClick={() => removeTag(tag)}
-                                                    className="module-overlay__tag-remove"
+                                                    className="module-overlay__btn-preview"
+                                                    onClick={() => handlePreviewFile(newContent.primaryFile)}
+                                                    aria-label="Preview uploaded file"
                                                 >
-                                                    <X size={12} />
+                                                    <EyeIcon size={16} /> Preview
                                                 </button>
-                                            </span>
-                                        ))}
+                                                <button
+                                                    type="button"
+                                                    className="module-overlay__btn-delete"
+                                                    onClick={handleRemoveFile}
+                                                    aria-label="Delete uploaded file"
+                                                >
+                                                    <RiDeleteBin2Fill size={16} /> Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <label htmlFor="uploadFiles" className="module-overlay__upload-label" tabIndex={0} onKeyPress={e => { if (e.key === 'Enter') document.getElementById('uploadFiles').click(); }}>
+                                            <Plus size={16} /> Upload File
+                                        </label>
+                                    )}
+                                    <label className="module-overlay__form-label">Instructions</label>
+                                    <textarea
+                                        name="instructions"
+                                        rows={4}
+                                        value={newContent.instructions || ''}
+                                        onChange={handleInputChange}
+                                        className="module-overlay__form-textarea"
+                                        placeholder="Add instructions for the module"
+                                    />
+                                    <div>
+                                        <label className="module-overlay__form-label">Additional File</label>
+                                        <input
+                                            type="file"
+                                            name="additionalFile"
+                                            onChange={handleInputChange}
+                                            accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.txt"
+                                            style={{ display: 'none' }}
+                                            id="additionalFile"
+                                        />
+                                        {newContent.additionalFile ? (
+                                            <div className="module-overlay__uploaded-file-container">
+                                                <span className="module-overlay__uploaded-file-name" title={typeof newContent.additionalFile === 'string' ? newContent.additionalFile.split('/').pop() : newContent.additionalFile.name}>
+                                                    {typeof newContent.additionalFile === 'string' ? newContent.additionalFile.split('/').pop() : newContent.additionalFile.name}
+                                                </span>
+                                                <div className="module-overlay__file-actions">
+                                                    <button
+                                                        type="button"
+                                                        className="module-overlay__btn-preview"
+                                                        onClick={() => handlePreviewFile(newContent.additionalFile)}
+                                                        aria-label="Preview uploaded file"
+                                                    >
+                                                        <EyeIcon size={16} /> Preview
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="module-overlay__btn-delete"
+                                                        onClick={handleRemoveAdditionalFile}
+                                                        aria-label="Delete uploaded file"
+                                                    >
+                                                        <RiDeleteBin2Fill size={16} /> Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <label htmlFor="additionalFile" className="module-overlay__upload-label" tabIndex={0} onKeyPress={e => { if (e.key === 'Enter') document.getElementById('uploadFiles').click(); }}>
+                                                <Plus size={16} /> Upload Additional File
+                                            </label>
+                                        )}
                                     </div>
                                 </div>
-                            </div>
-
-                            <div className="module-overlay__form-row">
-                                {/* <div className="module-overlay__form-group module-overlay__form-group--half">
-                                    <label className="module-overlay__form-label">Difficulty Level</label>
-                                    <select
-                                        name="difficultyLevel"
-                                        value={newContent.difficultyLevel || ''}
+                            ) : (
+                                <div className="module-overlay__form-group">
+                                    <label className="module-overlay__form-label">Enter Text</label>
+                                    <textarea
+                                        name="text"
+                                        rows={4}
+                                        value={newContent.text || ''}
                                         onChange={handleInputChange}
-                                        className="module-overlay__form-select"
-                                    >
-                                        <option value="">Select difficulty</option>
-                                        <option value="beginner">Beginner</option>
-                                        <option value="intermediate">Intermediate</option>
-                                        <option value="advanced">Advanced</option>
-                                    </select>
-                                </div> */}
+                                        className="module-overlay__form-textarea"
+                                        placeholder="Add text content or paste external URLs (YouTube, websites, documents, etc.)"
+                                    />
+                                    <label className="module-overlay__form-label">External Resource</label>
+                                    <span style={{ display: 'flex', alignItems: 'center' }}>
+                                        <input
+                                            type="text"
+                                            name="externalResource"
+                                            value={newContent.externalResource || ''}
+                                            onChange={handleInputChange}
+                                            className="module-overlay__form-input"
+                                            placeholder="Add external resource URL"
+                                        />
+                                        {isValidUrl && (
+                                            <button
+                                                type="button"
+                                                className="module-overlay__btn-view"
+                                                onClick={() => setShowIframe(!showIframe)}
+                                                aria-expanded={showIframe}
+                                                aria-controls="externalResourceIframe"
+                                            >
+                                                {showIframe ? 'Hide Resource' : 'View Resource'}
+                                            </button>
+                                        )}
+                                    </span>
+                                    {showIframe && (
+                                        <div style={{ marginTop: '16px', height: '300px', border: '1px solid #ddd', borderRadius: '8px', overflow: 'hidden' }}>
+                                            <iframe
+                                                id="externalResourceIframe"
+                                                src={newContent.externalResource}
+                                                title="External Resource Preview"
+                                                width="100%"
+                                                height="100%"
+                                                style={{ border: 'none' }}
+                                                sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                                            />
+                                        </div>
+                                    )}
+                                    <label className="module-overlay__form-label">Instructions</label>
+                                    <textarea
+                                        name="instructions"
+                                        rows={4}
+                                        value={newContent.instructions || ''}
+                                        onChange={handleInputChange}
+                                        className="module-overlay__form-textarea"
+                                        placeholder="Add instructions for the module"
+                                    />
+                                    <div>
+                                        <label className="module-overlay__form-label">Additional File</label>
+                                        <input
+                                            type="file"
+                                            name="additionalFile"
+                                            onChange={handleInputChange}
+                                            accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.txt"
+                                            style={{ display: 'none' }}
+                                            id="additionalFile"
+                                        />
+                                        {newContent.additionalFile ? (
+                                            <div className="module-overlay__uploaded-file-container">
+                                                <span className="module-overlay__uploaded-file-name" title={typeof newContent.additionalFile === 'string' ? newContent.additionalFile.split('/').pop() : newContent.additionalFile.name}>
+                                                    {typeof newContent.additionalFile === 'string' ? newContent.additionalFile.split('/').pop() : newContent.additionalFile.name}
+                                                </span>
+                                                <div className="module-overlay__file-actions">
+                                                    <button
+                                                        type="button"
+                                                        className="module-overlay__btn-preview"
+                                                        onClick={() => handlePreviewFile(newContent.additionalFile)}
+                                                        aria-label="Preview uploaded file"
+                                                    >
+                                                        <EyeIcon size={16} /> Preview
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="module-overlay__btn-delete"
+                                                        onClick={handleRemoveAdditionalFile}
+                                                        aria-label="Delete uploaded file"
+                                                    >
+                                                        <RiDeleteBin2Fill size={16} /> Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <label htmlFor="additionalFile" className="module-overlay__upload-label" tabIndex={0} onKeyPress={e => { if (e.key === 'Enter') document.getElementById('uploadFiles').click(); }}>
+                                                <Plus size={16} /> Upload Additional File
+                                            </label>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
-                                <div className="module-overlay__form-group module-overlay__form-group--half">
-                                    <label className="module-overlay__form-label">Prerequisites</label>
+                    {currentStep === 3 && (
+                        <div className="module-overlay__step">
+                            <div className="module-overlay__form-row">
+                                <div className="module-overlay__form-group" style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <label className="module-overlay__form-label">
+                                        Duration (in minutes) <span className="module-overlay__required">*</span>
+                                    </label>
                                     <input
-                                        type="text"
-                                        name="prerequisites"
-                                        value={newContent.prerequisites || ''}
+                                        type="number"
+                                        name="duration"
+                                        min="1"
+                                        value={newContent.duration || ''}
                                         onChange={handleInputChange}
                                         className="module-overlay__form-input"
-                                        placeholder="Required prior knowledge"
+                                        required
+                                        placeholder="e.g., 60"
+                                        autoComplete="off"
                                     />
+                                </div>
+
+                                {/* <div className="module-overlay__form-group" style={{ flex: 1, minWidth: 0, marginRight: '1rem' }}>
+                                    <label className="module-overlay__form-label">Created By</label>
+                                    <input
+                                        type="text"
+                                        name="createdBy"
+                                        value={newContent.createdBy || ''}
+                                        onChange={handleInputChange}
+                                        className="module-overlay__form-input"
+                                        placeholder="Your name"
+                                        autoComplete="off"
+                                    />
+                                </div> */}
+
+                                <div className="module-overlay__form-group" style={{ flex: 1, minWidth: 0 }}>
+                                    <label className="module-overlay__form-label">
+                                        Training Type <span className="module-overlay__required">*</span>
+                                    </label>
+                                    <select
+                                        name="trainingType"
+                                        value={newContent.trainingType || ''}
+                                        onChange={handleInputChange}
+                                        className="module-overlay__form-select"
+                                        required
+                                    >
+                                        <option value="">Select Training Type</option>
+                                        {trainingTypes.map((type) => (
+                                            <option key={type} value={type}>
+                                                {type}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
 
                             <div className="module-overlay__form-group">
-                                <label className="module-overlay__form-label">Module Summary</label>
-                                
-                                <div className="module-overlay__summary">
-                                    <div className="module-overlay__summary-item">
-                                        <strong>Title:</strong> {newContent.title || 'Not specified'}
-                                    </div>
-                                    <div className="module-overlay__summary-item">
-                                        <strong>Type:</strong> {newContent.type || 'Not specified'}
-                                    </div>
-                                    <div className="module-overlay__summary-item">
-                                        <strong>Duration:</strong> {newContent.duration ? `${newContent.duration} minutes` : 'Not specified'}
-                                    </div>
-                                    <div className="module-overlay__summary-item">
-                                        <strong>Learning Outcomes:</strong> {learningOutcomes.filter(o => o.trim()).length} defined
-                                    </div>
-                                    <button type="button" style={{ marginTop: '1rem', backgroundColor: '#007bff', color: '#fff', border: 'none', padding: '0.5rem 1rem', cursor: 'pointer', borderRadius: '4px'}} onClick={() => setOpenPreview(true)}>
-                                    Preview Module
-                                    </button>
+                                <label className="module-overlay__form-label">
+                                    Category <span className="module-overlay__required">*</span>
+                                </label>
+                                <select
+                                    name="category"
+                                    value={newContent.category || ''}
+                                    onChange={handleInputChange}
+                                    className="module-overlay__form-select"
+                                    required
+                                >
+                                    <option value="">Select Category</option>
+                                    {categories.map((cat) => (
+                                        <option key={cat} value={cat}>
+                                            {cat}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className='module-overlay__form-row'>
+                                <div className="module-overlay__slider-row">
+                                    <label className="module-overlay__form-label slider-label">
+                                        <span className="slider-label-text">Credits</span>
+                                        <span className="slider-value">{newContent.credits || 0}</span>
+                                        <input
+                                            type="range"
+                                            name="credits"
+                                            min="0"
+                                            max="9"
+                                            value={newContent.credits || 0}
+                                            onChange={handleInputChange}
+                                            className="module-overlay__slider"
+                                        />
+                                    </label>
+                                    <label className="module-overlay__form-label slider-label">
+                                        <span className="slider-label-text">Stars</span>
+                                        <span className="slider-value">{newContent.stars || 0}</span>
+                                        <input
+                                            type="range"
+                                            name="stars"
+                                            min="0"
+                                            max="9"
+                                            value={newContent.stars || 0}
+                                            onChange={handleInputChange}
+                                            className="module-overlay__slider"
+                                        />
+                                    </label>
+                                    <label className="module-overlay__form-label slider-label">
+                                        <span className="slider-label-text">Badges</span>
+                                        <span className="slider-value">{newContent.badges || 0}</span>
+                                        <input
+                                            type="range"
+                                            name="badges"
+                                            min="0"
+                                            max="9"
+                                            value={newContent.badges || 0}
+                                            onChange={handleInputChange}
+                                            className="module-overlay__slider"
+                                        />
+                                    </label>
                                 </div>
+                            </div>
+
+                            <div className="module-overlay__form-group">
+                                <label className="module-overlay__form-label">
+                                    Target Team/Sub Team <span className="module-overlay__required">*</span>
+                                </label>
+                                <select
+                                    name="team"
+                                    value={newContent.team || ''}
+                                    onChange={handleInputChange}
+                                    className="module-overlay__form-select"
+                                    required
+                                >
+                                    <option value="">Select Team/Sub Team</option>
+                                    {teams.map((team) => (
+                                        <option key={team} value={team}>
+                                            {team}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="module-overlay__form-group">
+                                <label className="module-overlay__form-label module-overlay__checkbox">
+                                    <input
+                                        type="checkbox"
+                                        name="feedbackEnabled"
+                                        checked={!!newContent.feedbackEnabled}
+                                        onChange={(e) =>
+                                            handleInputChange({ target: { name: 'feedbackEnabled', value: e.target.checked } })
+                                        }
+                                    />
+                                    Allow learners to submit feedback and reactions
+                                </label>
+                            </div>
+                            <div className="module-overlay__form-group" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                <button className='module-overlay__btn-save'>Save Draft</button>
+                                <button className='module-overlay__btn-preview'>Preview</button>
                             </div>
                         </div>
                     )}
                 </div>
 
-                {/* Footer with Navigation */}
+                {/* FOOTER ACTIONS */}
                 <div className="module-overlay__footer">
                     <div className="module-overlay__step-navigation">
                         {currentStep > 1 && (
-                            <button
-                                type="button"
-                                className="module-overlay__btn-prev"
-                                onClick={prevStep}
-                            >
-                                <ChevronLeft size={16} />
-                                Previous
+                            <button type="button" className="module-overlay__btn-prev" onClick={prevStep} aria-label="Previous Step">
+                                <ChevronLeft size={16} /> Previous
                             </button>
                         )}
-                        
-                        <div className="module-overlay__step-dots">
+                        <div className="module-overlay__step-dots" aria-label="Step Progress">
                             {[...Array(totalSteps)].map((_, index) => (
                                 <div
                                     key={index}
                                     className={`module-overlay__step-dot ${index + 1 <= currentStep ? 'active' : ''}`}
-                                ></div>
+                                    aria-current={index + 1 === currentStep ? "step" : undefined}
+                                />
                             ))}
                         </div>
-                        
-                        <div className="module-overlay__action-buttons">
-                            <button
-                                type="button"
-                                className="module-overlay__btn-cancel"
-                                onClick={() => setShowModal(false)}
-                            >
+                        <div className="module-overlay__action-buttons" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                            <button className="module-overlay__btn-cancel" onClick={() => setShowModal(false)} aria-label="Cancel " disabled={uploading}>
                                 Cancel
                             </button>
-                            
                             {currentStep < totalSteps ? (
                                 <button
                                     type="button"
                                     className="module-overlay__btn-next"
                                     onClick={nextStep}
-                                    disabled={!canProceed()}
+                                    disabled={!canProceed() || uploading}
+                                    aria-label="Next Step"
+                                    
                                 >
                                     Next
                                     <ChevronRight size={16} />
@@ -523,8 +718,10 @@ const GlobalModuleModal = ({ showModal, setShowModal, newContent, handleInputCha
                                     type="button"
                                     className="module-overlay__btn-add"
                                     onClick={handleAddContent}
+                                    disabled={uploading}
+                                    aria-label="Create Module"
                                 >
-                                    Create Module
+                                    {uploading ?(<CustomLoader2 size={16} color="#5570f1" strokeWidth={3} />): 'Create Module'}
                                 </button>
                             )}
                         </div>

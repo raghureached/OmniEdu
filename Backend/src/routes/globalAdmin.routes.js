@@ -37,11 +37,11 @@ router.route('/addPermissions').post(addPermissions)
 router.route('/getPermissions').get(getPermissions)
 //////////////Global Content////////////
 
-router.route('/addContent').post(uploadContent.fields([{name:'videoFile',maxCount:1},{name:'documentFiles',maxCount:5}]),uploadMultipleToCloudinary,addContent)
+router.route('/addContent').post(uploadContent.fields([{name:'primaryFile',maxCount:1},{name:'additionalFile',maxCount:1}]),uploadMultipleToCloudinary,addContent)
 router.route('/getContent').get(getContent)
 router.route('/getContentById/:id').get(getContentById)
 //Some changes
-router.route('/editContent/:id').put(uploadContent.fields([{name:'videoFile',maxCount:1},{name:'documentFiles',maxCount:5}]),uploadMultipleToCloudinary,editContent)
+router.route('/editContent/:id').put(uploadContent.fields([{name:'primaryFile',maxCount:1},{name:'additionalFile',maxCount:1}]),uploadMultipleToCloudinary,editContent)
 router.route('/deleteContent/:id').delete(deleteContent)
 
 /////////////Global Assesments////////////
@@ -88,11 +88,8 @@ router.route('/fetchAssignments').get(fetchAssignments)
 
 //////Activity Log//////
 router.route('/getActivityLog').get(getGlobalAdminActivity)
-
-
 router.route('/getGlobalProfile').get(getGlobalProfile)
 router.route('/changeGlobalPassword').put(changeGlobalPassword)
-
 
 
 //////////Admin Dashboard//////////

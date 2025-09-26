@@ -323,7 +323,7 @@ const AddOrganizationModal = ({
                   >
                     <input 
                       type="file" 
-                      accept="image/*" 
+                      accept="image/png, image/jpeg, image/jpg" 
                       className="addOrg-file-input"
                       id="logo-upload"
                       onChange={handleLogoUpload}
@@ -348,9 +348,9 @@ const AddOrganizationModal = ({
                   </label>
                   <p className="addOrg-upload-desc">
                     {key === "invoice"
-                      ? "Upload invoice document (PDF, DOC, etc). Required."
+                      ? "Upload invoice document (PDF). Required."
                       : key === "receipt"
-                        ? "Upload payment receipt document. Required."
+                        ? "Upload payment receipt document (PDF). Required."
                         : "Additional document"}
                   </p>
                 </div>
@@ -398,6 +398,7 @@ const AddOrganizationModal = ({
                       <input 
                         type="file" 
                         className="addOrg-file-input"
+                        accept="application/pdf"
                         id={`doc-upload-${key}`}
                         onChange={handleDocumentChange(key)}
                         required={!editMode}

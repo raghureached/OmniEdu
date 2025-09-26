@@ -18,25 +18,45 @@ const GlobalModuleSchema = new mongoose.Schema(
       type: [String],
       default: []
     },
-    type: {
-      type: String,
-      required: true,
-    },
-    content: {
+    primaryFile: {
       type: String,
       default: null,
     },
-    video_url: {
+    additionalFile: {
       type: String,
       default: null,
     },
-    doc_url:{
-      type: [String],
+    trainingType: {
+      type: String,
       default: null,
     },
-    additional_resources:{
-      type: [String],
-      default: []
+    team: {
+      type: String,
+      default: null,
+    },
+    category: {
+      type: String,
+      default: null,
+    },
+    badges: {
+      type: String,
+      default: null,
+    },
+    stars: {
+      type: String,
+      default: null,
+    },
+    enableFeedback: {
+      type: Boolean,
+      default: false,
+    },
+    externalResource: {
+      type: String,
+      default: null,
+    },
+    description: {
+      type: String,
+      default: null,
     },
     learning_outcomes:{
       type: [String],
@@ -55,8 +75,8 @@ const GlobalModuleSchema = new mongoose.Schema(
       default: 0,
     },
     created_by: {
-      type: String,
-      ref: "Users",
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "GlobalAdmin",
       default: null,
     },
     status: {

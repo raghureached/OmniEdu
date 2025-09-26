@@ -46,7 +46,7 @@ const upload = multer({ storage: diskStorageUploads,
   },
   fileFilter: (req, file, cb) => {
     // Optional: restrict file types
-    const allowed = ["image/jpeg", "image/png", "application/pdf"];
+    const allowed = ["image/jpeg", "image/png", "application/pdf","image/svg+xml"];
     if (!allowed.includes(file.mimetype)) {
       return cb(new Error("Only JPEG, PNG, and PDF files are allowed"), false);
     }
@@ -61,7 +61,7 @@ const upload = multer({ storage: diskStorageUploads,
  
  const diskStorageContent = multer.diskStorage({
    destination: function (req, file, cb) {
-     console.log("file",file)
+    //  console.log("file",file)
      ensureFolder(contentDir);
      cb(null, contentDir);
    },

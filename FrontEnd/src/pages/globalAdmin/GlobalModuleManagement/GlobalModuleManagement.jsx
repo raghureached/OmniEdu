@@ -20,14 +20,19 @@ const GlobalModuleManagement = () => {
   const [editContentId, setEditContentId] = useState(null);
   const [newContent, setNewContent] = useState({
     title: "",
-    type: "",
-    content: "",
     duration: "",
     tags: [],
     learningOutcomes: [''],
-    additionalResources: "",
-    difficultyLevel: "",
-    prerequisites: ""
+    prerequisites: "",
+    credits: 0,
+    stars: 0,
+    badges: 0,
+    team: "",
+    category: "",
+    trainingType: "",
+    instructions: "",
+    externalResource: "",
+    enableFeedback: false,
   });
   const [uploading, setUploading] = useState(false)
   const navigate = useNavigate()
@@ -61,17 +66,17 @@ const GlobalModuleManagement = () => {
     setCurrentPage(pageNumber);
   };
   const handleInputChange = (e) => {
-    const { name, value, files } = e.target;
-    
-    if (files) {
-      if (name === "videoFile") {
-        setNewContent({ ...newContent, videoFile: files[0] });
-      } else if (name === "documentFiles") {
-        setNewContent({ ...newContent, [name]: files });
-      }
-    }else{
-      setNewContent({ ...newContent, [name]: value });
+    const { name, value, files, type, checked } = e.target;
+    // console.log(name, value, files, type, checked)
+    if (type === 'checkbox') {
+      setNewContent(prev => ({ ...prev, [name]: checked }));
+      return;
     }
+    if (type === 'file') {
+      setNewContent(prev => ({ ...prev, [name]: files[0] }));
+      return;
+    }
+    setNewContent(prev => ({ ...prev, [name]: value }));
   };
   
   const handleOpenContent = (contentId) => {
@@ -82,11 +87,7 @@ const GlobalModuleManagement = () => {
   };
 
   const handleAddContent = async () => {
-    if (!newContent.title || !newContent.type || !newContent.content) {
-      alert("Please fill all required fields");
-      return;
-    }
-  
+    
     setUploading(true);
   
     try {
@@ -100,41 +101,12 @@ const GlobalModuleManagement = () => {
         createdDate: new Date().toISOString(),
       };
   
-      // Append fields properly
-      Object.entries(moduleData).forEach(([key, value]) => {
-        if (key === "documentFiles" && value && value.length > 0) {
-          Array.from(value).forEach((file) => {
-            formData.append("documentFiles", file);
-          });
-        } else if (key === "videoFile" && value) {
-          formData.append("videoFile", value);
-        } else if (Array.isArray(value)) {
-          // For arrays like tags, learningOutcomes
-          value.forEach((item) => formData.append(`${key}[]`, item));
-        } else if (value !== undefined && value !== null) {
-          formData.append(key, value);
-        }
-      });
-  
+      // console.log(moduleData)
       // ✅ Dispatch or API call with formData
-      dispatch(createContent(formData));
-  
-      // Close modal & reset form if needed
-      // setShowModal(false);
-      // setNewContent({
-      //   title: "",
-      //   type: "",
-      //   content: "",
-      //   duration: "",
-      //   tags: [],
-      //   learningOutcomes: [""],
-      //   additionalResources: "",
-      //   difficultyLevel: "",
-      //   prerequisites: "",
-      //   videoFile: null,
-      //   documentFiles: [],
-      // });
+      dispatch(createContent(moduleData))
+      
     } catch (err) {
+      setUploading(false)
       console.error("Error uploading content:", err);
       alert("Upload failed");
     } finally {
@@ -145,13 +117,21 @@ const GlobalModuleManagement = () => {
     setNewContent({
       title: content.title,
       type: content.type,
-      content: content.content,
       duration: content.duration || "",
       tags: content.tags || [],
       learningOutcomes: content.learningOutcomes || [''],
-      additionalResources: content.additionalResources || "",
+      additionalResources: content.additionalResources || null,
       difficultyLevel: content.difficultyLevel || "",
-      prerequisites: content.prerequisites || ""
+      prerequisites: content.prerequisites || "",
+      credits: content.credits || 0,
+      stars: content.stars || 0,
+      badges: content.badges || 0,
+      team: content.team || "",
+      category: content.category || "",
+      trainingType: content.trainingType || "",
+      instructions: content.instructions || "",
+      externalResource: content.externalResource || "",
+      enableFeedback: !!content.enableFeedback,
     });
     setEditContentId(content.uuid);
     setShowEditModal(true);
@@ -169,21 +149,26 @@ const GlobalModuleManagement = () => {
     setNewContent({
       title: "",
       type: "",
-      content: "",
       duration: "",
       tags: [],
       learningOutcomes: [''],
-      additionalResources: "",
-      difficultyLevel: "",
-      prerequisites: ""
+      additionalFile: null,
+      primaryFile: null,
+      prerequisites: "",
+      credits: 0,
+      stars: 0,
+      badges: 0,
+      team: "",
+      category: "",
+      trainingType: "",
+      instructions: "",
+      externalResource: "",
+      enableFeedback: false,
     });
   };
-  if (uploading) {
-    return <LoadingScreen text={"Uploading Global Content..."} />
-  }
-  if (loading) {
-    return <LoadingScreen text={"Loading Global Content..."} />
-  }
+  // if (loading && !uploading) {
+  //   return <LoadingScreen text={"Loading Global Content..."} />
+  // }
   const assessments = items?.filter(item => item.type === "assessment") || [];
   return (
     <div className="global-content-management">
@@ -228,7 +213,7 @@ const GlobalModuleManagement = () => {
           <button className="btn-primary" onClick={() => handleOpenModal()}> + Add Module</button>
         </div>
       </div>
-      {showModal && <GlobalModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} />}
+      {showModal && <GlobalModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading}/>}
       {showEditModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -308,7 +293,7 @@ const GlobalModuleManagement = () => {
           <thead>
             <tr>
               <th>Title</th>
-              <th>Type</th>
+              <th>Credits</th>
               <th>Status</th>
               <th>Organizations</th>
               <th>Created Date</th>
@@ -319,7 +304,7 @@ const GlobalModuleManagement = () => {
             {currentContent.map((content) => (
               <tr key={content.id}>
                 <td style={{ cursor: "pointer" }} onClick={() => handleOpenContent(content.uuid)}>{content.title}</td>
-                <td>{content.type}</td>
+                <td>{content.credits}</td>
                 <td>
                   <span className={`status-badge ${content.status === 'Published' ? 'active' : 'inactive'}`}>
                     {content.status === 'Published' ? '✓ Published' : 'Draft'}
