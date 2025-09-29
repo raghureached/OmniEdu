@@ -50,6 +50,10 @@ const GlobalCreateAssignment = () => {
             [name]: type === 'checkbox' ? checked : value
         });
     };
+    const getDuration = (item) => {
+        const contentItem = allContentItems.find((contentItem) => contentItem.uuid === item)
+        return contentItem?.duration + " minutes"
+    }
 
     const handleContentSelection = (item) => {
         setFormData({
@@ -67,7 +71,6 @@ const GlobalCreateAssignment = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         dispatch(createGlobalAssignment(formData));
-
         setFormData({
             contentType: '',
             contentId: '',
@@ -204,7 +207,10 @@ const GlobalCreateAssignment = () => {
                     {/* Step 3: Set Dates */}
                     {currentStep === 3 && (
                         <div className="global-assign-assignment-step-content">
+                            <div style={{display: "flex", justifyContent: "space-between"}}>
                             <h2 className="global-assign-step-title">Step 3: Set Overall Dates</h2>
+                            <p style={{color: "#666", fontSize: "14px",fontWeight: "bold"}}>Selected content duration: {getDuration(formData.contentId)}</p>
+                            </div>
                             <div className="global-assign-dates-container">
 
                                 <div className="global-assign-date-field">
@@ -255,6 +261,7 @@ const GlobalCreateAssignment = () => {
                                         <AddOrgDateRangePickerSingle
                                             title="Select Due Date"
                                             isEndDate
+                                            minDate={formData.assignDate ? new Date(formData.assignDate) : null}
                                             startDate={formData.assignDate ? new Date(formData.assignDate) : null}
                                             selectedDate={formData.dueDate ? new Date(formData.dueDate) : null}
                                             onDateChange={(date) =>

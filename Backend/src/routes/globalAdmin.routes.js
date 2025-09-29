@@ -1,6 +1,6 @@
 const {addOrganization, editOrganization, deleteOrganization, getOrganizations, getOrganizationById, deleteOrganizations} = require("../controllers/globalAdmin.controller/globalAdmin_organization");
 const {addRole, editRole, deleteRole, getRoles, addPermissions, getPermissions, createRole, editOrgRole} = require("../controllers/globalAdmin.controller/globalAdmin_Roles");
-const {addContent, editContent, deleteContent, getContent, getContentById} = require("../controllers/globalAdmin.controller/globalAdmin_Module");
+const {addContent, editContent, deleteContent, getContent, getContentById, bulkDelete} = require("../controllers/globalAdmin.controller/globalAdmin_Module");
 const {createSurvey, editSurvey, deleteSurvey, getSurveys, getSurvey} = require("../controllers/globalAdmin.controller/globalAdmin_Surveys");
 const {upload,uploadContent, uploadAssessment} = require("../middleware/multer_middleware");
 const { uploadMultipleToCloudinary, uploadToCloudinary } = require("../utils/uploadOnCloud");
@@ -27,6 +27,7 @@ const {
     fileUploadMiddleware,
     fileUploadHandler,
   } = require("../controllers/globalAdmin.controller/globalAdmin_Assessments");
+const { getTeams } = require("../controllers/globalAdmin.controller/globalAdmin_Teams");
 
 const router = require("express").Router();
 
@@ -51,13 +52,13 @@ router.route('/addPermissions').post(addPermissions)
 router.route('/getPermissions').get(getPermissions)
 //////////////Global Content////////////
 
-router.route('/addContent').post(uploadContent.fields([{name:'primaryFile',maxCount:1},{name:'additionalFile',maxCount:1}]),uploadMultipleToCloudinary,addContent)
+router.route('/addContent').post(uploadContent.fields([{name:'primaryFile',maxCount:1},{name:'additionalFile',maxCount:1},{name:'thumbnail',maxCount:1}]),uploadMultipleToCloudinary,addContent)
 router.route('/getContent').get(getContent)
 router.route('/getContentById/:id').get(getContentById)
 //Some changes
-router.route('/editContent/:id').put(uploadContent.fields([{name:'primaryFile',maxCount:1},{name:'additionalFile',maxCount:1}]),uploadMultipleToCloudinary,editContent)
+router.route('/editContent/:id').put(uploadContent.fields([{name:'primaryFile',maxCount:1},{name:'additionalFile',maxCount:1},{name:'thumbnail',maxCount:1}]),uploadMultipleToCloudinary,editContent)
 router.route('/deleteContent/:id').delete(deleteContent)
-
+router.route('/bulkDeleteContent').delete(bulkDelete)
 /////////////Global Assesments////////////
 
 router.route('/createAssessment').post(createAssessment)
@@ -117,6 +118,10 @@ router.route('/getAdminDashboardPermissions').get(getAdminDashboardPermissions)
 router.route('/updateUserDashBoardConfig/:id').put(updateUserDashBoardConfig)
 router.route('/getUserDashBoardConfig/:id').get(getUserDashBoardConfig)
 router.route('/getUserDashBoardPermissions').get(getUserDashBoardPermissions)
+
+
+///////getTeams////////
+router.route('/getTeams').get(getTeams)
 
 
 module.exports = router;

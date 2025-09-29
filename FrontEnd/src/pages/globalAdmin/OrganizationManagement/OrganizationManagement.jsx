@@ -208,6 +208,15 @@ useEffect(() => {
       })
     );
   };
+  const getStatus = (org) => {
+    const today = new Date();
+    const endDate = new Date(org.end_date);
+    if (endDate < today) {
+      return "Expired";
+    } else {
+      return "Active";
+    }
+  };
 
   const resetFilters = () => {
     dispatch(clearFilters());
@@ -383,7 +392,8 @@ useEffect(() => {
               </div>
 
               {currentpages.map((org) => (
-                <div key={org.id} className="table-row">
+                <div key={org.id} className={`table-row`}>
+                  {/* <span style={{color: "#FF0000", fontWeight: "bold",position: "absolute", left: "0", top: "0"}}>Expired</span> */}
                   <input
                     type="checkbox"
                     checked={selectedItems.includes(org.uuid)}
@@ -435,7 +445,7 @@ useEffect(() => {
                       {org.status === "Active" ? "✓ Active" : "✕ Inactive"}
                     </span>
                   </div>
-                  <div className="purchase-cell">{org.planName}</div>
+                  <div className="purchase-cell" style={{textTransform: "capitalize"}}>{org.planName}</div>
 
                   <div className="actions-cell">
                     <button

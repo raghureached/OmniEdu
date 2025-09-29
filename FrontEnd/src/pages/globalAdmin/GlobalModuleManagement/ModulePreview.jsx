@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Play, FileText, Clock, Award, Calendar, Tag, Globe, Eye, Download, X, Star, Users, BookOpen, Target, CheckCircle, ExternalLink, MessageCircle, Zap } from 'lucide-react';
 import './ModulePreview.css';
+import { useParams } from 'react-router-dom';
 
 const ModulePreview = ({ moduleData, onClose }) => {
   const [isVisible, setIsVisible] = useState(false);
-
+  // console.log(moduleData);
+  const moduleId = useParams();
+  console.log(moduleId)
   useEffect(() => {
     setIsVisible(true);
     document.body.style.overflow = 'hidden';

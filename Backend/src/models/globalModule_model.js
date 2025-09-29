@@ -31,7 +31,8 @@ const GlobalModuleSchema = new mongoose.Schema(
       default: null,
     },
     team: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Team",
       default: null,
     },
     category: {
@@ -82,15 +83,27 @@ const GlobalModuleSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    submissionEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    feedbackEnabled: {
+      type: Boolean,
+      default: false,
+    },
     created_by: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "GlobalAdmin",
       default: null,
     },
+    thumbnail: {
+      type: String,
+      default: null,
+    },
     status: {
       type: String,
-      enum: ["Published", "Draft"],
-      default: "Draft",
+      enum: ["Published", "Saved"],
+      default: "Saved",
     },
   },
   {

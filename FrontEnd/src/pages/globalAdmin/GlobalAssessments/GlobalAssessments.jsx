@@ -11,6 +11,7 @@ const GlobalAssessments = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [currentAssessment, setCurrentAssessment] = useState(null);
+  const [selectedItems, setSelectedItems] = useState([]);
  
   // const [formData, setFormData] = useState({
   //   title: '',
@@ -80,6 +81,13 @@ const GlobalAssessments = () => {
       instructions: ''
     }]);
     setShowForm(true);
+  };
+  const handleSelectAll = () => {
+    if(selectedItems.length === assessments.length){
+      setSelectedItems([]);
+      return;
+    }
+    setSelectedItems(assessments.map(a => a.uuid));
   };
 
   const handleEditAssessment = async (assessment) => {
@@ -315,6 +323,15 @@ const GlobalAssessments = () => {
       ];
     });
   };
+  const handleSelectItem = (item)=>{
+    setSelectedItems(prev => {
+      if (prev.includes(item)) {
+        return prev.filter(i => i !== item);
+      } else {
+        return [...prev, item];
+      }
+    });
+  }
 
   const handleFileUpload = async (e, qIndex) => {
     const file = e.target.files[0];
@@ -409,6 +426,7 @@ const GlobalAssessments = () => {
             <table className="assess-table">
               <thead>
                 <tr>
+                  <th><input type="checkbox" onChange={handleSelectAll} checked={selectedItems.length === assessments.length} /></th>
                   <th>Assessment Details</th>
                   <th>Questions</th>
                   <th>Status</th>
@@ -422,6 +440,7 @@ const GlobalAssessments = () => {
                               a.description?.toLowerCase().includes(searchTerm.toLowerCase()))
                   .map(assessment => (
                     <tr key={assessment.id} className="assess-table-row">
+                      <td><input type="checkbox" onChange={() => handleSelectItem(assessment.uuid)} checked={selectedItems.includes(assessment.uuid)} /></td>
                       <td>
                         <div className="assess-cell-content">
                           <div className="assess-title-container">

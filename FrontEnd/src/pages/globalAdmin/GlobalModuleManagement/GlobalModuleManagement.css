@@ -16,8 +16,28 @@
     align-items: flex-start;
     gap: 32px;
   }
-  .inactive{
-    background-color: gray;
+  .saved{
+    background-color: limegreen;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-block;
+  }
+  .bulk-action-panel-module{
+    position: absolute;
+    top: 40px;
+    right: 200px;
+    background-color: #f7faff;
+    border-radius: 12px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .published{
+    background-color: #5570F1;
     color: white;
     padding: 2px 8px;
     border-radius: 12px;

@@ -49,8 +49,10 @@ const addContent = async (req, res) => {
     //     errors: parsed.error.flatten(),
     //   });
     // }
-
-    const { title,trainingType,team,category,instructions, badges,stars,credits,description,enableFeedback,externalResource, pushable_to_orgs, tags, duration,learningOutcomes,prerequisites } = req.body;
+    const primaryFile = req.uploadedFiles?.primaryFile[0]?.url;
+    const additionalFile = req.uploadedFiles?.additionalFile[0]?.url;
+    const thumbnail = req.uploadedFiles?.thumbnail[0]?.url;
+    const { title,trainingType,team,category,submissionEnabled,feedbackEnabled,instructions, badges,stars,credits,description,enableFeedback,externalResource, pushable_to_orgs, tags, duration,learningOutcomes,prerequisites } = req.body;
     const created_by = req.user?._id || null;
     const newModule = new GlobalModule({
       title,
@@ -58,13 +60,16 @@ const addContent = async (req, res) => {
       trainingType,
       team,
       category,
+      submissionEnabled,
+      feedbackEnabled,
       badges,
       stars,
       credits,
       enableFeedback,
       externalResource,
-      primaryFile:req.uploadedFiles?.primaryFile[0].url,
-      additionalFile:req.uploadedFiles?.additionalFile[0].url,
+      primaryFile,
+      additionalFile,
+      thumbnail,
       pushable_to_orgs,
       learning_outcomes:learningOutcomes,
       prerequisites:prerequisites.split(","),
@@ -96,7 +101,7 @@ const getContent = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = 50;
     const skip = (page - 1) * limit;
-    const content = await GlobalModule.find().skip(skip).limit(limit)
+    const content = await GlobalModule.find().populate("team").skip(skip).limit(limit)
     const total = await GlobalModule.countDocuments()
     // await logGlobalAdminActivity(req,"Get Content","content", `Content fetched successfully ${content.title}`)
     return res.status(200).json({
@@ -122,17 +127,26 @@ const getContent = async (req, res) => {
 
 const getContentById = async (req, res) => {
   try {
-    const content = await GlobalModule.findOne({ uuid: req.params.id });
+    const content = await GlobalModule.findOne({ uuid: req.params.id }).populate("team").populate("created_by");
     // await logGlobalAdminActivity(req,"Get Content","content",`Module fetched successfully ${content.title}`)
     return res.status(200).json({ success: true, message: 'Module fetched successfully.', data: content });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to fetch module.', error: error.message });
   } 
 }
-
+const bulkDelete = async(req,res) => {
+  try {
+    // console.log(req.body)
+    const deletedModules = await GlobalModule.deleteMany({ uuid: { $in: req.body } })
+    await logGlobalAdminActivity(req,"Bulk Delete Content","content",`Content deleted successfully ${deletedModules.deletedCount}`)
+    return res.status(200).json({ success: true, message: 'Content deleted successfully.', data: deletedModules })
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to delete content.', error: error.message })
+  }
+}
 const editContent = async (req, res) => {
   try {
-    const { title, type, content, file_url, is_active, pushable_to_orgs } = req.body;
+    const { title,trainingType,team,category,submissionEnabled,feedbackEnabled,instructions, badges,stars,credits,description,enableFeedback,externalResource, pushable_to_orgs, tags, duration,learningOutcomes,prerequisites,primaryFile,additionalFile,thumbnail  } = req.body;
     // console.log(req.body)
     // const bodyParsed = updateContentSchema.safeParse({ 
     //   ...req.body,
@@ -145,9 +159,18 @@ const editContent = async (req, res) => {
     //     errors: bodyParsed.error.flatten(),
     //   });
     // }
+    if(req.uploadedFiles?.primaryFile){
+      primaryFile = req.uploadedFiles?.primaryFile[0]?.url
+    }
+    if(req.uploadedFiles?.additionalFile){
+      additionalFile = req.uploadedFiles?.additionalFile[0]?.url
+    }
+    if(req.uploadedFiles?.thumbnail){
+      thumbnail = req.uploadedFiles?.thumbnail[0]?.url
+    }
     const updatedModule = await GlobalModule.findOneAndUpdate(
       { uuid: req.params.id },
-      { title, type, content, file_url, is_active, pushable_to_orgs },
+      { title, trainingType, team, category, submissionEnabled, feedbackEnabled, instructions, badges, stars, credits, description, enableFeedback, externalResource, pushable_to_orgs, tags, duration, learningOutcomes, prerequisites,primaryFile,additionalFile,thumbnail },
       { new: true }
     );
     if (!updatedModule) {
@@ -201,5 +224,6 @@ module.exports = {
   getContent,
   editContent,
   deleteContent,
-  getContentById
+  getContentById,
+  bulkDelete
 }

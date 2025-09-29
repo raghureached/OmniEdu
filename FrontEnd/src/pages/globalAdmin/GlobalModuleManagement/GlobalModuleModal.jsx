@@ -6,8 +6,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { createContent, updateContent } from '../../../store/slices/contentSlice';
 import CustomLoader2 from '../../../components/common/Loading/CustomLoader2';
 import ModulePreview from './ModulePreview';
+import api from '../../../services/api';
 const categories = [
-    "Select Category",
     "Cyber Security",
     "POSH (Prevention of Sexual Harassment)",
     "Compliance & Regulations",
@@ -19,26 +19,15 @@ const categories = [
     "Process & Procedures",
 ];
 const trainingTypes = [
-    "Select Training Type",
     "Mandatory Training",
     "Continuous Learning",
     "Micro Learning/Learning Byte",
     "Initial/Onboarding Training",
 ];
-const teams = [
-    "Select Team/Sub Team",
-    "All Employees",
-    "Development Team",
-    "Design Team",
-    "Marketing Team",
-    "Sales Team",
-    "Human Resources",
-    "Finance Team",
-    "Operations Team",
-];
+
 
 const GlobalModuleModal = ({
-    showModal, setShowModal, newContent, handleInputChange,showEditModal,setShowEditModal,editContentId
+    showModal, setShowModal, newContent, handleInputChange,showEditModal,setShowEditModal,editContentId,drafts,setDrafts
 }) => {
     const [currentStep, setCurrentStep] = useState(1);
     const [learningOutcomes, setLearningOutcomes] = useState(newContent.learningOutcomes || ['']);
@@ -50,6 +39,7 @@ const GlobalModuleModal = ({
     const [showIframe, setShowIframe] = useState(false);
     const { uploading } = useSelector((state) => state.content);
     const [preview, setPreview] = useState(false);
+    const [teams, setTeams] = useState([]);
     const validateUrl = (url) => {
         try {
             const _url = new URL(url);
@@ -58,7 +48,18 @@ const GlobalModuleModal = ({
             return false;
         }
     };
-
+    useEffect(() => {
+        const fetchTeams = async () => {
+            try {
+                const response = await api.get('/api/globalAdmin/getTeams');
+                setTeams(response.data.data);
+                console.log(response.data.data);
+            } catch (error) {
+                console.error('Error fetching teams:', error);
+            }
+        };
+        fetchTeams();
+    }, []);
     // Run URL validation when externalResource changes
     useEffect(() => {
         setShowIframe(false); // hide iframe whenever URL changes
@@ -169,8 +170,37 @@ const GlobalModuleModal = ({
     const handleRemoveAdditionalFile = () => {
         handleInputChange({ target: { name: 'additionalFile', value: null } });
     };
+    const handleRemoveThumbnail = () => {
+        handleInputChange({ target: { name: 'thumbnail', value: null } });
+    };
+    const handleSaveDraft = () => {
+        const confirm = window.confirm("The files will be removed when you save the draft")
+        //ok or cancel
 
-
+        if(confirm){
+            if(!drafts){
+                const drafts = [];
+                drafts.push(newContent);
+                newContent.primaryFile = null   ;
+                newContent.additionalFile = null;
+                newContent.thumbnail = null;
+                localStorage.setItem('drafts', JSON.stringify(drafts));
+            }else{
+                const drafts = JSON.parse(localStorage.getItem('drafts'));
+                drafts.push(newContent);
+                localStorage.setItem('drafts', JSON.stringify(drafts));
+            }
+            setShowModal(false);
+        }
+        
+    };
+    // console.log(JSON.parse(drafts).title)
+    const deleteDraft = () => {
+        const drafts = JSON.parse(localStorage.getItem('drafts'));
+        drafts.filter((draft) => draft.title !== newContent.title);
+        localStorage.setItem('drafts', JSON.stringify(drafts));
+        setShowModal(false);
+    };
     const nextStep = () => currentStep < totalSteps && setCurrentStep(currentStep + 1);
     const prevStep = () => currentStep > 1 && setCurrentStep(currentStep - 1);
 
@@ -186,7 +216,16 @@ const GlobalModuleModal = ({
                         <div className="module-overlay__step-indicator">
                             Step {currentStep} of {totalSteps}: {currentStep === 1 ? "Basic Information" : currentStep === 2 ? "Files and Resources" : "Configurations & Metadata"}
                         </div>
+                        
                     </div>
+                    <div>
+                        {drafts && 
+                        <div className='module-overlay__drafts'>
+                            <p>Drafts</p>
+                            <button onClick={setDrafts}>{JSON.parse(drafts).title}</button>
+                            {/* <button onClick={deleteDraft} style={{border: 'none', background: 'transparent', cursor: 'pointer',position: 'relative', right: '35px',top: '-10px',color: 'red',fontWeight: '700'}}><X size={20} /></button> */}
+                        </div>}
+                        </div>
                     <button
                         type="button"
                         className="module-overlay__close"
@@ -313,6 +352,48 @@ const GlobalModuleModal = ({
                                     placeholder="Required prior knowledge"
                                     autoComplete="off"
                                 />
+                            </div>
+                            <div className="module-overlay__form-group">
+                                <label className="module-overlay__form-label">Thumbnail</label>
+                                <input
+                                    type="file"
+                                    name="thumbnail"
+                                    onChange={handleInputChange}
+                                    style={{ display: 'none' }}
+                                    accept="image/*"
+                                    id="thumbnail"
+                                />
+                                {newContent.thumbnail ? (
+                                        <div className="module-overlay__uploaded-file-container">
+                                            <span className="module-overlay__uploaded-file-name" title={typeof newContent.thumbnail === 'string' ? newContent.thumbnail.split('/').pop() : newContent.thumbnail.name}>
+                                                {typeof newContent.thumbnail === 'string' ? newContent.thumbnail.split('/').pop() : newContent.thumbnail.name}
+                                            </span>
+                                            <div className="module-overlay__file-actions">
+                                                <button
+                                                    type="button"
+                                                    className="module-overlay__btn-preview"
+                                                    onClick={() => handlePreviewFile(newContent.thumbnail)}
+                                                    aria-label="Preview uploaded file"
+                                                >
+                                                    <EyeIcon size={16} /> Preview
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="module-overlay__btn-delete"
+                                                    onClick={handleRemoveThumbnail}
+                                                    aria-label="Delete uploaded file"
+                                                >
+                                                    <RiDeleteBin2Fill size={16} /> Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <label htmlFor="thumbnail" className="module-overlay__upload-label" tabIndex={0} onKeyPress={e => { if (e.key === 'Enter') document.getElementById('uploadFiles').click(); }}>
+                                            <Plus size={16} /> Upload File
+                                        </label>
+                                    )}
+                        
+                                
                             </div>
                         </div>
                     )}
@@ -658,10 +739,10 @@ const GlobalModuleModal = ({
                                     required
                                 >
                                     <option value="">Select Team/Sub Team</option>
-                                    {teams.map((team) => (
-                                        <option key={team} value={team}>
-                                            {team}
-                                        </option>
+                                    {teams?.map((team) => (
+                                        <option key={team._id} value={team._id}>
+                                            {team.name}
+                                        </option>   
                                     ))}
                                 </select>
                             </div>
@@ -678,8 +759,24 @@ const GlobalModuleModal = ({
                                     Allow learners to submit feedback and reactions
                                 </label>
                             </div>
+                            <div className="module-overlay__form-group">
+                                <label className="module-overlay__form-label module-overlay__checkbox">
+                                    <input
+                                        type="checkbox"
+                                        name="submissionsEnabled"
+                                        checked={!!newContent.submissionsEnabled}
+                                        onChange={(e) =>
+                                            handleInputChange({ target: { name: 'submissionsEnabled', value: e.target.checked } })
+                                        }
+                                    />
+                                    Allow learners submissions
+                                </label>
+                                <p style={{ fontSize: '12px', color: '#666' }}>Allow learners to submit their work for grading and feedback.
+                                    Please enable this if you have an additional file.
+                                </p>
+                            </div>
                             <div className="module-overlay__form-group" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                                <button className='module-overlay__btn-save' onClick={() => alert("Integration Pending")}>Save Draft</button>
+                                <button className='module-overlay__btn-save' onClick={handleSaveDraft} disabled={editContentId}>Save Draft</button>
                                 <button className='module-overlay__btn-preview' onClick={() => alert("Integration Pending")}>Preview</button>
                             </div>
                         </div>

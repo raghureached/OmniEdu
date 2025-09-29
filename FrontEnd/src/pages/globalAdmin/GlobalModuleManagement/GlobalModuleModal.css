@@ -416,3 +416,18 @@
   background-color: gray;
   color: white;
 }
+.module-overlay__drafts{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.module-overlay__drafts p{
+  font-weight: 600;
+  color: #5570f1;
+}
+.module-overlay__drafts button{
+  font-weight: 600;
+  background-color: #5570f1;
+  color: white;
+}
+  

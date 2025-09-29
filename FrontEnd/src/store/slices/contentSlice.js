@@ -20,7 +20,7 @@ export const fetchContentById = createAsyncThunk(
     try {
       // console.log(id)
       const response = await api.get(`/api/globalAdmin/getContentById/${id}`);
-      // console.log(response.data.data);
+      console.log(response.data.data);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -61,6 +61,19 @@ export const deleteContent = createAsyncThunk(
     try {
       await api.delete(`/api/globalAdmin/deleteContent/${id}`);
       return id;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const bulkDeleteContent = createAsyncThunk(
+  'content/bulkDeleteContent',
+  async (ids, { rejectWithValue }) => {
+    try {
+      const response = await api.delete(`/api/globalAdmin/bulkDeleteContent`, { data: ids });
+      // console.log(response.data.data)
+      return ids;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -137,7 +150,7 @@ const contentSlice = createSlice({
       })
       .addCase(updateContent.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.items.findIndex(item => item.id === action.payload.id);
+        const index = state.items.findIndex(item => item.uuid === action.payload.uuid);
         if (index !== -1) {
           state.items[index] = action.payload;
         }
@@ -153,13 +166,22 @@ const contentSlice = createSlice({
       })
       .addCase(deleteContent.fulfilled, (state, action) => {
         state.loading = false;
-        // console.log(action.payload);
-        
         state.items = state.items.filter(item => item.uuid !== action.payload);
       })
       .addCase(deleteContent.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || 'Failed to delete content';
+      })
+      .addCase(bulkDeleteContent.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(bulkDeleteContent.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = state.items.filter(item => !action.payload.includes(item.uuid));
+      })
+      .addCase(bulkDeleteContent.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.message || 'Failed to bulk delete content';
       });
   }
 });

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchContent, deleteContent, createContent, updateContent } from '../../../store/slices/contentSlice';
+import { fetchContent, deleteContent, createContent, updateContent, bulkDeleteContent } from '../../../store/slices/contentSlice';
 import "./GlobalModuleManagement.css"
 import { useNavigate } from 'react-router-dom';
-import { FileText, Search, Users } from 'lucide-react';
+import { FileText, Search, Users, X } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading'
 import { RiDeleteBinFill } from "react-icons/ri";
 import { FiEdit3 } from "react-icons/fi";
@@ -18,6 +18,11 @@ const GlobalModuleManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editContentId, setEditContentId] = useState(null);
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [draftContent, setDraftContent] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
+  const [showBulkAction, setShowBulkAction] = useState(false);
+  const [selectedItems, setSelectedItems] = useState([]);
   const [newContent, setNewContent] = useState({
     title: "",
     duration: "",
@@ -39,7 +44,7 @@ const GlobalModuleManagement = () => {
   useEffect(() => {
     dispatch(fetchContent());
   }, [dispatch]);
-  
+
   const handleDeleteContent = (contentId) => {
     if (window.confirm("Are you sure you want to delete this content?")) {
       dispatch(deleteContent(contentId));
@@ -78,33 +83,43 @@ const GlobalModuleManagement = () => {
     }
     setNewContent(prev => ({ ...prev, [name]: value }));
   };
-  
+
   const handleOpenContent = (contentId) => {
-    navigate(`/global-admin/content/${contentId}`);
+    navigate(`/global-admin/module/${contentId}`);
   };
   const handleFileClick = (file) => {
     window.open(file)
   };
-
+  const openDraftModal = () => {
+    const drafts = JSON.parse(localStorage.getItem('drafts'));
+    setDraftContent(drafts)
+    // console.log(draftContent)
+    setShowDraftModal(true);
+  };
+  const useDraft = (title) => {
+    const drafts = localStorage.getItem('drafts');
+    const draft = JSON.parse(drafts).find((draft) => draft.title === title);
+    return draft;
+  };
   const handleAddContent = async () => {
-    
+
     setUploading(true);
-  
+
     try {
       // Build FormData
       const formData = new FormData();
-  
+
       const moduleData = {
         ...newContent,
         id: Date.now(), // temporary id
         status: "Draft",
         createdDate: new Date().toISOString(),
       };
-  
+
       // console.log(moduleData)
       // ✅ Dispatch or API call with formData
       dispatch(createContent(moduleData))
-      
+
     } catch (err) {
       setUploading(false)
       console.error("Error uploading content:", err);
@@ -137,6 +152,24 @@ const GlobalModuleManagement = () => {
     });
     setShowEditModal(true);
   };
+  const drafts = localStorage.getItem('draftContent');
+  const setDrafts = () => {
+    setNewContent(JSON.parse(drafts));
+    // setShowModal(true);
+  }
+  const handleBulkDelete = (ids) => {
+    if (ids.length === 0) {
+      alert("Please select at least one module to delete.")
+      return;
+    }
+    if (window.confirm("Are you sure you want to delete these modules?")) {
+      try {
+        dispatch(bulkDeleteContent(ids));
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }
 
   const handleOpenModal = () => {
     setShowModal(true);
@@ -160,10 +193,47 @@ const GlobalModuleManagement = () => {
       enableFeedback: false,
     });
   };
+  const handleContinueDraft = (draft) => {
+    setNewContent(draft)
+    // console.log(draft)
+    setShowDraftModal(false)
+    if (draft.uuid) {
+      setShowEditModal(true)
+    } else {
+      setShowModal(true)
+    }
+
+  }
+  const handleSelectAll = (e) => {
+    const checked = e.target.checked;
+    if (checked) {
+      setSelectedItems(currentContent.map(item => item.uuid));
+    } else {
+      setSelectedItems([]);
+    }
+  }
+  const handleSelectItem = (e, id) => {
+    const checked = e.target.checked;
+    if (checked) {
+      setSelectedItems([...selectedItems, id]);
+    } else {
+      setSelectedItems(selectedItems.filter(item => item !== id));
+    }
+  }
+  const deleteDraft = (title) => {
+    const drafts = JSON.parse(localStorage.getItem('drafts'));
+    const updatedDrafts = drafts.filter((draft) => draft.title !== title);
+    localStorage.setItem('drafts', JSON.stringify(updatedDrafts));
+    setShowDraftModal(false)
+  }
   // if (loading && !uploading) {
   //   return <LoadingScreen text={"Loading Global Content..."} />
   // }
   // const modules = items?.filter(item => item.type === "module") || [];
+
+  if(loading){
+    return <LoadingScreen text={"Loading Global Content..."} />
+  }
   return (
     <div className="global-content-management">
       <div className="global-content-header">
@@ -204,15 +274,31 @@ const GlobalModuleManagement = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <button className="btn-primary" onClick={() => handleOpenModal()}> + Add Module</button>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button className="btn-secondary" style={{ color: "#6b7280", border: "1px solid #6b7280" }} onClick={() => setShowBulkAction(!showBulkAction)}> Bulk Actions</button>
+            {showBulkAction && (
+              <div className="bulk-action-panel-module">
+                <div className="bulk-action-group">
+                  <label style={{ fontSize: "14px", fontWeight: "500" }}>Items Selected: {selectedItems.length}</label>
+                  <button className="bulk-action-delete-btn" disabled={selectedItems.length === 0} onClick={() => handleBulkDelete(selectedItems)}>
+                    <span style={{ display: "flex", alignItems: "center", gap: "2px" }}><RiDeleteBinFill size={16} color="#fff" /> Delete</span>
+                  </button>
+                </div>
+              </div>
+            )}
+            <button className="btn-secondary" style={{ color: "#6b7280", border: "1px solid #6b7280" }} onClick={() => openDraftModal()}> Drafts</button>
+            <button className="btn-primary" onClick={() => handleOpenModal()}> + Add Module</button>
+          </div>
         </div>
       </div>
-      {showModal && <GlobalModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading}/>}
+
+      {showModal && <GlobalModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading} />}
       {showEditModal && <GlobalModuleModal showModal={showEditModal} setShowModal={setShowEditModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} showEditModal={showEditModal} setShowEditModal={setShowEditModal} editContentId={editContentId} />}
       <div className="table-container">
         <table className="data-table">
           <thead>
             <tr>
+              <th><input type="checkbox" onChange={(e) => handleSelectAll(e)} checked={selectedItems.length === currentContent.length} /></th>
               <th>Title</th>
               <th>Credits</th>
               <th>Status</th>
@@ -224,14 +310,15 @@ const GlobalModuleManagement = () => {
           <tbody>
             {currentContent.map((content) => (
               <tr key={content.id}>
+                <td><input type="checkbox" onChange={(e) => handleSelectItem(e, content.uuid)} checked={selectedItems.includes(content.uuid)} /></td>
                 <td style={{ cursor: "pointer" }} onClick={() => handleOpenContent(content.uuid)}>{content.title}</td>
                 <td>{content.credits}</td>
                 <td>
-                  <span className={`status-badge ${content.status === 'Published' ? 'active' : 'inactive'}`}>
-                    {content.status === 'Published' ? '✓ Published' : 'Draft'}
+                  <span className={` ${content.status === 'Published' ? 'published' : 'saved'}`}>
+                    {content.status === 'Published' ? `✓ ${content.status}` : 'Saved'}
                   </span>
                 </td>
-                <td>{content.team || "All"}</td>
+                <td>{content.team?.name || "All"}</td>
                 <td>{new Date(content.createdAt).toLocaleDateString()}</td>
                 <td>
                   <button
@@ -261,6 +348,124 @@ const GlobalModuleManagement = () => {
           </tbody>
         </table>
       </div>
+      {showDraftModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+            padding: '20px',
+            boxSizing: 'border-box',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              width: '400px',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+              padding: '24px',
+              boxSizing: 'border-box',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px',
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="draftsTitle"
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2
+                id="draftsTitle"
+                style={{ margin: 0, fontWeight: '700', fontSize: '1.8rem', color: '#333' }}
+              >
+                Drafts
+              </h2>
+              <button className="close-btn" onClick={() => setShowDraftModal(false)}><X size={20} /></button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {draftContent?.length > 0 ? (
+                draftContent.map((draft) => (
+                  <div
+                    key={draft.id}
+                    style={{
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '8px',
+                      padding: '12px 16px',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+                      backgroundColor: '#fafafa',
+                    }}
+                  >
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.25rem', color: '#222' }}>
+                      {draft.title}
+                    </h3>
+                    <p style={{ margin: '0 0 12px 0', color: '#555', fontSize: '0.95rem', lineHeight: 1.4 }}>
+                      {draft.description}
+                    </p>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                      <button
+                        onClick={() => {
+                          handleContinueDraft(draft)
+                        }}
+                        style={{
+                          padding: '8px 14px',
+                          backgroundColor: '#5570f1',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontWeight: '600',
+                          fontSize: '0.95rem',
+                          transition: 'background-color 0.3s ease',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#3f57d4')}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#5570f1')}
+                        aria-label={`View draft titled ${draft.title}`}
+                      >
+                        Continue
+                      </button>
+                      <button
+                        onClick={() => {
+                          deleteDraft(draft.title)
+                        }}
+                        style={{
+                          padding: '8px 14px',
+                          backgroundColor: '#dc3545',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontWeight: '600',
+                          fontSize: '0.95rem',
+                          transition: 'background-color 0.3s ease',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#c82333')}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#dc3545')}
+                        aria-label={`Delete draft titled ${draft.title}`}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p style={{ color: '#777', fontStyle: 'italic' }}>No drafts available.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="pagination">
         <button
           disabled={currentPage === 1}
