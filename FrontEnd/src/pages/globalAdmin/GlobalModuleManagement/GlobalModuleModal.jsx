@@ -7,6 +7,7 @@ import { createContent, updateContent } from '../../../store/slices/contentSlice
 import CustomLoader2 from '../../../components/common/Loading/CustomLoader2';
 import ModulePreview from './ModulePreview';
 import api from '../../../services/api';
+import FullRichTextEditor from './RichText';
 const categories = [
     "Cyber Security",
     "POSH (Prevention of Sexual Harassment)",
@@ -27,7 +28,7 @@ const trainingTypes = [
 
 
 const GlobalModuleModal = ({
-    showModal, setShowModal, newContent, handleInputChange,showEditModal,setShowEditModal,editContentId,drafts,setDrafts
+    showModal, setShowModal, newContent, handleInputChange,showEditModal,setShowEditModal,editContentId,drafts,setDrafts,handleRichInputChange
 }) => {
     const [currentStep, setCurrentStep] = useState(1);
     const [learningOutcomes, setLearningOutcomes] = useState(newContent.learningOutcomes || ['']);
@@ -95,7 +96,7 @@ const GlobalModuleModal = ({
             case 1:
                 return newContent.title && newContent.description && newContent.learningOutcomes.length > 0 && newContent.tags.length > 0 && newContent.prerequisites !== "";
             case 2:
-                return contentType === "Upload File" ? newContent.primaryFile : newContent.externalResource;
+                return contentType === "Upload File" ? newContent.primaryFile : newContent.externalResource || newContent.richText;
             case 3:
                 return newContent.moduleType && newContent.category && newContent.team 
             default:
@@ -248,7 +249,7 @@ const GlobalModuleModal = ({
                 <div className="module-overlay__body" style={{ overflowY: 'auto', height: 'calc(100vh - 180px)' }}>
                     {currentStep === 1 && (
                         <div className="module-overlay__step">
-                            <div className="module-overlay__form-group">
+                            <div className="module-overlay__form-group"  style={{marginBottom: '20px'}}>
                                 <label className="module-overlay__form-label">
                                     Module Title <span className="module-overlay__required">*</span>
                                 </label>
@@ -418,6 +419,16 @@ const GlobalModuleModal = ({
                                     Text / External URL
                                 </button>
                             </div>
+                            <label className="module-overlay__form-label">Instructions</label>
+
+                            <textarea
+                                        name="instructions"
+                                        rows={4}
+                                        value={newContent.instructions || ''}
+                                        onChange={handleInputChange}
+                                        className="module-overlay__form-textarea"
+                                        placeholder="Add instructions for the module"
+                                    />
 
                             {contentType === 'Upload File' ? (
                                 <div className="module-overlay__form-group">
@@ -459,15 +470,7 @@ const GlobalModuleModal = ({
                                             <Plus size={16} /> Upload File
                                         </label>
                                     )}
-                                    <label className="module-overlay__form-label">Instructions</label>
-                                    <textarea
-                                        name="instructions"
-                                        rows={4}
-                                        value={newContent.instructions || ''}
-                                        onChange={handleInputChange}
-                                        className="module-overlay__form-textarea"
-                                        placeholder="Add instructions for the module"
-                                    />
+                                    
                                     <div>
                                         <label className="module-overlay__form-label">Additional File</label>
                                         <input
@@ -512,14 +515,16 @@ const GlobalModuleModal = ({
                             ) : (
                                 <div className="module-overlay__form-group">
                                     <label className="module-overlay__form-label">Enter Text</label>
-                                    <textarea
+                                    {/* <textarea
                                         name="text"
                                         rows={4}
                                         value={newContent.text || ''}
                                         onChange={handleInputChange}
                                         className="module-overlay__form-textarea"
                                         placeholder="Add text content or paste external URLs (YouTube, websites, documents, etc.)"
-                                    />
+                                    /> */}
+                                    <FullRichTextEditor value={newContent.text || ''} onChange={handleRichInputChange} />
+
                                     <label className="module-overlay__form-label">External Resource</label>
                                     <span style={{ display: 'flex', alignItems: 'center' }}>
                                         <input
@@ -777,12 +782,12 @@ const GlobalModuleModal = ({
                             </div>
                             <div className="module-overlay__form-group" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                                 <button className='module-overlay__btn-save' onClick={handleSaveDraft} disabled={editContentId}>Save Draft</button>
-                                <button className='module-overlay__btn-preview' onClick={() => alert("Integration Pending")}>Preview</button>
+                                <button className='module-overlay__btn-preview' onClick={() => setPreview(true)}>Preview</button>
                             </div>
                         </div>
                     )}
                 </div>
-                {/* {preview && <ModulePreview content={newContent} onClose={() => setPreview(false)} />} */}
+                {preview && <ModulePreview content={newContent} onClose={() => setPreview(false)} />}
 
                 {/* FOOTER ACTIONS */}
                 <div className="module-overlay__footer">

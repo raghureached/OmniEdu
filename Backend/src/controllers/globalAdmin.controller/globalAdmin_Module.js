@@ -49,10 +49,10 @@ const addContent = async (req, res) => {
     //     errors: parsed.error.flatten(),
     //   });
     // }
-    const primaryFile = req.uploadedFiles?.primaryFile[0]?.url;
-    const additionalFile = req.uploadedFiles?.additionalFile[0]?.url;
-    const thumbnail = req.uploadedFiles?.thumbnail[0]?.url;
-    const { title,trainingType,team,category,submissionEnabled,feedbackEnabled,instructions, badges,stars,credits,description,enableFeedback,externalResource, pushable_to_orgs, tags, duration,learningOutcomes,prerequisites } = req.body;
+    const primaryFile = req.uploadedFiles?.primaryFile?.[0]?.url;
+    const additionalFile = req.uploadedFiles?.additionalFile?.[0]?.url;
+    const thumbnail = req.uploadedFiles?.thumbnail?.[0]?.url;
+    const { title,trainingType,team,category,submissionEnabled,feedbackEnabled,instructions, badges,stars,credits,description,enableFeedback,externalResource, pushable_to_orgs, tags, duration,learningOutcomes,prerequisites,richText } = req.body;
     const created_by = req.user?._id || null;
     const newModule = new GlobalModule({
       title,
@@ -76,7 +76,8 @@ const addContent = async (req, res) => {
       instructions,
       tags,
       duration,
-      created_by
+      created_by,
+      richText
     });
 
     await newModule.save();

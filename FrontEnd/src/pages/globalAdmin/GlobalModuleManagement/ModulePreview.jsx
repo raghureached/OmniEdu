@@ -5,9 +5,8 @@ import { useParams } from 'react-router-dom';
 
 const ModulePreview = ({ moduleData, onClose }) => {
   const [isVisible, setIsVisible] = useState(false);
-  // console.log(moduleData);
-  const moduleId = useParams();
-  console.log(moduleId)
+  // const moduleId = useParams(); 
+  console.log("preview")
   useEffect(() => {
     setIsVisible(true);
     document.body.style.overflow = 'hidden';

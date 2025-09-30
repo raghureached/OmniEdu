@@ -63,6 +63,10 @@ const GlobalModuleSchema = new mongoose.Schema(
       type: [String],
       default: []
     },
+    richText:{
+      type: String,
+      default: null,
+    },
     pushable_to_orgs: {
       type: Boolean,
       default: true,

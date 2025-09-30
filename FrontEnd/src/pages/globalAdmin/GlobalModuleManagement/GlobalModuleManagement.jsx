@@ -83,6 +83,9 @@ const GlobalModuleManagement = () => {
     }
     setNewContent(prev => ({ ...prev, [name]: value }));
   };
+  const handleRichInputChange = (e) => {
+    setNewContent(prev => ({ ...prev, richText: e }));
+  };
 
   const handleOpenContent = (contentId) => {
     navigate(`/global-admin/module/${contentId}`);
@@ -292,7 +295,7 @@ const GlobalModuleManagement = () => {
         </div>
       </div>
 
-      {showModal && <GlobalModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading} />}
+      {showModal && <GlobalModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading} handleRichInputChange={handleRichInputChange} />}
       {showEditModal && <GlobalModuleModal showModal={showEditModal} setShowModal={setShowEditModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} showEditModal={showEditModal} setShowEditModal={setShowEditModal} editContentId={editContentId} />}
       <div className="table-container">
         <table className="data-table">
