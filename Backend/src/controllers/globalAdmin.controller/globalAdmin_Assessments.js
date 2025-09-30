@@ -84,7 +84,7 @@ function normalizeCorrectOption(value) {
 }
 const createAssessment = async (req, res) => {
     try {
-        const { title, description, questions, status, duration, tags, team, subteam, attempts, percentage_to_pass, display_answers, display_answers_when } = req.body;
+        const { title, description, questions, status, duration, tags, team, subteam, attempts, unlimited_attempts, percentage_to_pass, display_answers, display_answers_when } = req.body;
         if (!title || !questions || !Array.isArray(questions) || questions.length === 0) {
             return res.status(400).json({
                 isSuccess: false,
@@ -104,7 +104,8 @@ const createAssessment = async (req, res) => {
         if (!subteam) {
             return res.status(400).json({ isSuccess: false, message: "SubTeam is required" });
         }
-        const attemptsNum = Number.isFinite(Number(attempts)) ? Math.max(1, Number(attempts)) : 1;
+        const unlimited = Boolean(unlimited_attempts);
+        const attemptsNum = unlimited ? 1 : (Number.isFinite(Number(attempts)) ? Math.max(1, Number(attempts)) : 1);
         const passPct = Number(percentage_to_pass);
         if (!Number.isFinite(passPct) || passPct < 0 || passPct > 100) {
             return res.status(400).json({ isSuccess: false, message: "percentage_to_pass must be between 0 and 100" });
@@ -243,6 +244,7 @@ const createAssessment = async (req, res) => {
             team,
             subteam,
             attempts: attemptsNum,
+            unlimited_attempts: unlimited,
             percentage_to_pass: passPct,
             display_answers: display_answers ?? false,
             display_answers_when: display_answers_when || "Never",
@@ -506,6 +508,7 @@ const editAssessment = async (req, res) => {
                 team: req.body.team,
                 subteam: req.body.subteam,
                 attempts: req.body.attempts,
+                unlimited_attempts: req.body.unlimited_attempts === true || req.body.unlimited_attempts === 'true',
                 percentage_to_pass: req.body.percentage_to_pass,
                 display_answers: req.body.display_answers,
                 display_answers_when: req.body.display_answers_when,
