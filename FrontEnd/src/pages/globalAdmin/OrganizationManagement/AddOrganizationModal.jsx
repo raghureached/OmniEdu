@@ -135,7 +135,7 @@ const AddOrganizationModal = ({
               <p className="addOrg-header-subtitle">
                 {editMode ? "Update organization details" : "Create a new organization profile"}
               </p>
-              {error && <p className="addOrg-error">{error}</p>}
+              {error && <CustomError  error={error} />}
             </div>
           </div>
           <button 

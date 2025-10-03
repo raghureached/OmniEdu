@@ -23,7 +23,9 @@ const globalQuestionSchema = new mongoose.Schema({
   total_points:{
     type:Number,
     default:1,
-  },instructions: { type: String, default: '' } ,// NEW
+  },
+  instructions: { type: String, default: '' } ,// NEW
+  shuffle_options: { type: Boolean, default: false }, // NEW: Enable option shuffling
   options: {
     type: [String],
     required: true,

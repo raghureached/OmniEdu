@@ -61,20 +61,38 @@ function isValidDuration(hhmm) {
     return h >= 0 && mm >= 0 && mm <= 59;
 }
 function normalizeCorrectOption(value) {
-    // Accept numbers, arrays, or strings like "0,2"
+    // Accept numbers, arrays, strings like "0,2", or letters like "A,C"
     if (Array.isArray(value)) {
         return value
-            .map(v => Number.parseInt(v, 10))
+            .map(v => {
+                if (typeof v === 'string') {
+                    // Handle letter inputs like "A", "B", "C"
+                    if (/^[A-Z]$/.test(v.trim())) {
+                        return v.toUpperCase().charCodeAt(0) - 65;
+                    }
+                }
+                return Number.parseInt(v, 10);
+            })
             .filter(n => Number.isInteger(n));
     }
     if (typeof value === 'string') {
         if (value.includes(',')) {
             return value
                 .split(',')
-                .map(s => Number.parseInt(s.trim(), 10))
+                .map(s => {
+                    const trimmed = s.trim();
+                    if (/^[A-Z]$/.test(trimmed)) {
+                        return trimmed.toUpperCase().charCodeAt(0) - 65;
+                    }
+                    return Number.parseInt(trimmed, 10);
+                })
                 .filter(n => Number.isInteger(n));
         }
-        const n = Number.parseInt(value.trim(), 10);
+        const trimmed = value.trim();
+        if (/^[A-Z]$/.test(trimmed)) {
+            return [trimmed.toUpperCase().charCodeAt(0) - 65];
+        }
+        const n = Number.parseInt(trimmed, 10);
         return Number.isInteger(n) ? [n] : [];
     }
     if (Number.isInteger(value)) {
@@ -191,8 +209,8 @@ const createAssessment = async (req, res) => {
                     file_url: q.file_url?.trim() || null,
                     options: q.options,
                     correct_option: normalizedCorrect,
-                    instructions, // NEW
-
+                    instructions: q.instructions?.trim() || "", // NEW
+                    shuffle_options: Boolean(q.shuffle_options), // NEW
                 });
             } catch (questionError) {
                 errors.push({ index, reason: `Question validation failed: ${questionError.message}` });
@@ -462,11 +480,57 @@ const getQuestionsRandom = async (req, res) => {
     try {
         const { noOfQuestions } = req.query
         const questions = await GlobalAssessment.findOne({ uuid: req.params.id }).populate("questions")
-        const randomQuestions = questions.questions.sort(() => 0.5 - Math.random()).slice(0, noOfQuestions);
+
+        if (!questions || !questions.questions) {
+            return res.status(404).json({
+                isSuccess: false,
+                message: "Assessment or questions not found"
+            })
+        }
+
+        // Use all questions if noOfQuestions not provided or invalid
+        const totalQuestions = questions.questions.length
+        const numQuestions = noOfQuestions && !isNaN(noOfQuestions) && noOfQuestions > 0
+            ? Math.min(parseInt(noOfQuestions), totalQuestions)
+            : totalQuestions
+
+        const randomQuestions = questions.questions.sort(() => 0.5 - Math.random()).slice(0, numQuestions);
+
+        // Shuffle options within each question for all questions (always enabled)
+        const shuffledQuestions = randomQuestions.map(question => {
+            if (question.options && question.options.length > 1) {
+                // Create array of option objects with their original indices
+                const optionsWithIndices = question.options.map((option, index) => ({
+                    text: option,
+                    originalIndex: index
+                }));
+
+                // Shuffle the options
+                const shuffledOptions = optionsWithIndices.sort(() => 0.5 - Math.random());
+
+                // Create new options array and mapping for correct answers
+                const newOptions = shuffledOptions.map(opt => opt.text);
+                const correctOptionMapping = shuffledOptions.map(opt => opt.originalIndex);
+
+                // Map correct answers to new indices
+                const newCorrectOptions = question.correct_option.map(correctIndex =>
+                    correctOptionMapping.indexOf(correctIndex)
+                );
+
+                return {
+                    ...question.toObject(),
+                    options: newOptions,
+                    correct_option: newCorrectOptions,
+                    original_correct_option: question.correct_option // Keep original for reference
+                };
+            }
+            return question;
+        });
+
         return res.status(200).json({
             isSuccess: true,
             message: "Questions fetched successfully",
-            data: randomQuestions
+            data: shuffledQuestions
         })
     } catch (error) {
         return res.status(500).json({
@@ -522,25 +586,60 @@ const editAssessment = async (req, res) => {
             await Promise.all(
                 questions.map(async (q) => {
                     const id = q.id || q.uuid || q._id;
-                    if (!id) return;
-                    // // Normalize correct_option to array of integers
-                    // let correct = q.correct_option;
-                    // if (typeof correct === 'string') {
-                    //     correct = correct.includes(',')
-                    //         ? correct
-                    //             .split(',')
-                    //             .map((s) => parseInt(s.trim(), 10))
-                    //             .filter((n) => Number.isInteger(n))
-                    //         : Number.isInteger(parseInt(correct.trim(), 10))
-                    //             ? [parseInt(correct.trim(), 10)]
-                    //             : [];
-                    // } else if (Number.isInteger(correct)) {
-                    //     correct = [correct];
-                    // } else if (Array.isArray(correct)) {
-                    //     correct = correct.filter((n) => Number.isInteger(n));
-                    // } else {
-                    //     correct = [];
-                    // }
+                    if (!id) {
+                        // This is a new question - create it
+                        try {
+                            const type = String(q.type || '').trim();
+                            if (!['Multiple Choice', 'Multi Select'].includes(type)) {
+                                throw new Error('Invalid type. Allowed: Multiple Choice, Multi Select');
+                            }
+
+                            const normalizedCorrect = normalizeCorrectOption(q.correct_option);
+
+                            // Enforce counts based on type
+                            if (type === 'Multiple Choice') {
+                                if (normalizedCorrect.length !== 1) {
+                                    throw new Error('Multiple Choice must have exactly 1 correct option index');
+                                }
+                            } else if (type === 'Multi Select') {
+                                if (normalizedCorrect.length < 1) {
+                                    throw new Error('Multi Select must have at least 1 correct option index');
+                                }
+                            }
+
+                            // Validate options bounds
+                            const maxIndex = (q.options || []).length - 1;
+                            if (normalizedCorrect.some(n => n < 0 || n > maxIndex)) {
+                                throw new Error('correct_option indexes out of range for provided options');
+                            }
+
+                            const instructions = typeof q.instructions === 'string' ? q.instructions : '';
+
+                            const newQuestion = new GlobalQuestion({
+                                type: q.type.trim(),
+                                question_text: q.question_text.trim(),
+                                file_url: q.file_url?.trim() || null,
+                                options: q.options,
+                                correct_option: normalizedCorrect,
+                                instructions,
+                                shuffle_options: Boolean(q.shuffle_options),
+                            });
+
+                            const savedQuestion = await newQuestion.save();
+
+                            // Add the new question to the assessment
+                            await GlobalAssessment.findOneAndUpdate(
+                                { uuid: req.params.id },
+                                { $push: { questions: savedQuestion._id } }
+                            );
+                        } catch (questionError) {
+                            console.error('Failed to create new question:', questionError);
+                            throw questionError;
+                        }
+                        return;
+                    }
+
+                    // Existing question - update it
                     const type = typeof q.type === 'string' ? q.type.trim() : undefined;
                     const normalizedCorrect = normalizeCorrectOption(q.correct_option);
 
@@ -563,7 +662,7 @@ const editAssessment = async (req, res) => {
                                 throw new Error('Multiple Choice must have exactly 1 correct option index');
                             }
                         } else if (effectiveType === 'Multi Select') {
-                            if (normalizedCorrect.length < 1) { // or < 2 if strictly multiple
+                            if (normalizedCorrect.length < 1) {
                                 throw new Error('Multi Select must have at least 1 correct option index');
                             }
                         }
@@ -578,21 +677,8 @@ const editAssessment = async (req, res) => {
                         ? { _id: id }
                         : { uuid: id };
 
-                    // await GlobalQuestion.findOneAndUpdate(
-                    //     filter,
-                    //     {
-                    //         question_text: q.question_text,
-                    //         type: q.type,
-                    //         options: q.options,
-                    //         correct_option: correct,
-                    //         file_url: q.file_url || null,
-                    //         // Include instructions if provided (optional)
-                    //         ...(typeof q.instructions === 'string' ? { instructions: q.instructions } : {}),
-
-                    //     },
-                    //     { new: false }
                     await GlobalQuestion.findOneAndUpdate(
-                        { uuid: id },
+                        filter,
                         {
                             ...(typeof q.question_text === 'string' ? { question_text: q.question_text } : {}),
                             ...(Array.isArray(q.options) ? { options: q.options } : {}),
@@ -600,6 +686,7 @@ const editAssessment = async (req, res) => {
                             ...(typeof q.type === 'string' ? { type } : {}),
                             ...(typeof q.file_url === 'string' ? { file_url: q.file_url } : {}),
                             ...(typeof q.instructions === 'string' ? { instructions: q.instructions } : {}),
+                            ...(typeof q.shuffle_options === 'boolean' ? { shuffle_options: q.shuffle_options } : {}),
                         },
                         { new: false }
                     );
@@ -667,6 +754,7 @@ const editQuestion = async (req, res) => {
             ...(typeof req.body.type === 'string' ? { type: req.body.type.trim() } : {}),
             ...(typeof req.body.file_url === 'string' ? { file_url: req.body.file_url } : {}),
             ...(typeof req.body.instructions === 'string' ? { instructions: req.body.instructions } : {}),
+            ...(typeof req.body.shuffle_options === 'boolean' ? { shuffle_options: req.body.shuffle_options } : {}),
         };
 
         let normalizedCorrect;

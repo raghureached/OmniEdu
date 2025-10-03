@@ -1,653 +1,146 @@
-/* Modal Overlay */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 50;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
   display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 1rem;
-  background-color: rgba(0, 0, 0, 0.5);
+  align-items: center;
   opacity: 0;
-  transition: opacity 300ms ease;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 1000;
 }
-
 .modal-overlay.visible {
   opacity: 1;
+  pointer-events: all;
 }
-
-/* Modal Container */
 .modal-container {
-  background-color: white;
-  border-radius: 1rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  max-width: 64rem;
-  width: 100%;
+  background: #fff;
+  max-width: 700px;
+  width: 90%;
   max-height: 90vh;
-  overflow: hidden;
-  transform: scale(0.95) translateY(1rem);
-  transition: all 300ms ease;
+  overflow-y: auto;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 12px 24px rgb(0 0 0 / 0.15);
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
-
 .modal-container.visible {
-  transform: scale(1) translateY(0);
+  opacity: 1;
+  transform: translateY(0);
 }
-
-/* Header */
 .modal-header {
+  border-bottom: 1px solid #eee;
+  margin-bottom: 20px;
   position: relative;
-  background: linear-gradient(to right, #3b82f6, #8b5cf6, #6366f1);
-  color: white;
-  padding: 1.5rem;
 }
-
-.close-button {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  padding: 0.5rem;
-  border-radius: 50%;
-  border: none;
+.close-btn {
   background: transparent;
+  border: none;
+  position: absolute;
+  right: 10px;
+  top: 10px;
   cursor: pointer;
-  transition: background-color 200ms;
+  padding: 4px;
 }
-
-.close-button:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-.close-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  color: white;
-}
-
-.header-content {
-  padding-right: 3rem;
-}
-
-.category-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.category-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-}
-
-.category-text {
-  font-size: 0.875rem;
-  font-weight: 500;
-  opacity: 0.9;
-}
-
 .module-title {
-  font-size: 1.5rem;
+  margin: 0;
+  font-size: 1.75rem;
   font-weight: 700;
-  margin-bottom: 0.5rem;
-  line-height: 1.2;
+  color: #222;
 }
-
-.module-info {
+.info-row {
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  font-size: 0.875rem;
-  opacity: 0.9;
+  gap: 15px;
+  margin-top: 8px;
   flex-wrap: wrap;
 }
-
 .info-item {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: #555;
 }
-
-.info-icon {
-  width: 1rem;
-  height: 1rem;
-}
-
 .rating {
-  gap: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
-
-.rating-number {
-  margin-left: 0.25rem;
-}
-
-/* Stars */
 .star {
-  width: 1rem;
-  height: 1rem;
+  color: #f5c518;
 }
-
-.star-filled {
-  fill: #fbbf24;
-  color: #fbbf24;
-}
-
 .star-empty {
-  color: #d1d5db;
+  color: #ccc;
 }
-
-/* Content */
-.modal-content {
-  overflow-y: auto;
-  max-height: calc(90vh - 120px);
-}
-
-.content-inner {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-/* Stats Grid */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-@media (min-width: 768px) {
-  .stats-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-.stat-card {
-  border-radius: 0.5rem;
-  padding: 1rem;
-  text-align: center;
-  border: 1px solid;
-}
-
-.stat-card.credits {
-  background: linear-gradient(to bottom right, #dbeafe, #bfdbfe);
-  border-color: #bfdbfe;
-}
-
-.stat-card.badges {
-  background: linear-gradient(to bottom right, #f3e8ff, #e9d5ff);
-  border-color: #e9d5ff;
-}
-
-.stat-card.training {
-  background: linear-gradient(to bottom right, #ecfdf5, #d1fae5);
-  border-color: #d1fae5;
-}
-
-.stat-card.difficulty {
-  background: linear-gradient(to bottom right, #fff7ed, #fed7aa);
-  border-color: #fed7aa;
-}
-
-.stat-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  margin: 0 auto 0.5rem auto;
-}
-
-.credits .stat-icon {
-  color: #2563eb;
-}
-
-.badges .stat-icon {
-  color: #7c3aed;
-}
-
-.training .stat-icon {
-  color: #059669;
-}
-
-.stat-number {
-  font-size: 1.5rem;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.credits .stat-number {
-  color: #1d4ed8;
-}
-
-.badges .stat-number {
-  color: #6b21a8;
-}
-
-.stat-label {
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
-}
-
-.credits .stat-label {
-  color: #2563eb;
-}
-
-.badges .stat-label {
-  color: #7c3aed;
-}
-
-.stat-text {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #047857;
-}
-
-.stat-sublabel {
-  font-size: 0.75rem;
-  margin-top: 0.25rem;
-}
-
-.training .stat-sublabel {
-  color: #059669;
-}
-
-.difficulty .stat-sublabel {
-  color: #ea580c;
-}
-
-/* Difficulty Badge */
-.difficulty-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.5rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  border: 1px solid;
-}
-
-.difficulty-beginner {
-  background-color: #f0fdf4;
-  color: #15803d;
-  border-color: #bbf7d0;
-}
-
-.difficulty-intermediate {
-  background-color: #fefce8;
-  color: #a16207;
-  border-color: #fef08a;
-}
-
-.difficulty-advanced {
-  background-color: #fef2f2;
-  color: #dc2626;
-  border-color: #fecaca;
-}
-
-.difficulty-default {
-  background-color: #f9fafb;
-  color: #374151;
-  border-color: #e5e7eb;
-}
-
-/* Sections */
 .section {
-  margin-bottom: 1.5rem;
+  margin-bottom: 20px;
 }
-
-.section-title {
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 0.75rem;
+.section h3 {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 4px;
 }
-
-.section-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
-/* Description Section */
-.description-section {
-  background-color: #f9fafb;
-  border-radius: 0.5rem;
-  padding: 1.25rem;
-}
-
-.description-section .section-icon {
-  color: #6b7280;
-}
-
-.description-text {
-  color: #374151;
-  line-height: 1.6;
-}
-
-/* Learning Outcomes */
-.outcomes-icon {
-  color: #059669;
-}
-
-.outcomes-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.outcome-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
-.outcome-check {
-  width: 1.25rem;
-  height: 1.25rem;
-  color: #10b981;
-  margin-top: 0.125rem;
-  flex-shrink: 0;
-}
-
-.outcome-text {
-  color: #374151;
-}
-
-/* Prerequisites */
-.prerequisites-icon {
-  color: #2563eb;
-}
-
-.prerequisites-text {
-  color: #374151;
-  background-color: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 0.5rem;
-  padding: 0.75rem;
-}
-
-/* Instructions */
-.instructions-icon {
-  color: #7c3aed;
-}
-
-.instructions-text {
-  color: #374151;
-  background-color: #f3e8ff;
-  border: 1px solid #e9d5ff;
-  border-radius: 0.5rem;
-  padding: 0.75rem;
-}
-
-/* Tags */
-.tags-icon {
-  color: #4f46e5;
-}
-
 .tags-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 8px;
 }
-
 .tag-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.75rem;
+  background: #e0e7ff;
+  color: #4338ca;
+  padding: 4px 12px;
   border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  background-color: #e0e7ff;
-  color: #3730a3;
-  border: 1px solid #c7d2fe;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
-
-/* Resources Grid */
-.resources-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
+.resource-list {
+  list-style: none;
+  padding-left: 0;
 }
-
-@media (min-width: 768px) {
-  .resources-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.resource-card {
-  border-radius: 0.5rem;
-  padding: 1rem;
-  border: 1px solid;
-}
-
-.resource-card.primary-file {
-  background-color: #f0fdf4;
-  border-color: #bbf7d0;
-}
-
-.resource-card.additional-file {
-  background-color: #eff6ff;
-  border-color: #bfdbfe;
-}
-
-.resource-card.external-resource {
-  background-color: #f3e8ff;
-  border-color: #e9d5ff;
-}
-
-.resource-card.feedback {
-  background-color: #fffbeb;
-  border-color: #fde68a;
-}
-
-.resource-title {
-  font-weight: 500;
-  margin-bottom: 0.5rem;
+.resource-list li {
+  margin-bottom: 8px;
+  font-size: 0.9rem;
   display: flex;
+  gap: 6px;
   align-items: center;
-  gap: 0.5rem;
 }
-
-.primary-file .resource-title {
-  color: #166534;
-}
-
-.additional-file .resource-title {
-  color: #1e40af;
-}
-
-.external-resource .resource-title {
-  color: #6b21a8;
-}
-
-.feedback .resource-title {
-  color: #92400e;
-}
-
-.resource-icon {
-  width: 1rem;
-  height: 1rem;
-}
-
-.resource-text {
-  font-size: 0.875rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.primary-file .resource-text {
-  color: #15803d;
-}
-
-.additional-file .resource-text {
-  color: #1d4ed8;
-}
-
-.feedback .resource-text {
-  color: #a16207;
-}
-
-.resource-link {
-  font-size: 0.875rem;
-  color: #6b21a8;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  transition: text-decoration 200ms;
-}
-
-.resource-link:hover {
-  text-decoration: underline;
-}
-
-.external-icon {
-  width: 0.75rem;
-  height: 0.75rem;
-}
-
-/* Modal Footer */
 .modal-footer {
-  position: sticky;
-  bottom: 0;
-  background-color: white;
-  border-top: 1px solid #e5e7eb;
-  padding: 1.5rem;
-}
-
-.button-group {
   display: flex;
-  gap: 0.75rem;
   justify-content: flex-end;
+  gap: 15px;
+  border-top: 1px solid #eee;
+  padding-top: 15px;
 }
-
-.button {
-  padding: 0.5rem 1.5rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
+.btn {
+  padding: 10px 18px;
+  font-size: 1rem;
+  border-radius: 5px;
   cursor: pointer;
-  transition: all 200ms;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  border: none;
-  font-size: 0.875rem;
+  gap: 6px;
 }
-
-.button-secondary {
-  border: 1px solid #d1d5db;
-  color: #374151;
-  background-color: white;
-}
-
-.button-secondary:hover {
-  background-color: #f9fafb;
-}
-
-.button-primary {
-  background: linear-gradient(to right, #2563eb, #7c3aed);
+.btn-primary {
+  background-color: #4338ca;
   color: white;
   border: none;
 }
-
-.button-primary:hover {
-  background: linear-gradient(to right, #1d4ed8, #6b21a8);
-  transform: scale(1.05);
+.btn-primary:hover {
+  background-color: #3730a3;
 }
-
-.button-icon {
-  width: 1rem;
-  height: 1rem;
+.btn-secondary {
+  background-color: #e5e7eb;
+  color: #374151;
+  border: none;
 }
-
-/* Responsive Design */
-@media (max-width: 640px) {
-  .modal-overlay {
-    padding: 0.5rem;
-  }
-  
-  .modal-header {
-    padding: 1rem;
-  }
-  
-  .content-inner {
-    padding: 1rem;
-    gap: 1rem;
-  }
-  
-  .modal-footer {
-    padding: 1rem;
-  }
-  
-  .module-title {
-    font-size: 1.25rem;
-  }
-  
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
-  
-  .stat-card {
-    padding: 0.75rem;
-  }
-  
-  .module-info {
-    gap: 0.75rem;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .button-group {
-    flex-direction: column;
-  }
-  
-  .button {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-/* Animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(1rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.content-inner > * {
-  animation: fadeIn 0.6s ease forwards;
-}
-
-.content-inner > *:nth-child(1) { animation-delay: 0.1s; }
-.content-inner > *:nth-child(2) { animation-delay: 0.2s; }
-.content-inner > *:nth-child(3) { animation-delay: 0.3s; }
-.content-inner > *:nth-child(4) { animation-delay: 0.4s; }
-.content-inner > *:nth-child(5) { animation-delay: 0.5s; }
-.content-inner > *:nth-child(6) { animation-delay: 0.6s; }
-
-/* Scrollbar Styling */
-.modal-content::-webkit-scrollbar {
-  width: 6px;
-}
-
-.modal-content::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
-
-.modal-content::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-}
-
-.modal-content::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+.btn-secondary:hover {
+  background-color: #d1d5db;
 }

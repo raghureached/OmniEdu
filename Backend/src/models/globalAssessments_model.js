@@ -106,6 +106,7 @@ const globalAssessmentsSchema = new mongoose.Schema({
   team: { type: mongoose.Schema.Types.ObjectId, ref: "Team" },         // can set required: true if desired
   subteam: { type: mongoose.Schema.Types.ObjectId, ref: "SubTeam" },   // can set required: true if desired
   attempts: { type: Number, default: 1 },
+  unlimited_attempts: { type: Boolean, default: false },
   percentage_to_pass: { type: Number, min: 0, max: 100, default: 0 },
   display_answers: { type: Boolean, default: false },
   display_answers_when: {

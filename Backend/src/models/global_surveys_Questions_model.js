@@ -1,158 +1,52 @@
-// const mongoose = require("mongoose");
-// const { v4: uuidv4 } = require("uuid");
-
-// const surveyQuestionSchema = new mongoose.Schema(
-//   {
-//     uuid: {
-//       type: String,
-//       default: uuidv4,
-//       unique: true,
-//       index:true
-//     },
-//     question_text: {
-//       type: String,
-//       required: true,
-//       trim: true,
-//     },
-//     question_type: {
-//       type: String,
-//       required: true,
-//       enum: ["multiple_choice"],
-//     },
-//     options: {
-//       type: mongoose.Schema.Types.Mixed, // to store JSON (JSONB equivalent)
-//       default: null,
-//     },
-//     position: {
-//       type: Number,
-//       default: 0,
-//     },
-//   },
-//   {
-//     timestamps: true, 
-//   }
-// );
-
-// const GlobalSurveyQuestion = mongoose.model("GlobalSurveyQuestion", surveyQuestionSchema);
-
-// module.exports = GlobalSurveyQuestion;
-
-
-// const mongoose = require("mongoose");
-// const { v4: uuidv4 } = require("uuid");
-
-// const surveyQuestionSchema = new mongoose.Schema(
-//   {
-//     uuid: {
-//       type: String,
-//       default: uuidv4,
-//       unique: true,
-//       index: true,
-//     },
-//     question_type: {
-//       type: String,
-//       required: true,
-//       enum: ["multiple_choice", "info"], // add "info" type
-//     },
-//     question_text: {
-//       type: String,
-//       trim: true,
-//       required: function () {
-//         return this.question_type === "multiple_choice";
-//       },
-//     },
-//     info_text: {
-//       type: String,
-//       trim: true,
-//       required: function () {
-//         return this.question_type === "info";
-//       },
-//     },
-//     options: {
-//       type: mongoose.Schema.Types.Mixed, // only for multiple_choice
-//       default: null,
-//     },
-//     position: {
-//       type: Number,
-//       default: 0, // use to maintain order
-//     },
-//   },
-//   {
-//     timestamps: true,
-//   }
-// );
-
-// const GlobalSurveyQuestion = mongoose.model(
-//   "GlobalSurveyQuestion",
-//   surveyQuestionSchema
-// );
-
-// module.exports = GlobalSurveyQuestion;
-
 const mongoose = require("mongoose");
-const { v4: uuidv4 } = require("uuid");
-
-const surveyQuestionSchema = new mongoose.Schema(
-  {
-    uuid: {
-      type: String,
-      default: uuidv4,
-      unique: true,
-      index: true,
-    },
-    question_type: {
-      type: String,
-      required: true,
-      enum: ["multiple_choice", "info","text"],
-    },
-    question_text: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    info_text: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    options: {
-      type: mongoose.Schema.Types.Mixed,
-      default: [],
-    },
-    position: {
-      type: Number,
-      default: 0,
-    },
+const {v4: uuidv4} = require("uuid");
+const  surveyQuestionSchema = new mongoose.Schema({
+  question_text: {
+    type: String,
+    required: true,
   },
-  {
-    timestamps: true,
+  type:{
+    type:String,
+    enum:["Multiple Choice","Multi Select","info"],
+    required:true
+  },
+  
+  uuid:{
+    type:String,
+    default:uuidv4,
+    unique:true,
+    index:true
   }
-);
-
-// ✅ Custom validation
-surveyQuestionSchema.pre("validate", function (next) {
-  if (this.question_type === "multiple_choice") {
-    if (!this.question_text || this.question_text.trim() === "") {
-      return next(new Error("question_text is required for multiple_choice questions"));
+  ,instruction_header: { type: String, default: '' }
+  ,instruction_text: { type: String, default: '' }
+  ,instructions: { type: String, default: '' } ,// NEW
+  options: {
+    type: [String],
+    required: function () { return this.type !== 'info'; },
+    validate: {
+      validator: function (arr) {
+        if (this.type === 'info') return true;
+        return Array.isArray(arr) && arr.filter(Boolean).length >= 2;
+      },
+      message: "At least two options are required"
     }
-  }
-
-  if (this.question_type === "info") {
-    const hasInfoText = this.info_text && this.info_text.trim() !== "";
-    const hasQuestionText = this.question_text && this.question_text.trim() !== "";
-    if (!hasInfoText && !hasQuestionText) {
-      return next(new Error("Either info_text or question_text is required for info type questions"));
-    }
-  }
-  if (this.question_type === "text" && (!this.question_text || this.question_text.trim() === "")) {
-  return next(new Error("question_text is required for text questions"));
-}
-
-  next();
+  },
 });
 
+// Keep the combined 'instructions' in sync if header/text are edited from the UI
+surveyQuestionSchema.pre('save', function(next) {
+  try {
+    const header = (this.instruction_header || '').trim();
+    const text = (this.instruction_text || '').trim();
+    const combined = [header, text].filter(Boolean).join('\n\n');
+    if (this.isModified('instruction_header') || this.isModified('instruction_text')) {
+      this.instructions = combined;
+    }
+    next();
+  } catch (e) {
+    next(e);
+  }
+});
 const GlobalSurveyQuestion = mongoose.model("GlobalSurveyQuestion", surveyQuestionSchema);
 
 module.exports = GlobalSurveyQuestion;
-
-

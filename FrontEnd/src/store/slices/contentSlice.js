@@ -79,13 +79,24 @@ export const bulkDeleteContent = createAsyncThunk(
     }
   }
 );
-
+export const enhanceText = createAsyncThunk(
+    'content/enhanceText',
+    async ({title,description}, { rejectWithValue }) => {
+      try {
+        const response = await api.post('/api/globalAdmin/enhanceText', {title,description});
+        return response.data.data;
+      } catch (error) {
+        return rejectWithValue(error.response.data);
+      }
+    }
+  );
 // Content slice
 const contentSlice = createSlice({
   name: 'content',
   initialState: {
     items: [],
     uploading: false,
+    aiProcessing:false,
     loading: false,
     error: null,
     filters: {},

@@ -96,7 +96,6 @@ const GlobalModuleManagement = () => {
   const openDraftModal = () => {
     const drafts = JSON.parse(localStorage.getItem('drafts'));
     setDraftContent(drafts)
-    // console.log(draftContent)
     setShowDraftModal(true);
   };
   const useDraft = (title) => {
@@ -111,7 +110,6 @@ const GlobalModuleManagement = () => {
     try {
       // Build FormData
       const formData = new FormData();
-
       const moduleData = {
         ...newContent,
         id: Date.now(), // temporary id
@@ -295,8 +293,8 @@ const GlobalModuleManagement = () => {
         </div>
       </div>
 
-      {showModal && <GlobalModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading} handleRichInputChange={handleRichInputChange} />}
-      {showEditModal && <GlobalModuleModal showModal={showEditModal} setShowModal={setShowEditModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} showEditModal={showEditModal} setShowEditModal={setShowEditModal} editContentId={editContentId} />}
+      {showModal && <GlobalModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading} handleRichInputChange={handleRichInputChange} error={error}/>}
+      {showEditModal && <GlobalModuleModal showModal={showEditModal} setShowModal={setShowEditModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} showEditModal={showEditModal} setShowEditModal={setShowEditModal} editContentId={editContentId} handleRichInputChange={handleRichInputChange} error={error}/> } 
       <div className="table-container">
         <table className="data-table">
           <thead>

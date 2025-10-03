@@ -28,6 +28,7 @@ const {
     fileUploadHandler,
   } = require("../controllers/globalAdmin.controller/globalAdmin_Assessments");
 const { getTeams } = require("../controllers/globalAdmin.controller/globalAdmin_Teams");
+const { enhanceText, generateImage } = require("../controllers/globalAdmin.controller/globalAdmin_AI");
 
 const router = require("express").Router();
 
@@ -123,5 +124,10 @@ router.route('/getUserDashBoardPermissions').get(getUserDashBoardPermissions)
 ///////getTeams////////
 router.route('/getTeams').get(getTeams)
 
+
+
+//////AI/////////
+router.route('/enhanceText').post(enhanceText)
+router.route('/generateImage').post(generateImage)
 
 module.exports = router;
