@@ -13,29 +13,29 @@ const AdminDashBoardConfig = () => {
         dispatch(fetchOrganizations());
         dispatch(fetchAdminDashboardPermissions());
     }, [dispatch]);
-    useEffect(()=>{
+    useEffect(() => {
         dispatch(fetchAdminAllowedPermissions(currentOrg?.uuid))
-    },[currentOrg])
+    }, [currentOrg])
 
     const { organizations } = useSelector((state) => state.organizations);
-    const { permissions,loading } = useSelector((state) => state.adminDashboardConfig);
-    const {adminAllowedPermissions} = useSelector((state) => state.adminDashboardConfig);
+    const { permissions, loading } = useSelector((state) => state.adminDashboardConfig);
+    const { adminAllowedPermissions } = useSelector((state) => state.adminDashboardConfig);
     // console.log(adminAllowedPermissions)
     const handleOrgChange = (e) => {
         setCurrentOrg(organizations.find((org) => org.uuid === e.target.value))
     }
     const handlePermissionChange = (permissionId) => {
-        dispatch(updateAdminDashboardConfig({permissionId, orgId:currentOrg?.uuid}))
+        dispatch(updateAdminDashboardConfig({ permissionId, orgId: currentOrg?.uuid }))
     }
-    if(loading){
-        return <LoadingScreen text="Loading..."/>
+    if (loading) {
+        return <LoadingScreen text="Loading..." />
     }
     return (
-        <div className="admin-dash-dashboard-settings-container">
-            <div className="admin-dash-settings-header">
-                <label htmlFor="org-select">Manage Settings for Organization:</label>
-                <select id="org-select" className="admin-dash-org-select" onChange={handleOrgChange} value={currentOrg?.uuid}>
-                    <option value="">-- Select an Organization --</option>
+        <div className="user-dash-dashboard-settings-container">
+            <div className="message-board-form" style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: "20px" }}>
+                <label htmlFor="" className="message-board-label">Manage Settings for an Organization</label>
+                <select className="message-board-select" onChange={(e) => handleOrgChange(e)} style={{ width: "fit-content" }} value={currentOrg?.uuid}>
+                    <option value="">Select an Organization</option>
                     {organizations.map((org) => (
                         <option key={org._id} value={org.uuid}>
                             {org.name}
@@ -44,37 +44,37 @@ const AdminDashBoardConfig = () => {
                 </select>
             </div>
 
-             <div className="admin-dash-settings-card">
-                <h2 className="admin-dash-settings-title">
-                    Manage Admin Dashboard Settings for <span>{currentOrg?.name || "No Org Selected"}</span>
+            {currentOrg ? <div className="user-dash-settings-card">
+                <h2 className="user-dash-settings-title">
+                    Manage User Dashboard Settings for <span>{currentOrg?.name}</span>
                 </h2>
 
-                <p className="admin-dash-settings-info">
+                <p className="user-dash-settings-info">
                     These toggles enable or disable features at the <strong>organization level</strong>.
-                    Administrators will only see features that are enabled here AND permitted by their assigned Role.
+                    Users will only see features that are enabled here AND permitted by their assigned Role.
                 </p>
 
-                {currentOrg ?<div className="admin-dash-settings-list">
+                {currentOrg ? <div className="user-dash-settings-list">
                     {permissions.map((permission) => (
-                        <div className="admin-dash-settings-item" key={permission._id}>
+                        <div className="user-dash-settings-item" key={permission.feature_key}>
                             <span>{permission.name}</span>
-                            <label className="admin-dash-switch">
-                                <input
-                                    type="checkbox"
-                                    checked={adminAllowedPermissions.includes(permission._id)}
-                                    onChange={()=>handlePermissionChange(permission._id)}
-                                />
-                                <span className="admin-dash-slider admin-dash-round"></span>
+                            <label className="user-dash-switch">
+                                <input type="checkbox" checked={adminAllowedPermissions.includes(permission._id)} onChange={(e) => handlePermissionChange(permission._id)} />
+                                <span className="user-dash-slider round"></span>
                             </label>
                         </div>
                     ))}
-                </div> : <p style={{textAlign:"center",fontSize:"16px",color:"#666",marginTop:"20px"}}>Please select an Organization</p>}
+                </div> : <p style={{ textAlign: "center", fontSize: "16px", color: "#666", marginTop: "20px" }}>Please select an Organization</p>}
 
-                    {/* <button className="admin-dash-save-btn">Save Admin Dashboard Settings</button> */}
-                </div> 
+                {/* <button className="user-dash-save-btn">Save User Dashboard Settings</button> */}
             </div>
+                :
+                <p style={{ textAlign: "center", fontSize: "16px", color: "#666", marginTop: "20px", fontWeight: 600 }}>Please select an Organization</p>
+            }
+        </div>
 
-            )
-    }
 
-            export default AdminDashBoardConfig
+    )
+}
+
+export default AdminDashBoardConfig

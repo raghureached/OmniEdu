@@ -9,6 +9,7 @@ import ModulePreview from './ModulePreview';
 import api from '../../../services/api';
 import FullRichTextEditor from './RichText';
 import CustomError from '../../../components/common/Error/Error';
+import { GoBook, GoX } from 'react-icons/go';
 const categories = [
     "Cyber Security",
     // "POSH (Prevention of Sexual Harassment)",
@@ -29,7 +30,7 @@ const trainingTypes = [
 
 
 const GlobalModuleModal = ({
-    showModal, setShowModal, newContent, handleInputChange, showEditModal, setShowEditModal, editContentId, drafts, setDrafts, handleRichInputChange,error
+    showModal, setShowModal, newContent, handleInputChange, showEditModal, setShowEditModal, editContentId, drafts, setDrafts, handleRichInputChange, error
 }) => {
     const [currentStep, setCurrentStep] = useState(1);
     const [learningOutcomes, setLearningOutcomes] = useState(newContent.learningOutcomes || ['']);
@@ -57,7 +58,7 @@ const GlobalModuleModal = ({
             try {
                 const response = await api.get('/api/globalAdmin/getTeams');
                 setTeams(response.data.data);
-                console.log(response.data.data);
+                // console.log(response.data.data);
             } catch (error) {
                 console.error('Error fetching teams:', error);
             }
@@ -93,17 +94,17 @@ const GlobalModuleModal = ({
         setLearningOutcomes(newOutcomes);
         handleInputChange({ target: { name: 'learningOutcomes', value: newOutcomes } });
     };
-    const enhanceTexthelper = (title,description)=>{
-        if(title.trim().length < 5 || description.trim().length < 5 ){
+    const enhanceTexthelper = (title, description) => {
+        if (title.trim().length < 5 || description.trim().length < 5) {
             alert("Title and description must be at least 5 characters long")
             return
         }
-        if(aiProcessing){
+        if (aiProcessing) {
             alert("Please wait for the previous request to complete")
             return
         }
         setAiProcessing(true)
-        dispatch(enhanceText({title,description})).then((res) => {
+        dispatch(enhanceText({ title, description })).then((res) => {
             // console.log(res)
             handleInputChange({ target: { name: 'title', value: res.payload.title } });
             handleInputChange({ target: { name: 'description', value: res.payload.description } });
@@ -111,19 +112,19 @@ const GlobalModuleModal = ({
             setAiProcessing(false)
         })
     }
-    const generateImage = (title,description)=>{
-        if(title.trim().length < 5 || description.trim().length < 5 ){
+    const generateImage = (title, description) => {
+        if (title.trim().length < 5 || description.trim().length < 5) {
             alert("Title and description must be at least 5 characters long")
             return
         }
-        if(generatingImage){
+        if (generatingImage) {
             alert("Please wait for the previous request to complete")
             return
         }
         setGeneratingImage(true)
-        dispatch(generateImage({title,description})).then((res) => {
+        dispatch(generateImage({ title, description })).then((res) => {
             // console.log(res)
-           handleInputChange({ target: { name: 'thumbnail', value: res.payload.thumbnail } });  
+            handleInputChange({ target: { name: 'thumbnail', value: res.payload.thumbnail } });
         }).finally(() => {
             setGeneratingImage(false)
         })
@@ -245,37 +246,30 @@ const GlobalModuleModal = ({
     if (!showModal) return null;
 
     return (
-        <div className="module-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-            <div className="module-overlay__content" style={{ width: '60%' }}>
+        <div className="addOrg-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <div className="addOrg-modal-content" >
                 {/* HEADER */}
-                <div className="module-overlay__header">
-                    <div>
-                        <h2 id="modalTitle" className="module-overlay__title">Add New Module</h2>
-                        <div className="module-overlay__step-indicator">
-                            Step {currentStep} of {totalSteps}: {currentStep === 1 ? "Basic Information" : currentStep === 2 ? "Files and Resources" : "Configurations & Metadata"}
+                <div className="addOrg-modal-header">
+                    <div className="addOrg-header-content">
+                        <div className="addOrg-header-icon">
+                            <GoBook size={24} color="#5570f1" />
                         </div>
-
-                    </div>
-                    <div>
-                        {drafts &&
-                            <div className='module-overlay__drafts'>
-                                <p>Drafts</p>
-                                <button onClick={setDrafts}>{JSON.parse(drafts).title}</button>
-                                {/* <button onClick={deleteDraft} style={{border: 'none', background: 'transparent', cursor: 'pointer',position: 'relative', right: '35px',top: '-10px',color: 'red',fontWeight: '700'}}><X size={20} /></button> */}
-                            </div>}
+                        <div>
+                            <h2>{showEditModal ? "Edit Module" : "Add New Module"}</h2>
+                            <p className="addOrg-header-subtitle">
+                                Step {currentStep} of {totalSteps} : {currentStep === 1 ? "Basic Information" : currentStep === 2 ? "Files and Resources" : currentStep === 3 ? "Meta Data and Configurations" : ""}
+                            </p>
+                        </div>
                     </div>
                     <button
                         type="button"
-                        className="module-overlay__close"
+                        className="addOrg-close-btn"
                         onClick={() => setShowModal(false)}
-                        aria-label="Close Modal"
+                        aria-label="Close modal"
                     >
-                        <X size={20} />
+                        <GoX size={20} />
                     </button>
                 </div>
-                {error && <CustomError error={error} />}
-
-                {/* PROGRESS BAR */}
                 <div className="module-overlay__progress">
                     <div
                         className="module-overlay__progress-bar"
@@ -288,51 +282,51 @@ const GlobalModuleModal = ({
                     {currentStep === 1 && (
                         <div className="module-overlay__step">
                             <div >
-                            <div className="module-overlay__form-group" style={{ marginBottom: '20px' }}>
-                                <label className="module-overlay__form-label">
-                                    <span style={{display: 'flex', alignItems: 'center', gap: '5px'}}>Module Title <span className="module-overlay__required">*</span>
-                                    {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'}/></span>}</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    name="title"
-                                    value={newContent.title || ''}
-                                    onChange={handleInputChange}
-                                    className="module-overlay__form-input"
-                                    placeholder="Enter module title"
-                                    required
-                                    autoComplete="off"
-                                    disabled={aiProcessing}
-                                />
-                                
+                                <div className="module-overlay__form-group" style={{ marginBottom: '20px' }}>
+                                    <label className="module-overlay__form-label">
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Module Title <span className="module-overlay__required">*</span>
+                                            {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="title"
+                                        value={newContent.title || ''}
+                                        onChange={handleInputChange}
+                                        className="addOrg-form-input"
+                                        placeholder="Enter module title"
+                                        required
+                                        autoComplete="off"
+                                        style={{ width: '100%' }}
+                                        disabled={aiProcessing}
+                                    />
+
+
+                                </div>
+
+                                <div className="module-overlay__form-group">
+                                    <label className="module-overlay__form-label">
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Module Description <span className="module-overlay__required">*</span>
+                                            {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}</span>
+                                    </label>
+                                    <textarea
+                                        name="description"
+                                        value={newContent.description || ''}
+                                        onChange={handleInputChange}
+                                        rows={4}
+                                        className="addOrg-form-input"
+                                        placeholder="Describe the intent, target audience, and what learners will gain"
+                                        required
+                                        style={{ width: '100%' }}
+                                        disabled={aiProcessing}
+                                    />
+
+
+                                </div>
 
                             </div>
 
                             <div className="module-overlay__form-group">
-                                <label className="module-overlay__form-label">
-                                    <span style={{display: 'flex', alignItems: 'center', gap: '5px'}}>Module Description <span className="module-overlay__required">*</span>
-                                    {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'}/></span>}</span>
-                                </label>
-                                <textarea
-                                    name="description"
-                                    value={newContent.description || ''}
-                                    onChange={handleInputChange}
-                                    rows={4}
-                                    className="module-overlay__form-textarea"
-                                    placeholder="Describe the intent, target audience, and what learners will gain"
-                                    required
-                                    disabled={aiProcessing}
-                                />
-                                
-                                
-                            </div>
-                            <span style={{margin:'10px', }}>
-                                    <button style={{float:'right', background: 'gray', border: 'none', cursor: 'pointer',color:'white', padding:'5px 10px', borderRadius:'5px'}} onClick={()=>enhanceTexthelper(newContent.title,newContent.description)}>{aiProcessing ? "Please Wait.." : "Enhance with AI ✨"}</button>
-                                </span>
-                            </div>
-
-                            <div className="module-overlay__form-group">
-                                <label className="module-overlay__form-label">Learning Outcomes</label>
+                                <label className="module-overlay__form-label">Learning Outcomes<span className='module-overlay__required'>*</span></label>
                                 <div className="module-overlay__learning-outcomes">
                                     {learningOutcomes.map((outcome, index) => (
                                         <div key={index} className="module-overlay__learning-outcome-item">
@@ -340,14 +334,15 @@ const GlobalModuleModal = ({
                                                 type="text"
                                                 value={outcome}
                                                 onChange={(e) => updateLearningOutcome(index, e.target.value)}
-                                                className="module-overlay__form-input"
+                                                className="addOrg-form-input"
                                                 placeholder={`Learning outcome ${index + 1}`}
+                                                style={{ width: '100%' }}
                                             />
                                             {learningOutcomes.length > 1 && (
                                                 <button
                                                     type="button"
                                                     onClick={() => removeLearningOutcome(index)}
-                                                    className="module-overlay__learning-outcome-remove"
+                                                    className=""
                                                     aria-label={`Remove learning outcome ${index + 1}`}
                                                 >
                                                     <X size={16} />
@@ -358,7 +353,9 @@ const GlobalModuleModal = ({
                                     <button
                                         type="button"
                                         onClick={addLearningOutcome}
-                                        className="module-overlay__add-outcome-btn"
+                                        className="add-btn"
+                                        style={{ width: 'fit-content', alignSelf: 'flex-end' }}
+
                                     >
                                         <Plus size={16} /> Add Learning Outcome
                                     </button>
@@ -366,15 +363,16 @@ const GlobalModuleModal = ({
                             </div>
 
                             <div className="module-overlay__form-group">
-                                <label className="module-overlay__form-label">Tags</label>
+                                <label className="module-overlay__form-label">Tags<span className='module-overlay__required'>*</span></label>
                                 <input
                                     type="text"
                                     value={tagInput}
                                     onChange={handleTagInputChange}
                                     onKeyDown={handleTagInputKeyDown}
-                                    className="module-overlay__form-input"
+                                    className="addOrg-form-input"
                                     placeholder="Type a tag and press Enter or comma"
                                     autoComplete="off"
+                                    style={{ width: '100%' }}
                                 />
                                 <div className="module-overlay__tags-container">
                                     {tags.map((tag, index) => (
@@ -400,11 +398,15 @@ const GlobalModuleModal = ({
                                     name="prerequisites"
                                     value={newContent.prerequisites || ''}
                                     onChange={handleInputChange}
-                                    className="module-overlay__form-input"
+                                    className="addOrg-form-input"
                                     placeholder="Required prior knowledge"
                                     autoComplete="off"
+                                    style={{ width: '100%' }}
                                 />
                             </div>
+
+                            <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(newContent.title, newContent.description)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
+
                             <div className="module-overlay__form-group">
                                 <label className="module-overlay__form-label">Thumbnail</label>
                                 <input
@@ -415,7 +417,8 @@ const GlobalModuleModal = ({
                                     accept="image/*"
                                     id="thumbnail"
                                 />
-                                <button style={{float:'right', background: 'gray', border: 'none', cursor: 'pointer',color:'white', padding:'5px 10px', borderRadius:'5px'}} onClick={()=>generateImage(newContent.title,newContent.description)}>{generatingImage ? "Please Wait.." : "Create with AI ✨"}</button>
+
+                                {/* <button style={{ float: 'right', background: 'gray', border: 'none', cursor: 'pointer', color: 'white', padding: '5px 10px', borderRadius: '5px' }} onClick={() => generateImage(newContent.title, newContent.description)}>{generatingImage ? "Please Wait.." : "Create with AI ✨"}</button> */}
                                 {newContent.thumbnail ? (
                                     <div className="module-overlay__uploaded-file-container">
                                         <span className="module-overlay__uploaded-file-name" title={typeof newContent.thumbnail === 'string' ? newContent.thumbnail.split('/').pop() : newContent.thumbnail.name}>
@@ -478,50 +481,54 @@ const GlobalModuleModal = ({
                                 rows={4}
                                 value={newContent.instructions || ''}
                                 onChange={handleInputChange}
-                                className="module-overlay__form-textarea"
+                                className="addOrg-form-input"
                                 placeholder="Add instructions for the module"
+                                style={{ width: '100%' }}
                             />
 
                             {contentType === 'Upload File' ? (
                                 <div className="module-overlay__form-group">
-                                    <label className="module-overlay__form-label">Upload Files</label>
-                                    <input
-                                        type="file"
-                                        name="primaryFile"
-                                        onChange={handleInputChange}
-                                        style={{ display: 'none' }}
-                                        accept=".pdf,.doc,.docx,.mp4,.mp3,.scorm"
-                                        id="uploadFiles"
-                                    />
-                                    {newContent.primaryFile ? (
-                                        <div className="module-overlay__uploaded-file-container">
-                                            <span className="module-overlay__uploaded-file-name" title={typeof newContent.primaryFile === 'string' ? newContent.primaryFile.split('/').pop() : newContent.primaryFile.name}>
-                                                {typeof newContent.primaryFile === 'string' ? newContent.primaryFile.split('/').pop() : newContent.primaryFile.name}
-                                            </span>
-                                            <div className="module-overlay__file-actions">
-                                                <button
-                                                    type="button"
-                                                    className="module-overlay__btn-preview"
-                                                    onClick={() => handlePreviewFile(newContent.primaryFile)}
-                                                    aria-label="Preview uploaded file"
-                                                >
-                                                    <EyeIcon size={16} /> Preview
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className="module-overlay__btn-delete"
-                                                    onClick={handleRemoveFile}
-                                                    aria-label="Delete uploaded file"
-                                                >
-                                                    <RiDeleteBin2Fill size={16} /> Delete
-                                                </button>
+                                    <div>
+                                        <label className="module-overlay__form-label">Upload File <span className='module-overlay__required'>*</span></label>
+
+                                        <input
+                                            type="file"
+                                            name="primaryFile"
+                                            onChange={handleInputChange}
+                                            style={{ display: 'none' }}
+                                            accept=".pdf,.doc,.docx,.mp4,.mp3,.scorm"
+                                            id="uploadFiles"
+                                        />
+                                        {newContent.primaryFile ? (
+                                            <div className="module-overlay__uploaded-file-container">
+                                                <span className="module-overlay__uploaded-file-name" title={typeof newContent.primaryFile === 'string' ? newContent.primaryFile.split('/').pop() : newContent.primaryFile.name}>
+                                                    {typeof newContent.primaryFile === 'string' ? newContent.primaryFile.split('/').pop() : newContent.primaryFile.name}
+                                                </span>
+                                                <div className="module-overlay__file-actions">
+                                                    <button
+                                                        type="button"
+                                                        className="module-overlay__btn-preview"
+                                                        onClick={() => handlePreviewFile(newContent.primaryFile)}
+                                                        aria-label="Preview uploaded file"
+                                                    >
+                                                        <EyeIcon size={16} /> Preview
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="module-overlay__btn-delete"
+                                                        onClick={handleRemoveFile}
+                                                        aria-label="Delete uploaded file"
+                                                    >
+                                                        <RiDeleteBin2Fill size={16} /> Delete
+                                                    </button>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ) : (
-                                        <label htmlFor="uploadFiles" className="module-overlay__upload-label" tabIndex={0} onKeyPress={e => { if (e.key === 'Enter') document.getElementById('uploadFiles').click(); }}>
-                                            <Plus size={16} /> Upload File
-                                        </label>
-                                    )}
+                                        ) : (
+                                            <label htmlFor="uploadFiles" className="module-overlay__upload-label" tabIndex={0} onKeyPress={e => { if (e.key === 'Enter') document.getElementById('uploadFiles').click(); }}>
+                                                <Plus size={16} /> Upload File
+                                            </label>
+                                        )}
+                                    </div>
 
                                     <div style={{ marginTop: '20px' }}>
                                         <label className="module-overlay__form-label">Additional File</label>
@@ -566,16 +573,8 @@ const GlobalModuleModal = ({
                                 </div>
                             ) : (
                                 <div className="module-overlay__form-group">
-                                    <label className="module-overlay__form-label">Enter Text</label>
-                                    {/* <textarea
-                                        name="text"
-                                        rows={4}
-                                        value={newContent.text || ''}
-                                        onChange={handleInputChange}
-                                        className="module-overlay__form-textarea"
-                                        placeholder="Add text content or paste external URLs (YouTube, websites, documents, etc.)"
-                                    /> */}
-                                    <FullRichTextEditor value={newContent.text || ''} onChange={handleRichInputChange} />
+                                    <label className="module-overlay__form-label">Enter Text<span className='module-overlay__required'>*</span></label>
+                                    <FullRichTextEditor value={newContent.richText || ''} onChange={handleRichInputChange} />
 
                                     <label className="module-overlay__form-label">External Resource</label>
                                     <span style={{ display: 'flex', alignItems: 'center' }}>
@@ -584,8 +583,9 @@ const GlobalModuleModal = ({
                                             name="externalResource"
                                             value={newContent.externalResource || ''}
                                             onChange={handleInputChange}
-                                            className="module-overlay__form-input"
+                                            className="addOrg-form-input"
                                             placeholder="Add external resource URL"
+                                            style={{ width: '100%' }}
                                         />
                                         {isValidUrl && (
                                             <button
@@ -612,15 +612,6 @@ const GlobalModuleModal = ({
                                             />
                                         </div>
                                     )}
-                                    <label className="module-overlay__form-label">Instructions</label>
-                                    <textarea
-                                        name="instructions"
-                                        rows={4}
-                                        value={newContent.instructions || ''}
-                                        onChange={handleInputChange}
-                                        className="module-overlay__form-textarea"
-                                        placeholder="Add instructions for the module"
-                                    />
                                     <div>
                                         <label className="module-overlay__form-label">Additional File</label>
                                         <input
@@ -679,66 +670,69 @@ const GlobalModuleModal = ({
                                         min="1"
                                         value={newContent.duration || ''}
                                         onChange={handleInputChange}
-                                        className="module-overlay__form-input"
+                                        className="addOrg-form-input"
                                         required
-                                        placeholder="e.g., 60"
+                                        placeholder="e.g. 60"
                                         autoComplete="off"
                                     />
                                 </div>
-                                    <div className='module-overlay__form-group'>
+                                <div className='module-overlay__form-group'>
                                     <label className="module-overlay__form-label">
                                         Credits
                                     </label>
-                                        {/* <span className="slider-value">{newContent.credits || 0}</span> */}
-                                        <input
-                                            type="number"
-                                            name="credits"
-                                            min="0"
-                                            max="9"
-                                            value={newContent.credits || 0}
-                                            onChange={handleInputChange}
-                                            className="module-overlay__form-input"
-                                            style={{ width: '150px' }}   
-                                        />
-                                    {/* </label> */}
-                                    </div>
-                                    <div className='module-overlay__form-group'>
+                                    <select name="credits" id="" value={newContent.credits || 0} onChange={handleInputChange} className='addOrg-form-input' style={{ width: '180px' }}>
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                    </select>
+                                </div>
+                                <div className='module-overlay__form-group'>
                                     <label className="module-overlay__form-label slider-label">
                                         Stars
                                     </label>
 
-                                        {/* <span className="slider-value">{newContent.stars || 0}</span> */}
-                                        <input
-                                            type="number"
-                                            name="stars"
-                                            min="0"
-                                            max="9"
-                                            value={newContent.stars || 0}
-                                            onChange={handleInputChange}
-                                            className="module-overlay__form-input"
-                                            style={{ width: '150px' }}
-                                        />
-                                    </div>
-                                    <div className='module-overlay__form-group'>
+                                    <select name="stars" id="" value={newContent.stars || 0} onChange={handleInputChange} className='addOrg-form-input' style={{ width: '180px' }}>
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                    </select>
+                                </div>
+                                <div className='module-overlay__form-group'>
                                     <label className="module-overlay__form-label slider-label">
                                         Badges
                                     </label>
-                                        {/* <span className="slider-value">{newContent.badges || 0}</span> */}
-                                        <input
-                                            type="number"
-                                            name="badges"
-                                            min="0"
-                                            max="9"
-                                            value={newContent.badges || 0}
-                                            onChange={handleInputChange}
-                                            className="module-overlay__form-input"
-                                            style={{ width: '150px' }}
-                                        />
-                                    </div>
+                                    {/* <span className="slider-value">{newContent.badges || 0}</span> */}
+                                    <select name="badges" id="" value={newContent.badges || 0} onChange={handleInputChange} className='addOrg-form-input' style={{ width: '180px' }}>
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                    </select>
                                 </div>
+                            </div>
 
-                            <div className='module-overlay__form-row' >
-                                    <div className='module-overlay__form-group'>
+                            <div className='module-overlay__form-row' style={{ marginTop: '20px' }}>
+                                <div className='module-overlay__form-group'>
                                     <label className="module-overlay__form-label">
                                         Category <span className="module-overlay__required">*</span>
                                     </label>
@@ -746,8 +740,9 @@ const GlobalModuleModal = ({
                                         name="category"
                                         value={newContent.category || ''}
                                         onChange={handleInputChange}
-                                        className="module-overlay__form-select"
+                                        className="addOrg-form-input"
                                         required
+                                        style={{ width: '300px' }}
                                     >
                                         <option value="">Select Category</option>
                                         {categories.map((cat) => (
@@ -756,45 +751,47 @@ const GlobalModuleModal = ({
                                             </option>
                                         ))}
                                     </select>
-                                    </div>
-                                    <div className="module-overlay__form-group" style={{ flex: 1, minWidth: 0 }}>
-                                        <label className="module-overlay__form-label">
-                                            Training Type <span className="module-overlay__required">*</span>
-                                        </label>
-                                        <select
-                                            name="trainingType"
-                                            value={newContent.trainingType || ''}
-                                            onChange={handleInputChange}
-                                            className="module-overlay__form-select"
-                                            required
-                                        >
-                                            <option value="">Select Training Type</option>
-                                            {trainingTypes.map((type) => (
-                                                <option key={type} value={type}>
-                                                    {type}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="module-overlay__form-group">
-                                        <label className="module-overlay__form-label">
-                                            Target Team/Sub Team <span className="module-overlay__required">*</span>
-                                        </label>
-                                        <select
-                                            name="team"
-                                            value={newContent.team || ''}
-                                            onChange={handleInputChange}
-                                            className="module-overlay__form-select"
-                                            required
-                                        >
-                                            <option value="">Select Team/Sub Team</option>
-                                            {teams?.map((team) => (
-                                                <option key={team._id} value={team._id}>
-                                                    {team.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                </div>
+                                <div className="module-overlay__form-group" >
+                                    <label className="module-overlay__form-label">
+                                        Training Type <span className="module-overlay__required">*</span>
+                                    </label>
+                                    <select
+                                        name="trainingType"
+                                        value={newContent.trainingType || ''}
+                                        onChange={handleInputChange}
+                                        className="addOrg-form-input"
+                                        required
+                                        style={{ width: '250px' }}
+                                    >
+                                        <option value="">Select Training Type</option>
+                                        {trainingTypes.map((type) => (
+                                            <option key={type} value={type}>
+                                                {type}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="module-overlay__form-group">
+                                    <label className="module-overlay__form-label">
+                                        Target Team/Sub Team <span className="module-overlay__required">*</span>
+                                    </label>
+                                    <select
+                                        name="team"
+                                        value={newContent.team || ''}
+                                        onChange={handleInputChange}
+                                        className="addOrg-form-input"
+                                        required
+                                        style={{ width: '250px' }}
+                                    >
+                                        <option value="">Select Team/Sub Team</option>
+                                        {teams?.map((team) => (
+                                            <option key={team._id} value={team._id}>
+                                                {team.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
 
                             <div className="module-overlay__form-group">
@@ -825,32 +822,33 @@ const GlobalModuleModal = ({
                                 <p style={{ fontSize: '12px', color: '#666' }}>Allow learners to submit their work for grading and feedback.
                                     Please enable this if you have an additional file.
                                 </p>
-                            </div>
-                            <div className="module-overlay__form-group" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px'}}>
-                                <button className='module-overlay__btn-save' onClick={handleSaveDraft} disabled={editContentId}>Save Draft</button>
-                                <button className='module-overlay__btn-preview' onClick={() => setPreview(true)}>Preview</button>
+                                <div className="module-overlay__form-group" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' ,marginTop:"120px"}}>
+                                    <button className='btn-primary' onClick={handleSaveDraft} disabled={editContentId}>Save Draft</button>
+                                    <button className='btn-secondary' onClick={() => setPreview(true)}>Preview</button>
+                                </div>
                             </div>
                         </div>
                     )}
+
                 </div>
                 {preview && <ModulePreview moduleData={newContent} onClose={() => setPreview(false)} />}
 
                 {/* FOOTER ACTIONS */}
                 <div className="module-overlay__footer">
                     <div className="module-overlay__step-navigation">
-                        
-                            <button type="button" className="module-overlay__btn-prev" onClick={prevStep} aria-label="Previous Step" disabled={currentStep === 1}>
-                                <ChevronLeft size={16} /> Previous
-                            </button>
+
+                        <button type="button" className="btn-secondary" onClick={prevStep} aria-label="Previous Step" disabled={currentStep === 1}>
+                            <ChevronLeft size={16} /> Previous
+                        </button>
 
                         <div className="module-overlay__action-buttons" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                            <button className="module-overlay__btn-cancel" onClick={() => setShowModal(false)} aria-label="Cancel " disabled={uploading}>
+                            <button className="btn-secondary" onClick={() => setShowModal(false)} aria-label="Cancel " disabled={uploading}>
                                 Cancel
                             </button>
                             {currentStep < totalSteps ? (
                                 <button
                                     type="button"
-                                    className="module-overlay__btn-next"
+                                    className="btn-primary"
                                     onClick={nextStep}
                                     disabled={!canProceed() || uploading}
                                     aria-label="Next Step"
@@ -862,7 +860,7 @@ const GlobalModuleModal = ({
                             ) : (
                                 <button
                                     type="button"
-                                    className="module-overlay__btn-add"
+                                    className="btn-primary"
                                     onClick={showEditModal ? handleEditContent : handleAddContent}
                                     disabled={uploading}
                                     aria-label="Create Module"

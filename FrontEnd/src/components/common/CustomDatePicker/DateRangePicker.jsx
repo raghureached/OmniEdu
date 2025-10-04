@@ -63,10 +63,10 @@ const AddOrgDateRangePickerSingle = ({
         />
         {error && <div className="calendar-error">{error}</div>}
         <div className="calendar-modal-actions">
-          <button onClick={onClose} className="cancel-btn">
+          <button onClick={onClose} className="calendar-cancel-btn">
             Cancel
           </button>
-          <button onClick={handleConfirm} className="confirm-btn">
+          <button onClick={handleConfirm} className="calendar-confirm-btn">
             Confirm
           </button>
         </div>

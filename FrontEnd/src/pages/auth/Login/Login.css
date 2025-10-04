@@ -67,26 +67,6 @@
   margin-top: 30px;
 }
 
-.btn-primary {
-  background-color: #0d6efd;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-primary:hover {
-  background-color: #0b5ed7;
-}
-
-.btn-primary:disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
-}
-
 .forgot-password-link {
   color: #0d6efd;
   text-decoration: none;

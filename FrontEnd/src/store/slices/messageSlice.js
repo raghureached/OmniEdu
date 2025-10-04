@@ -43,7 +43,8 @@ const messageSlice = createSlice({
   initialState: {
     currentMessage: '',
     loading: false,
-    error: null
+    error: null,
+    posting:false
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -63,10 +64,12 @@ const messageSlice = createSlice({
       .addCase(updateMessage.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.posting=true
       })
       .addCase(updateMessage.fulfilled, (state, action) => {
         state.loading = false;
         state.currentMessage = action.payload;
+        state.posting=false
       })
       .addCase(updateMessage.rejected, (state, action) => {
         state.loading = false;

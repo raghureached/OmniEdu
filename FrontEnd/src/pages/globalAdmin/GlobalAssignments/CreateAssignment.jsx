@@ -7,7 +7,7 @@ import { createGlobalAssignment } from '../../../store/slices/globalAssignmentSl
 import { fetchGlobalAssessments } from '../../../store/slices/globalAssessmentSlice';
 import { fetchOrganizations } from '../../../store/slices/organizationSlice';
 import { fetchSurveys } from '../../../store/slices/surveySlice';
-import { Filter, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Filter, Search, X } from 'lucide-react';
 
 const GlobalCreateAssignment = () => {
     const dispatch = useDispatch();
@@ -18,7 +18,7 @@ const GlobalCreateAssignment = () => {
         dispatch(fetchOrganizations());
         dispatch(fetchSurveys());
     }, [dispatch]);
-    const [showFilters,setShowFilters] = useState(false);
+    const [showFilters, setShowFilters] = useState(false);
     const [currentStep, setCurrentStep] = useState(1);
     const [showAssignDatePicker, setShowAssignDatePicker] = useState(false);
     const [showDueDatePicker, setShowDueDatePicker] = useState(false);
@@ -27,6 +27,8 @@ const GlobalCreateAssignment = () => {
     const { surveys } = useSelector(state => state.surveys);
     const { items: content, loading } = useSelector(state => state.content);
     const { assessments } = useSelector(state => state.globalAssessments);
+    const [orgSearchTerm, setOrgSearchTerm] = useState('');
+    const [selectedOrgs, setSelectedOrgs] = useState([]);
 
     const [formData, setFormData] = useState({
         contentType: '',
@@ -64,8 +66,8 @@ const GlobalCreateAssignment = () => {
             contentType: assessments.includes(item)
                 ? 'Assessment'
                 : surveys.includes(item)
-                ? 'Survey'
-                : 'Module'
+                    ? 'Survey'
+                    : 'Module'
         });
     };
 
@@ -90,11 +92,11 @@ const GlobalCreateAssignment = () => {
 
         setCurrentStep(1);
     };
-    const handleFilters = ()=>{
-        if(showFilters){
+    const handleFilters = () => {
+        if (showFilters) {
             clearFilters();
             setShowFilters(false);
-        }else{
+        } else {
             setShowFilters(true);
         }
     }
@@ -102,32 +104,46 @@ const GlobalCreateAssignment = () => {
     const handlePrevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
     const [contentSearchTerm, setContentSearchTerm] = useState('');
-    let allContentItems ;
+    let allContentItems;
     if (contentType === 'Module') {
         allContentItems = content;
     } else if (contentType === 'Assessment') {
         allContentItems = assessments;
     } else if (contentType === 'Survey') {
         allContentItems = surveys;
-    }else{
+    } else {
         allContentItems = [...content, ...assessments, ...surveys];
     }
-    const clearFilters = ()=>{
+    const clearFilters = () => {
         setContentType('');
         setContentSearchTerm('');
     }
     const filteredContentItems = allContentItems.filter(item =>
         item.title.toLowerCase().includes(contentSearchTerm.toLowerCase())
     );
+    const handleAddOrg = (orgId) => {
+        if (selectedOrgs.includes(orgId)) {
+            setSelectedOrgs(selectedOrgs.filter(org => org !== orgId));
+        } else {
+            setSelectedOrgs([...selectedOrgs, orgId]);
+        }
+    }
 
     const stepTitles = [
         'Choose Organization',
         'Choose Content',
-        'Set Dates',
-        'Notifications',
-        'Recurring'
+        'Dates & Configuration'
     ];
-
+    const filteredOrganizations = organizations.filter(org =>
+        org.email.toLowerCase().includes(orgSearchTerm.toLowerCase())
+    ).slice(0, 5);
+    const handleSelectAll = () => {
+        if (selectedOrgs.length === filteredOrganizations.length) {
+            setSelectedOrgs([]);
+        } else {
+            setSelectedOrgs(filteredOrganizations.map(org => org.uuid));
+        }
+    };
     return (
         <div className="global-assign-create-assignment-container">
             <div className="global-assign-assignment-form-container">
@@ -156,21 +172,121 @@ const GlobalCreateAssignment = () => {
                     {currentStep === 1 && (
                         <div className="global-assign-assignment-step-content">
                             <h2 className="global-assign-step-title">Step 1: Choose Target Audience</h2>
-                            <div className="global-assign-content-selection-note">Select one Organization to assign.</div>
-                            <select value={formData.orgId} onChange={handleInputChange} name="orgId">
-                                <option value="">Select Organization</option>
-                                {organizations.map(org => (
-                                    <option key={org.id} value={org.uuid}>{org.name}</option>
-                                ))}
-                            </select>
-                            <div className="global-assign-step-actions">
+                            {/* <div className="global-assign-content-selection-note">Select one Organization to assign.</div> */}
+                            <div className='roles-search-bar'>
+                                <Search size={16} color="#6b7280" className="search-icon" style={{ top: "33%" }} />
+                                <input
+                                    type="text"
+                                    placeholder="Search by Email"
+                                    value={orgSearchTerm}
+                                    onChange={(e) => setOrgSearchTerm(e.target.value)}
+                                    style={{ marginBottom: '20px', paddingLeft: "35px" }}
+                                />
+                            </div>
+
+                            <table style={{
+                                width: '100%',
+                                borderCollapse: 'collapse',
+                                backgroundColor: '#ffffff',
+                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                                borderRadius: '8px',
+                                overflow: 'hidden'
+                            }}>
+                                <thead>
+                                    <tr style={{
+                                        fontWeight: 600,
+                                        fontSize: '0.9rem',
+                                        backgroundColor: '#f8f9fa',
+                                        borderBottom: '2px solid #dee2e6'
+                                    }}>
+                                        <th style={{
+                                            padding: '16px',
+                                            textAlign: 'left',
+                                            width: '50px'
+                                        }}>
+                                            <input
+                                                type="checkbox"
+                                                onChange={(e) => handleSelectAll()}
+                                                checked={selectedOrgs.length === filteredOrganizations.length}
+                                                style={{
+                                                    width: '14px',
+                                                    height: '14px',
+                                                    cursor: 'pointer'
+                                                }}
+                                            />
+                                        </th>
+                                        <th style={{
+                                            padding: '16px',
+                                            textAlign: 'left',
+                                            color: '#2c3e50'
+                                        }}>Name</th>
+                                        <th style={{
+                                            padding: '16px',
+                                            textAlign: 'left',
+                                            color: '#2c3e50'
+                                        }}>Email</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredOrganizations.map(org => (
+                                        <tr
+                                            key={org.id}
+                                            onClick={() => handleAddOrg(org.uuid)}
+                                            style={{
+                                                cursor: 'pointer',
+                                                borderBottom: '1px solid #e9ecef',
+                                                transition: 'background-color 0.2s ease'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                            <td style={{
+                                                padding: '16px',
+                                                textAlign: 'left'
+                                            }}>
+                                                <input
+                                                    type="checkbox"
+                                                    onChange={(e) => handleAddOrg(org.uuid)}
+                                                    name="orgId"
+                                                    value={org.uuid}
+                                                    checked={selectedOrgs.includes(org.uuid)}
+                                                    style={{
+                                                        width: '14px',
+                                                        height: '14px',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                />
+                                            </td>
+                                            <td style={{
+                                                padding: '16px',
+                                                textAlign: 'left',
+                                                color: '#495057',
+                                                fontWeight: 500,
+                                                fontSize: '0.9rem'
+                                            }}>{org.name}</td>
+                                            <td style={{
+                                                padding: '16px',
+                                                textAlign: 'left',
+                                                color: '#6c757d',
+                                                fontSize: '0.9rem'
+                                            }}>{org.email}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            <div className="global-assign-step-actions" style={{marginTop:'80px'}}>
+                                <div className="global-assign-form-actions">
+                                    <button type="button" className="btn-secondary" onClick={() => setCurrentStep(1)}>
+                                        Cancel
+                                    </button>
+                                </div>
                                 <button
                                     type="button"
-                                    className="global-assign-next-step-btn"
+                                    className="btn-primary"
                                     onClick={handleNextStep}
-                                    disabled={!formData.orgId}
+                                    disabled={!selectedOrgs.length}
                                 >
-                                    Next
+                                    Next <ChevronRight size={20} />
                                 </button>
                             </div>
                         </div>
@@ -180,32 +296,32 @@ const GlobalCreateAssignment = () => {
                     {currentStep === 2 && (
                         <div className="global-assign-assignment-step-content">
                             <h2 className="global-assign-step-title">Step 2: Choose Content to Assign</h2>
-                            <div style={{display: 'flex',alignItems: 'center',gap: '10px'}}>
-                            <input
-                                type="text"
-                                placeholder="Search Modules, Assessments, Learning Paths, Surveys by name..."
-                                value={contentSearchTerm}
-                                onChange={(e) => setContentSearchTerm(e.target.value)}
-                                className="global-assign-content-search-input"
-                            />
-                            <span style={{cursor: 'pointer',display: 'flex',alignItems: 'center',gap: '5px',border: '1px solid #ccc',padding: '10px 15px',borderRadius: '10px',backgroundColor: '#f5f5f5',width:'fit-content'}} onClick={() => handleFilters()}>{showFilters && contentType ? "Clear" : <span style={{display: 'flex',alignItems: 'center',gap: '5px'}}><Filter size={20} />Filter</span>}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <input
+                                    type="text"
+                                    placeholder="Search Modules, Assessments, Learning Paths, Surveys by name..."
+                                    value={contentSearchTerm}
+                                    onChange={(e) => setContentSearchTerm(e.target.value)}
+                                    className="global-assign-content-search-input"
+                                />
+                                <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', border: '1px solid #ccc', padding: '10px 15px', borderRadius: '10px', backgroundColor: '#f5f5f5', width: 'fit-content' }} onClick={() => handleFilters()}>{showFilters && contentType ? "Clear" : <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><Filter size={20} />Filter</span>}</span>
                             </div>
-                            {showFilters && <div className='filter-overlay' style={{padding: '10px 15px'}}> 
-                                
-                                                <div style={{display: 'flex',alignItems: 'center',justifyContent: 'space-between',marginBottom: '20px'}}>
-                                                    <span style={{fontSize: '18px',fontWeight: 'bold'}}>Filters</span>
-                                                    <span style={{cursor: 'pointer'}}><X size={20} onClick={() => setShowFilters(false)} /></span>
-                                                </div>
-                                                <div style={{display: 'flex',alignItems: 'center',gap: '10px'}}>
-                                                    <label style={{fontWeight: 'bold'}}>Type</label>
-                                                    <select value={contentType} onChange={(e) => setContentType(e.target.value)} name="contentType">
-                                                        <option value="">Select Content Type</option>
-                                                        <option value="Module">Module</option>
-                                                        <option value="Assessment">Assessment</option>
-                                                        <option value="Survey">Survey</option>
-                                                    </select>
-                                                </div>  
-                                            </div>}
+                            {showFilters && <div className='filter-overlay' style={{ padding: '10px 15px' }}>
+
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                                    <span style={{ fontSize: '18px', fontWeight: 'bold' }}>Filters</span>
+                                    <span style={{ cursor: 'pointer' }}><X size={20} onClick={() => setShowFilters(false)} /></span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <label style={{ fontWeight: 'bold' }}>Type</label>
+                                    <select value={contentType} onChange={(e) => setContentType(e.target.value)} name="contentType">
+                                        <option value="">Select Content Type</option>
+                                        <option value="Module">Module</option>
+                                        <option value="Assessment">Assessment</option>
+                                        <option value="Survey">Survey</option>
+                                    </select>
+                                </div>
+                            </div>}
                             <div className="global-assign-content-items-list">
                                 {filteredContentItems.length > 0 ? (
                                     filteredContentItems.slice(0, 8).map(item => (
@@ -221,8 +337,8 @@ const GlobalCreateAssignment = () => {
                                                 {assessments.includes(item)
                                                     ? 'Assessment'
                                                     : surveys.includes(item)
-                                                    ? 'Survey'
-                                                    : 'Module'}
+                                                        ? 'Survey'
+                                                        : 'Module'}
                                             </div>
                                             <div className="global-assign-content-item-name">{item.title.toUpperCase()}</div>
                                         </div>
@@ -233,13 +349,19 @@ const GlobalCreateAssignment = () => {
                                     </div>
                                 )}
                             </div>
-                            <div className="global-assign-step-actions">
-                                <button type="button" className="global-assign-prev-step-btn" onClick={handlePrevStep}>
-                                    Previous
+                            <div className="global-assign-step-actions" style={{ display: "flex", justifyContent: "space-between" }}>
+                                <button type="button" className="btn-secondary" onClick={handlePrevStep}>
+                                    <ChevronLeft size={20} />Previous
                                 </button>
-                                <button type="button" className="global-assign-next-step-btn" onClick={handleNextStep} disabled={!formData.contentId}>
-                                    Next
-                                </button>
+                                <div style={{ display: "flex", gap: "10px" }}>
+                                    <button type="button" className="btn-secondary" onClick={() => setCurrentStep(1)}>
+                                        Cancel
+                                    </button>
+                                    <button type="button" className="btn-primary" onClick={handleNextStep} disabled={!formData.contentId}>
+                                        Next <ChevronRight size={20} />
+                                    </button>
+                                </div>
+
                             </div>
                         </div>
                     )}
@@ -247,158 +369,128 @@ const GlobalCreateAssignment = () => {
                     {/* Step 3: Set Dates */}
                     {currentStep === 3 && (
                         <div className="global-assign-assignment-step-content">
-                            <div style={{display: "flex", justifyContent: "space-between"}}>
-                            <h2 className="global-assign-step-title">Step 3: Set Overall Dates</h2>
-                            <p style={{color: "#666", fontSize: "14px",fontWeight: "bold"}}>Selected content duration: {getDuration(formData.contentId)}</p>
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                <h2 className="global-assign-step-title">Step 3: Dates & Configuration</h2>
+                                <p style={{ color: "#666", fontSize: "14px", fontWeight: "bold" }}>Selected content duration: {getDuration(formData.contentId)}</p>
                             </div>
-                            <div className="global-assign-dates-container">
-
-                                <div className="global-assign-date-field">
-                                    <label>Assign On:</label>
-                                    <input
-                                        type="text"
-                                        readOnly
-                                        value={formData.assignDate ? new Date(formData.assignDate).toLocaleDateString() : ''}
-                                        onClick={() => setShowAssignDatePicker(true)}
-                                        placeholder="Select Assign Date"
-                                        className="global-assign-date-input"
-                                    />
-                                    {showAssignDatePicker && (
-                                        <AddOrgDateRangePickerSingle
-                                            title="Select Assign Date"
-                                            selectedDate={formData.assignDate ? new Date(formData.assignDate) : null}
-                                            onDateChange={(date) =>
-                                                setFormData({ ...formData, assignDate: date.toISOString().split('T')[0] })
-                                            }
-                                            onClose={() => setShowAssignDatePicker(false)}
+                            <div className="global-assign-dates-container" style={{ marginTop: "20px" }}>
+                                {/* <h2>Dates</h2>   */}
+                                <div style={{ display: "flex", gap: "30px", alignItems: "center" }}>
+                                    <div className="global-assign-date-field">
+                                        <label>Assign On:</label>
+                                        <input
+                                            type="text"
+                                            readOnly
+                                            value={formData.assignDate ? new Date(formData.assignDate).toLocaleDateString() : ''}
+                                            onClick={() => setShowAssignDatePicker(true)}
+                                            placeholder="Select Assign Date"
+                                            className="global-assign-date-input"
                                         />
-                                    )}
-                                </div>
+                                        {showAssignDatePicker && (
+                                            <AddOrgDateRangePickerSingle
+                                                title="Select Assign Date"
+                                                selectedDate={formData.assignDate ? new Date(formData.assignDate) : null}
+                                                onDateChange={(date) =>
+                                                    setFormData({ ...formData, assignDate: date.toISOString().split('T')[0] })
+                                                }
+                                                onClose={() => setShowAssignDatePicker(false)}
+                                            />
+                                        )}
+                                    </div>
 
-                                <div className="global-assign-date-field">
-                                    <label>Assign Time:</label>
-                                    <input
-                                        type="time"
-                                        name="assignTime"
-                                        value={formData.assignTime}
-                                        onChange={handleInputChange}
-                                        required
-                                        className="global-assign-time-input"
-                                    />
-                                </div>
-
-                                <div className="global-assign-date-field">
-                                    <label>Due Date:</label>
-                                    <input
-                                        type="text"
-                                        readOnly
-                                        value={formData.dueDate ? new Date(formData.dueDate).toLocaleDateString() : ''}
-                                        onClick={() => setShowDueDatePicker(true)}
-                                        placeholder="Select Due Date"
-                                        className="global-assign-date-input"
-                                    />
-                                    {showDueDatePicker && (
-                                        <AddOrgDateRangePickerSingle
-                                            title="Select Due Date"
-                                            isEndDate
-                                            minDate={formData.assignDate ? new Date(formData.assignDate) : null}
-                                            startDate={formData.assignDate ? new Date(formData.assignDate) : null}
-                                            selectedDate={formData.dueDate ? new Date(formData.dueDate) : null}
-                                            onDateChange={(date) =>
-                                                setFormData({ ...formData, dueDate: date.toISOString().split('T')[0] })
-                                            }
-                                            onClose={() => setShowDueDatePicker(false)}
+                                    <div className="global-assign-date-field">
+                                        <label>Assign Time:</label>
+                                        <input
+                                            type="time"
+                                            name="assignTime"
+                                            value={formData.assignTime}
+                                            onChange={handleInputChange}
+                                            required
+                                            className="global-assign-time-input"
                                         />
-                                    )}
-                                </div>
+                                    </div>
+                                    <div className="global-assign-date-field">
+                                        <label>Due Date:</label>
+                                        <input
+                                            type="text"
+                                            readOnly
+                                            value={formData.dueDate ? new Date(formData.dueDate).toLocaleDateString() : ''}
+                                            onClick={() => setShowDueDatePicker(true)}
+                                            placeholder="Select Due Date"
+                                            className="global-assign-date-input"
+                                        />
+                                        {showDueDatePicker && (
+                                            <AddOrgDateRangePickerSingle
+                                                title="Select Due Date"
+                                                isEndDate
+                                                minDate={formData.assignDate ? new Date(formData.assignDate) : null}
+                                                startDate={formData.assignDate ? new Date(formData.assignDate) : null}
+                                                selectedDate={formData.dueDate ? new Date(formData.dueDate) : null}
+                                                onDateChange={(date) =>
+                                                    setFormData({ ...formData, dueDate: date.toISOString().split('T')[0] })
+                                                }
+                                                onClose={() => setShowDueDatePicker(false)}
+                                            />
+                                        )}
+                                    </div>
 
-                                <div className="global-assign-date-field">
-                                    <label>Due Time:</label>
+                                    <div className="global-assign-date-field">
+                                        <label>Due Time:</label>
+                                        <input
+                                            type="time"
+                                            name="dueTime"
+                                            value={formData.dueTime}
+                                            onChange={handleInputChange}
+                                            required
+                                            className="global-assign-time-input"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ display: "flex", gap: "10px", alignItems: "center",flexDirection:"column"}}>
+                                <div className="global-assign-notification-option" style={{alignSelf:"flex-start"}}>
                                     <input
-                                        type="time"
-                                        name="dueTime"
-                                        value={formData.dueTime}
+                                        type="checkbox"
+                                        id="notifyUsers"
+                                        name="notifyUsers"
+                                        checked={formData.notifyUsers}
                                         onChange={handleInputChange}
-                                        required
-                                        className="global-assign-time-input"
                                     />
+                                    <label htmlFor="notifyUsers">Send email notification to users</label>
+                                </div>
+                                <div className="global-assign-recurring-option" style={{alignSelf:"flex-start"}}>
+                                    <input
+                                        type="checkbox"
+                                        id="isRecurring"
+                                        name="isRecurring"
+                                        checked={formData.isRecurring}
+                                        onChange={handleInputChange}
+                                        disabled
+                                    />
+                                    <label htmlFor="isRecurring">Make this a recurring assignment</label>
+                                    <p className="global-assign-recurring-note">(Coming soon)</p>
                                 </div>
                             </div>
 
-                            <div className="global-assign-step-actions">
-                                <button type="button" className="global-assign-prev-step-btn" onClick={handlePrevStep}>
-                                    Previous
+                            <div className="global-assign-step-actions" style={{ display: "flex", justifyContent: "space-between" ,marginTop:'200px'}}>
+                                <button type="button" className="btn-secondary" onClick={handlePrevStep}>
+                                    <ChevronLeft size={20} />Previous
                                 </button>
-                                <button
-                                    type="button"
-                                    className="global-assign-next-step-btn"
-                                    onClick={handleNextStep}
-                                    disabled={!formData.assignDate || !formData.assignTime || !formData.dueDate || !formData.dueTime}
-                                >
-                                    Next
-                                </button>
+                                <div style={{ display: "flex", gap: "10px" }}>
+                                    <button type="button" className="btn-secondary" onClick={() => setCurrentStep(1)}>
+                                        Cancel
+                                    </button>
+                                    <button type="button" className="btn-primary" onClick={handleSubmit}>
+                                        Create Assignment
+                                    </button>
+                                </div>
+
                             </div>
                         </div>
                     )}
 
-                    {/* Step 4: Notifications */}
-                    {currentStep === 4 && (
-                        <div className="global-assign-assignment-step-content">
-                            <h2 className="global-assign-step-title">Step 4: Notify Users?</h2>
-                            <div className="global-assign-notification-option">
-                                <input
-                                    type="checkbox"
-                                    id="notifyUsers"
-                                    name="notifyUsers"
-                                    checked={formData.notifyUsers}
-                                    onChange={handleInputChange}
-                                />
-                                <label htmlFor="notifyUsers">Send email notification to users</label>
-                            </div>
-                            <div className="global-assign-step-actions">
-                                <button type="button" className="global-assign-prev-step-btn" onClick={handlePrevStep}>
-                                    Previous
-                                </button>
-                                <button type="button" className="global-assign-next-step-btn" onClick={handleNextStep}>
-                                    Next
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Step 5: Recurring */}
-                    {currentStep === 5 && (
-                        <div className="global-assign-assignment-step-content">
-                            <h2 className="global-assign-step-title">Step 5: Recurring Assignment?</h2>
-                            <div className="global-assign-recurring-option">
-                                <input
-                                    type="checkbox"
-                                    id="isRecurring"
-                                    name="isRecurring"
-                                    checked={formData.isRecurring}
-                                    onChange={handleInputChange}
-                                    disabled
-                                />
-                                <label htmlFor="isRecurring">Make this a recurring assignment</label>
-                                <p className="global-assign-recurring-note">(Coming soon)</p>
-                            </div>
-                            <div className="global-assign-step-actions">
-                                <button type="button" className="global-assign-prev-step-btn" onClick={handlePrevStep}>
-                                    Previous
-                                </button>
-                                <button type="submit" className="global-assign-create-btn">
-                                    {loading ? 'Creating Assignment...' : 'Create Assignment'}
-                                </button>
-                            </div>
-                        </div>
-                    )}
                 </form>
-
-                <div className="global-assign-form-actions">
-                    <button type="button" className="global-assign-cancel-btn" onClick={() => setCurrentStep(1)}>
-                        Cancel
-                    </button>
-                </div>
             </div>
         </div>
     );

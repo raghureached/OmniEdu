@@ -176,7 +176,7 @@ const AddOrganizationModal = ({
                 <input
                   type="email"
                   name="email"
-                  placeholder="contact@company.com"
+                  placeholder="Contact@company.com"
                   value={formData.email}
                   onChange={handleInputChange}
                   className="addOrg-form-input"
@@ -283,7 +283,7 @@ const AddOrganizationModal = ({
                 <label className="addOrg-form-label">
                   Company Logo<span className="addOrg-required">*</span>
                 </label>
-                <p className="addOrg-upload-desc">Upload your company logo (PNG, JPG, SVG)</p>
+                <p className="addOrg-upload-desc">Upload your company logo (PNG, JPG  )</p>
               </div>
               <div className="addOrg-upload-container">
                 {logoToPreview ? (
@@ -418,13 +418,13 @@ const AddOrganizationModal = ({
           <div className="addOrg-form-actions">
             <button
               type="button"
-              className="addOrg-btn-secondary"
+              className="btn-secondary"
               onClick={closeForm}
               disabled={loading}
             >
               Cancel
             </button>
-            <button type="submit" className="addOrg-btn-primary" disabled={loading}>
+            <button type="submit" className="btn-primary" disabled={loading}>
               <GoOrganization size={16} />
               <span>{loading ? 'Processing...' : (editMode ? "Update Organization" : "Create Organization")}</span>
             </button>

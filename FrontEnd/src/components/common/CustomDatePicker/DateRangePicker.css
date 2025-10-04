@@ -75,8 +75,8 @@
   align-items: center;
 }
 
-.cancel-btn,
-.confirm-btn {
+.calendar-cancel-btn,
+.calendar-confirm-btn {
   padding: 8px 16px;
   border-radius: 6px;
   border: none;
@@ -86,12 +86,19 @@
   font-size: 14px;
 }
 
-.cancel-btn {
+.calendar-cancel-btn {
   background-color: #ccc;
   color: #333;
 }
 
-.confirm-btn {
+.calendar-confirm-btn {
   background-color: #5570F1;
   color: white;
 }
+.calendar-cancel-btn:hover {
+  background-color: #e2e1e1;
+}
+.calendar-confirm-btn:hover {
+  background-color: #5570F1;
+}
+  

@@ -7,6 +7,8 @@ import {
   ChevronRight,
   Loader,
   X,
+  Edit3,
+  Trash2,
 } from "lucide-react";
 import { RiDeleteBinFill } from "react-icons/ri";
 import { FiEdit3 } from "react-icons/fi";
@@ -26,6 +28,7 @@ import AddOrganizationFormModal from "./AddOrganizationModal";
 import OrganizationDetails from "./OrganizationDetails";
 import './OrganizationManagement.css'
 import LoadingScreen from "../../../components/common/Loading/Loading";
+import { GoX } from "react-icons/go";
 
 const OrganizationManagement = () => {
   const dispatch = useDispatch();
@@ -297,7 +300,7 @@ useEffect(() => {
                 <input
                   type="text"
                   name="name"
-                  placeholder="Search.."
+                  placeholder="Search"
                   className="search-input"
                   onChange={(e) => handleFilterChange(e)}
                 />
@@ -362,18 +365,29 @@ useEffect(() => {
               </div>
             )}
             {showBulkAction && (
-              <div className="bulk-action-panel">
-                {/* Status Filter */}
-                <div className="bulk-action-group">
-                  {/* <label>Delete</label> */}
-                  <label style={{fontSize: "14px", fontWeight: "500"}}>Items Selected: {selectedItems.length}</label>
-                  <button className="bulk-action-delete-btn" onClick={() => handleBulkDeleteOrg(selectedItems)}>
-                    <span style={{display: "flex", alignItems: "center", gap: "2px"}}><RiDeleteBinFill size={16} color="#fff" /> Delete</span>
-                  </button>
-                </div>
-              </div>
+                          <div className="bulk-action-panel">
+                            <div className="bulk-action-header">
+                              <label className="bulk-action-title">Items Selected: {selectedItems.length}</label>
+                              <GoX  
+                                size={20}
+                                title="Close"
+                                aria-label="Close bulk action panel"
+                                onClick={() => setShowBulkAction(false)}
+                                className="bulk-action-close"
+                              />
+                            </div>
+                            <div className="bulk-action-actions">
+                              <button
+                                className="bulk-action-delete-btn"
+                                disabled={selectedItems.length === 0}
+                                onClick={() => handleBulkDeleteOrg(selectedItems)}
+                              >
+                                <RiDeleteBinFill size={16} color="#fff" />
+                                <span>Delete</span>
+                              </button>
+                            </div>
+                          </div>
             )}
-            {/* Table */}
             <>
             <div className="table-container">
               <div className="table-header">
@@ -437,28 +451,28 @@ useEffect(() => {
 
                   <div>
                     <span
-                      className={`status-badge ${org.status === "Active"
+                      className={`status-badge ${org.displayStatus === "Active"
                         ? "status-paid"
                         : "status-cancelled"
                         }`}
                     >
-                      {org.status === "Active" ? "✓ Active" : "✕ Inactive"}
+                      {org.displayStatus === "Active" ? "✓ Active" : "✕ Inactive"}
                     </span>
                   </div>
                   <div className="purchase-cell" style={{textTransform: "capitalize"}}>{org.planName}</div>
 
                   <div className="actions-cell">
                     <button
-                      className="action-btn delete-btn"
+                      className="global-action-btn delete"
                       onClick={() => handleDeleteOrg(org.uuid)}
                     >
-                      <span style={{display: "flex", alignItems: "center", gap: "2px"}}><RiDeleteBinFill size={16} /> Delete</span>
+                      <Trash2 size={16} />
                     </button>
                     <button
-                      className="action-btn edit-btn"
+                      className="global-action-btn edit"
                       onClick={() => openForm(org)}
                     >
-                      <span style={{display: "flex", alignItems: "center", gap: "2px"}}><FiEdit3 size={16} /> Edit</span>
+                    <Edit3 size={16} />
                     </button>
                   </div>
                 </div>
@@ -480,7 +494,7 @@ useEffect(() => {
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                   <button
                     key={page}
-                    className={`page-btn ${currentPage === page ? "active" : ""}`}
+                    className={`org-page-btn ${currentPage === page ? "active" : ""}`}
                     onClick={() => handlePageChange(page)}
                   >
                     {page}

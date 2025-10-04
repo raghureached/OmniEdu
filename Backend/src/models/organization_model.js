@@ -76,7 +76,20 @@ const organizationSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+organizationSchema.virtual('displayStatus').get(function () {
+  if (
+    this.status === 'Active' &&
+    this.end_date &&
+    new Date(this.end_date) < new Date()
+  ) {
+    return 'Inactive';
+  }
+  return this.status;
+});
+organizationSchema.set('toJSON', { virtuals: true });
+organizationSchema.set('toObject', { virtuals: true });
 
 const Organization = mongoose.model("Organization", organizationSchema);
+
 
 module.exports = Organization;

@@ -30,21 +30,21 @@ const UserDashBoardConfig = () => {
   }
   return (
     <div className="user-dash-dashboard-settings-container">
-      <div className="user-dash-settings-header">
-        <label htmlFor="org-select">Manage Settings for Organization:</label>
-        <select id="org-select" className="user-dash-org-select" onChange={handleOrgChange} value={currentOrg?.uuid}>
-          <option value="">-- Select an Organization --</option>
-          {organizations.map((org) => (
-            <option key={org.uuid} value={org.uuid}>
-              {org.name}
-            </option>
-          ))}
-        </select>
+      <div className="message-board-form" style={{display: "flex", flexDirection: "row", alignItems: "center",justifyContent:"center",gap:"20px"}}>
+        <label htmlFor="" className="message-board-label">Manage Settings for an Organization</label>
+        <select className="message-board-select" onChange={(e) => handleOrgChange(e)} style={{width:"fit-content"}} value={currentOrg?.uuid}>
+        <option value="">Select an Organization</option>
+        {organizations.map((org) => (
+          <option key={org._id} value={org.uuid}>
+            {org.name}
+          </option>
+        ))}
+      </select>
       </div>
 
-      <div className="user-dash-settings-card">
+      {currentOrg ? <div className="user-dash-settings-card">
         <h2 className="user-dash-settings-title">
-          Manage User Dashboard Settings for <span>{currentOrg?.name || "No Org Selected"}</span>
+          Manage User Dashboard Settings for <span>{currentOrg?.name}</span>
         </h2>
 
         <p className="user-dash-settings-info">
@@ -66,6 +66,9 @@ const UserDashBoardConfig = () => {
 
         {/* <button className="user-dash-save-btn">Save User Dashboard Settings</button> */}
       </div>
+      :
+      <p style={{textAlign:"center",fontSize:"16px",color:"#666",marginTop:"20px",fontWeight:600}}>Please select an Organization</p>
+      }
     </div>
 
   )

@@ -194,6 +194,7 @@ const contentSlice = createSlice({
         state.loading = false;
         state.error = action.payload?.message || 'Failed to bulk delete content';
       });
+      
   }
 });
 

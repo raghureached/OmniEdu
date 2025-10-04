@@ -11,7 +11,7 @@ const GlobalMessageBoard = () => {
   const [orgId,setOrgId] = useState(null)
   const dispatch = useDispatch();
 
-  const { currentMessages, loading, error } = useSelector(
+  const { currentMessages, loading,posting, error } = useSelector(
     (state) => state.globalMessage
   );
   const {organizations} = useSelector((state) => state.organizations);
@@ -47,13 +47,10 @@ const GlobalMessageBoard = () => {
 
   return (
     <div className="message-board">
-      <div className="message-board-header">
-        {/* <h2>Message Board</h2> */}
-      </div>
-      <div className="message-board-form">
-        <label htmlFor="" className="message-board-label">Organization</label>
-        <select className="message-board-select" onChange={(e) => setOrgId(e.target.value)}>
-        <option value="">Select Organization</option>
+      <div className="message-board-form" style={{display: "flex", flexDirection: "row", alignItems: "center",justifyContent:"center",gap:"20px"}}>
+        <label htmlFor="" className="message-board-label">Manage Messages for an Organization</label>
+        <select className="message-board-select" onChange={(e) => setOrgId(e.target.value)} style={{width:"fit-content"}}>
+        <option value="">Select an Organization</option>
         {organizations.map((org) => (
           <option key={org._id} value={org.uuid}>
             {org.name}
@@ -72,15 +69,11 @@ const GlobalMessageBoard = () => {
         <button
           className="post-btn"
           onClick={handlePostMessage}
-          disabled={loading}
+          disabled={posting || loading || orgId === null || newMessage === "" || orgId === ""}
         >
-          {loading ? "Posting..." : "Post"}
+          {posting ? "Posting..." : "Post"}
         </button>
       </div>
-
-      {/* Loading & Error States */}
-
-      {/* {loading && <div className="loading">Loading messages...</div>} */}
 
       {error && <div className="error">Error: {error}</div>}
 
@@ -89,7 +82,7 @@ const GlobalMessageBoard = () => {
         {currentMessages?.length > 0 ? (
           currentMessages.map((msg) => (
             <div key={msg._id} className="message-card">
-              <div className="message-user">{msg.user || "You"}</div>
+              {/* <div className="message-user">{msg.user || "You"}</div> */}
               <div className="message-text">{msg.message_text}</div>
               <div className="message-time">
                 {new Date(msg.createdAt).toLocaleDateString()}

@@ -6,11 +6,11 @@ const Organization = require("../../models/organization_model")
 const { logGlobalAdminActivity } = require("./globalAdmin_activity")
 const createAssignment = async(req,res)=>{
     try {
-        const {assignType,assignDate,assignTime,dueDate,dueTime,notifyUsers,isRecurring,contentId,orgId} = req.body
+        const {assignDate,assignTime,dueDate,dueTime,notifyUsers,isRecurring,contentId,orgIds} = req.body
         const Module = await GlobalModule.findOne({uuid:contentId}).populate("title")
         const Assessment = await GlobalAssessment.findOne({uuid:contentId}).populate("title")
         const Survey = await Surveys.findOne({uuid:contentId}).populate("title")
-        const Organization = await Organization.findOne({uuid:orgId})
+        const OrganizationIds = await Organization.find({uuid:orgIds})
         if(!Module){
             return res.status(404).json({
                 isSuccess:false,
@@ -18,24 +18,28 @@ const createAssignment = async(req,res)=>{
             })
         }
         const contentName = Module ? Module.title : Assessment ? Assessment.title : Survey ? Survey.title : ""
-        const assignment = await GlobalAssignment.create({
-            assignDate,
-            assignTime,
-            dueDate,
-            dueTime,
-            notifyUsers,
-            isRecurring,
-            contentId:Module ? Module._id : "",
-            contentName:contentName,
-            surveyId:Survey ? Survey._id : "",
-            assessmentId:Assessment ? Assessment._id : "",
-            orgId:Organization ? Organization._id : ""      
-        })
+        const assignments = []
+        for(let i=0;i<OrganizationIds.length;i++){
+            const assignment = await GlobalAssignment.create({
+                assignDate,
+                assignTime,
+                dueDate,
+                dueTime,
+                notifyUsers,
+                isRecurring,
+                contentId:Module ? Module._id : "",
+                contentName:contentName,
+                surveyId:Survey ? Survey._id : "",
+                assessmentId:Assessment ? Assessment._id : "",
+                orgId:OrganizationIds[i]._id      
+            })
+            assignments.push(assignment)
+        }
         await logGlobalAdminActivity(req,"Create Assignment","assignment",`Assignment created successfully`)
         return res.status(201).json({
             isSuccess:true,
             message:"Assignment created successfully",
-            data:assignment
+            data:assignments
         })
     } catch (error) {
         console.log(error)

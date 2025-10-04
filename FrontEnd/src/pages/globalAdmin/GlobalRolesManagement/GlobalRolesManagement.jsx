@@ -12,8 +12,9 @@ import api from "../../../services/api";
 import CustomLoader from "../../../components/common/Loading/CustomLoader";
 import { RiDeleteBinFill } from "react-icons/ri";
 import { FiEdit3 } from "react-icons/fi";
-import { Search } from "lucide-react";
+import { Edit3, Search, Trash2 } from "lucide-react";
 import LoadingScreen from "../../../components/common/Loading/Loading";
+import { GoOrganization, GoTrash, GoX } from "react-icons/go";
 
 const GlobalRolesManagement = () => {
   const dispatch = useDispatch();
@@ -139,18 +140,20 @@ const GlobalRolesManagement = () => {
           <Search size={16} color="#6b7280" className="search-icon" />
           <input
             type="text"
-            placeholder="Search roles..."
+            placeholder="Search roles"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="form-group  ">
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"10px"}}>
+        <div className="form-group">
           <select
             style={{ marginTop: "20px" }}
             value={currentOrg}
             onChange={(e) =>
               handleSelectCurrentOrg(e.target.value)
             }
+            
           >
             <option value="global">Roles Available for All Organizations</option>
             {
@@ -163,19 +166,42 @@ const GlobalRolesManagement = () => {
           </select>
 
         </div>
-        {currentOrg === "global" || currentOrg === null ? <button className="roles-quick-add-btn" onClick={handleAddRole}>
+        {currentOrg === "global" || currentOrg === null ? <button className="add-btn" onClick={handleAddRole}>
           + Add Role
         </button> : null}
+        {/* <button className="add-btn" onClick={handleAddRole} disabled={currentOrg !== null || c}>
+          + Add Role
+        </button> */}
+        </div>
       </div>
       {showForm && (
-        <div className="roles-modal-overlay">
-          <div className="roles-modal-content" style={{ width: "80%", maxWidth: "900px" }}>
-            <div className="roles-modal-header">
-              <h2>{currentRole ? "Edit Role" : "Add New Role"}</h2>
+        <div className="addOrg-modal-overlay">
+          <div className="addOrg-modal-content">
+          <div className="addOrg-modal-header">
+          <div className="addOrg-header-content">
+            <div className="addOrg-header-icon">
+              <GoOrganization size={24} color="#5570f1" />
             </div>
+            <div>
+              <h2>{currentRole ? "Edit Role" : "Add New Role"}</h2>
+              <p className="addOrg-header-subtitle">
+                {currentRole ? "Update role details" : "Create a new role profile"}
+              </p>
+              {/* {error && <CustomError  error={error} />} */}
+            </div>
+          </div>
+          <button 
+            type="button" 
+            className="addOrg-close-btn"
+            onClick={() => setShowForm(false)}
+            aria-label="Close modal"
+          >
+            <GoX size={20} />
+          </button>
+        </div>
 
-            <form onSubmit={handleSaveRole}>
-              <div className="form-group">
+            <form onSubmit={handleSaveRole} className="addOrg-org-form" style={{padding:"20px"}}>
+              <div className="roles-form-group">
                 <label>Role Name</label>
                 <input
                   type="text"
@@ -187,17 +213,18 @@ const GlobalRolesManagement = () => {
                 />
               </div>
 
-              <div className="form-group">
+              <div className="roles-form-group">
                 <label>Description</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
+                  style={{minWidth:"100%",minHeight:"100px"}}
                 />
               </div>
 
-              <div className="form-group">
+              <div className="roles-form-group">
                 <label>Permissions</label>
                 <div className="permissions-sections">
                   {availablePermissions.map((section) => (
@@ -236,12 +263,9 @@ const GlobalRolesManagement = () => {
               </div>
 
               <div className="form-actions">
-                <button type="submit" className="roles-quick-add-btn">
-                  {currentRole ? "Update Role" : "Create Role"}
-                </button>
-                <button
+              <button
                   type="button"
-                  className="roles-btn-delete"
+                  className="btn-secondary"
                   onClick={() => {
                     setShowForm(false);
                     setCurrentRole(null);
@@ -250,6 +274,10 @@ const GlobalRolesManagement = () => {
                 >
                   Cancel
                 </button>
+                <button type="submit" className="btn-primary">
+                  {currentRole ? "Update Role" : "Create Role"}
+                </button>
+                
               </div>
             </form>
           </div>
@@ -294,21 +322,21 @@ const GlobalRolesManagement = () => {
                     </td>
                     {currentOrg === "global" || currentOrg === null ? <td className="roles-action-cell">
                       <button
-                        className="roles-btn-delete"
+                        className="global-action-btn delete"
                         onClick={() => handleDeleteRole(role.uuid)}
                       >
-                        Delete
+                        <Trash2 size={14} />
                       </button>
                       <button
-                        className="roles-btn-edit"
+                        className="global-action-btn edit"
                         onClick={() => handleEditRole(role)}
                       >
-                        Edit
+                      <Edit3 size={14} />
                       </button>
                     </td> : 
                     <td className="roles-action-cell">
                     <div key={role._id} className="permission-item">
-                    <label className="toggle-switch">
+                    <label className="toggle-switch" style={{marginBottom:"0px",bottom:"3px !important"}}>
                       <input
                         type="checkbox"
                         checked={
@@ -316,7 +344,7 @@ const GlobalRolesManagement = () => {
                         }
                         onChange={() => handleToggleRole(currentOrg,role.uuid)}
                       />
-                      <span className="slider"></span>
+                      <span className="slider-org"></span>
                     </label>
                   </div>
                   </td>

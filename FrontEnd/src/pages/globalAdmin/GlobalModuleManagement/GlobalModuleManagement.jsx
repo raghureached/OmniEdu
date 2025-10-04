@@ -3,11 +3,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchContent, deleteContent, createContent, updateContent, bulkDeleteContent } from '../../../store/slices/contentSlice';
 import "./GlobalModuleManagement.css"
 import { useNavigate } from 'react-router-dom';
-import { FileText, Search, Users, X } from 'lucide-react';
+import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading'
 import { RiDeleteBinFill } from "react-icons/ri";
 import { FiEdit3 } from "react-icons/fi";
 import GlobalModuleModal from './GlobalModuleModal';
+import { GoX } from 'react-icons/go';
 
 
 const GlobalModuleManagement = () => {
@@ -150,6 +151,7 @@ const GlobalModuleManagement = () => {
       instructions: content.instructions || "",
       externalResource: content.externalResource || "",
       enableFeedback: !!content.enableFeedback,
+      richText: content.richText || "",
     });
     setShowEditModal(true);
   };
@@ -192,6 +194,7 @@ const GlobalModuleManagement = () => {
       instructions: "",
       externalResource: "",
       enableFeedback: false,
+      richText: "",
     });
   };
   const handleContinueDraft = (draft) => {
@@ -232,7 +235,7 @@ const GlobalModuleManagement = () => {
   // }
   // const modules = items?.filter(item => item.type === "module") || [];
 
-  if(loading){
+  if (loading) {
     return <LoadingScreen text={"Loading Global Content..."} />
   }
   return (
@@ -241,7 +244,7 @@ const GlobalModuleManagement = () => {
         <div className="global-content-header-content">
           <div className="global-content-header-info">
             <h1 className="global-content-page-title">Modules Management</h1>
-            <p className="global-content-page-subtitle">Create, manage and organize your modules</p>
+            <p className="global-content-page-subtitle">Create, Manage and Organize your modules</p>
           </div>
           <div className="global-content-stats">
             <div className="global-content-stat-card">
@@ -271,30 +274,46 @@ const GlobalModuleManagement = () => {
           <input
             type="text"
             class
-            placeholder="Search Modules..."
+            placeholder="Search Modules"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           <div style={{ display: "flex", gap: "10px" }}>
-            <button className="btn-secondary" style={{ color: "#6b7280", border: "1px solid #6b7280" }} onClick={() => setShowBulkAction(!showBulkAction)}> Bulk Actions</button>
+
+            {/* <button className="control-btn" style={{ color: "#6b7280", border: "1px solid #6b7280" }} onClick={() => openDraftModal()}> Drafts</button> */}
+            <button className="control-btn" onClick={() => setShowBulkAction(!showBulkAction)}> Bulk Action <ChevronDown size={16} /></button>
             {showBulkAction && (
               <div className="bulk-action-panel-module">
-                <div className="bulk-action-group">
-                  <label style={{ fontSize: "14px", fontWeight: "500" }}>Items Selected: {selectedItems.length}</label>
-                  <button className="bulk-action-delete-btn" disabled={selectedItems.length === 0} onClick={() => handleBulkDelete(selectedItems)}>
-                    <span style={{ display: "flex", alignItems: "center", gap: "2px" }}><RiDeleteBinFill size={16} color="#fff" /> Delete</span>
+                <div className="bulk-action-header">
+                  <label className="bulk-action-title">Items Selected: {selectedItems.length}</label>
+                  <GoX
+                    size={20}
+                    title="Close"
+                    aria-label="Close bulk action panel"
+                    onClick={() => setShowBulkAction(false)}
+                    className="bulk-action-close"
+                  />
+                </div>
+                <div className="bulk-action-actions">
+                  <button
+                    className="bulk-action-delete-btn"
+                    disabled={selectedItems.length === 0}
+                    onClick={() => handleBulkDelete(selectedItems)}
+                  >
+                    <RiDeleteBinFill size={16} color="#fff" />
+                    <span>Delete</span>
                   </button>
                 </div>
               </div>
             )}
-            <button className="btn-secondary" style={{ color: "#6b7280", border: "1px solid #6b7280" }} onClick={() => openDraftModal()}> Drafts</button>
-            <button className="btn-primary" onClick={() => handleOpenModal()}> + Add Module</button>
+
+            <button className="add-btn" onClick={() => handleOpenModal()}> + Add Module</button>
           </div>
         </div>
       </div>
 
-      {showModal && <GlobalModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading} handleRichInputChange={handleRichInputChange} error={error}/>}
-      {showEditModal && <GlobalModuleModal showModal={showEditModal} setShowModal={setShowEditModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} showEditModal={showEditModal} setShowEditModal={setShowEditModal} editContentId={editContentId} handleRichInputChange={handleRichInputChange} error={error}/> } 
+      {showModal && <GlobalModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading} handleRichInputChange={handleRichInputChange} error={error} />}
+      {showEditModal && <GlobalModuleModal showModal={showEditModal} setShowModal={setShowEditModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} showEditModal={showEditModal} setShowEditModal={setShowEditModal} editContentId={editContentId} handleRichInputChange={handleRichInputChange} error={error} />}
       <div className="table-container">
         <table className="data-table">
           <thead>
@@ -312,29 +331,50 @@ const GlobalModuleManagement = () => {
             {currentContent.map((content) => (
               <tr key={content.id}>
                 <td><input type="checkbox" onChange={(e) => handleSelectItem(e, content.uuid)} checked={selectedItems.includes(content.uuid)} /></td>
-                <td style={{ cursor: "pointer" }} onClick={() => handleOpenContent(content.uuid)}>{content.title}</td>
+                <td>
+                  <div className="assess-cell-content">
+                    <div className="assess-title-container">
+                      <h4 className="assess-title">{content.title}</h4>
+                      <p className="assess-description">{content.description || "No description provided"}</p>
+                      {Array.isArray(content.tags) && content.tags.length > 0 && (
+                        <div className="assess-tags">
+                          {content.tags.map((t, idx) => (
+                            <span key={`${content.id}-tag-${idx}`} className="assess-classification">{t}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </td>
                 <td>{content.credits}</td>
                 <td>
-                  <span className={` ${content.status === 'Published' ? 'published' : 'saved'}`}>
-                    {content.status === 'Published' ? `✓ ${content.status}` : 'Saved'}
+                  <span className={` ${content.status === 'Published' ? 'published' : content.status === 'Draft' ? 'draft' : 'saved'} assess-status-badge`}>
+                    {content.status === 'Published' ? `✓ ${content.status}` : content.status === 'Draft' ? 'Draft' : 'Saved'}
                   </span>
                 </td>
                 <td>{content.team?.name || "All"}</td>
-                <td>{new Date(content.createdAt).toLocaleDateString()}</td>
-                <td>
-                  <button
-                    className="delete-btn action-btn"
-                    onClick={() => handleDeleteContent(content.uuid)}
-                  >
-                    <span style={{ display: "flex", alignItems: "center", gap: "2px" }}><RiDeleteBinFill size={16} />Delete </span>
-                  </button>
-                  <button className="edit-btn action-btn" onClick={() => {
-                    setEditContentId(content.uuid)
-                    openEditModal(content);
-                  }}>
-                    <span style={{ display: "flex", alignItems: "center", gap: "2px" }}><FiEdit3 size={16} />Edit </span>
-                  </button>
+                <td><div className="assess-date-info"><Calendar size={14} />
+                  <span>{content.createdAt ? new Date(content.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  }) : ""}</span></div></td>
 
+                <td>
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    <button
+                      className="global-action-btn delete"
+                      onClick={() => handleDeleteContent(content.uuid)}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                    <button className="global-action-btn edit" onClick={() => {
+                      setEditContentId(content.uuid)
+                      openEditModal(content);
+                    }}>
+                      <Edit3 size={16} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

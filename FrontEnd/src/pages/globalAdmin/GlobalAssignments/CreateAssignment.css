@@ -257,6 +257,13 @@
   justify-content: flex-end;
   gap: 12px;
 }
+.assignmnet-row-table{
+  cursor: pointer;
+
+}
+.assignmnet-row-table:hover{
+  background: #cfcfcf;
+}
 input[type="checkbox"]{
     outline: none;
     width: fit-content;
@@ -313,6 +320,7 @@ input[type="checkbox"]{
 .global-assign-assignment-step-content {
   background: #fff;
   border: 1px solid #e5e7eb;
+  height: 530px;
   border-radius: 12px;
   padding: 28px 32px;
   margin-bottom: 20px;

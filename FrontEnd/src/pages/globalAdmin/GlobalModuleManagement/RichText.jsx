@@ -5,8 +5,8 @@ import Link from '@tiptap/extension-link';
 
 const styles = `
   .rich-editor-wrapper {
-    max-width: 900px;
-    margin: 40px auto;
+    width: 100%;
+    margin-bottom:10px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 

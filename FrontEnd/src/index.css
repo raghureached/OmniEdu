@@ -117,3 +117,91 @@ body>* {
     display: flow-root;
     /* Creates a new block formatting context */
 }
+
+
+.global-action-btn {
+    background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.global-action-btn.edit:hover {
+    background: #eff6ff;
+    border-color: #dbeafe;
+    color: #2563eb;
+  }
+  
+.global-action-btn.delete:hover {
+    background: #fee2e2;
+    border-color: #fecaca;
+    color: #dc2626;
+  }
+
+
+  .control-btn {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    background-color: white;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+  }
+  .control-btn:hover {
+    background-color: #f9fafb;
+    border-color: #9ca3af;
+  }
+
+.btn-secondary {
+    background: #ffffff;
+    border: 2px solid #c0c9d4;
+    border-radius: 12px;
+    padding: 12px 24px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #374151;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .btn-secondary:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+  
+  .btn-primary {
+    background: linear-gradient(135deg, #5570f1 0%, #4338ca 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px 0 rgba(85, 112, 241, 0.3);
+  }
+  
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+    box-shadow: 0 6px 20px 0 rgba(85, 112, 241, 0.4);
+    transform: translateY(-1px);
+  }
+  
+  .btn-primary:active {
+    transform: translateY(0);
+  }
