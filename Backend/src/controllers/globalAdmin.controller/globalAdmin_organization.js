@@ -352,7 +352,7 @@ const getOrganizations = async(req, res) => {
         }
 
         if (status) {
-            filter.status = status;
+            filter.status  = status;
         }
 
         if (plan) {
@@ -363,9 +363,8 @@ const getOrganizations = async(req, res) => {
         const organizations = await Organization.find(filter)
             .skip(skip)
             .limit(limit);
-
         const total = await Organization.countDocuments(filter);
-
+        // console.log("organizations",organizations)
         return res.status(200).json({
             success: true,
             message: "Organizations fetched successfully",

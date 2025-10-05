@@ -15,20 +15,17 @@ const globalAssignmentSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    contentId: {
+    ModuleId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Content",
-        required: true,
     },
     surveyId:{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Survey",
-        required: true,
     },
     assessmentId:{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Assessment",
-        required: true,
     },
     contentName: {
         type: String,

@@ -5,11 +5,13 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 async function enhanceText(req, res) {
     const { title, description } = req.body;
     const prompt = `
-You are a helpful assistant for an LMS app. Given the module title and description below, rewrite both to be more engaging, clear, and professional.
+You are a helpful assistant for an LMS app. Given the module title and description below, rewrite both to be more engaging, clear, and professional.And also add tags , learningOutcomes
 Return the improved title and description in JSON format as:
 {
   "title": "<enhanced title>",
-  "description": "<enhanced description>"
+  "description": "<enhanced description>",
+  "tags": ["tag1", "tag2", "tag3"],
+  "learningOutcomes": ["outcome1", "outcome2", "outcome3"]
 }
 Module Title: ${title}
 Module Description: ${description}

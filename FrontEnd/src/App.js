@@ -41,7 +41,7 @@ import AdminPortalActivity from './pages/admin/AdminPortalActivity/AdminPortalAc
 import OrganizationManagement from './pages/globalAdmin/OrganizationManagement/OrganizationManagement';
 // import NewOrgManagement from './pages/globalAdmin/OrganizationManagement/NewOrgManagement';
 import GlobalRolesManagement from './pages/globalAdmin/GlobalRolesManagement/GlobalRolesManagement';
-import GlobalSurveys from './pages/globalAdmin/GlobalSurveys/GlobalSurveys';
+// import GlobalSurveys from './pages/globalAdmin/GlobalSurveys/GlobalSurveys';
 import GlobalPortalActivity from './pages/globalAdmin/GlobalAdminLibraryPortal/GlobalPortal';
 import Dashboard from './pages/user/Dashboard/Dashboard';
 import { useEffect } from 'react';
@@ -63,6 +63,7 @@ import GlobalModuleManagement from './pages/globalAdmin/GlobalModuleManagement/G
 import ModulePreview from './pages/globalAdmin/GlobalModuleManagement/ModulePreview';
 import Globalusers from './pages/globalAdmin/Users/Globalusers';
 import FullRichTextEditor, { RichTextEditor } from './pages/globalAdmin/GlobalModuleManagement/RichText';
+import GlobalSurveys from './pages/globalAdmin/GlobalSurveys/GlobalAssessments-survey';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, loading, role } = useSelector((state) => state.auth);

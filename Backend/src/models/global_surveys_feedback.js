@@ -15,8 +15,6 @@ const feedbackSchema = new mongoose.Schema(
     instruction_header_top: { type: String, default: "" },
     question_text: { type: String, default: "" },
     instructionBottom: { type: String, default: "" },
-   // instruction_header_bottom: { type: String, default: "" },
-    // optional references for traceability (not required for usage)
     created_by: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   },
   { timestamps: true }

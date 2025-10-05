@@ -200,7 +200,7 @@
    .search-box-content input {
     padding: 10px 14px;
     padding-left: 36px;
-    border: 1px solid #e2e8f0;
+    border: 2px solid rgb(206, 206, 206);
     border-radius: 10px;
     font-size: 14px;
     width: 280px;

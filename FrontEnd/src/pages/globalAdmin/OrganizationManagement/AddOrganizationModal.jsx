@@ -24,7 +24,10 @@ const AddOrganizationModal = ({
   handleSubmit,
   plans,
   loading,
-  error
+  error,
+  creating,
+  updating,
+  deleting
 }) => {
   const [dateRange, setDateRange] = useState([null, null]);
   const [openStart, setOpenStart] = useState(false);
@@ -220,9 +223,10 @@ const AddOrganizationModal = ({
                   onChange={handleInputChange}
                   className="addOrg-form-select"
                   required
+                  disabled={true}
                 >
                   <option value="Admin">Administrator</option>
-                  <option value="SuperAdmin">Super Administrator</option>
+                  {/* <option value="SuperAdmin">Super Administrator</option> */}
                 </select>
               </div>
             </div>
@@ -426,7 +430,7 @@ const AddOrganizationModal = ({
             </button>
             <button type="submit" className="btn-primary" disabled={loading}>
               <GoOrganization size={16} />
-              <span>{loading ? 'Processing...' : (editMode ? "Update Organization" : "Create Organization")}</span>
+             <span>{editMode ? (updating ? 'Updating...' : 'Update Organization') : (creating ? 'Creating...' : 'Create Organization')}</span>
             </button>
           </div>
         </form>

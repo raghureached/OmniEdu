@@ -19,6 +19,7 @@ export const createGlobalAssignment = createAsyncThunk(
   'globalAssignments/createGlobalAssignment',
   async (assignmentData, { rejectWithValue }) => {
     try {
+      console.log(assignmentData)
       const response = await api.post('/api/globalAdmin/createAssignment', assignmentData);
       return response.data;
     } catch (error) {

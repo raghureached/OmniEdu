@@ -141,6 +141,7 @@ const GlobalRolesManagement = () => {
           <input
             type="text"
             placeholder="Search roles"
+            className="control-btn"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -148,8 +149,9 @@ const GlobalRolesManagement = () => {
         <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"10px"}}>
         <div className="form-group">
           <select
-            style={{ marginTop: "20px" }}
+            style={{ marginTop: "20px" ,transition:"all 0.3s ease",border:"2px solid #cecece",borderRadius:"12px",padding:"10px 14px",outline:"none"}}
             value={currentOrg}
+            className="control-btn"
             onChange={(e) =>
               handleSelectCurrentOrg(e.target.value)
             }
@@ -166,7 +168,7 @@ const GlobalRolesManagement = () => {
           </select>
 
         </div>
-        {currentOrg === "global" || currentOrg === null ? <button className="add-btn" onClick={handleAddRole}>
+        {currentOrg === "global" || currentOrg === null ? <button className="btn-primary" onClick={handleAddRole}>
           + Add Role
         </button> : null}
         {/* <button className="add-btn" onClick={handleAddRole} disabled={currentOrg !== null || c}>

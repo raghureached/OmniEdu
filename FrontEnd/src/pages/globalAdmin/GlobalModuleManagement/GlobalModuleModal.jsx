@@ -105,9 +105,13 @@ const GlobalModuleModal = ({
         }
         setAiProcessing(true)
         dispatch(enhanceText({ title, description })).then((res) => {
-            // console.log(res)
+            // console.log(res.payload)
             handleInputChange({ target: { name: 'title', value: res.payload.title } });
             handleInputChange({ target: { name: 'description', value: res.payload.description } });
+            handleInputChange({ target: { name: 'tags', value: res.payload.tags } });
+            handleInputChange({ target: { name: 'learningOutcomes', value: res.payload.learningOutcomes } });
+            setLearningOutcomes(res.payload.learningOutcomes)
+            setTags(res.payload.tags)
         }).finally(() => {
             setAiProcessing(false)
         })
@@ -136,7 +140,7 @@ const GlobalModuleModal = ({
             case 2:
                 return contentType === "Upload File" ? newContent.primaryFile : newContent.externalResource || newContent.richText;
             case 3:
-                return newContent.moduleType && newContent.category && newContent.team
+                return newContent.duration && newContent.category && newContent.team && newContent.trainingType 
             default:
                 return true;
         }
@@ -166,7 +170,6 @@ const GlobalModuleModal = ({
     };
     const dispatch = useDispatch();
     const handleAddContent = async () => {
-
         try {
             // Build FormData
             const formData = new FormData();
@@ -342,7 +345,7 @@ const GlobalModuleModal = ({
                                                 <button
                                                     type="button"
                                                     onClick={() => removeLearningOutcome(index)}
-                                                    className=""
+                                                    className="addOrg-close-btn"
                                                     aria-label={`Remove learning outcome ${index + 1}`}
                                                 >
                                                     <X size={16} />
@@ -530,7 +533,7 @@ const GlobalModuleModal = ({
                                         )}
                                     </div>
 
-                                    <div style={{ marginTop: '20px' }}>
+                                    <div style={{ marginTop: '100px' }}>
                                         <label className="module-overlay__form-label">Additional File</label>
                                         <input
                                             type="file"
@@ -572,11 +575,11 @@ const GlobalModuleModal = ({
                                     </div>
                                 </div>
                             ) : (
-                                <div className="module-overlay__form-group">
+                                <div className="module-overlay__form-group" style={{ marginTop: '20px' }}>
                                     <label className="module-overlay__form-label">Enter Text<span className='module-overlay__required'>*</span></label>
                                     <FullRichTextEditor value={newContent.richText || ''} onChange={handleRichInputChange} />
 
-                                    <label className="module-overlay__form-label">External Resource</label>
+                                    <label className="module-overlay__form-label" style={{ marginTop: '20px' }}>External Resource</label>
                                     <span style={{ display: 'flex', alignItems: 'center' }}>
                                         <input
                                             type="text"
@@ -612,7 +615,7 @@ const GlobalModuleModal = ({
                                             />
                                         </div>
                                     )}
-                                    <div>
+                                    <div style={{ marginTop: '20px' }}>
                                         <label className="module-overlay__form-label">Additional File</label>
                                         <input
                                             type="file"
@@ -824,7 +827,7 @@ const GlobalModuleModal = ({
                                 </p>
                                 <div className="module-overlay__form-group" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' ,marginTop:"120px"}}>
                                     <button className='btn-primary' onClick={handleSaveDraft} disabled={editContentId}>Save Draft</button>
-                                    <button className='btn-secondary' onClick={() => setPreview(true)}>Preview</button>
+                                    <button className='btn-secondary' onClick={() => setPreview(true)} disabled={!canProceed()} >Preview</button>
                                 </div>
                             </div>
                         </div>
@@ -862,7 +865,7 @@ const GlobalModuleModal = ({
                                     type="button"
                                     className="btn-primary"
                                     onClick={showEditModal ? handleEditContent : handleAddContent}
-                                    disabled={uploading}
+                                    disabled={uploading || !canProceed()}
                                     aria-label="Create Module"
                                 >
                                     {uploading ? (<CustomLoader2 size={16} color="#5570f1" strokeWidth={3} />) : showEditModal ? 'Update Module' : 'Create Module'}

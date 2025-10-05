@@ -4,52 +4,115 @@ const GlobalAssessment = require("../../models/globalAssessments_model")
 const Surveys = require("../../models/global_surveys_model")
 const Organization = require("../../models/organization_model")
 const { logGlobalAdminActivity } = require("./globalAdmin_activity")
-const createAssignment = async(req,res)=>{
+const mongoose = require("mongoose")
+const createAssignment = async (req, res) => {
+    let session;
     try {
-        const {assignDate,assignTime,dueDate,dueTime,notifyUsers,isRecurring,contentId,orgIds} = req.body
-        const Module = await GlobalModule.findOne({uuid:contentId}).populate("title")
-        const Assessment = await GlobalAssessment.findOne({uuid:contentId}).populate("title")
-        const Survey = await Surveys.findOne({uuid:contentId}).populate("title")
-        const OrganizationIds = await Organization.find({uuid:orgIds})
-        if(!Module){
-            return res.status(404).json({
-                isSuccess:false,
-                message:"Content not found"
-            })
+        const {
+            assignDate,
+            assignTime,
+            dueDate,
+            dueTime,
+            notifyUsers,
+            isRecurring,
+            contentId,
+            orgIds,
+            contentType
+        } = req.body;
+
+        // Validate input
+        if (!contentId || !orgIds?.length || !contentType) {
+            return res.status(400).json({
+                isSuccess: false,
+                message: "Missing required fields"
+            });
         }
-        const contentName = Module ? Module.title : Assessment ? Assessment.title : Survey ? Survey.title : ""
-        const assignments = []
-        for(let i=0;i<OrganizationIds.length;i++){
-            const assignment = await GlobalAssignment.create({
+
+        // Fetch organizations
+        const organizations = await Organization.find({ uuid: { $in: orgIds } });
+        if (!organizations.length) {
+            return res.status(404).json({
+                isSuccess: false,
+                message: "No valid organizations found"
+            });
+        }
+
+        // Fetch content based on type
+        let content;
+        if (contentType === "Module") {
+            content = await GlobalModule.findOne({ uuid: contentId });
+        } else if (contentType === "Assessment") {
+            content = await GlobalAssessment.findOne({ uuid: contentId });
+        } else if (contentType === "Survey") {
+            content = await Surveys.findOne({ uuid: contentId });
+        }
+
+        if (!content) {
+            return res.status(404).json({
+                isSuccess: false,
+                message: "Content not found"
+            });
+        }
+
+        const contentName = content.title;
+
+        // Start MongoDB session
+        session = await mongoose.startSession();
+        session.startTransaction();
+
+        const assignments = [];
+
+        for (const org of organizations) {
+            const assignmentData = {
                 assignDate,
                 assignTime,
                 dueDate,
                 dueTime,
                 notifyUsers,
                 isRecurring,
-                contentId:Module ? Module._id : "",
-                contentName:contentName,
-                surveyId:Survey ? Survey._id : "",
-                assessmentId:Assessment ? Assessment._id : "",
-                orgId:OrganizationIds[i]._id      
-            })
-            assignments.push(assignment)
+                contentName,
+                orgId: org._id,
+                ModuleId: contentType === "Module" ? content._id : null,
+                surveyId: contentType === "Survey" ? content._id : null,
+                assessmentId: contentType === "Assessment" ? content._id : null,
+            };
+
+            const assignment = await GlobalAssignment.create([assignmentData], { session });
+            assignments.push(assignment[0]);
         }
-        await logGlobalAdminActivity(req,"Create Assignment","assignment",`Assignment created successfully`)
+
+        await session.commitTransaction();
+
+        await logGlobalAdminActivity(
+            req,
+            "Create Assignment",
+            "assignment",
+            "Assignment created successfully"
+        );
+
         return res.status(201).json({
-            isSuccess:true,
-            message:"Assignment created successfully",
-            data:assignments
-        })
+            isSuccess: true,
+            message: "Assignment created successfully",
+            data: assignments,
+        });
+
     } catch (error) {
-        console.log(error)
+        if (session) {
+            await session.abortTransaction();
+        }
+        console.error("Error creating assignment:", error);
         return res.status(500).json({
-            isSuccess:false,
-            message:"Failed to create assignment",
-            error:error.message
-        })
+            isSuccess: false,
+            message: "Failed to create assignment",
+            error: error.message,
+        });
+    } finally {
+        if (session) {
+            session.endSession();
+        }
     }
-}
+};
+
 
 
 const fetchAssignments = async(req,res)=>{

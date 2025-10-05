@@ -1,4 +1,19 @@
-// legacy commented code removed above for clarity
+// // src/store/slices/surveySlice.js
+// import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+// import api from "../../services/api";
+
+// // Thunks
+// export const fetchSurveys = createAsyncThunk(
+//   "surveys/fetchSurveys",
+//   async (_, { rejectWithValue }) => {
+//     try {
+//       const response = await api.get("/api/globalAdmin/getSurveys");
+//       return response.data.data; // backend returns { data: [...] }
+//     } catch (error) {
+//       return rejectWithValue(error.response?.data || "Failed to fetch surveys");
+//     }
+//   }
+// );
 
 // export const createSurvey = createAsyncThunk(
 //   "surveys/createSurvey",
@@ -104,12 +119,10 @@ import api from "../../services/api";
 // Thunks
 export const fetchSurveys = createAsyncThunk(
   "surveys/fetchSurveys",
-  async ({ page = 1, limit = 50 } = {}, { rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get("/api/globalAdmin/getSurveys", { params: { page, limit } });
-      // backend returns { success, message, data: surveys, pagination }
-      
-      return { list: response.data.data, pagination: response.data.pagination };
+      const response = await api.get("/api/globalAdmin/getSurveys");
+      return response.data.data; // backend returns { data: [...] }
     } catch (error) {
       return rejectWithValue(error.response?.data || "Failed to fetch surveys");
     }
@@ -121,7 +134,6 @@ export const createSurvey = createAsyncThunk(
   async (surveyData, { rejectWithValue }) => {
     try {
       const response = await api.post("/api/globalAdmin/createSurvey", surveyData);
-      console.log(surveyData)
       return response.data.data; // survey with uuid from backend
     } catch (error) {
       return rejectWithValue(error.response?.data || "Failed to create survey");
@@ -153,25 +165,11 @@ export const deleteSurvey = createAsyncThunk(
   }
 );
 
-export const getSurveyById = createAsyncThunk(
-  "surveys/getSurveyById",
-  async (uuid, { rejectWithValue }) => {
-    try {
-      const response = await api.get(`/api/globalAdmin/getSurvey/${uuid}`);
-      return response.data.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data || "Failed to fetch survey");
-    }
-  }
-);
-
 // Initial state
 const initialState = {
   surveys: [],
   loading: false,
   error: null,
-  pagination: { total: 0, page: 1, limit: 50, totalPages: 0, hasNextPage: false },
-  current: null,
 };
 
 const surveySlice = createSlice({
@@ -190,8 +188,7 @@ const surveySlice = createSlice({
       })
       .addCase(fetchSurveys.fulfilled, (state, action) => {
         state.loading = false;
-        state.surveys = action.payload.list || [];
-        state.pagination = action.payload.pagination || initialState.pagination;
+        state.surveys = action.payload;
       })
       .addCase(fetchSurveys.rejected, (state, action) => {
         state.loading = false;
@@ -209,18 +206,6 @@ const surveySlice = createSlice({
         if (idx !== -1) {
           state.surveys[idx] = action.payload;
         }
-      })
-      // Get by id
-      .addCase(getSurveyById.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(getSurveyById.fulfilled, (state, action) => {
-        state.loading = false;
-        state.current = action.payload;
-      })
-      .addCase(getSurveyById.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
       })
 
       // Delete

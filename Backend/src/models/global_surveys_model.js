@@ -1,74 +1,3 @@
-// const mongoose = require("mongoose");
-// const { v4: uuidv4 } = require("uuid");
-
-// const surveySchema = new mongoose.Schema(
-//   {
-//     uuid: {
-//       type: String,
-//       default: uuidv4,
-//       unique: true,
-//       index: true,
-//     },
-//     title: {
-//       type: String,
-//       required: true,
-//       trim: true,
-//     },
-//     description: {
-//       type: String,
-//       default: null,
-//     },
-//     questions: {
-//       type:[mongoose.Schema.Types.ObjectId],
-//       ref:"GlobalSurveyQuestion",
-//       required:true
-//     },
-//     survey_type: {
-//       type: String,
-//       enum: ["Multiple Choice","Multi  Choice"],
-//       required: true,
-//     },
-//     // NEW: classification fields to mirror assessments usage
-//     tags: {
-//       type: [String],
-//       default: [],
-//     },
-//     team: {
-//       type: String,
-//       default: "",
-//       trim: true,
-//     },
-//     subteam: {
-//       type: String,
-//       default: "",
-//       trim: true,
-//     },
-//     start_date: {
-//       type: Date,
-//       default: null,
-//     },
-//     end_date: {
-//       type: Date,
-//       default: null,
-//     },
-//     is_active: {
-//       type: Boolean,
-//       default: true,
-//     },
-//     created_by: {
-//       type: String,
-//       ref: "User",
-//       default: null,
-//     },
-//   },
-//   {
-//     timestamps: true,
-//   }
-// );
-
-// const Surveys = mongoose.model("GlobalSurveys", surveySchema);
-
-// module.exports = Surveys;
 
 
 const mongoose = require("mongoose");
@@ -86,16 +15,10 @@ const surveySchema = new mongoose.Schema({
     required: true,
   },
   description: { type: String },
-
-  // Questions
-  questions: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "GlobalSurveyQuestion",
+  sections:{
+    type: [mongoose.Schema.Types.ObjectId],
+    ref:"GlobalSurveySection"
     },
-  ],
-
-  // Optional feedback block attached to the survey
   feedback: { type: mongoose.Schema.Types.ObjectId, ref: "GlobalSurveyFeedback", default: null },
 
   // Tagging and configuration (aligns with controllers and frontend)

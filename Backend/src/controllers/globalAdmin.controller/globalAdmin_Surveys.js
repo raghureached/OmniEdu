@@ -4,474 +4,346 @@ const GlobalSurveyQuestion = require("../../models/global_surveys_Questions_mode
 const { v4: uuidv4 } = require("uuid");
 const { logGlobalAdminActivity } = require("./globalAdmin_activity");
 const GlobalSurveyFeedback = require("../../models/global_surveys_feedback");
+const GlobalSurveySection = require("../../models/globalSurvey_Section_model");
 
 
-/// aligned with new question and survey models
+/// aligned with new question and survey models, with adapter for `elements`
+const mongoose = require("mongoose");
+
 const createSurvey = async (req, res) => {
+  let session;
   try {
-    const { title, description, questions, created_by, tags = [], team, subteam, status,feedback } = req.body;
+    const { title, description, sections, tags = [], team, subteam, status, feedback } = req.body;
+    // console.log(sections[0].questions)
+    const created_by = req.user?.id || req.body.created_by; // Ensure created_by is passed or derived
 
     if (!title || !title.trim()) {
       return res.status(400).json({ success: false, message: "Title is required" });
     }
 
-    if (!Array.isArray(questions) || questions.length === 0) {
-      return res.status(400).json({ success: false, message: "At least one question is required" });
+    if (!Array.isArray(sections) || sections.length === 0) {
+      return res.status(400).json({ success: false, message: "At least one section is required" });
     }
 
-    // Validate questions per new schema: type, options, total_points, instructions
-    for (const q of questions) {
-      if (!q.type || !["Multiple Choice", "Multi Select"].includes(q.type)) {
-        return res.status(400).json({ success: false, message: "Invalid question type. Use 'Multiple Choice' or 'Multi Select'" });
-      }
-      if (!q.question_text || !q.question_text.trim()) {
-        return res.status(400).json({ success: false, message: "question_text is required for all questions" });
-      }
-      if (!Array.isArray(q.options) || q.options.length < 2) {
-        return res.status(400).json({ success: false, message: "Each question must have at least two options" });
-      }
-    }
+    // Start MongoDB session
+    session = await mongoose.startSession();
+    session.startTransaction();
 
-    const createdQuestions = await GlobalSurveyQuestion.insertMany(
-      questions.map((q) => {
-        const options = Array.isArray(q.options)
-          ? q.options.map(o => (o || '').trim()).filter(Boolean)
-          : [];
-        const header = (q.instruction_header || '').trim();
-        const text = (q.instruction_text || '').trim();
-        const combined = (typeof q.instructions === 'string' && q.instructions.trim())
-          ? q.instructions.trim()
-          : [header, text].filter(Boolean).join('\n\n');
-        return ({
-          question_text: q.question_text.trim(),
-          type: q.type,
-          options,
-          instructions: combined,
-          instruction_header: header,
-          instruction_text: text,
-        });
-      })
+    let sectionsIDs = [];
+
+    for (const section of sections) {
+      if (!section.questions || !Array.isArray(section.questions)) {
+        throw new Error("Each section must contain a 'questions' array");
+      }
+
+      const questionIds = [];
+
+      // Create questions inside the transaction
+      for (const question of section.questions) {
+        const createdQuestion = await GlobalSurveyQuestion.create([question], { session });
+        questionIds.push(createdQuestion[0]._id);
+      }
+
+      // Create section linked with questions
+      const createdSection = await GlobalSurveySection.create(
+        [{ description: section.description, questions: questionIds }],
+        { session }
+      );
+
+      sectionsIDs.push(createdSection[0]._id);
+    }
+    const createdFeedback = await GlobalSurveyFeedback.create(feedback, { session });
+    // Create the final survey document
+    const createdSurvey = await Surveys.create(
+      [
+        {
+          title,
+          description,
+          sections: sectionsIDs,
+          created_by,
+          tags,
+          team,
+          subteam,
+          status,
+          feedback: createdFeedback[0]._id,
+        },
+      ],
+      { session }
     );
 
-    const questionIds = createdQuestions.map((q) => q._id);
-
-    const surveyDoc = {
-      uuid: uuidv4(),
-      title: title.trim(),
-      description,
-      questions: questionIds,
-      tags: Array.isArray(tags) ? tags : [],
-      status: 'Draft', // Always set status to Draft
-      ...(team ? { team } : {}),
-      ...(subteam ? { subteam } : {}),
-      ...(created_by ? { created_by } : {}),
-    };
-    // feedback create
-    const feedbackPayload = {
-      instructionTop: feedback?.instructionTop || "",
-      instruction_header_top: feedback?.instruction_header_top || "",
-      question_text: feedback?.question_text || "",
-      instructionBottom: feedback?.instructionBottom || "",
-      //instruction_header_bottom: feedback?.instruction_header_bottom || "",
-    };
-    if ([feedbackPayload.instructionTop, feedbackPayload.question_text, feedbackPayload.instructionBottom].some(s => (s || "").trim() !== "")) {
-      const fb = await GlobalSurveyFeedback.create(feedbackPayload);
-      surveyDoc.feedback = fb._id;
-    }
-    const survey = await Surveys.create(surveyDoc);
-
-    await logGlobalAdminActivity(req, "Create Survey", "survey", `Survey created successfully ${survey.title}`);
+    // Commit transaction
+    await session.commitTransaction();
 
     return res.status(201).json({
       success: true,
       message: "Survey created successfully",
-      data: survey,
+      data: createdSurvey[0],
     });
-
   } catch (error) {
+    // Rollback if anything fails
+    if (session) {
+      await session.abortTransaction();
+    }
+
+    console.error("Error creating survey:", error);
+
     return res.status(500).json({
       success: false,
       message: "Failed to create survey",
       error: error.message,
     });
+  } finally {
+    if (session) {
+      session.endSession();
+    }
   }
 };
-
-
-// const editSurvey = async (req, res) => {
-//   try {
-//     const { title, description, questions, created_by, tags, team, subteam, status } = req.body;
-
-//     let questionIds = [];
-
-//     if (Array.isArray(questions) && questions.length > 0) {
-//       for (const q of questions) {
-//         // Validate per new schema
-//         if (!q.type || !["Multiple Choice", "Multi Select"].includes(q.type)) {
-//           return res.status(400).json({ success: false, message: "Invalid question type. Use 'Multiple Choice' or 'Multi Select'" });
-//         }
-//         if (!q.question_text || !q.question_text.trim()) {
-//           return res.status(400).json({ success: false, message: "question_text is required for all questions" });
-//         }
-//         if (!Array.isArray(q.options) || q.options.length < 2) {
-//           return res.status(400).json({ success: false, message: "Each question must have at least two options" });
-//         }
-
-//         if (q._id) {
-//           const updated = await GlobalSurveyQuestion.findByIdAndUpdate(
-//             q._id,
-//             {
-//               question_text: q.question_text.trim(),
-//               type: q.type,
-//               options: q.options,
-//               //total_points: typeof q.total_points === 'number' ? q.total_points : 1,
-//               instructions: typeof q.instructions === 'string' ? q.instructions : '',
-//             },
-//             { new: true }
-//           );
-//           questionIds.push(updated._id);
-//         } else {
-//           const newQ = await GlobalSurveyQuestion.create({
-//             question_text: q.question_text.trim(),
-//             type: q.type,
-//             options: q.options,
-//             //total_points: typeof q.total_points === 'number' ? q.total_points : 1,
-//             instructions: typeof q.instructions === 'string' ? q.instructions : '',
-//           });
-//           questionIds.push(newQ._id);
-//         }
-//       }
-//     }
-
-//     const updatedSurvey = await Surveys.findOneAndUpdate(
-//       { uuid: req.params.id },
-//       {
-//         ...(title ? { title: title.trim() } : {}),
-//         ...(description ? { description } : {}),
-//         ...(questionIds.length > 0 ? { questions: questionIds } : {}),
-//         ...(Array.isArray(tags) ? { tags } : {}),
-//         ...(team ? { team } : {}),
-//         ...(subteam ? { subteam } : {}),
-//         ...(status ? { status } : {}),
-//         ...(created_by ? { created_by } : {}),
-//       },
-//       { new: true }
-//     ).populate("questions");
-
-//     if (!updatedSurvey) {
-//       return res.status(404).json({ success: false, message: "Survey not found" });
-//     }
-
-//     await logGlobalAdminActivity(req, "Edit Survey", "survey", `Survey updated successfully ${updatedSurvey.title}`);
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "Survey updated successfully",
-//       data: { updatedSurvey, questions },
-//     });
-
-//   } catch (error) {
-//     return res.status(500).json({
-//       success: false,
-//       message: "Failed to update survey",
-//       error: error.message,
-//     });
-//   }
-// };
-
-////////////////////////
-// const createSurvey = async (req, res) => {
-//   try {
-//     const { title, description, questions, survey_type, start_date, end_date, is_active, created_by } = req.body;
-
-//     // Insert questions with info_text support
-//     const createdQuestions = await GlobalSurveyQuestion.insertMany(
-//       questions.map(q => ({
-//         info_text: q.info_text || null, // ✅ include info_text
-//         question_text: q.question_text || "", // keep empty string if info only
-//         question_type: q.question_type,
-//         options: q.options || [],
-//         position: q.position || 0,
-//       }))
-//     );
-
-//     const questionIds = createdQuestions.map(q => q._id);
-
-//     // Create survey
-//     const survey = await Surveys.create({
-//       uuid: uuidv4(),
-//       title,
-//       description,
-//       questions: questionIds,
-//       survey_type,
-//       start_date,
-//       end_date,
-//       is_active,
-//       created_by,
-//     });
-
-//     await logGlobalAdminActivity(req, "Create Survey", "survey", `Survey created successfully ${survey.title}`);
-
-//     return res.status(201).json({
-//       success: true,
-//       message: "Survey created successfully",
-//       data: survey,
-//     });
-//   } catch (error) {
-//     return res.status(500).json({
-//       success: false,
-//       message: "Failed to create survey",
-//       error: error.message,
-//     });
-//   }
-// };
-
-// const editSurvey = async (req, res) => {
-//   try {
-//     const { title, description, questions, survey_type, start_date, end_date, is_active, created_by } = req.body;
-
-//     let questionIds = [];
-
-//     if (questions && questions.length > 0) {
-//       for (const q of questions) {
-//         if (q._id) {
-//           // Update existing question with info_text
-//           const updated = await GlobalSurveyQuestion.findByIdAndUpdate(
-//             q._id,
-//             {
-//               info_text: q.info_text || null,
-//               question_text: q.question_text || "",
-//               question_type: q.question_type,
-//               options: q.options || [],
-//               position: q.position || 0,
-//             },
-//             { new: true }
-//           );
-//           questionIds.push(updated._id);
-//         } else {
-//           // Create new question
-//           const newQ = await GlobalSurveyQuestion.create({
-//             info_text: q.info_text || null,
-//             question_text: q.question_text || "",
-//             question_type: q.question_type,
-//             options: q.options || [],
-//             position: q.position || 0,
-//           });
-//           questionIds.push(newQ._id);
-//         }
-//       }
-//     }
-
-//     const updatedSurvey = await Surveys.findOneAndUpdate(
-//       { uuid: req.params.id },
-//       {
-//         ...(title && { title }),
-//         ...(description && { description }),
-//         ...(questionIds.length > 0 && { questions: questionIds }),
-//         ...(survey_type && { survey_type }),
-//         ...(start_date && { start_date: new Date(start_date) }),
-//         ...(end_date && { end_date: new Date(end_date) }),
-//         ...(is_active !== undefined && { is_active }),
-//         ...(created_by && { created_by }),
-//       },
-//       { new: true }
-//     ).populate("questions");
-
-//     if (!updatedSurvey) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Survey not found",
-//       });
-//     }
-
-//     await logGlobalAdminActivity(req, "Edit Survey", "survey", `Survey updated successfully ${updatedSurvey.title}`);
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "Survey updated successfully",
-//       data: { updatedSurvey, questions },
-//     });
-//   } catch (error) {
-//     return res.status(500).json({
-//       success: false,
-//       message: "Failed to update survey",
-//       error: error.message,
-//     });
-//   }
-// };
-
-//new code for surveys with feedback
 const editSurvey = async (req, res) => {
+  let session;
   try {
-    const { title, description, questions, created_by, tags, team, subteam, status, feedback } = req.body;
+    const { title, description, sections, tags = [], team, subteam, status, feedback } = req.body;
+    const surveyUUID = req.params.id;
 
-    const survey = await Surveys.findOne({ uuid: req.params.id });
-    if (!survey) return res.status(404).json({ success: false, message: "Survey not found" });
-
-    // Build questionIds if questions provided
-    let questionIds = [];
-    if (Array.isArray(questions) && questions.length > 0) {
-      for (const q of questions) {
-        if (!q.type || !["Multiple Choice", "Multi Select"].includes(q.type)) {
-          return res.status(400).json({ success: false, message: "Invalid question type. Use 'Multiple Choice' or 'Multi Select'" });
-        }
-        if (!q.question_text || !q.question_text.trim()) {
-          return res.status(400).json({ success: false, message: "question_text is required for all questions" });
-        }
-        if (!Array.isArray(q.options) || q.options.length < 2) {
-          return res.status(400).json({ success: false, message: "Each question must have at least two options" });
-        }
-
-        const options = Array.isArray(q.options)
-          ? q.options.map(o => (o || '').trim()).filter(Boolean)
-          : [];
-        const header = (q.instruction_header || '').trim();
-        const text = (q.instruction_text || '').trim();
-        const combined = (typeof q.instructions === 'string' && q.instructions.trim())
-          ? q.instructions.trim()
-          : [header, text].filter(Boolean).join('\n\n');
-
-        if (q._id) {
-          const updated = await GlobalSurveyQuestion.findByIdAndUpdate(
-            q._id,
-            {
-              question_text: q.question_text.trim(),
-              type: q.type,
-              options,
-              instructions: combined,
-              instruction_header: header,
-              instruction_text: text,
-            },
-            { new: true }
-          );
-          questionIds.push(updated._id);
-        } else {
-          const newQ = await GlobalSurveyQuestion.create({
-            question_text: q.question_text.trim(),
-            type: q.type,
-            options,
-            instructions: combined,
-            instruction_header: header,
-            instruction_text: text,
-          });
-          questionIds.push(newQ._id);
-        }
-      }
-    }
-
-    // Assign fields on instance
-    if (title) survey.title = title.trim();
-    if (description) survey.description = description;
-    if (Array.isArray(tags)) survey.tags = tags;
-    if (team) survey.team = team;
-    if (subteam) survey.subteam = subteam;
-    survey.status = 'Draft'; // Always set status to Draft
-    if (created_by) survey.created_by = created_by;
-    if (questionIds.length > 0) survey.questions = questionIds;
-
-    // Feedback upsert (your block)
-    if (feedback) {
-      const feedbackPayload = {
-        instructionTop: feedback?.instructionTop || "",
-        instruction_header_top: feedback?.instruction_header_top || "",
-        question_text: feedback?.question_text || "",
-        instructionBottom: feedback?.instructionBottom || "",
-        //instruction_header_bottom: feedback?.instruction_header_bottom || "",
-      };
-      const hasContent = [feedbackPayload.instructionTop, feedbackPayload.question_text, feedbackPayload.instructionBottom]
-        .some(s => (s || "").trim() !== "");
-
-      if (hasContent) {
-        if (survey.feedback) {
-          await GlobalSurveyFeedback.findByIdAndUpdate(survey.feedback, feedbackPayload, { new: true });
-        } else {
-          const fb = await GlobalSurveyFeedback.create(feedbackPayload);
-          survey.feedback = fb._id;
-        }
-      } else {
-        // Optional: clear feedback when user wipes all fields
-        // survey.feedback = null;
-      }
-    }
-
-    await survey.save();
-    const updatedSurvey = await Surveys.findById(survey._id)
-      .populate("questions")
-      .populate("feedback");
-
-    if (!updatedSurvey) {
+    const survey = await Surveys.findOne({ uuid: surveyUUID }).populate("sections");
+    if (!survey) {
       return res.status(404).json({ success: false, message: "Survey not found" });
     }
+
+    // Start MongoDB session
+    session = await mongoose.startSession();
+    session.startTransaction();
+
+    // Validate
+    if (!title || !title.trim()) {
+      throw new Error("Title is required");
+    }
+
+    if (!Array.isArray(sections) || sections.length === 0) {
+      throw new Error("At least one section is required");
+    }
+
+    // --- DELETE OLD SECTIONS & QUESTIONS ---
+    if (Array.isArray(survey.sections) && survey.sections.length > 0) {
+      const sectionIds = survey.sections.map((s) => s._id);
+      const oldSections = await GlobalSurveySection.find({ _id: { $in: sectionIds } });
+      const questionIdsToDelete = oldSections.flatMap((sec) => sec.questions);
+      if (questionIdsToDelete.length > 0) {
+        await GlobalSurveyQuestion.deleteMany({ _id: { $in: questionIdsToDelete } }, { session });
+      }
+      await GlobalSurveySection.deleteMany({ _id: { $in: sectionIds } }, { session });
+    }
+
+    // --- CREATE NEW SECTIONS & QUESTIONS ---
+    let sectionsIDs = [];
+
+    for (const section of sections) {
+      if (!Array.isArray(section.questions) || section.questions.length === 0) {
+        throw new Error("Each section must contain at least one question");
+      }
+
+      const questionIds = [];
+
+      for (const question of section.questions) {
+        if (!question.question_text || !question.question_text.trim()) {
+          throw new Error("Each question must have question_text");
+        }
+
+        const createdQuestion = await GlobalSurveyQuestion.create(
+          [
+            {
+              question_text: question.question_text.trim(),
+              type: question.type,
+              options: Array.isArray(question.options)
+                ? question.options.map((o) => o.trim()).filter(Boolean)
+                : [],
+              instructions: question.instructions || "",
+              instruction_header: question.instruction_header || "",
+              instruction_text: question.instruction_text || "",
+            },
+          ],
+          { session }
+        );
+
+        questionIds.push(createdQuestion[0]._id);
+      }
+      // const createdFeedback = await GlobalSurveyFeedback.create(feedback, { session });  
+
+      const createdSection = await GlobalSurveySection.create(
+        [
+          {
+            description: section.description || "",
+            questions: questionIds,
+          },
+        ],
+        { session }
+      );
+
+      sectionsIDs.push(createdSection[0]._id);
+    }
+    // --- UPDATE SURVEY MAIN FIELDS ---
+    survey.title = title.trim();
+    survey.description = description;
+    survey.sections = sectionsIDs;
+    survey.tags = tags;
+    survey.team = team;
+    survey.subteam = subteam;
+    survey.status = status || "Draft";
+    await survey.save({ session });
+
+    // Commit transaction
+    await session.commitTransaction();
+
+    const updatedSurvey = await Surveys.findById(survey._id)
+      .populate({
+        path: "sections",
+        populate: { path: "questions" },
+      })
+      .populate("feedback");
 
     await logGlobalAdminActivity(req, "Edit Survey", "survey", `Survey updated successfully ${updatedSurvey.title}`);
 
     return res.status(200).json({
       success: true,
       message: "Survey updated successfully",
-      data: { updatedSurvey, questions },
+      data: updatedSurvey,
     });
-
   } catch (error) {
+    if (session) await session.abortTransaction();
+    console.error("Error updating survey:", error);
     return res.status(500).json({
       success: false,
       message: "Failed to update survey",
       error: error.message,
     });
+  } finally {
+    if (session) session.endSession();
   }
 };
 
-const deleteSurvey = async(req, res) => {
-    try {
-        const deletedSurvey = await Surveys.findOneAndDelete({ uuid: req.params.id });
-        if (!deletedSurvey) {
-            return res.status(404).json({
-                success: false,
-                message: "Survey not found"
-            })
-        }
-        await logGlobalAdminActivity(req,"Delete Survey","survey",`Survey deleted successfully ${deletedSurvey.title}`)
-        return res.status(200).json({
-            success: true,
-            message: 'Survey deleted successfully',
-            data: deletedSurvey,
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: 'Failed to delete survey',
-            error: error.message,
-        });
-    }
-}
 
-const getSurveys = async(req, res) => {
-    try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 50;
-        const skip = (page - 1) * limit;
-        const surveys = await Surveys.find().skip(skip).limit(limit).populate("questions").populate('feedback');;
-        const total = await Surveys.countDocuments()
-        // await logGlobalAdminActivity(req,"Get Surveys","survey","Surveys fetched successfully")
-        return res.status(200).json({
-            success: true,
-            message: 'Surveys fetched successfully',
-            data: surveys,
-            pagination: {
-                total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit),
-                hasNextPage: page * limit < total
-            }
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: 'Failed to fetch surveys',
-            error: error.message,
-        });
+const deleteSurvey = async (req, res) => {
+  let session;
+  try {
+    // Start MongoDB transaction
+    session = await mongoose.startSession();
+    session.startTransaction();
+
+    const survey = await Surveys.findOne({ uuid: req.params.id })
+      .populate("sections")
+      .populate("feedback");
+
+    if (!survey) {
+      return res.status(404).json({
+        success: false,
+        message: "Survey not found",
+      });
     }
-}
+
+    // --- Step 1: Delete questions under each section ---
+    if (Array.isArray(survey.sections) && survey.sections.length > 0) {
+      const sectionIds = survey.sections.map((s) => s._id);
+      const sections = await GlobalSurveySection.find({ _id: { $in: sectionIds } });
+      const questionIds = sections.flatMap((section) => section.questions);
+
+      if (questionIds.length > 0) {
+        await GlobalSurveyQuestion.deleteMany({ _id: { $in: questionIds } }, { session });
+      }
+
+      // --- Step 2: Delete sections ---
+      await GlobalSurveySection.deleteMany({ _id: { $in: sectionIds } }, { session });
+    }
+
+    // --- Step 3: Delete feedback (if any) ---
+    if (survey.feedback) {
+      await GlobalSurveyFeedback.findByIdAndDelete(survey.feedback._id, { session });
+    }
+
+    // --- Step 4: Delete the survey itself ---
+    const deletedSurvey = await Surveys.findOneAndDelete({ uuid: req.params.id }, { session });
+
+    await session.commitTransaction();
+
+    // --- Step 5: Log admin activity ---
+    await logGlobalAdminActivity(
+      req,
+      "Delete Survey",
+      "survey",
+      `Survey deleted successfully: ${deletedSurvey.title}`
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Survey deleted successfully",
+      data: deletedSurvey,
+    });
+  } catch (error) {
+    if (session) await session.abortTransaction();
+    console.error("Error deleting survey:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete survey",
+      error: error.message,
+    });
+  } finally {
+    if (session) session.endSession();
+  }
+};
+
+const getSurveys = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+
+    // Fetch all surveys with sections → questions → feedback
+    const surveys = await Surveys.find()
+      .skip(skip)
+      .limit(limit)
+      .populate({
+        path: "sections",
+        populate: {
+          path: "questions",
+          model: "GlobalSurveyQuestion",
+        },
+      })
+      .populate("feedback")
+      .lean(); // lean() for faster response and smaller payload
+
+    const total = await Surveys.countDocuments();
+
+    // Optional: sort sections or questions by order before sending
+    const sortedSurveys = surveys.map((survey) => ({
+      ...survey,
+      sections: (survey.sections || [])
+        .sort((a, b) => a.order - b.order)
+        .map((section) => ({
+          ...section,
+          questions: (section.questions || []).sort((a, b) => a.order - b.order),
+        })),
+    }));
+
+    return res.status(200).json({
+      success: true,
+      message: "Surveys fetched successfully",
+      data: sortedSurveys,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page * limit < total,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching surveys:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch surveys",
+      error: error.message,
+    });
+  }
+};
+
 
 const viewResponse = async(req, res) => {
     try {
@@ -507,23 +379,70 @@ const viewResponses = async(req, res) => {
         })
     }
 }
-const getSurvey = async(req, res) => {
-    try {
-        const survey = await Surveys.findOne({uuid: req.params.id}).populate('questions').populate("feedback");
-        // await logGlobalAdminActivity(req,"Get Survey","survey",`Survey fetched successfully ${survey.title}`)
-        return res.status(200).json({
-            success: true,
-            message: "Survey fetched successfully",
-            data: survey
-        })
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Failed to fetch survey",
-            error: error.message
-        })
+const getSurvey = async (req, res) => {
+  try {
+    const survey = await Surveys.findOne({ uuid: req.params.id })
+      .populate({
+        path: "sections",
+        populate: {
+          path: "questions",
+          model: "GlobalSurveyQuestion",
+        },
+      })
+      .populate("feedback");
+
+    if (!survey) {
+      return res.status(404).json({ success: false, message: "Survey not found" });
     }
-}
+
+    // Reconstruct unified elements array from nested structure
+    const elements = [];
+
+    for (const section of survey.sections || []) {
+      // Add section descriptor
+      elements.push({
+        type: "section",
+        description: section.description || "",
+      });
+
+      // Add questions within this section
+      for (const q of section.questions || []) {
+        if (q.type === "info") {
+          elements.push({
+            type: "info",
+            description: q.instruction_text || "",
+          });
+        } else {
+          elements.push({
+            type: "question",
+            question_type: q.type,
+            question_text: q.question_text || "",
+            options: Array.isArray(q.options) ? q.options : [],
+            instruction_text: q.instruction_text || "",
+          });
+        }
+      }
+    }
+
+
+    return res.status(200).json({
+      success: true,
+      message: "Survey fetched successfully",
+      data: {
+        ...survey.toObject(),
+        elements, // Flattened structure for front-end compatibility
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching survey:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch survey",
+      error: error.message,
+    });
+  }
+};
+
 
 module.exports = {
     createSurvey,

@@ -62,7 +62,7 @@ const GlobalMessageBoard = () => {
       {/* Input Box */}
       <div className="message-input-box">
         <textarea
-          placeholder="Write a message..."
+          placeholder="Write a message"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
         />

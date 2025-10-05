@@ -32,7 +32,7 @@ import { GoX } from "react-icons/go";
 
 const OrganizationManagement = () => {
   const dispatch = useDispatch();
-  const { organizations, loading, filters,error } = useSelector((state) => state.organizations);
+  const { organizations, loading, filters, error,creating,updating,deleting } = useSelector((state) => state.organizations);
   const [plans, setPlans] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -44,7 +44,7 @@ const OrganizationManagement = () => {
   const [showOrgModal, setShowOrgModal] = useState(false);
   const [plan, setPlan] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [showBulkAction,setShowBulkAction] = useState(false)
+  const [showBulkAction, setShowBulkAction] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -62,20 +62,20 @@ const OrganizationManagement = () => {
   const navigate = useNavigate();
 
 
-useEffect(() => {
-  if (filters.name && filters.name.length > 3) {
-    const timeoutId = setTimeout(() => {
+  useEffect(() => {
+    if (filters.name && filters.name.length > 3) {
+      const timeoutId = setTimeout(() => {
+        dispatch(fetchOrganizations(filters));
+        fetchPlans();
+      }, 200); // delay for debounce
+
+      return () => clearTimeout(timeoutId);
+    }
+    if (filters.name === "") {
       dispatch(fetchOrganizations(filters));
       fetchPlans();
-    }, 200); // delay for debounce
-
-    return () => clearTimeout(timeoutId);
-  }
-  if(filters.name === ""){
-    dispatch(fetchOrganizations(filters));
-    fetchPlans();
-  }
-}, [dispatch, filters]);
+    }
+  }, [dispatch, filters]);
 
   const fetchPlans = async () => {
     const response = await api.get("/api/globalAdmin/getPlans");
@@ -150,13 +150,13 @@ useEffect(() => {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
-  
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     console.log(formData);
-  
+
     if (editMode) {
       try {
         const resultAction = await dispatch(updateOrganization({ id: currentOrg.uuid, data: formData }));
@@ -170,7 +170,7 @@ useEffect(() => {
         alert('Failed to update organization');
       }
     } else {
-      if(!formData.invoice || !formData.receipt){
+      if (!formData.invoice || !formData.receipt) {
         alert("Please upload invoice and receipt.");
         return;
       }
@@ -194,7 +194,7 @@ useEffect(() => {
       }
     }
   };
-  
+
 
   const handleCheckboxChange = (id) => {
     setSelectedItems((prev) =>
@@ -242,7 +242,6 @@ useEffect(() => {
     if (pageNumber < 1 || pageNumber > totalPages) return;
     setCurrentPage(pageNumber);
   };
-
   const handleSelectAll = () => {
     setSelectedItems(
       selectedItems.length === currentpages.length
@@ -261,7 +260,7 @@ useEffect(() => {
   }
 
   const handleBulkDeleteOrg = (ids) => {
-    if(ids.length === 0){
+    if (ids.length === 0) {
       alert("Please select at least one organization to delete.")
       return;
     }
@@ -278,242 +277,243 @@ useEffect(() => {
 
   return (
     <>
-      {loading && filters.name === ""  ? <LoadingScreen text="Loading Organizations..."/> : (
-      <div className="app-container">
-        {/* Main Content */}
-        <div className="main-content">
-          {showOrgModal && (
-            <OrganizationDetails
-              org={org}
-              isOpen={showOrgModal}
-              onClose={handleCloseOrgModal}
-            />
-          )}
+    {deleting && <LoadingScreen text="Deleting Organization..." />}
+      {loading && filters.name === "" ? <LoadingScreen text="Loading Organizations..." /> : (
+        <div className="app-container">
+          {/* Main Content */}
+          <div className="main-content">
+            {showOrgModal && (
+              <OrganizationDetails
+                org={org}
+                isOpen={showOrgModal}
+                onClose={handleCloseOrgModal}
+              />
+            )}
 
-          {/* Page Content */}
-          <div className="page-content">
+            {/* Page Content */}
+            <div className="page-content">
 
-            {/* Controls */}
-            <div className="controls">
-              <div className="search-container">
-                <Search size={16} color="#6b7280" className="search-icon" />
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="Search"
-                  className="search-input"
-                  onChange={(e) => handleFilterChange(e)}
-                />
-              </div>
+              {/* Controls */}
+              <div className="controls">
+                <div className="roles-search-bar">
+                  <Search size={16} color="#6b7280" className="search-icon" />
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Search"
+                    className="search-input"
+                    onChange={(e) => handleFilterChange(e)}
+                  />
+                </div>
 
-              <div className="controls-right">
-                <button className="control-btn" onClick={() => setShowFilters((prev) => !prev)}>
-                  <Filter size={16} />
-                  Filter
-                </button>
+                <div className="controls-right">
+                  <button className="control-btn" onClick={() => setShowFilters((prev) => !prev)}>
+                    <Filter size={16} />
+                    Filter
+                  </button>
 
-                {/* <button className="control-btn">
+                  {/* <button className="control-btn">
                   <Share size={16} />
                   Share
                 </button> */}
-                <button className="control-btn" onClick={() => setShowBulkAction((prev) => !prev)}>
-                  Bulk Action <ChevronDown size={16} />
-                </button>
-                <button className="add-btn" onClick={() => openForm()}>
-                + Add Organization
-              </button>
-              </div>
-            </div>
-            {showFilters && (
-              <div className="filter-panel">
-                <span style={{cursor: "pointer", position: "absolute", right: "10px", top: "10px"}} onClick={() => setShowFilters(false)}><X size={16} color="#6b7280" /></span>
-                <div className="filter-group">
-                  <label>Status</label>
-                  <select
-                    name="status"
-                    value={filters?.status || ""}
-                    onChange={handleFilterChange}
-                  >
-                    <option value="">All</option>
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </div>
-
-                {/* Plan Filter */}
-                <div className="filter-group">
-                  <label>Plan</label>
-                  <select
-                    name="plan"
-                    value={filters?.plan || ""}
-                    onChange={handleFilterChange}
-                  >
-                    <option value="">All</option>
-                    {plans.map((plan) => (
-                      <option key={plan._id} value={plan._id}>
-                        {plan.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="filter-actions">
-                  <button className="reset-btn" onClick={resetFilters}>
-                    Clear
+                  <button className="control-btn" onClick={() => setShowBulkAction((prev) => !prev)}>
+                    Bulk Action <ChevronDown size={16} />
+                  </button>
+                  <button className="btn-primary" onClick={() => openForm()}>
+                    + Add Organization
                   </button>
                 </div>
               </div>
-            )}
-            {showBulkAction && (
-                          <div className="bulk-action-panel">
-                            <div className="bulk-action-header">
-                              <label className="bulk-action-title">Items Selected: {selectedItems.length}</label>
-                              <GoX  
-                                size={20}
-                                title="Close"
-                                aria-label="Close bulk action panel"
-                                onClick={() => setShowBulkAction(false)}
-                                className="bulk-action-close"
-                              />
-                            </div>
-                            <div className="bulk-action-actions">
-                              <button
-                                className="bulk-action-delete-btn"
-                                disabled={selectedItems.length === 0}
-                                onClick={() => handleBulkDeleteOrg(selectedItems)}
-                              >
-                                <RiDeleteBinFill size={16} color="#fff" />
-                                <span>Delete</span>
-                              </button>
-                            </div>
-                          </div>
-            )}
-            <>
-            <div className="table-container">
-              <div className="table-header">
-                <input
-                  type="checkbox"
-                  checked={currentpages.length > 0 && selectedItems.length === currentpages.length}
-                  onChange={handleSelectAll}
-                />
-                <div>Plan ID</div>
-                <div>Organization</div>
-                <div>Start Date</div>
-                <div>End Date</div>
-                <div>Status</div>
-                <div>Plan Name</div>
-                <div>Actions</div>
-              </div>
-
-              {currentpages.map((org) => (
-                <div key={org.id} className={`table-row`}>
-                  {/* <span style={{color: "#FF0000", fontWeight: "bold",position: "absolute", left: "0", top: "0"}}>Expired</span> */}
-                  <input
-                    type="checkbox"
-                    checked={selectedItems.includes(org.uuid)}
-                    onChange={() => handleCheckboxChange(org.uuid)}
-                    key={org.uuid}
-                  />
-                  <div className="planId">{org.planId}</div>
-                  <div className="user-cell" onClick={() => handleOpenOrg(org)}>
-                    <div
-                      className="user-avatar-cell"
-                      style={{ backgroundColor: "#FFC107" }}
+              {showFilters && (
+                <div className="filter-panel">
+                  <span style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px",hover:{color:"#6b7280"}}} onClick={() => setShowFilters(false)}><GoX size={20} color="#6b7280" /></span>
+                  <div className="filter-group">
+                    <label>Status</label>
+                    <select
+                      name="status"
+                      value={filters?.status || ""}
+                      onChange={handleFilterChange}
                     >
-                      {org.logo_url ? (
-                        <img
-                          src={org.logo_url}
-                          alt={org.name}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            borderRadius: "50%",
-                            objectFit: "cover",
-                          }}
-                        />
-                      ) : (
-                        org?.name?.charAt(0).toUpperCase()
-                      )}
-                    </div>
-                    <div className="user-info">
-                      <div className="user-name-cell">{org.name}</div>
-                      <div className="user-email">{org.email}</div>
-                    </div>
-                  </div>
-                  
-
-                  <div className="date-cell">
-                    {new Date(org.start_date).toLocaleDateString("en-CA")}
-                  </div>
-                  <div className="date-cell">
-                    {new Date(org.end_date).toLocaleDateString("en-CA")}
+                      <option value="">All</option>
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
                   </div>
 
-                  <div>
-                    <span
-                      className={`status-badge ${org.displayStatus === "Active"
-                        ? "status-paid"
-                        : "status-cancelled"
-                        }`}
+                  {/* Plan Filter */}
+                  <div className="filter-group">
+                    <label>Plan</label>
+                    <select
+                      name="plan"
+                      value={filters?.plan || ""}
+                      onChange={handleFilterChange}
                     >
-                      {org.displayStatus === "Active" ? "✓ Active" : "✕ Inactive"}
-                    </span>
+                      <option value="">All</option>
+                      {plans.map((plan) => (
+                        <option key={plan._id} value={plan._id}>
+                          {plan.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  <div className="purchase-cell" style={{textTransform: "capitalize"}}>{org.planName}</div>
 
-                  <div className="actions-cell">
-                    <button
-                      className="global-action-btn delete"
-                      onClick={() => handleDeleteOrg(org.uuid)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                    <button
-                      className="global-action-btn edit"
-                      onClick={() => openForm(org)}
-                    >
-                    <Edit3 size={16} />
+                  <div className="filter-actions">
+                    <button className="btn-primary"  onClick={resetFilters}>
+                      Clear
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
+              )}
+              {showBulkAction && (
+                <div className="bulk-action-panel">
+                  <div className="bulk-action-header">
+                    <label className="bulk-action-title">Items Selected: {selectedItems.length}</label>
+                    <GoX
+                      size={20}
+                      title="Close"
+                      aria-label="Close bulk action panel"
+                      onClick={() => setShowBulkAction(false)}
+                      className="bulk-action-close"
+                    />
+                  </div>
+                  <div className="bulk-action-actions">
+                    <button
+                      className="bulk-action-delete-btn"
+                      disabled={selectedItems.length === 0}
+                      onClick={() => handleBulkDeleteOrg(selectedItems)}
+                    >
+                      <RiDeleteBinFill size={16} color="#fff" />
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+              <>
+                <div className="table-container">
+                  <div className="table-header">
+                    <input
+                      type="checkbox"
+                      checked={currentpages.length > 0 && selectedItems.length === currentpages.length}
+                      onChange={handleSelectAll}
+                    />
+                    <div>Plan ID</div>
+                    <div>Organization</div>
+                    <div>Start Date</div>
+                    <div>End Date</div>
+                    <div>Status</div>
+                    <div>Plan Name</div>
+                    <div>Actions</div>
+                  </div>
 
-            {/* Pagination */}
-            <div className="pagination">
-              <button
-                className="pagination-btn"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft size={16} /> Previous
-              </button>
+                  {currentpages.map((org) => (
+                    <div key={org.id} className={`table-row`}>
+                      {/* <span style={{color: "#FF0000", fontWeight: "bold",position: "absolute", left: "0", top: "0"}}>Expired</span> */}
+                      <input
+                        type="checkbox"
+                        checked={selectedItems.includes(org.uuid)}
+                        onChange={() => handleCheckboxChange(org.uuid)}
+                        key={org.uuid}
+                      />
+                      <div className="planId">{org.planId}</div>
+                      <div className="user-cell" onClick={() => handleOpenOrg(org)}>
+                        <div
+                          className="user-avatar-cell"
+                          style={{ backgroundColor: "#FFC107" }}
+                        >
+                          {org.logo_url ? (
+                            <img
+                              src={org.logo_url}
+                              alt={org.name}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                borderRadius: "50%",
+                                objectFit: "cover",
+                              }}
+                            />
+                          ) : (
+                            org?.name?.charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <div className="user-info">
+                          <div className="user-name-cell">{org.name}</div>
+                          <div className="user-email">{org.email}</div>
+                        </div>
+                      </div>
 
-              {/* Page Numbers */}
-              <div className="pagination-numbers">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+
+                      <div className="date-cell">
+                        {new Date(org.start_date).toLocaleDateString("en-CA")}
+                      </div>
+                      <div className="date-cell">
+                        {new Date(org.end_date).toLocaleDateString("en-CA")}
+                      </div>
+
+                      <div>
+                        <span
+                          className={`status-badge ${org.displayStatus === "Active"
+                            ? "status-paid"
+                            : "status-cancelled"
+                            }`}
+                        >
+                          {org.displayStatus === "Active" ? "✓ Active" : "✕ Inactive"}
+                        </span>
+                      </div>
+                      <div className="purchase-cell" style={{ textTransform: "capitalize" }}>{org.planName}</div>
+
+                      <div className="actions-cell">
+                        <button
+                          className="global-action-btn delete"
+                          onClick={() => handleDeleteOrg(org.uuid)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                        <button
+                          className="global-action-btn edit"
+                          onClick={() => openForm(org)}
+                        >
+                          <Edit3 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                <div className="pagination">
                   <button
-                    key={page}
-                    className={`org-page-btn ${currentPage === page ? "active" : ""}`}
-                    onClick={() => handlePageChange(page)}
+                    className="pagination-btn"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
                   >
-                    {page}
+                    <ChevronLeft size={16} /> Previous
                   </button>
-                ))}
-              </div>
 
-              <button
-                className="pagination-btn"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                Next <ChevronRight size={16} />
-              </button>
+                  {/* Page Numbers */}
+                  <div className="pagination-numbers">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        className={`org-page-btn ${currentPage === page ? "active" : ""}`}
+                        onClick={() => handlePageChange(page)}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    className="pagination-btn"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next <ChevronRight size={16} />
+                  </button>
+                </div>
+              </>
             </div>
-            </>
           </div>
-        </div>
-      </div>)}
+        </div>)}
 
       {showForm && <AddOrganizationFormModal
         showForm={showForm}
@@ -529,6 +529,9 @@ useEffect(() => {
         plan={plan}
         loading={loading}
         error={error}
+        creating={creating}
+        updating={updating}
+        deleting={deleting}
       />}
 
     </>

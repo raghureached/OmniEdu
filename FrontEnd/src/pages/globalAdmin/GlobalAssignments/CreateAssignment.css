@@ -5,7 +5,7 @@
 .global-assign-create-assignment-container {
   display: flex;
   justify-content: center;
-  padding: 40px;
+  /* padding: 40px; */
   background: #f4f6fa;
   min-height: 100vh;
   font-family: "Segoe UI", Roboto, sans-serif;
@@ -56,11 +56,11 @@
 
 /* Step states */
 .global-assign-assignment-step.global-assign-active .global-assign-step-number {
-  background: #5570f1;
-  box-shadow: 0 0 12px rgba(85, 112, 241, 0.5);
+  background: linear-gradient(135deg, #5570f1 0%, #4338ca 100%);
+  box-shadow: 0 0 12px rgba(85, 112, 241, 0.8);
 }
 .global-assign-assignment-step.global-assign-completed .global-assign-step-number {
-  background: #34d399;
+  background: #9aabff;
 }
 
 .global-assign-step-number {

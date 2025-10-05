@@ -204,9 +204,10 @@
   .search-input {
     width: 100%;
     padding: 8px 12px 8px 36px;
-    border: 1px solid #d1d5db;
+    border: 1px solid #787a7b;
     border-radius: 6px;
     font-size: 14px;
+    color:black;
     outline: none;
     transition: border-color 0.2s ease;
   }
@@ -225,7 +226,8 @@
   .table-container {
     background-color: white;
     border-radius: 12px;
-    border: 1px solid #e5e7eb;
+    border: 2px solid #cecece;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     overflow: hidden;
   }
 
@@ -236,10 +238,10 @@
     text-align: center;   
     grid-template-columns: 30px 150px 250px 120px 120px 120px 120px 120px;
     align-items: center;
-    background-color: #f9fafb;
-    font-size: 12px;
-    font-weight: 500;
-    color: #6b7280;
+    background-color: #efefef;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666666;
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -258,7 +260,8 @@
     grid-template-columns: 30px 150px 250px 120px 120px 120px 120px 120px;
     align-items: center;
     font-size: 14px;
-    color: #374151;
+    font-weight: 600;
+    color: #434343;
     transition: background-color 0.2s ease;
   }
 
@@ -341,8 +344,9 @@
     color: #6b7280;
   }
   .planId{
-    color: #6b7280;
-    font-weight: 500;
+    /* font-size: 14px; */
+    font-weight: 600;
+    color: #434343;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-size: 12px;
@@ -739,4 +743,11 @@
   outline: none ;
   color: white;
   border: none;
+}
+.bulk-action-actions{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
 }

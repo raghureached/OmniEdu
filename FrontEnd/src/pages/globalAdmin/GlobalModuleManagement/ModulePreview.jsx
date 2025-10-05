@@ -162,14 +162,14 @@ const ModulePreview = ({ moduleData, onClose }) => {
               </section>
 
               {/* Prerequisites */}
-              {moduleData.prerequisites?.length > 0 && (
+              {moduleData?.prerequisites.split(',')?.length > 0 && (
                 <section className="mp-section">
                   <h2 className="mp-section-title">
                     <BookOpen size={22} />
                     Prerequisites
                   </h2>
                   <ul className="mp-prerequisites-list">
-                    {moduleData.prerequisites.map((pre, i) => (
+                    {moduleData.prerequisites.split(',').map((pre, i) => (
                       <li key={i}>{pre}</li>
                     ))}
                   </ul>

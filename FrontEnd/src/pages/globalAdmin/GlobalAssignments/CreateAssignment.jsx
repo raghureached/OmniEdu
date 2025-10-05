@@ -7,7 +7,8 @@ import { createGlobalAssignment } from '../../../store/slices/globalAssignmentSl
 import { fetchGlobalAssessments } from '../../../store/slices/globalAssessmentSlice';
 import { fetchOrganizations } from '../../../store/slices/organizationSlice';
 import { fetchSurveys } from '../../../store/slices/surveySlice';
-import { ChevronLeft, ChevronRight, Filter, Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Filter, Plus, Search, X } from 'lucide-react';
+import LoadingScreen from '../../../components/common/Loading/Loading';
 
 const GlobalCreateAssignment = () => {
     const dispatch = useDispatch();
@@ -23,9 +24,9 @@ const GlobalCreateAssignment = () => {
     const [showAssignDatePicker, setShowAssignDatePicker] = useState(false);
     const [showDueDatePicker, setShowDueDatePicker] = useState(false);
     const [contentType, setContentType] = useState('');
-    const { organizations } = useSelector(state => state.organizations);
+    const { organizations,loading } = useSelector(state => state.organizations);
     const { surveys } = useSelector(state => state.surveys);
-    const { items: content, loading } = useSelector(state => state.content);
+    const { items: content } = useSelector(state => state.content);
     const { assessments } = useSelector(state => state.globalAssessments);
     const [orgSearchTerm, setOrgSearchTerm] = useState('');
     const [selectedOrgs, setSelectedOrgs] = useState([]);
@@ -34,16 +35,13 @@ const GlobalCreateAssignment = () => {
         contentType: '',
         contentId: '',
         contentName: '',
-        assignType: 'individual',
-        selectedUsers: [],
-        selectedGroup: '',
         assignDate: '',
         assignTime: '',
         dueDate: '',
         dueTime: '',
         notifyUsers: false,
         isRecurring: false,
-        orgId: ''
+        orgIds: []
     });
 
     const handleInputChange = (e) => {
@@ -73,22 +71,21 @@ const GlobalCreateAssignment = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        formData.orgIds = selectedOrgs
         dispatch(createGlobalAssignment(formData));
         setFormData({
             contentType: '',
             contentId: '',
             contentName: '',
-            assignType: 'individual',
-            selectedUsers: [],
-            selectedGroup: '',
             assignDate: '',
             assignTime: '',
             dueDate: '',
             dueTime: '',
             notifyUsers: false,
             isRecurring: false,
-            orgId: ''
+            orgIds: []
         });
+        setSelectedOrgs([]);
 
         setCurrentStep(1);
     };
@@ -99,6 +96,12 @@ const GlobalCreateAssignment = () => {
         } else {
             setShowFilters(true);
         }
+    }
+
+    const handleFilterChange = (e) => {
+        setContentType(e.target.value);
+        setContentSearchTerm('');
+        setShowFilters(false)
     }
     const handleNextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 5));
     const handlePrevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
@@ -143,7 +146,11 @@ const GlobalCreateAssignment = () => {
         } else {
             setSelectedOrgs(filteredOrganizations.map(org => org.uuid));
         }
+        formData.orgIds = selectedOrgs
     };
+    if(loading){
+        return <LoadingScreen text="Loading Content..."/>
+    }
     return (
         <div className="global-assign-create-assignment-container">
             <div className="global-assign-assignment-form-container">
@@ -274,7 +281,7 @@ const GlobalCreateAssignment = () => {
                                     ))}
                                 </tbody>
                             </table>
-                            <div className="global-assign-step-actions" style={{marginTop:'80px'}}>
+                            <div className="global-assign-step-actions" style={{ marginTop: '50px' }}>
                                 <div className="global-assign-form-actions">
                                     <button type="button" className="btn-secondary" onClick={() => setCurrentStep(1)}>
                                         Cancel
@@ -314,7 +321,7 @@ const GlobalCreateAssignment = () => {
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                     <label style={{ fontWeight: 'bold' }}>Type</label>
-                                    <select value={contentType} onChange={(e) => setContentType(e.target.value)} name="contentType">
+                                    <select value={contentType} onChange={(e) => handleFilterChange(e)} name="contentType">
                                         <option value="">Select Content Type</option>
                                         <option value="Module">Module</option>
                                         <option value="Assessment">Assessment</option>
@@ -333,14 +340,22 @@ const GlobalCreateAssignment = () => {
                                             ].filter(Boolean).join(' ')}
                                             onClick={() => handleContentSelection(item)}
                                         >
-                                            <div className="global-assign-content-item-type">
-                                                {assessments.includes(item)
-                                                    ? 'Assessment'
-                                                    : surveys.includes(item)
-                                                        ? 'Survey'
-                                                        : 'Module'}
+                                            <div style={{display:'flex',alignItems:'center',gap:'10px',justifyContent:'space-between'}}>
+                                            <div>
+                                                <div className="global-assign-content-item-type">
+                                                    {assessments.includes(item)
+                                                        ? 'Assessment'
+                                                        : surveys.includes(item)
+                                                            ? 'Survey'
+                                                            : 'Module'}
+                                                </div>
+                                                <div className="global-assign-content-item-name">{item.title.toUpperCase()}</div>
                                             </div>
-                                            <div className="global-assign-content-item-name">{item.title.toUpperCase()}</div>
+                                            <div>
+                                                {/* <button className="btn-secondary">Preview</button> */}
+                                            </div>
+                                            </div>
+
                                         </div>
                                     ))
                                 ) : (
@@ -369,7 +384,7 @@ const GlobalCreateAssignment = () => {
                     {/* Step 3: Set Dates */}
                     {currentStep === 3 && (
                         <div className="global-assign-assignment-step-content">
-                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                 <h2 className="global-assign-step-title">Step 3: Dates & Configuration</h2>
                                 <p style={{ color: "#666", fontSize: "14px", fontWeight: "bold" }}>Selected content duration: {getDuration(formData.contentId)}</p>
                             </div>
@@ -448,8 +463,8 @@ const GlobalCreateAssignment = () => {
                                 </div>
                             </div>
 
-                            <div style={{ display: "flex", gap: "10px", alignItems: "center",flexDirection:"column"}}>
-                                <div className="global-assign-notification-option" style={{alignSelf:"flex-start"}}>
+                            <div style={{ display: "flex", gap: "10px", alignItems: "center", flexDirection: "column" }}>
+                                <div className="global-assign-notification-option" style={{ alignSelf: "flex-start" }}>
                                     <input
                                         type="checkbox"
                                         id="notifyUsers"
@@ -459,7 +474,7 @@ const GlobalCreateAssignment = () => {
                                     />
                                     <label htmlFor="notifyUsers">Send email notification to users</label>
                                 </div>
-                                <div className="global-assign-recurring-option" style={{alignSelf:"flex-start"}}>
+                                <div className="global-assign-recurring-option" style={{ alignSelf: "flex-start" }}>
                                     <input
                                         type="checkbox"
                                         id="isRecurring"
@@ -473,7 +488,7 @@ const GlobalCreateAssignment = () => {
                                 </div>
                             </div>
 
-                            <div className="global-assign-step-actions" style={{ display: "flex", justifyContent: "space-between" ,marginTop:'200px'}}>
+                            <div className="global-assign-step-actions" style={{ display: "flex", justifyContent: "space-between", marginTop: '200px' }}>
                                 <button type="button" className="btn-secondary" onClick={handlePrevStep}>
                                     <ChevronLeft size={20} />Previous
                                 </button>

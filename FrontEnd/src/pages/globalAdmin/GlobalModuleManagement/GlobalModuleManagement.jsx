@@ -294,7 +294,7 @@ const GlobalModuleManagement = () => {
                     className="bulk-action-close"
                   />
                 </div>
-                <div className="bulk-action-actions">
+                <div className="bulk-action-actions" style={{ display: "flex", justifyContent:"center" }}>
                   <button
                     className="bulk-action-delete-btn"
                     disabled={selectedItems.length === 0}
@@ -307,7 +307,7 @@ const GlobalModuleManagement = () => {
               </div>
             )}
 
-            <button className="add-btn" onClick={() => handleOpenModal()}> + Add Module</button>
+            <button className="btn-primary" onClick={() => handleOpenModal()}> + Add Module</button>
           </div>
         </div>
       </div>

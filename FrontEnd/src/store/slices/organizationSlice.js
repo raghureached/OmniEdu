@@ -199,6 +199,9 @@ const initialState = {
     organizations: [],
     currentOrganization: null,
     loading: false,
+    creating:false,
+    updating:false,
+    deleting:false,
     error: null,
     documentUploading: false,
     documentError: null,
@@ -216,8 +219,7 @@ const organizationSlice = createSlice({
     initialState,
     reducers: {
         setFilters: (state, action) => {
-          // console.log("action.payload", action.payload)  
-          // console.log("state.filters", state.filters)
+            
             state.filters = {...state.filters, ...action.payload };
         },
         clearFilters: (state) => {
@@ -275,7 +277,6 @@ const organizationSlice = createSlice({
           })
           .addCase(fetchOrganizationById.fulfilled, (state, action) => {
             state.loading = false;
-            // console.log(action.payload)
             state.currentOrganization = action.payload;
           })
           .addCase(fetchOrganizationById.rejected, (state, action) => {
@@ -285,35 +286,31 @@ const organizationSlice = createSlice({
 
           // Create organization
           .addCase(createOrganization.pending, (state) => {
-            state.loading = true;
+            state.creating = true;
             state.error = null;
           })
           .addCase(createOrganization.fulfilled, (state, action) => {
-            state.loading = false;
-            console.log(action.payload)
+            state.creating = false;
             state.organizations.push(action.payload);
             state.totalCount += 1;
           })
           .addCase(createOrganization.rejected, (state, action) => {
-            state.loading = false;
+            state.creating = false;
             state.error = action.payload.message || "Failed to create organization";
           })
 
           // Update organization
           .addCase(updateOrganization.pending, (state) => {
-            state.loading = true;
+            state.updating = true;
             state.error = null;
           })
           .addCase(updateOrganization.fulfilled, (state, action) => {
-            state.loading = false;
-            console.log(state,action.payload)
+            state.updating = false;
             const index = state.organizations.findIndex(
               (org) => org.uuid === action.payload.uuid
             );
-            // console.log(index)
             if (index !== -1) {
               state.organizations[index] = action.payload;
-              console.log(state.organizations[index])
             }
             if (
               state.currentOrganization &&
@@ -323,17 +320,17 @@ const organizationSlice = createSlice({
             }
           })
           .addCase(updateOrganization.rejected, (state, action) => {
-            state.loading = false;
+            state.updating = false;
             state.error = action.payload || "Failed to update organization";
           })
 
           // Delete organization
           .addCase(deleteOrganization.pending, (state) => {
-            state.loading = true;
+            state.deleting = true;
             state.error = null;
           })
           .addCase(deleteOrganization.fulfilled, (state, action) => {
-            state.loading = false;
+            state.deleting = false;
             state.organizations = state.organizations.filter(
               (org) => org.uuid !== action.payload
             );
@@ -346,22 +343,22 @@ const organizationSlice = createSlice({
             }
           })
           .addCase(deleteOrganization.rejected, (state, action) => {
-            state.loading = false;
+            state.deleting = false;
             state.error = action.payload || "Failed to delete organization";
           })
           .addCase(deleteOrganizations.pending, (state) => {
-            state.loading = true;
+            state.deleting = true;
             state.error = null;
           })
           .addCase(deleteOrganizations.fulfilled, (state, action) => {
-            state.loading = false;
+            state.deleting = false;
             state.organizations = state.organizations.filter(
               (org) => !action.payload.includes(org.uuid)
             );
             state.totalCount -= action.payload.length;
           })
           .addCase(deleteOrganizations.rejected, (state, action) => {
-            state.loading = false;
+            state.deleting = false;
             state.error = action.payload || "Failed to delete organizations";
           })
           // Upload document
