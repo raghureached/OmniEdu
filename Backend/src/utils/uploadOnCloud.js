@@ -88,4 +88,42 @@ const uploadMultipleToCloudinary = async (req, res, next) => {
     }
   };
 
-module.exports = {uploadToCloudinary,uploadMultipleToCloudinary};
+
+  const uploadQuestionFilesToCloud = async (req, res, next) => {
+    try {
+      if (!req.files) return next();
+  
+      req.uploadedFiles = {};
+  
+      for (const fieldName of Object.keys(req.files)) {
+        const files = req.files[fieldName];
+        req.uploadedFiles[fieldName] = [];
+  
+        for (const file of files) {
+          const result = await cloudinary.uploader.upload(file.path, {
+            folder: "questionFiles",
+            resource_type: "auto",
+          });
+  
+          // Delete temp file
+          if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+  
+          req.uploadedFiles[fieldName].push({
+            url: result.secure_url,
+            public_id: result.public_id,
+            format: result.format,
+            size: result.bytes,
+          });
+        }
+      }
+      next();
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        isSuccess: false,
+        message: "Cloudinary upload failed",
+        error: error.message,
+      });
+    }
+  };
+module.exports = {uploadToCloudinary,uploadMultipleToCloudinary,uploadQuestionFilesToCloud};

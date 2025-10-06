@@ -73,4 +73,82 @@ async function generateImage(req, res) {
   }
 }
 
-module.exports = { enhanceText, generateImage };
+const enhanceSurvey = async( req,res)=>{
+  const { title } = req.body;
+  const prompt = `
+You are a helpful assistant for an LMS app. Given the survey title below, rewrite it to be more engaging, clear, and professional and add tags and description.
+Return the improved title in JSON format as:
+{
+  "title": "<enhanced title>",
+  "description": "<enhanced description>",
+  "tags": ["tag1", "tag2", "tag3"],
+}
+Survey Title: ${title}
+
+  `;
+    
+    const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+    });
+
+    let result = response.text || response.content || response;
+
+    // Clean out code block markers like ```json ... ```
+    result = result.replace(/```json|```/g, "").trim();
+
+    let enhanced;
+    try {
+        enhanced = JSON.parse(result);
+    } catch (e) {
+        console.error("Parsing error:", e);
+        enhanced = { raw: result }; // fallback if not valid JSON
+    }
+
+    return res.status(200).json({
+        isSuccess: true,
+        message: "Text enhanced successfully",
+        data: enhanced,
+    });
+}
+const enhanceAssessment = async( req,res)=>{
+  const { title } = req.body;
+  const prompt = `
+You are a helpful assistant for an LMS app. Given the assessmnest title below, rewrite it to be more engaging, clear, and professional and add tags and description.
+Return the improved title in JSON format as:
+{
+  "title": "<enhanced title>",
+  "description": "<enhanced description>",
+  "tags": ["tag1", "tag2", "tag3"],
+}
+Assessment Title: ${title}
+
+  `;
+    
+    const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+    });
+
+    let result = response.text || response.content || response;
+
+    // Clean out code block markers like ```json ... ```
+    result = result.replace(/```json|```/g, "").trim();
+
+    let enhanced;
+    try {
+        enhanced = JSON.parse(result);
+    } catch (e) {
+        console.error("Parsing error:", e);
+        enhanced = { raw: result }; // fallback if not valid JSON
+    }
+
+    return res.status(200).json({
+        isSuccess: true,
+        message: "Text enhanced successfully",
+        data: enhanced,
+    });
+}
+
+
+module.exports = { enhanceText, generateImage, enhanceSurvey,enhanceAssessment };

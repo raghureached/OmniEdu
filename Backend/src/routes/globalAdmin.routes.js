@@ -2,8 +2,8 @@ const {addOrganization, editOrganization, deleteOrganization, getOrganizations, 
 const {addRole, editRole, deleteRole, getRoles, addPermissions, getPermissions, createRole, editOrgRole} = require("../controllers/globalAdmin.controller/globalAdmin_Roles");
 const {addContent, editContent, deleteContent, getContent, getContentById, bulkDelete} = require("../controllers/globalAdmin.controller/globalAdmin_Module");
 const {createSurvey, editSurvey, deleteSurvey, getSurveys, getSurvey} = require("../controllers/globalAdmin.controller/globalAdmin_Surveys");
-const {upload,uploadContent, uploadAssessment} = require("../middleware/multer_middleware");
-const { uploadMultipleToCloudinary, uploadToCloudinary } = require("../utils/uploadOnCloud");
+const {upload,uploadContent, uploadAssessment, uploadQuestionFile} = require("../middleware/multer_middleware");
+const { uploadMultipleToCloudinary, uploadToCloudinary, uploadQuestionFilestoCloud, uploadQuestionFilesToCloud } = require("../utils/uploadOnCloud");
 const { setMessage, editMessage, deleteMessage, getMessage } = require("../controllers/globalAdmin.controller/globalAdmin_message");
 const { getPlans } = require("../controllers/globalAdmin.controller/globalAdmin_plans");
 const { createAssignment, fetchAssignments } = require("../controllers/globalAdmin.controller/globalAdmin_Assignmnet");
@@ -28,7 +28,7 @@ const {
     fileUploadHandler,
   } = require("../controllers/globalAdmin.controller/globalAdmin_Assessments");
 const { getTeams } = require("../controllers/globalAdmin.controller/globalAdmin_Teams");
-const { enhanceText, generateImage } = require("../controllers/globalAdmin.controller/globalAdmin_AI");
+const { enhanceText, enhanceAssessment, enhanceSurvey } = require("../controllers/globalAdmin.controller/globalAdmin_AI");
 
 const router = require("express").Router();
 
@@ -62,8 +62,8 @@ router.route('/deleteContent/:id').delete(deleteContent)
 router.route('/bulkDeleteContent').delete(bulkDelete)
 /////////////Global Assesments////////////
 
-router.route('/createAssessment').post(createAssessment)
-router.route('/uploadAssessmentCSV').post(uploadAssessment.single('file'),uploadAssessmentCSV)
+router.route('/createAssessment').post(uploadQuestionFile.array('files'),uploadQuestionFilesToCloud,createAssessment)
+router.route('/uploadAssessmentCSV').post(uploadAssessmentCSV)
 router.route('/editAssessment/:id').put(editAssessment)
 router.route('/deleteAssessment/:id').delete(deleteAssessment)
 router.route('/getAssessments').get(getAssessments)
@@ -128,6 +128,8 @@ router.route('/getTeams').get(getTeams)
 
 //////AI/////////
 router.route('/enhanceText').post(enhanceText)
-router.route('/generateImage').post(generateImage)
+// router.route('/generateImage').post(generateImage)
+router.route('/enhanceSurvey').post(enhanceSurvey)
+router.route('/enhanceAssessment').post(enhanceAssessment)
 
 module.exports = router;

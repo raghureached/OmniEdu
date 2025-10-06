@@ -100,191 +100,251 @@ function normalizeCorrectOption(value) {
     }
     return [];
 }
+// const createAssessment = async (req, res) => {
+//     try {
+//         const { title, description, sections, status, duration, tags, team, subteam, attempts, unlimited_attempts, percentage_to_pass, display_answers, display_answers_when } = req.body;
+//         if (!title || !sections || !Array.isArray(sections) || sections.length === 0) {
+//             return res.status(400).json({
+//                 isSuccess: false,
+//                 message: "Title and sections are required"
+//             });
+//         }
+
+//         if (!Array.isArray(tags) || tags.length === 0) {
+//             return res.status(400).json({ isSuccess: false, message: "Tags (array) are required" });
+//         }
+//         if (!duration || typeof duration !== "string") {
+//             return res.status(400).json({ isSuccess: false, message: "Duration (string) is required" });
+//         }
+//         if (!team) {
+//             return res.status(400).json({ isSuccess: false, message: "Team is required" });
+//         }
+//         if (!subteam) {
+//             return res.status(400).json({ isSuccess: false, message: "SubTeam is required" });
+//         }
+//         const unlimited = Boolean(unlimited_attempts);
+//         const attemptsNum = unlimited ? 1 : (Number.isFinite(Number(attempts)) ? Math.max(1, Number(attempts)) : 1);
+//         const passPct = Number(percentage_to_pass);
+//         if (!Number.isFinite(passPct) || passPct < 0 || passPct > 100) {
+//             return res.status(400).json({ isSuccess: false, message: "percentage_to_pass must be between 0 and 100" });
+//         }
+
+//         // Validate duration format HH:MM (optional but safer)
+//         if (!duration || typeof duration !== 'string' || !isValidDuration(duration)) {
+//             return res.status(400).json({
+//                 isSuccess: false,
+//                 message: 'Duration must be a string in HH:MM format',
+//             });
+//         }
+//         const errors = [];
+        
+//         const validQuestions = [];
+
+//         // Validate each question
+//         questions.forEach((q, index) => {
+//             try {
+//                 if (!q.type || !q.question_text) {
+//                     errors.push({ index, reason: "Missing type or question text" });
+//                     return;
+//                 }
+
+
+//                 if (!q.options || !Array.isArray(q.options) || q.options.length === 0) {
+//                     errors.push({ index, reason: "Options must be a non-empty array" });
+//                     return;
+//                 }
+
+//                 if (q.correct_option === undefined || q.correct_option === null ||
+//                     (Array.isArray(q.correct_option) && q.correct_option.length === 0)) {
+//                     errors.push({ index, reason: "Missing or invalid correct_option" });
+//                     return;
+//                 }
+//                 const type = String(q.type || '').trim();
+//                 if (!['Multiple Choice', 'Multi Select'].includes(type)) {
+//                     errors.push({ index, reason: 'Invalid type. Allowed: Multiple Choice, Multi Select' });
+//                     return;
+//                 }
+
+//                 // Normalize correct_option to array of ints
+//                 const normalizedCorrect = normalizeCorrectOption(q.correct_option);
+
+//                 // Enforce counts based on type
+//                 if (type === 'Multiple Choice') {
+//                     if (normalizedCorrect.length !== 1) {
+//                         errors.push({ index, reason: 'Multiple Choice must have exactly 1 correct option index' });
+//                         return;
+//                     }
+//                 } else if (type === 'Multi Select') {
+//                     if (normalizedCorrect.length < 1) { // set to < 2 if you want strictly multiple
+//                         errors.push({ index, reason: 'Multi Select must have at least 1 correct option index' });
+//                         return;
+//                     }
+//                 }
+
+//                 // Also ensure correct indexes are within options bounds
+//                 const maxIndex = (q.options || []).length - 1;
+//                 if (normalizedCorrect.some(n => n < 0 || n > maxIndex)) {
+//                     errors.push({ index, reason: 'correct_option indexes out of range for provided options' });
+//                     return;
+//                 }
+
+//                 // DO NOT require instructions; just normalize
+//                 const instructions = typeof q.instructions === 'string' ? q.instructions : '';
+
+//                 validQuestions.push({
+//                     type: q.type.trim(),
+//                     question_text: q.question_text.trim(),
+//                     file_url: q.file_url?.trim() || null,
+//                     options: q.options,
+//                     correct_option: normalizedCorrect,
+//                     instructions: q.instructions?.trim() || "", // NEW
+//                     shuffle_options: Boolean(q.shuffle_options), // NEW
+//                 });
+//             } catch (questionError) {
+//                 errors.push({ index, reason: `Question validation failed: ${questionError.message}` });
+//                 return res.status(400).json({
+//                     isSuccess: false,
+//                     message: "Invalid question format",
+//                     errors
+//                 });
+//             }
+//         });
+
+//         if (validQuestions.length === 0) {
+//             return res.status(400).json({
+//                 isSuccess: false,
+//                 message: "No valid questions found",
+//                 errors
+//             });
+//         }
+//         if (errors.length > 0) {
+//             return res.status(400).json({
+//                 isSuccess: false,
+//                 message: "Invalid question format",
+//                 errors
+//             });
+//         }
+
+//         const savedQuestions = await GlobalQuestion.insertMany(validQuestions, { ordered: false });
+//         const assessment = new GlobalAssessment({
+//             title,
+//             description: description || "",
+//             questions: savedQuestions.map(q => q._id),
+//             tags,
+//             duration,
+//             team,
+//             subteam,
+//             attempts: attemptsNum,
+//             unlimited_attempts: unlimited,
+//             percentage_to_pass: passPct,
+//             display_answers: display_answers ?? false,
+//             display_answers_when: display_answers_when || "Never",
+//             created_by: req.user?._id,
+//             status,
+//         });
+
+//         await assessment.save();
+//         res.status(201).json({
+//             isSuccess: true,
+//             message: "Assessment created successfully",
+//             data: assessment,
+//             errors
+//         });
+
+//     } catch (error) {
+//         console.error("Error creating assessment:", error);
+//         res.status(500).json({ isSuccess: false, message: error.message });
+//     }
+// };
+
+
+// Create a full Assessment with Sections + Question
+
+// Controller for creating assessment
 const createAssessment = async (req, res) => {
     try {
-        const { title, description, questions, status, duration, tags, team, subteam, attempts, unlimited_attempts, percentage_to_pass, display_answers, display_answers_when } = req.body;
-        if (!title || !questions || !Array.isArray(questions) || questions.length === 0) {
-            return res.status(400).json({
-                isSuccess: false,
-                message: "Title and questions are required"
-            });
+      const {
+        title, description, tags, duration, team, subteam,
+        attempts, unlimited_attempts, percentage_to_pass,
+        display_answers, display_answers_when, status,
+        classification, created_by, sections
+      } = req.body;
+  
+      if (!title) return res.status(400).json({ success: false, message: "Title is required" });
+      if (!sections || !Array.isArray(sections)) return res.status(400).json({ success: false, message: "Sections are required" });
+  
+      const sectionIds = [];
+      const parsedSections = typeof sections === "string" ? JSON.parse(sections) : sections;
+  
+      for (let secIndex = 0; secIndex < parsedSections.length; secIndex++) {
+        const section = parsedSections[secIndex];
+        const questionIds = [];
+  
+        for (let qIndex = 0; qIndex < (section.questions || []).length; qIndex++) {
+          const question = section.questions[qIndex];
+  
+          // Map file if uploaded
+          let file_url = null;
+          const fieldName = `sections[${secIndex}][questions][${qIndex}][file]`;
+          if (req.uploadedFiles && req.uploadedFiles[fieldName]) {
+            file_url = req.uploadedFiles[fieldName][0].url; // only 1 file per question
+          }
+  
+          const newQuestion = new GlobalQuestion({
+            question_text: question.question_text,
+            type: question.type,
+            options: question.options || [],
+            correct_option: question.correct_option || [],
+            total_points: question.total_points || 1,
+            instructions: question.instructions || "",
+            shuffle_options: question.shuffle_options || false,
+            file_url,
+          });
+  
+          const savedQuestion = await newQuestion.save();
+          questionIds.push(savedQuestion._id);
         }
-
-        if (!Array.isArray(tags) || tags.length === 0) {
-            return res.status(400).json({ isSuccess: false, message: "Tags (array) are required" });
-        }
-        if (!duration || typeof duration !== "string") {
-            return res.status(400).json({ isSuccess: false, message: "Duration (string) is required" });
-        }
-        if (!team) {
-            return res.status(400).json({ isSuccess: false, message: "Team is required" });
-        }
-        if (!subteam) {
-            return res.status(400).json({ isSuccess: false, message: "SubTeam is required" });
-        }
-        const unlimited = Boolean(unlimited_attempts);
-        const attemptsNum = unlimited ? 1 : (Number.isFinite(Number(attempts)) ? Math.max(1, Number(attempts)) : 1);
-        const passPct = Number(percentage_to_pass);
-        if (!Number.isFinite(passPct) || passPct < 0 || passPct > 100) {
-            return res.status(400).json({ isSuccess: false, message: "percentage_to_pass must be between 0 and 100" });
-        }
-
-        // Validate duration format HH:MM (optional but safer)
-        if (!duration || typeof duration !== 'string' || !isValidDuration(duration)) {
-            return res.status(400).json({
-                isSuccess: false,
-                message: 'Duration must be a string in HH:MM format',
-            });
-        }
-        const errors = [];
-        const validQuestions = [];
-
-        // Validate each question
-        questions.forEach((q, index) => {
-            try {
-                if (!q.type || !q.question_text) {
-                    errors.push({ index, reason: "Missing type or question text" });
-                    return;
-                }
-
-
-                if (!q.options || !Array.isArray(q.options) || q.options.length === 0) {
-                    errors.push({ index, reason: "Options must be a non-empty array" });
-                    return;
-                }
-
-                if (q.correct_option === undefined || q.correct_option === null ||
-                    (Array.isArray(q.correct_option) && q.correct_option.length === 0)) {
-                    errors.push({ index, reason: "Missing or invalid correct_option" });
-                    return;
-                }
-
-                // // Ensure correct_option index is valid
-                // if (Array.isArray(q.correct_option)) {
-                //     const invalid = q.correct_option.some(i => i < 0 || i >= q.options.length);
-                //     if (invalid) {
-                //         errors.push({ index, reason: "Invalid correct_option indices" });
-                //         return;
-                //     }
-                // } else if (q.correct_option < 0 || q.correct_option >= q.options.length) {
-                //     errors.push({ index, reason: "Invalid correct_option index" });
-                //     return;
-                // }
-                // After you computed/validated options and other fields
-                const type = String(q.type || '').trim();
-                if (!['Multiple Choice', 'Multi Select'].includes(type)) {
-                    errors.push({ index, reason: 'Invalid type. Allowed: Multiple Choice, Multi Select' });
-                    return;
-                }
-
-                // Normalize correct_option to array of ints
-                const normalizedCorrect = normalizeCorrectOption(q.correct_option);
-
-                // Enforce counts based on type
-                if (type === 'Multiple Choice') {
-                    if (normalizedCorrect.length !== 1) {
-                        errors.push({ index, reason: 'Multiple Choice must have exactly 1 correct option index' });
-                        return;
-                    }
-                } else if (type === 'Multi Select') {
-                    if (normalizedCorrect.length < 1) { // set to < 2 if you want strictly multiple
-                        errors.push({ index, reason: 'Multi Select must have at least 1 correct option index' });
-                        return;
-                    }
-                }
-
-                // Also ensure correct indexes are within options bounds
-                const maxIndex = (q.options || []).length - 1;
-                if (normalizedCorrect.some(n => n < 0 || n > maxIndex)) {
-                    errors.push({ index, reason: 'correct_option indexes out of range for provided options' });
-                    return;
-                }
-
-                // DO NOT require instructions; just normalize
-                const instructions = typeof q.instructions === 'string' ? q.instructions : '';
-
-                validQuestions.push({
-                    type: q.type.trim(),
-                    question_text: q.question_text.trim(),
-                    file_url: q.file_url?.trim() || null,
-                    options: q.options,
-                    correct_option: normalizedCorrect,
-                    instructions: q.instructions?.trim() || "", // NEW
-                    shuffle_options: Boolean(q.shuffle_options), // NEW
-                });
-            } catch (questionError) {
-                errors.push({ index, reason: `Question validation failed: ${questionError.message}` });
-                return res.status(400).json({
-                    isSuccess: false,
-                    message: "Invalid question format",
-                    errors
-                });
-            }
+  
+        const newSection = new GlobalAssesmentSection({
+          title: section.title,
+          description: section.description,
+          questions: questionIds,
         });
-
-        if (validQuestions.length === 0) {
-            return res.status(400).json({
-                isSuccess: false,
-                message: "No valid questions found",
-                errors
-            });
-        }
-        if (errors.length > 0) {
-            return res.status(400).json({
-                isSuccess: false,
-                message: "Invalid question format",
-                errors
-            });
-        }
-
-        const savedQuestions = await GlobalQuestion.insertMany(validQuestions, { ordered: false });
-
-        // const assessment = new GlobalAssessment({
-        //     title,
-        //     description: description || "",
-        //     questions: savedQuestions.map(q => q._id),
-        //     tags,
-        //     duration,
-        //     team,
-        //     subteam,
-        //     attempts,
-        //     percentage_to_pass,
-        //     created_by: req.user?._id,
-        //     status,
-
-        // });
-        const assessment = new GlobalAssessment({
-            title,
-            description: description || "",
-            questions: savedQuestions.map(q => q._id),
-            tags,
-            duration,
-            team,
-            subteam,
-            attempts: attemptsNum,
-            unlimited_attempts: unlimited,
-            percentage_to_pass: passPct,
-            display_answers: display_answers ?? false,
-            display_answers_when: display_answers_when || "Never",
-            created_by: req.user?._id,
-            status,
-        });
-
-        await assessment.save();
-        res.status(201).json({
-            isSuccess: true,
-            message: "Assessment created successfully",
-            data: assessment,
-            errors
-        });
-
+  
+        const savedSection = await newSection.save();
+        sectionIds.push(savedSection._id);
+      }
+  
+      const newAssessment = new GlobalAssessments({
+        title, description, tags, duration, team, subteam,
+        attempts, unlimited_attempts, percentage_to_pass,
+        display_answers, display_answers_when, status,
+        classification, created_by, sections: sectionIds,
+      });
+  
+      const savedAssessment = await newAssessment.save();
+  
+      const populatedAssessment = await GlobalAssessments.findById(savedAssessment._id)
+        .populate({ path: "sections", populate: { path: "questions" } });
+  
+      res.status(201).json({
+        success: true,
+        message: "Assessment created successfully",
+        assessment: populatedAssessment,
+      });
+  
     } catch (error) {
-        console.error("Error creating assessment:", error);
-        res.status(500).json({ isSuccess: false, message: error.message });
+      console.error("Error creating assessment:", error);
+      res.status(500).json({ success: false, message: "Failed to create assessment", error: error.message });
     }
-};
+  };
+  
+
+
 
 const csv = require("csv-parser");
+const GlobalAssesmentSection = require("../../models/globalAssesment_section_model");
+const GlobalAssessments = require("../../models/globalAssessments_model");
 
 
 const uploadAssessmentCSV = async (req, res) => {
@@ -432,7 +492,7 @@ const getAssessments = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 50;
-        const assessments = await GlobalAssessment.find().skip((page - 1) * limit).limit(limit)
+        const assessments = await GlobalAssessment.find().skip((page - 1) * limit).limit(limit).populate("sections")
         return res.status(200).json({
             isSuccess: true,
             message: "Assessments fetched successfully",
@@ -543,7 +603,13 @@ const getQuestionsRandom = async (req, res) => {
 
 const getAssessmentById = async (req, res) => {
     try {
-        const assessment = await GlobalAssessment.findOne({ uuid: req.params.id }).populate("questions")
+        const assessment = await GlobalAssessment.findOne({ uuid: req.params.id }).populate({
+            path: "sections",
+            populate: {
+              path: "questions",
+              model: "GlobalQuestion",
+            },
+        })
         return res.status(200).json({
             isSuccess: true,
             message: "Assessment fetched successfully",
