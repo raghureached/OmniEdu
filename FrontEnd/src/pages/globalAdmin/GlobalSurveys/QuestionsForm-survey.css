@@ -154,6 +154,7 @@
     width: 100%;
     outline: none;
     font-family: inherit;
+    margin-bottom: 20px;
   }
   
   .survey-assess-form-input:focus,
@@ -241,7 +242,7 @@
     flex-direction: column;
     gap: 12px;
   }
-  
+
   .survey-assess-option-row {
     display: flex;
     align-items: center;
@@ -252,16 +253,23 @@
     background: #f1f5f9;
     border: 1px solid #cbd5e1;
     border-radius: 8px;
-    padding: 8px 12px;
+    padding: 0 12px;
     font-size: 0.875rem;
     font-weight: 600;
     color: #64748b;
     min-width: 32px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
     text-align: center;
   }
   
-  .survey-assess-option-row .assess-form-input {
+  .survey-assess-option-row .survey-assess-form-input {
     flex: 1;
+    margin-bottom: 0;
+    min-height: 44px;
   }
   
   .survey-assess-remove-option {
@@ -349,7 +357,7 @@
   /* Form Actions */
   .survey-assess-form-actions {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 16px;
     padding-top: 24px;
     border-top: 1px solid #f1f5f9;
@@ -577,16 +585,14 @@
 
 .survey-assess-qpreview-modal {
   /* Open as a centered card, not full page */
-  width: 100%;
-  max-width: 720px;
-  height: auto;
-  max-height: 85vh;
+  width: 96vw;
+  max-width: 1100px;
+  max-height: 90vh;
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+  /* Ensure internal body can scroll */
   display: flex;
   flex-direction: column;
+ 
   overflow: hidden;
 }
 .survey-gforms-card {
@@ -642,7 +648,7 @@
 .survey-assess-qpreview-body {
   padding: 16px 18px;
   overflow: auto;
-  background: #ffffff; /* card-like white background */
+  background:#d9def6  ; /* card-like white background */
 }
 
 /* Full-page Survey (Assessment) Preview Modal */
@@ -651,7 +657,7 @@
   max-width: 1100px;
   height: 90vh;
   max-height: 90vh;
-  background: #ffffff;
+  background: #d9def6;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
@@ -789,10 +795,30 @@ margin-top: 15px; }
 .survey-gforms-section-block { max-width: 640px; margin: 0 auto; }
 
 /* 3-column nav: left/back, center/counter, right/next-submit */
-.survey-gforms-nav-3 { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; }
+.survey-gforms-nav-3 {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  /* Make nav align to the same width as cards and sit just below */
+  max-width: 640px;
+  margin: 12px auto 24px; /* tighten gap from card and center */
+  padding: 0 4px;        /* slight breathing room */
+}
 .survey-gforms-nav-3 .survey-nav-left { justify-self: start; }
 .survey-gforms-nav-3 .survey-nav-center { justify-self: center; }
 .survey-gforms-nav-3 .survey-nav-right { justify-self: end; display: inline-flex; gap: 8px; }
+
+/* Make Previous/Next same size and style within preview nav */
+.survey-gforms-nav-3 .survey-assess-btn-primary {
+  min-width: 120px;
+  justify-content: center;
+}
+.survey-gforms-nav-3 .survey-assess-btn-primary:disabled {
+  opacity: 1;              /* keep same color as enabled */
+  filter: none;            /* avoid dimming gradients */
+  cursor: not-allowed;
+}
 
 /* Question card footer actions */
 .survey-assess-question-actions {

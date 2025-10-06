@@ -7,7 +7,7 @@ export const fetchGlobalAssessments = createAsyncThunk(
     try {
       const response = await api.get('/api/globalAdmin/getAssessments', { params: filters });
 
-      return response.data.data;
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -45,6 +45,7 @@ export const createGlobalAssessment = createAsyncThunk(
   'globalAssessments/createGlobalAssessment',
   async (payload, { rejectWithValue }) => {
     try {
+      console.log(payload);
       const response = await api.post('/api/globalAdmin/createAssessment', payload);
       // Controller returns { isSuccess, message, data: assessment, errors }
       return response.data.data;
@@ -178,7 +179,8 @@ const globalAssessmentSlice = createSlice({
     totalCount: 0,
     selectedAssessment: null,
     questions: [],
-    uploadUrl: ''
+    uploadUrl: '',
+    pagination:''
   },
   reducers: {
     setFilters: (state, action) => {
@@ -195,8 +197,9 @@ const globalAssessmentSlice = createSlice({
       })
       .addCase(fetchGlobalAssessments.fulfilled, (state, action) => {
         state.loading = false;
-        console.log(action.payload)
-        state.assessments = action.payload;
+        // console.log(action.payload)
+        state.pagination = action.payload.pagination; 
+        state.assessments = action.payload.data;
       })
       .addCase(fetchGlobalAssessments.rejected, (state, action) => {
         state.loading = false;

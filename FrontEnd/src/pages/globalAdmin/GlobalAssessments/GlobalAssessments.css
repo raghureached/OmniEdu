@@ -51,7 +51,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 140px;
+  min-width: 200px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
@@ -208,8 +208,8 @@
 .assess-table th {
   padding: 16px 20px;
   text-align: left;
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-weight: 700;
+  font-size: 1.05rem;
   color: #374151;
   border-bottom: 1px solid #e2e8f0;
   white-space: nowrap;
@@ -227,6 +227,12 @@
 .assess-table td {
   padding: 16px 20px;
   vertical-align: middle;
+}
+
+/* Center the Questions column (3rd column) */
+.assess-table th:nth-child(3),
+.assess-table td:nth-child(3) {
+  text-align: center;
 }
 
 .assess-cell-content {
@@ -282,7 +288,7 @@
 }
 
 .assess-questions-info {
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;

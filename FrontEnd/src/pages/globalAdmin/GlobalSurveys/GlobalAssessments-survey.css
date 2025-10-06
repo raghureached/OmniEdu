@@ -204,12 +204,11 @@
 .assess-table thead {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
-
-.assess-table th {
+assess-table th {
   padding: 16px 20px;
   text-align: left;
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-weight: 700;
+  font-size: 1.05rem;
   color: #374151;
   border-bottom: 1px solid #e2e8f0;
   white-space: nowrap;

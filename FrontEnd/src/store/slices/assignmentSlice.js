@@ -18,6 +18,7 @@ export const createAssignment = createAsyncThunk(
   'assignments/createAssignment',
   async (assignmentData, { rejectWithValue }) => {
     try {
+      console.log(assignmentData);
       const response = await api.post('/assignments', assignmentData);
       return response.data;
     } catch (error) {

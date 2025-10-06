@@ -189,7 +189,7 @@
   
   .assess-question-card {
     background: #fafbfc;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #aab1ba;
     border-radius: 16px;
     padding: 24px;
     transition: all 0.2s ease;
@@ -324,7 +324,7 @@
     height: 100%;
     cursor: pointer;
   }
-  
+    
   .assess-file-label {
     background: #ffffff;
     border: 1.5px solid #e2e8f0;
@@ -576,18 +576,17 @@
 }
 
 .assess-qpreview-modal {
+  /* Open as a centered card, not full page */
   width: 96vw;
   max-width: 1100px;
   max-height: 90vh;
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+  /* Ensure internal body can scroll */
   display: flex;
   flex-direction: column;
+ 
   overflow: hidden;
 }
-
 .assess-qpreview-header {
   display: flex;
   align-items: center;
@@ -710,9 +709,9 @@
   gap: 6px;
   padding: 2px 8px;
   font-size: 0.8rem;
-  color: #334155;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  color: rgb(3, 105, 161);
+  background-color: rgb(224, 242, 254);
+  border: 1px solid rgb(186, 230, 253);
   border-radius: 9999px;
 }
 .assess-qpreview-divider {
@@ -742,6 +741,7 @@
 .assess-correct-group {
   flex: 1 1 auto;
   min-width: 200px;
+  margin-bottom: 10px
 }
 .assess-correct-group .assess-form-input {
   max-width: 320px;
@@ -751,4 +751,37 @@
   align-items: center;
   gap: 6px;
   white-space: nowrap;
+}
+
+/* Instructions editor inside a question card */
+.assess-instructions-box {
+  /* container styles if needed */
+}
+/* Increase font size for the rich text editor content */
+.assess-modal-form .assess-instructions-box .ql-editor {
+  font-size: 1.08rem; /* adjust as needed */
+  line-height: 1.7;
+}
+
+/* Upload Thumbnail button: bordered pill style */
+.assess-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0; /* slate-200 */
+  border-radius: 12px;
+  background: #ffffff;
+  color: #5570f1; /* match survey accent */
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.assess-upload-btn:hover {
+  border-color: #5570f1; /* blue hover like survey */
+  background: #f8fafc;
+}
+.assess-upload-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); /* blue focus ring */
 }

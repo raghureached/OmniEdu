@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FileText, Plus, X, Upload, Copy, Eye, Info } from 'lucide-react';
-import api from '../../../services/api.js';
+import api from '../../../services/api';
 import './QuestionsForm-survey.css';
 import '../GlobalAssessments/QuestionsForm.css';
-import RichText from './RichTextSurvey.jsx';
+import RichText from '../GlobalSurveys/RichTextSurvey.jsx';
 // Minimal URL resolver for previews (can be enhanced to handle relative URLs)
 const resolveUrl = (u) => u;
 

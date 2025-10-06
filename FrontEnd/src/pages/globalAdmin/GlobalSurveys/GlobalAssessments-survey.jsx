@@ -597,7 +597,6 @@ const GlobalSurveys = () => {
       console.error('Failed to delete assessment:', err?.response?.data || err.message);
     }
   };
-  console.log("assessments",assessments)
 
   return (
     <div className="assess-container">
@@ -721,8 +720,8 @@ const GlobalSurveys = () => {
                     </td>
                     <td>
                       <div className="assess-questions-info">
-                        <span className="assess-question-count">{assessment.sections.reduce((total, section) => total + section.questions.length, 0)}</span>
-                        <span className="assess-question-label">questions</span>
+                        <span className="assess-question-count">{Array.isArray(assessment.sections) ? assessment.sections.reduce((acc, section) => acc + section.questions.length, 0) : 0}</span>
+                        <span className="assess-question-label">{(Array.isArray(assessment.sections) ? assessment.sections.reduce((acc, section) => acc + section.questions.length, 0) : 0) <= 1 ? 'Question' : 'Questions'}</span>
                       </div>
                     </td>
                     <td>
@@ -762,16 +761,9 @@ const GlobalSurveys = () => {
                 ))}
               {/* Pagination row */}
               <tr className="assess-table-row">
-                <td colSpan={5}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                    <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
-                      {(() => {
-                        const start = assessments.length ? (pagination.page - 1) * pagination.limit + 1 : 0;
-                        const end = Math.min(pagination.page * pagination.limit, pagination.total || start);
-                        const total = pagination.total || 0;
-                        return `Showing ${start}-${end} of ${total}`;
-                      })()}
-                    </div>
+                <td colSpan={6}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                   
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <button
                         type="button"
