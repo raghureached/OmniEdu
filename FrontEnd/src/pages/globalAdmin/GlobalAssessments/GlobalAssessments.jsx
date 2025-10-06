@@ -49,6 +49,8 @@ const GlobalAssessments = () => {
   }]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [sectionsPayload, setSectionsPayload] = useState([]);
+  // UI helper: initial sections structure for Step 2 when editing
+  const [initialSectionsUI, setInitialSectionsUI] = useState(null);
 
   const {assessments, loading, pagination} = useSelector((state) => state.globalAssessments)
   const { user: authUser } = useSelector((state) => state.auth || { user: null });
@@ -91,6 +93,7 @@ const GlobalAssessments = () => {
       file_url: '',
       instructions: ''
     }]);
+    setInitialSectionsUI([{ afterIndex: -1, title: '', description: '' }]);
     setShowForm(true);
   };
   
@@ -174,22 +177,57 @@ const GlobalAssessments = () => {
           full.display_answers_when || 'AfterAssessment',
       });
 
-      const mappedQuestions = Array.isArray(full.questions)
-        ? full.questions.map(q => ({
-            _id: q._id,
-            uuid: q.uuid,
-            type: q.type || '',
-            question_text: q.question_text || '',
-            options: Array.isArray(q.options) && q.options.length ? q.options : [''],
-            correct_option: Array.isArray(q.correct_option) ? q.correct_option : (Number.isInteger(q.correct_option) ? [q.correct_option] : []),
-            file_url: q.file_url || '',
-            instructions: q.instructions || '',
-            shuffle_options: Boolean(q.shuffle_options)
-          }))
-        : [];
-      setQuestions(mappedQuestions.length
-        ? mappedQuestions
-        : [{ type: '', question_text: '', options: [''], correct_option: '', file_url: '' }]);
+      // Prefer sections->questions if present; fallback to legacy top-level questions
+      if (Array.isArray(full.sections) && full.sections.length > 0) {
+        const flatQs = [];
+        let countSoFar = 0;
+        const uiSections = [];
+        full.sections.forEach((sec, sIdx) => {
+          // Section UI marker: first is top-level (-1), others go after last q of previous section
+          const afterIndex = sIdx === 0 ? -1 : Math.max(0, countSoFar - 1);
+          uiSections.push({
+            afterIndex,
+            title: sec?.title || '',
+            description: sec?.description || ''
+          });
+          const qs = Array.isArray(sec?.questions) ? sec.questions : [];
+          qs.forEach(q => {
+            flatQs.push({
+              _id: q._id,
+              uuid: q.uuid,
+              type: q.type || '',
+              question_text: q.question_text || '',
+              options: Array.isArray(q.options) && q.options.length ? q.options : [''],
+              correct_option: Array.isArray(q.correct_option) ? q.correct_option : (Number.isInteger(q.correct_option) ? [q.correct_option] : []),
+              file_url: q.file_url || '',
+              instructions: q.instructions || '',
+              shuffle_options: Boolean(q.shuffle_options),
+              total_points: Number.isFinite(q.total_points) ? q.total_points : 1,
+            });
+          });
+          countSoFar += qs.length;
+        });
+        setQuestions(flatQs.length ? flatQs : [{ type: '', question_text: '', options: [''], correct_option: '', file_url: '' }]);
+        setInitialSectionsUI(uiSections.length ? uiSections : [{ afterIndex: -1, title: '', description: '' }]);
+      } else {
+        const mappedQuestions = Array.isArray(full.questions)
+          ? full.questions.map(q => ({
+              _id: q._id,
+              uuid: q.uuid,
+              type: q.type || '',
+              question_text: q.question_text || '',
+              options: Array.isArray(q.options) && q.options.length ? q.options : [''],
+              correct_option: Array.isArray(q.correct_option) ? q.correct_option : (Number.isInteger(q.correct_option) ? [q.correct_option] : []),
+              file_url: q.file_url || '',
+              instructions: q.instructions || '',
+              shuffle_options: Boolean(q.shuffle_options)
+            }))
+          : [];
+        setQuestions(mappedQuestions.length
+          ? mappedQuestions
+          : [{ type: '', question_text: '', options: [''], correct_option: '', file_url: '' }]);
+        setInitialSectionsUI([{ afterIndex: -1, title: '', description: '' }]);
+      }
       setShowForm(true);
     } catch (e) {
       // Fallback to given assessment if API fails
@@ -212,6 +250,7 @@ const GlobalAssessments = () => {
           assessment.display_answers_when || 'AfterAssessment',
       });
       setQuestions([{ type: '', question_text: '', options: ['', ''], correct_option: '', file_url: '', instructions: '', shuffle_options: false }]);
+      setInitialSectionsUI([{ afterIndex: -1, title: '', description: '' }]);
       setShowForm(true);
     }
   };
@@ -686,6 +725,7 @@ const GlobalAssessments = () => {
           duplicateQuestion={duplicateQuestion}
           groups={groups}
           setSectionsPayload={setSectionsPayload}
+          initialSections={initialSectionsUI}
         />
       )}
     </div>

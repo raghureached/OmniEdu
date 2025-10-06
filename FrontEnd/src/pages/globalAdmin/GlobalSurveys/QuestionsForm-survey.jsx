@@ -481,7 +481,7 @@ const QuestionsForm = ({
                                                         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
                                                             <button
                                                                 type="button"
-                                                                className="survey-assess-duplicate-element"
+                                                                className="btn-primary"
                                                                 title="Duplicate Question"
                                                                 onClick={() => duplicateFormElement(elementIndex)} style={{ display: 'flex', gap: 8, border: '1px solid #e2e8f0', borderRadius: '8px' }}
                                                             >
@@ -623,10 +623,10 @@ const QuestionsForm = ({
                                                                 const hint = qReady ? undefined : 'Enter question text and at least two options to enable';
                                                                 return (
                                                                     <>
-                                                                        <button type="button" className="survey-assess-btn-secondary" onClick={() => addFormElement('question', {}, elementIndex + 1)} disabled={!qReady} title={hint}>
+                                                                        <button type="button" className="btn-secondary" onClick={() => addFormElement('question', {}, elementIndex + 1)} disabled={!qReady} title={hint}>
                                                                             <Plus size={14} /> Add Question
                                                                         </button>
-                                                                        <button type="button" className="survey-assess-btn-secondary" onClick={() => addFormElement('section')} disabled={!qReady} title={hint}>
+                                                                        <button type="button" className="btn-secondary" onClick={() => addFormElement('section')} disabled={!qReady} title={hint}>
                                                                             <Plus size={14} /> Add Section
                                                                         </button>
                                                                         <button
@@ -687,7 +687,7 @@ const QuestionsForm = ({
                                                             const ready = plain.length > 0;
                                                             const hint = ready ? undefined : 'Enter section description to enable';
                                                             return (
-                                                                <button type="button" className="survey-assess-btn-secondary" onClick={() => addFormElement('question', {}, elementIndex + 1)} disabled={!ready} title={hint}>
+                                                                <button type="button" className="btn-secondary" onClick={() => addFormElement('question', {}, elementIndex + 1)} disabled={!ready} title={hint}>
                                                                     <Plus size={14} /> Add Question
                                                                 </button>
                                                             );

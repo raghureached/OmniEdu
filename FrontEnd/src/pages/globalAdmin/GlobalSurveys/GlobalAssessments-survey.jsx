@@ -210,15 +210,19 @@ const GlobalSurveys = () => {
         instruction_header_bottom: f.instruction_header_bottom || ''
       });
 
-      const mappedFormElements = Array.isArray(full.questions)
-        ? [
-            // Always start with a section description
-            {
-              type: 'section',
-              description: full.description || ''
-            },
-            // Then add questions
-            ...full.questions.map(q => ({
+      // Build formElements from sections if present; fallback to legacy questions
+      let mappedFormElements = [];
+      if (Array.isArray(full.sections) && full.sections.length > 0) {
+        full.sections.forEach((sec, sIdx) => {
+          // Push a section descriptor first
+          mappedFormElements.push({
+            type: 'section',
+            title: sec?.title || '',
+            description: sec?.description || ''
+          });
+          // Then its questions
+          (sec?.questions || []).forEach(q => {
+            mappedFormElements.push({
               _id: q._id,
               uuid: q.uuid,
               type: 'question',
@@ -228,21 +232,35 @@ const GlobalSurveys = () => {
                 const arr = Array.isArray(q.options) && q.options.length ? [...q.options] : ['',''];
                 return arr.length >= 2 ? arr : [...arr, ''].slice(0, 2);
               })()
-            }))
-          ]
-        : [
-            // Default structure if no questions
-            {
-              type: 'section',
-              description: full.description || ''
-            },
-            {
-              type: 'question',
-              question_type: '',
-              question_text: '',
-              options: ['', '']
-            }
-          ];
+            });
+          });
+        });
+        // Ensure at least one question follows a section
+        if (mappedFormElements.length === 1) {
+          mappedFormElements.push({ type: 'question', question_type: '', question_text: '', options: ['', ''] });
+        }
+      } else if (Array.isArray(full.questions)) {
+        mappedFormElements = [
+          { type: 'section', description: full.description || '' },
+          ...full.questions.map(q => ({
+            _id: q._id,
+            uuid: q.uuid,
+            type: 'question',
+            question_type: q.type || '',
+            question_text: q.question_text || '',
+            options: (() => {
+              const arr = Array.isArray(q.options) && q.options.length ? [...q.options] : ['',''];
+              return arr.length >= 2 ? arr : [...arr, ''].slice(0, 2);
+            })()
+          }))
+        ];
+      } else {
+        mappedFormElements = [
+          { type: 'section', description: full.description || '' },
+          { type: 'question', question_type: '', question_text: '', options: ['', ''] }
+        ];
+      }
+      setFormElements(mappedFormElements);
       setShowForm(true);
     } catch (e) {
       // Fallback to given assessment if API fails

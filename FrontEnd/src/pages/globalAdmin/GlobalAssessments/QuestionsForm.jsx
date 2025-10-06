@@ -28,6 +28,7 @@ const QuestionsForm = ({
     duplicateQuestion,
     groups = [],
     setSectionsPayload,
+    initialSections,
 }) => {
     // console.log(formData)
     const [step, setStep] = useState(1);
@@ -218,18 +219,20 @@ const QuestionsForm = ({
         if (assessmentPreviewOpen) setSectionPreviewIndex(0);
     }, [assessmentPreviewOpen]);
 
-    // Reset sections when creating a new assessment or ensure at least one section exists
+    // Initialize sections when the modal opens
     useEffect(() => {
-        if (showForm) {
-            if (!currentAssessment) {
-                // Creating new assessment - start with one default section
-                setSections([{ afterIndex: -1, title: '', description: '' }]);
-            } else {
-                // Editing existing assessment - ensure at least one section exists for organization
-                setSections(prev => prev.length > 0 ? prev : [{ afterIndex: -1, title: '', description: '' }]);
-            }
+        if (!showForm) return;
+        // If parent provided initialSections (edit mode), use them; else default single section
+        if (Array.isArray(initialSections) && initialSections.length > 0) {
+            setSections(initialSections.map(s => ({
+                afterIndex: typeof s.afterIndex === 'number' ? s.afterIndex : -1,
+                title: s.title || '',
+                description: s.description || ''
+            })));
+        } else {
+            setSections([{ afterIndex: -1, title: '', description: '' }]);
         }
-    }, [currentAssessment, showForm]);
+    }, [showForm, initialSections]);
 
     return (
         <>
@@ -496,7 +499,7 @@ const QuestionsForm = ({
                                             return (
                                                 <button
                                                     type="button"
-                                                    className="survey-assess-btn-secondary"
+                                                    className="btn-secondary"
                                                     onClick={() => addQuestionAfter(-1)}
                                                     disabled={!ready}
                                                     title={ready ? undefined : 'Enter section text to enable adding a question'}
@@ -520,7 +523,7 @@ const QuestionsForm = ({
                                             <div style={{ display: 'flex', gap: 8 }}>
                                                 <button
                                                     type="button"
-                                                    className="assess-duplicate-question"
+                                                    className="btn-primary"
                                                     title="Duplicate Question"
                                                     onClick={() => duplicateQuestion(qIndex)} style={{ display: 'flex', gap: 8,border: '1px solid #e2e8f0',borderRadius: '8px' }}
                                                 > 
@@ -853,7 +856,7 @@ const QuestionsForm = ({
                                                         <>
                                                             <button
                                                                 type="button"
-                                                                className="survey-assess-btn-secondary"
+                                                                className="btn-secondary"
                                                                 onClick={() => addQuestionAfter(qIndex)}
                                                                 disabled={!qReady}
                                                                 title={hint}
@@ -862,7 +865,7 @@ const QuestionsForm = ({
                                                             </button>
                                                             <button
                                                                 type="button"
-                                                                className="survey-assess-btn-secondary"
+                                                                className="btn-secondary"
                                                                 onClick={() => addSectionAfter(qIndex)}
                                                                 disabled={!qReady}
                                                                 title={hint}
