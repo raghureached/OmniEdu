@@ -961,13 +961,11 @@ const QuestionsForm = ({
                                             className="assess-form-input"
                                             style={{ width: 140 }}
                                             placeholder="Enter minutes"
-                                            value={(parseHm(formData.duration).hh * 60) + parseHm(formData.duration).mm}
+                                            value={Number.isFinite(formData.duration) ? formData.duration : 0}
                                             onChange={e => {
                                                 const raw = parseInt(e.target.value, 10);
                                                 const totalMin = Number.isNaN(raw) ? 0 : Math.max(0, raw);
-                                                const hh = Math.floor(totalMin / 60);
-                                                const mm = totalMin % 60;
-                                                setFormData({ ...formData, duration: formatHm(hh, mm) });
+                                                setFormData({ ...formData, duration: totalMin });
                                             }}
                                             onKeyDown={e => { if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault(); }}
                                             required

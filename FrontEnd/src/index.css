@@ -205,3 +205,9 @@ body>* {
   .btn-primary:active {
     transform: translateY(0);
   }
+  /* Hide spin buttons */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

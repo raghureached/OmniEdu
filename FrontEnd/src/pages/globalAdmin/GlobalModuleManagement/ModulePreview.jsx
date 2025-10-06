@@ -11,7 +11,7 @@ import {
 const ModulePreview = ({ moduleData, onClose }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
-
+  console.log(moduleData)
   useEffect(() => {
     setIsVisible(true);
     document.body.style.overflow = 'hidden';
@@ -44,6 +44,13 @@ const ModulePreview = ({ moduleData, onClose }) => {
     );
   };
 
+  // Normalize prerequisites into an array regardless of backend shape (string or array)
+  const prerequisitesList = Array.isArray(moduleData.prerequisites)
+    ? moduleData.prerequisites
+    : typeof moduleData.prerequisites === 'string'
+      ? moduleData.prerequisites.split(',').map((s) => s.trim()).filter(Boolean)
+      : [];
+
   return (
     <div className={`mp-modal-overlay ${isVisible ? 'mp-visible' : ''}`}>
       <div className={`mp-modal-container ${isVisible ? 'mp-visible' : ''}`}>
@@ -59,7 +66,7 @@ const ModulePreview = ({ moduleData, onClose }) => {
             <div className="mp-breadcrumb">
               <span>{moduleData.team?.name || 'Training'}</span>
               <span className="mp-separator">›</span>
-              <span>{moduleData.trainingType}</span>
+              <span style={{fontWeight:600}}>{moduleData.trainingType}</span>
             </div>
             
             <h1 className="mp-title">{moduleData.title}</h1>
@@ -76,7 +83,7 @@ const ModulePreview = ({ moduleData, onClose }) => {
               {/* <span className="mp-divider">|</span> */}
               <div className="mp-meta-item">
                 <Clock size={18} />
-                <span>{moduleData.duration} mins</span>
+                <span style={{fontWeight:600}}>{moduleData.duration} mins</span>
               </div>
             </div>
 
@@ -162,30 +169,17 @@ const ModulePreview = ({ moduleData, onClose }) => {
               </section>
 
               {/* Prerequisites */}
-              {moduleData?.prerequisites.split(',')?.length > 0 && (
+              {prerequisitesList.length > 0 && (
                 <section className="mp-section">
                   <h2 className="mp-section-title">
                     <BookOpen size={22} />
                     Prerequisites
                   </h2>
                   <ul className="mp-prerequisites-list">
-                    {moduleData.prerequisites.split(',').map((pre, i) => (
+                    {prerequisitesList.map((pre, i) => (
                       <li key={i}>{pre}</li>
                     ))}
                   </ul>
-                </section>
-              )}
-
-              {/* Instructions */}
-              {moduleData.instructions && (
-                <section className="mp-section">
-                  <h2 className="mp-section-title">
-                    <MessageCircle size={22} />
-                    Course Instructions
-                  </h2>
-                  <div className="mp-instruction-box">
-                    <p>{moduleData.instructions}</p>
-                  </div>
                 </section>
               )}
             </>
@@ -200,10 +194,12 @@ const ModulePreview = ({ moduleData, onClose }) => {
                 </p>
               </div>
               {moduleData.richText ? (
-                <div 
-                  className="mp-curriculum-content"
-                  dangerouslySetInnerHTML={{ __html: moduleData.richText }}
-                />
+                <div className="mp-curriculum-box">
+                  <div 
+                    className="mp-rich-content"
+                    dangerouslySetInnerHTML={{ __html: moduleData.richText }}
+                  />
+                </div>
               ) : (
                 <div className="mp-info-box">
                   <Shield size={20} />
@@ -658,6 +654,113 @@ const ModulePreview = ({ moduleData, onClose }) => {
           border-radius: 8px;
           color: #6b7280;
         }
+
+        /* Rich text preview styles */
+        .mp-curriculum-box {
+          background: #ffffff;
+          border: 2px solid #e5e7eb;
+          border-radius: 12px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          overflow: hidden;
+        }
+
+        .mp-rich-content {
+          padding: 20px 24px;
+        }
+
+        .mp-rich-content p {
+          margin: 0 0 12px 0;
+          line-height: 1.7;
+          color: #1f2937;
+        }
+
+        .mp-rich-content h1 {
+          font-size: 2em;
+          font-weight: 700;
+          margin: 24px 0 16px 0;
+          color: #111827;
+          line-height: 1.2;
+        }
+
+        .mp-rich-content h2 {
+          font-size: 1.5em;
+          font-weight: 600;
+          margin: 20px 0 12px 0;
+          color: #111827;
+          line-height: 1.3;
+        }
+
+        .mp-rich-content h3 {
+          font-size: 1.25em;
+          font-weight: 600;
+          margin: 16px 0 10px 0;
+          color: #111827;
+          line-height: 1.4;
+        }
+
+        .mp-rich-content ul,
+        .mp-rich-content ol {
+          padding-left: 24px;
+          margin: 12px 0;
+        }
+
+        .mp-rich-content li {
+          margin: 6px 0;
+          line-height: 1.7;
+          color: #1f2937;
+        }
+
+        .mp-rich-content blockquote {
+          border-left: 4px solid #3b82f6;
+          padding-left: 16px;
+          margin: 16px 0;
+          color: #4b5563;
+          font-style: italic;
+          background: #f9fafb;
+          padding: 12px 16px;
+          border-radius: 0 6px 6px 0;
+        }
+
+        .mp-rich-content code {
+          background: #f3f4f6;
+          color: #dc2626;
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 0.9em;
+          font-family: 'Courier New', monospace;
+        }
+
+        .mp-rich-content pre {
+          background: #1f2937;
+          color: #f9fafb;
+          padding: 16px;
+          border-radius: 8px;
+          overflow-x: auto;
+          margin: 16px 0;
+          font-family: 'Courier New', monospace;
+          font-size: 0.9em;
+          line-height: 1.5;
+        }
+
+        .mp-rich-content pre code {
+          background: transparent;
+          color: inherit;
+          padding: 0;
+        }
+
+        .mp-rich-content a {
+          color: #3b82f6;
+          text-decoration: underline;
+          cursor: pointer;
+        }
+
+        .mp-rich-content a:hover {
+          color: #2563eb;
+        }
+
+        .mp-rich-content strong { font-weight: 700; color: #111827; }
+        .mp-rich-content em { font-style: italic; }
+        .mp-rich-content s { text-decoration: line-through; }
 
         .mp-resources-grid {
           display: grid;

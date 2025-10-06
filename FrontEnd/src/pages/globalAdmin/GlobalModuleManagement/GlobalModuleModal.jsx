@@ -822,7 +822,7 @@ const GlobalModuleModal = ({
                                     />
                                     Allow learners submissions
                                 </label>
-                                <p style={{ fontSize: '12px', color: '#666' }}>Allow learners to submit their work for grading and feedback.
+                                <p style={{ fontSize: '12px', color: '#666',marginLeft:"30px" }}>Allow learners to submit their work for grading and feedback.
                                     Please enable this if you have an additional file.
                                 </p>
                                 <div className="module-overlay__form-group" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' ,marginTop:"120px"}}>

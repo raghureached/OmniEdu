@@ -353,13 +353,15 @@ const GlobalModuleManagement = () => {
                   </span>
                 </td>
                 <td>{content.team?.name || "All"}</td>
-                <td><div className="assess-date-info"><Calendar size={14} />
-                  <span>{content.createdAt ? new Date(content.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                  }) : ""}</span></div></td>
-
+                <td>
+                  <div className="assess-date-info"><Calendar size={14} />
+                    <span>{content.createdAt ? new Date(content.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    }) : ""}</span>
+                  </div>
+                </td>
                 <td>
                   <div style={{ display: "flex", gap: "10px" }}>
                     <button
@@ -379,22 +381,51 @@ const GlobalModuleManagement = () => {
               </tr>
             ))}
 
-            {currentContent.length === 0 && (
-              <tr>
-                <td colSpan="6" className="no-results">
-                  No Global Modules found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+          {currentContent.length === 0 && (
+            <tr>
+              <td colSpan="6" className="no-results">
+                No Global Modules found.
+              </td>
+            </tr>
+          )}
+
+          {filteredContent.length > 0 && (
+            <tr>
+              <td colSpan={7}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage <= 1}
+                      style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: currentPage <= 1 ? 'not-allowed' : 'pointer' }}
+                    >
+                      Prev
+                    </button>
+                    <span style={{ color: '#0f172a' }}>
+                      {`Page ${currentPage} of ${Math.max(1, totalPages)}`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage >= totalPages}
+                      style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer' }}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
       {showDraftModal && (
         <div
           style={{
             position: 'fixed',
             top: 0,
-            left: 0,
             width: '100vw',
             height: '100vh',
             backgroundColor: 'rgba(0,0,0,0.5)',
@@ -507,31 +538,7 @@ const GlobalModuleManagement = () => {
         </div>
       )}
 
-      <div className="pagination">
-        <button
-          disabled={currentPage === 1}
-          onClick={() => handlePageChange(currentPage - 1)}
-        >
-          Previous
-        </button>
-
-        {[...Array(totalPages)].map((_, index) => (
-          <button
-            key={index + 1}
-            className={currentPage === index + 1 ? "active" : ""}
-            onClick={() => handlePageChange(index + 1)}
-          >
-            {index + 1}
-          </button>
-        ))}
-
-        <button
-          disabled={currentPage === totalPages}
-          onClick={() => handlePageChange(currentPage + 1)}
-        >
-          Next
-        </button>
-      </div>
+          
     </div>
   );
 };

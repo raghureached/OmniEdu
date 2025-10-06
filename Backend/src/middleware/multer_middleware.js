@@ -32,6 +32,8 @@ const diskStorageUploads = multer.diskStorage({
       filePrefix = "document3";
     }else if(file.fieldname === 'document4'){
       filePrefix = "document4";
+    }else if(file.fieldname === 'thumbnail'){
+      filePrefix = "thumbnail";
     }
     const { name = 'org' } = req.body;
     const timestamp = Date.now();

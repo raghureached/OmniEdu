@@ -226,7 +226,7 @@ const organizationSlice = createSlice({
             state.filters = {
                 name: '',
                 status: '',
-                planName: ''
+                plan: ''
             };
         },
         clearErrors: (state) => {

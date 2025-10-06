@@ -16,6 +16,7 @@ import {
 
 // import api from '../../../services/api';
 import QuestionsForm from './QuestionsForm-survey';
+import LoadingScreen from '../../../components/common/Loading/Loading';
 const GlobalSurveys = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
@@ -77,10 +78,10 @@ const GlobalSurveys = () => {
   }, [dispatch, page, limit])
   useEffect(() => {
     dispatch(fetchGroups()); // fetch teams/subteams
-  }, [dispatch]);
+  }, [dispatch,assessments]);
 
   const { groups } = useSelector(state => state.groups); 
-  console.log("groups in assessments: ",groups)
+  // console.log("groups in assessments: ",groups)
   const splitInstructions = (str) => {
     const raw = String(str || '');
     if (!raw.trim()) return { instruction_header: '', instruction_text: '' };
@@ -373,7 +374,7 @@ const GlobalSurveys = () => {
       
       }
     };
- console.log(sections )
+//  console.log(sections )
     try {
       await dispatch(createSurvey(payload)).unwrap();
       setShowForm(false);
@@ -608,13 +609,17 @@ const GlobalSurveys = () => {
   // };
 
   const handleDeleteAssessment = async (id) => {
+    if(!window.confirm("Are you sure you want to delete this survey?")) return;
     try {
       await dispatch(deleteSurvey(id)).unwrap();
       dispatch(fetchSurveys({ page, limit }));
     } catch (err) {
-      console.error('Failed to delete assessment:', err?.response?.data || err.message);
+      console.error('Failed to delete survey:', err?.response?.data || err.message);
     }
   };
+  if(loading){
+    return <LoadingScreen text="Loading Surveys...." />
+  }
 
   return (
     <div className="assess-container">
@@ -738,8 +743,8 @@ const GlobalSurveys = () => {
                     </td>
                     <td>
                       <div className="assess-questions-info">
-                        <span className="assess-question-count">{Array.isArray(assessment.sections) ? assessment.sections.reduce((acc, section) => acc + section.questions.length, 0) : 0}</span>
-                        <span className="assess-question-label">{(Array.isArray(assessment.sections) ? assessment.sections.reduce((acc, section) => acc + section.questions.length, 0) : 0) <= 1 ? 'Question' : 'Questions'}</span>
+                        <span className="assess-question-count">{Array.isArray(assessment.sections) ? assessment.sections.reduce((acc, section) => acc + (Array.isArray(section?.questions) ? section.questions.length : 0), 0) : 0}</span>
+                        <span className="assess-question-label">{(Array.isArray(assessment.sections) ? assessment.sections.reduce((acc, section) => acc + (Array.isArray(section?.questions) ? section.questions.length : 0), 0) : 0) <= 1 ? 'Question' : 'Questions'}</span>
                       </div>
                     </td>
                     <td>

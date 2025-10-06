@@ -62,20 +62,18 @@ const OrganizationManagement = () => {
   const navigate = useNavigate();
 
 
+  // Fetch organizations whenever any filter changes (debounced)
   useEffect(() => {
-    if (filters.name && filters.name.length > 3) {
-      const timeoutId = setTimeout(() => {
-        dispatch(fetchOrganizations(filters));
-        fetchPlans();
-      }, 200); // delay for debounce
-
-      return () => clearTimeout(timeoutId);
-    }
-    if (filters.name === "") {
+    const timeoutId = setTimeout(() => {
       dispatch(fetchOrganizations(filters));
-      fetchPlans();
-    }
+    }, 200);
+    return () => clearTimeout(timeoutId);
   }, [dispatch, filters]);
+
+  // Fetch plans on mount
+  useEffect(() => {
+    fetchPlans();
+  }, []);
 
   const fetchPlans = async () => {
     const response = await api.get("/api/globalAdmin/getPlans");
@@ -210,6 +208,7 @@ const OrganizationManagement = () => {
         [name]: value,
       })
     );
+    setShowFilters(false)
   };
   const getStatus = (org) => {
     const today = new Date();
@@ -337,6 +336,7 @@ const OrganizationManagement = () => {
                       <option value="">All</option>
                       <option value="Active">Active</option>
                       <option value="Inactive">Inactive</option>
+                      <option value="Suspended">Suspended</option>
                     </select>
                   </div>
 
@@ -451,12 +451,12 @@ const OrganizationManagement = () => {
 
                       <div>
                         <span
-                          className={`status-badge ${org.displayStatus === "Active"
+                          className={`status-badge ${org.status === "Active"
                             ? "status-paid"
                             : "status-cancelled"
                             }`}
                         >
-                          {org.displayStatus === "Active" ? "✓ Active" : "✕ Inactive"}
+                          {org.status === "Active" ? "✓ Active" : "✕ Inactive"}
                         </span>
                       </div>
                       <div className="purchase-cell" style={{ textTransform: "capitalize" }}>{org.planName}</div>
@@ -479,36 +479,29 @@ const OrganizationManagement = () => {
                   ))}
                 </div>
 
-                {/* Pagination */}
-                <div className="pagination">
-                  <button
-                    className="pagination-btn"
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft size={16} /> Previous
-                  </button>
-
-                  {/* Page Numbers */}
-                  <div className="pagination-numbers">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <button
-                        key={page}
-                        className={`org-page-btn ${currentPage === page ? "active" : ""}`}
-                        onClick={() => handlePageChange(page)}
-                      >
-                        {page}
-                      </button>
-                    ))}
+                {/* Pagination - aligned with Module Management */}
+                <div className="pagination" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <button
+                      type="button"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage <= 1}
+                      style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: currentPage <= 1 ? 'not-allowed' : 'pointer' }}
+                    >
+                      Prev
+                    </button>
+                    <span style={{ color: '#0f172a' }}>
+                      {`Page ${currentPage} of ${Math.max(1, totalPages)}`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage >= totalPages}
+                      style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer' }}
+                    >
+                      Next
+                    </button>
                   </div>
-
-                  <button
-                    className="pagination-btn"
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next <ChevronRight size={16} />
-                  </button>
                 </div>
               </>
             </div>

@@ -259,13 +259,21 @@ const GlobalAssessments = () => {
     if (e && typeof e.preventDefault === 'function') {
       e.preventDefault();
     }
-    // Format duration to "<minutes> mins"
+    // Normalize duration to minutes number (supports number, numeric string, or HH:MM)
     const minutesFromHhMm = (d) => {
-      if (!d) return 0;
-      const [h = '0', m = '0'] = String(d).split(':');
-      const hh = parseInt(h, 10) || 0;
-      const mm = parseInt(m, 10) || 0;
-      return (Math.max(0, hh) * 60) + Math.max(0, Math.min(59, mm));
+      if (typeof d === 'number' && Number.isFinite(d)) return Math.max(0, d);
+      if (typeof d === 'string') {
+        const trimmed = d.trim();
+        if (trimmed.includes(':')) {
+          const [h = '0', m = '0'] = trimmed.split(':');
+          const hh = parseInt(h, 10) || 0;
+          const mm = parseInt(m, 10) || 0;
+          return (Math.max(0, hh) * 60) + Math.max(0, Math.min(59, mm));
+        }
+        const asNum = parseInt(trimmed, 10);
+        if (Number.isFinite(asNum)) return Math.max(0, asNum);
+      }
+      return 0;
     };
 
     // Build sections payload if available; fallback to single section with all questions
@@ -277,7 +285,7 @@ const GlobalAssessments = () => {
       title: formData.title,
       description: formData.description,
       tags: Array.isArray(formData.tags) ? formData.tags : [],
-      duration: `${minutesFromHhMm(formData.duration)} mins`,
+      duration: minutesFromHhMm(formData.duration),
       team: formData.team,
       subteam: formData.subteam,
       attempts: formData.attempts,
@@ -480,6 +488,7 @@ const GlobalAssessments = () => {
   };
 
   const handleDeleteAssessment = async (id) => {
+    if(!window.confirm("Are you sure you want to delete this assessment?")) return;
     try {
       await dispatch(deleteGlobalAssessment(id)).unwrap();
       dispatch(fetchGlobalAssessments({ page, limit }));

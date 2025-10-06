@@ -424,7 +424,9 @@ const GlobalCreateAssignment = () => {
                                             className="global-assign-time-input"
                                         />
                                     </div>
-                                    <div className="global-assign-date-field">
+                                </div>
+                                <div style={{ display: "flex", gap: "30px", alignItems: "center" }}>
+                                <div className="global-assign-date-field">
                                         <label>Due Date:</label>
                                         <input
                                             type="text"
@@ -488,7 +490,7 @@ const GlobalCreateAssignment = () => {
                                 </div>
                             </div>
 
-                            <div className="global-assign-step-actions" style={{ display: "flex", justifyContent: "space-between", marginTop: '200px' }}>
+                            <div className="global-assign-step-actions" style={{ display: "flex", justifyContent: "space-between", marginTop: '110px' }}>
                                 <button type="button" className="btn-secondary" onClick={handlePrevStep}>
                                     <ChevronLeft size={20} />Previous
                                 </button>

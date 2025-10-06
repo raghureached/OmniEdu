@@ -32,7 +32,7 @@ const globalAssessmentsSchema = new mongoose.Schema({
 
   // Tagging and configuration (aligns with controllers and frontend)
   tags: { type: [String], default: [] },              // create endpoint requires tags; you can set required: true if you want DB-level enforcement
-  duration: { type: String },                         // can set required: true if desired
+  duration: { type: Number },                         // can set required: true if desired
   team: { type: mongoose.Schema.Types.ObjectId, ref: "Team" },         // can set required: true if desired
   subteam: { type: mongoose.Schema.Types.ObjectId, ref: "SubTeam" },   // can set required: true if desired
   attempts: { type: Number, default: 1 },
