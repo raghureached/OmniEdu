@@ -109,8 +109,8 @@
   display: flex;
   align-items: center;
   background: #ffffff;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
+  border: 2px solid rgb(206, 206, 206);
+  border-radius: 10px;
   padding: 0 16px;
   gap: 12px;
   transition: all 0.2s ease;
@@ -186,7 +186,7 @@
 /* Table Section */
 .assess-table-section {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
+  border:2px solid rgb(206, 206, 206);
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);

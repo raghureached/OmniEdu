@@ -51,7 +51,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 200px;
+  min-width: 140px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
@@ -109,8 +109,8 @@
   display: flex;
   align-items: center;
   background: #ffffff;
-  border: 2px solid rgb(206, 206, 206);
-  border-radius: 10px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
   padding: 0 16px;
   gap: 12px;
   transition: all 0.2s ease;
@@ -186,7 +186,7 @@
 /* Table Section */
 .assess-table-section {
   background: #ffffff;
-  border: 2px solid rgb(206, 206, 206);
+  border: 1px solid #e2e8f0;
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -204,8 +204,7 @@
 .assess-table thead {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
-
-.assess-table th {
+assess-table th {
   padding: 16px 20px;
   text-align: left;
   font-weight: 700;
@@ -227,12 +226,6 @@
 .assess-table td {
   padding: 16px 20px;
   vertical-align: middle;
-}
-
-/* Center the Questions column (3rd column) */
-.assess-table th:nth-child(3),
-.assess-table td:nth-child(3) {
-  text-align: center;
 }
 
 .assess-cell-content {
@@ -288,7 +281,7 @@
 }
 
 .assess-questions-info {
-  display: inline-flex;
+  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;

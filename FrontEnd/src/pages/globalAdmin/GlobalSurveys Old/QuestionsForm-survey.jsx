@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FileText, Plus, X, Upload, Copy, Eye, Info, ChevronLeft, ChevronRight } from 'lucide-react';
-import api from '../../../services/api';
+import api from '../../../services/api.js';
 import './QuestionsForm-survey.css';
-import '../GlobalAssessments/QuestionsForm.css';
-import RichText from '../GlobalSurveys/RichTextSurvey.jsx';
+import '../GlobalAssessments Old/QuestionsForm.css';
+import RichText from './RichTextSurvey.jsx';
 // Minimal URL resolver for previews (can be enhanced to handle relative URLs)
 const resolveUrl = (u) => u;
 
@@ -58,15 +58,6 @@ const QuestionsForm = ({
     const subTeams = selectedTeam?.subTeams || [];
 
 
-
-    const parseHm = (d) => {
-        const [h = '0', m = '0'] = (d || '').split(':');
-        const hh = Math.max(0, parseInt(h, 10) || 0);
-        const mm = Math.max(0, Math.min(59, parseInt(m, 10) || 0));
-        return { hh, mm };
-    };
-    const formatHm = (hh, mm) => `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-
     // Auto-open feedback panel in edit mode when the survey already has feedback
     useEffect(() => {
         const hasFeedback = [
@@ -111,19 +102,10 @@ const QuestionsForm = ({
         return sections;
     }, [formElements, formData?.title, formData?.description]);
     const [aiProcessing, setAiProcessing] = useState(false);
-    // Reset preview state when opening
+    // Reset section pagination when opening preview
     useEffect(() => {
-        if (assessmentPreviewOpen) {
-            setSectionPreviewIndex(0);
-            setPreviewResponses({});
-        }
+        if (assessmentPreviewOpen) setSectionPreviewIndex(0);
     }, [assessmentPreviewOpen]);
-    // Reset single-question preview selections when opening
-    useEffect(() => {
-        if (questionPreviewIndex !== null) {
-            setPreviewResponses({});
-        }
-    }, [questionPreviewIndex]);
     // Ensure Step 2 starts with Section first, then one Question (run once per entry)
     const initializedStep2 = useRef(false);
     useEffect(() => {
@@ -196,7 +178,6 @@ const QuestionsForm = ({
         }
     }, [assessmentPreviewOpen, questionPreviewIndex]);
 
-    
     return (
         <>
             <div className="survey-assess-modal-overlay">
@@ -225,13 +206,6 @@ const QuestionsForm = ({
                         <button className="survey-assess-close-btn" onClick={() => setShowForm(false)}>
                             <X size={20} />
                         </button>
-                        {/* Bottom-of-header progress bar to match Assessments placement */}
-                        <div className="assess-header-progress bottom">
-                            <div
-                                className="bar"
-                                style={{ width: `${Math.min(100, Math.max(0, (step / 3) * 100))}%` }}
-                            />
-                        </div>
                     </div>
 
                     {/* Form + Preview Panel */}
@@ -359,7 +333,7 @@ const QuestionsForm = ({
                                                         }}
                                                         style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4f46e5', background: 'transparent' }}
                                                     >
-                                                       <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="16" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M7 6V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7ZM13.4142 13.9997L15.182 12.232L13.7678 10.8178L12 12.5855L10.2322 10.8178L8.81802 12.232L10.5858 13.9997L8.81802 15.7675L10.2322 17.1817L12 15.4139L13.7678 17.1817L15.182 15.7675L13.4142 13.9997ZM9 4V6H15V4H9Z"></path></svg>Delete
+                                                        <X size={16} /> Delete
                                                     </button>
                                                 </div>
                                             </div>
@@ -379,7 +353,7 @@ const QuestionsForm = ({
                                                 />
                                                 <label
                                                     htmlFor="survey-thumb-input"
-                                                    className="survey-assess-upload-btn"
+                                                    className="survey-assess-btn-secondary"
                                                     style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
                                                 >
                                                     <Upload size={16} /> Upload Thumbnail
@@ -590,7 +564,7 @@ const QuestionsForm = ({
                                                         {/* Question Text */}
                                                         <div className="survey-assess-form-group">
                                                             <label className="survey-assess-form-label">
-                                                                Question Text<span className="assess-required">*</span>
+                                                                Question Text<span className="form-required">*</span>
                                                             </label>
                                                             <textarea
                                                                 className="survey-assess-form-textarea"
@@ -753,14 +727,14 @@ const QuestionsForm = ({
                                             </div>
                                         </div>
                                         <div className="survey-assess-question-content">
-                                            {feedbackTextOpen && !feedbackInfoOpen && (
+                                            {feedbackTextOpen && (
                                                 <div className="survey-assess-form-group">
                                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                                         <label className="assess-form-label" style={{ marginBottom: 0 }}>Text</label>
                                                         {/* Remove (hide) the text box and clear its data */}
                                                         <button
                                                             type="button"
-                                                            className="survey-assess-remove-option"
+                                                            className="survey-assess-remove-question"
                                                             aria-label="Remove text"
                                                             title="Remove text"
                                                             onClick={() => { setFeedbackTextOpen(false); setFeedback({ ...(feedback || {}), question_text: '' }); }}
@@ -788,7 +762,7 @@ const QuestionsForm = ({
                                                         title="Add info"
                                                         onClick={() => setFeedbackInfoOpen(true)}
                                                     >
-                                                        <Plus size={14} /> <span style={{ marginLeft: 6 }}>Add Info</span>
+                                                        <Plus size={14} /> <span style={{ marginLeft: 6 }}>add Info</span>
                                                     </button>
                                                     {!feedbackTextOpen && (
                                                         <button
@@ -797,7 +771,7 @@ const QuestionsForm = ({
                                                             title="Add text"
                                                             onClick={() => setFeedbackTextOpen(true)}
                                                         >
-                                                            <Plus size={14} /> <span style={{ marginLeft: 6 }}>Add Text</span>
+                                                            <Plus size={14} /> <span style={{ marginLeft: 6 }}>add Text</span>
                                                         </button>
                                                     )}
                                                 </div>
@@ -808,7 +782,7 @@ const QuestionsForm = ({
                                                         <label className="survey-assess-form-label" style={{ marginBottom: 0 }}>Info</label>
                                                         <button
                                                             type="button"
-                                                            className="survey-assess-remove-option"
+                                                            className="survey-assess-remove-question"
                                                             aria-label="Close info"
                                                             title="Close info"
                                                             onClick={() => setFeedbackInfoOpen(false)}
@@ -822,46 +796,6 @@ const QuestionsForm = ({
                                                         placeholder="Enter info..."
                                                         value={feedback?.instructionBottom || ''}
                                                         onChange={(e) => setFeedback({ ...feedback, instructionBottom: e.target.value })}
-                                                    />
-                                                    {/* When Info is open and Text is hidden, offer Add Text below Info */}
-                                                    {!feedbackTextOpen && (
-                                                        <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
-                                                            <button
-                                                                type="button"
-                                                                className="survey-assess-btn-secondary"
-                                                                title="Add text"
-                                                                onClick={() => setFeedbackTextOpen(true)}
-                                                            >
-                                                                <Plus size={14} /> <span style={{ marginLeft: 6 }}>Add Text</span>
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                            {/* When Info is open and Text is enabled, render Text below Info */}
-                                            {feedbackInfoOpen && feedbackTextOpen && (
-                                                <div className="survey-assess-form-group">
-                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                        <label className="assess-form-label" style={{ marginBottom: 0 }}>Text</label>
-                                                        <button
-                                                            type="button"
-                                                            className="survey-assess-remove-option"
-                                                            aria-label="Remove text"
-                                                            title="Remove text"
-                                                            onClick={() => { setFeedbackTextOpen(false); setFeedback({ ...(feedback || {}), question_text: '' }); }}
-                                                        >
-                                                            <X size={16} />
-                                                        </button>
-                                                    </div>
-                                                    <textarea
-                                                        className="survey-assess-form-textarea"
-                                                        placeholder="Enter feedback text..."
-                                                        rows={3}
-                                                        value={feedback?.question_text || ''}
-                                                        onChange={(e) => {
-                                                            const v = e.target.value;
-                                                            setFeedback({ ...(feedback || {}), question_text: v });
-                                                        }}
                                                     />
                                                 </div>
                                             )}
@@ -916,39 +850,88 @@ const QuestionsForm = ({
                                         </select>
                                     </div>
                                 </div>
-                                 <div className="survey-assess-form-grid">
-                                 <div className="survey-assess-form-group">
-                                    <label className="survey-assess-form-label">
-                                        Duration<span className="assess-required">*</span>
-                                    </label>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                {/* <div className="assess-form-grid">
+                                <div className="assess-form-group">
+                                    <label className="assess-form-label">Pass Percentage (0-100)</label>
                                     <input
-  type="text" /* plain input, no native steppers */
-  inputMode="numeric"
-  pattern="[0-9]*"
-  className="survey-assess-form-input"
- 
-  placeholder="Enter minutes"
-  value={(parseHm(formData.duration).hh * 60) + parseHm(formData.duration).mm}
-  onChange={e => {
-    const raw = parseInt(e.target.value, 10);
-    const totalMin = Number.isNaN(raw) ? 0 : Math.max(0, raw);
-    const hh = Math.floor(totalMin / 60);
-    const mm = totalMin % 60;
-    setFormData({ ...formData, duration: formatHm(hh, mm) });
-  }}
-  onKeyDown={e => {
-    if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault();
-  }}
-  required
-/>
-                                        <span>minutes</span>
-                                    </div>
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        step="3"
+                                        inputMode="numeric"
+                                        className="assess-form-input"
+                                        value={
+                                            formData.percentage_to_pass === 0 || formData.percentage_to_pass
+                                                ? formData.percentage_to_pass
+                                                : ''
+                                        }
+                                        onChange={e => {
+                                            const n = parseInt(e.target.value, 10);
+                                            setFormData({
+                                                ...formData,
+                                                percentage_to_pass: Number.isNaN(n) ? '' : n,
+                                            });
+                                            if (passError) setPassError('');
+                                        }}
+                                        onBlur={e => {
+                                            const n = parseInt(e.target.value, 10);
+                                            let clamped = Number.isNaN(n) ? 0 : Math.min(100, Math.max(0, n));
+                                            setFormData({ ...formData, percentage_to_pass: clamped });
+                                            validatePass();
+                                        }}
+                                        onKeyDown={e => {
+                                            if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault();
+                                        }}
+                                        placeholder="e.g., 60"
+                                    />
                                     <small style={{ color: '#64748b', fontSize: '0.875rem' }}>
-                                        Enter total minutes 
                                     </small>
+                                    {passError && (
+                                        <div style={{ color: '#dc2626', marginTop: 6, fontSize: '0.875rem' }}>{passError}</div>
+                                    )}
                                 </div>
-                            </div> 
+                                    <label className="assess-form-label">
+                                        Display Answers<span className="assess-required">*</span>
+                                    </label>
+                                    <select
+                                        className="assess-form-select"
+                                        value={String(Boolean(formData.display_answers))}
+                                        onChange={e => {
+                                            const val = e.target.value === 'true';
+                                            setFormData({
+                                                ...formData,
+                                                display_answers: val,
+                                                 if turning off, clear the when value to avoid confusion
+                                                 when enabling, default to AfterPassing if unlimited attempts, else AfterAssessment
+                                                display_answers_when: val
+                                                    ? (formData.unlimited_attempts ? 'AfterPassing' : (formData.display_answers_when || 'AfterAssessment'))
+                                                    : '',
+                                            });
+                                        }}
+                                    >
+                                        <option value="true">Yes</option>
+                                        <option value="false">No</option>
+                                    </select>
+                                </div>
+                                <div className="assess-form-group">
+                                    <label className="assess-form-label">
+                                        Display Answers When
+                                    </label>
+                                    <select
+                                        className="assess-form-select"
+                                        value={formData.display_answers_when || ''}
+                                        onChange={e => setFormData({ ...formData, display_answers_when: e.target.value })}
+                                        disabled={!formData.display_answers}
+                                    >
+                                        <option value="">Select when to display</option>
+                                        <option value="AfterAssessment">After submission</option>
+                                        <option value="AfterPassing">After passing</option>
+                                        <option value="AfterDueDate">After due date</option> 
+                                         <option value="Always">Always</option>
+                                        <option value="Never">Never</option>
+                                    </select>
+                                </div>
+                            </div> */}
                             </div>}
                            
                             {/* Form Actions */}
@@ -1025,7 +1008,7 @@ const QuestionsForm = ({
             </div>
             {/* Question Preview Modal (end-user view) */}
             {questionPreviewIndex !== null && formElements[questionPreviewIndex] && formElements[questionPreviewIndex].type === 'question' && (
-                <div className="survey-assess-qpreview-overlay" onClick={(e) => { if (e.target === e.currentTarget) { setQuestionPreviewIndex(null); setPreviewResponses({}); } }}>
+                <div className="survey-assess-qpreview-overlay" onClick={(e) => { if (e.target === e.currentTarget) setQuestionPreviewIndex(null); }}>
                     <div className="survey-assess-qpreview-modal">
                         <div className="survey-assess-qpreview-header">
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1034,7 +1017,7 @@ const QuestionsForm = ({
                             </div>
                             <button
                                 type="button"
-                                onClick={() => { setQuestionPreviewIndex(null); setPreviewResponses({}); }}
+                                onClick={() => setQuestionPreviewIndex(null)}
                                 aria-label="Close preview"
                                 className="survey-assess-qpreview-close"
                             >
@@ -1110,7 +1093,7 @@ const QuestionsForm = ({
                 </div>
             )}
             {assessmentPreviewOpen && (
-                <div className="survey-assess-qpreview-overlay" onClick={(e) => { if (e.target === e.currentTarget) { setAssessmentPreviewOpen(false); setPreviewResponses({}); } }}>
+                <div className="survey-assess-qpreview-overlay" onClick={(e) => { if (e.target === e.currentTarget) setAssessmentPreviewOpen(false); }}>
                     <div className="survey-assess-apreview-modal">
                         <div className="survey-assess-qpreview-header">
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1119,7 +1102,7 @@ const QuestionsForm = ({
                             </div>
                             <button
                                 type="button"
-                                onClick={() => { setAssessmentPreviewOpen(false); setPreviewResponses({}); }}
+                                onClick={() => setAssessmentPreviewOpen(false)}
                                 aria-label="Close preview"
                                 className="survey-assess-qpreview-close"
                             >
@@ -1154,24 +1137,21 @@ const QuestionsForm = ({
                                 const s = builtSections[Math.min(sectionPreviewIndex, builtSections.length - 1)] || { title: '', description: '', items: [] };
                                 return (
                                     <>
-                                        {/* Section header card: always show section number; include optional title/description */}
-                                        <div className="survey-assess-qpreview-section">
-                                            <div className="survey-gforms-card">
-                                                <div className="survey-gforms-card-body">
-                                                    <div className="label" style={{ fontWeight: 700,fontSize:'17px', marginBottom: (s.title || s.description) ? 6 : 0 }}>
-                                                        Section {sectionPreviewIndex + 1}
+                                        {/* Section Description inside a card (rich text) */}
+                                        {(s.title || s.description) && (
+                                            <div className="survey-assess-qpreview-section">
+                                                <div className="survey-gforms-card">
+                                                    <div className="survey-gforms-card-body">
+                                                        {s.title && (<div className="label" style={{ fontWeight: 700, marginBottom: 6 }}>{s.title}</div>)}
+                                                        {s.description && (
+                                                            <div style={{ color: '#334155' }}
+                                                                dangerouslySetInnerHTML={{ __html: s.description }}
+                                                            />
+                                                        )}
                                                     </div>
-                                                    {s.title && (
-                                                        <div className="label" style={{ fontWeight: 700, marginTop: 6, marginBottom: 6 }}>{s.title}</div>
-                                                    )}
-                                                    {s.description && (
-                                                        <div style={{ color: '#334155' }}
-                                                            dangerouslySetInnerHTML={{ __html: s.description }}
-                                                        />
-                                                    )}
                                                 </div>
                                             </div>
-                                        </div>
+                                        )}
 
                                         {/* Items within the section */}
                                         {s.items.map((el, idx) => (
@@ -1202,8 +1182,7 @@ const QuestionsForm = ({
                                                             {(el.question_type === 'Multiple Choice' || el.question_type === 'Multi Select') && Array.isArray(el.options) && el.options.length > 0 && (
                                                                 <div className="survey-assess-qpreview-options">
                                                                     {el.options.map((opt, oidx) => {
-                                                                        // Use a unique key per section+question to avoid collisions when ids are missing (e.g., duplicated unsaved questions)
-                                                                        const qKey = el.uuid || el._id || `sec-${sectionPreviewIndex}-q-${idx}`;
+                                                                        const qKey = el.uuid || el._id || `q-${idx}`;
                                                                         const isMulti = el.question_type === 'Multi Select';
                                                                         const selected = previewResponses[qKey];
                                                                         const checked = isMulti

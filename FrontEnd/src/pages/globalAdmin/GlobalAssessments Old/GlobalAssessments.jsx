@@ -48,6 +48,9 @@ const GlobalAssessments = () => {
     instructions: ''
   }]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [sectionsPayload, setSectionsPayload] = useState([]);
+  // UI helper: initial sections structure for Step 2 when editing
+  const [initialSectionsUI, setInitialSectionsUI] = useState(null);
 
   const {assessments, loading, pagination} = useSelector((state) => state.globalAssessments)
   const { user: authUser } = useSelector((state) => state.auth || { user: null });
@@ -90,6 +93,7 @@ const GlobalAssessments = () => {
       file_url: '',
       instructions: ''
     }]);
+    setInitialSectionsUI([{ afterIndex: -1, title: '', description: '' }]);
     setShowForm(true);
   };
   
@@ -177,7 +181,15 @@ const GlobalAssessments = () => {
       if (Array.isArray(full.sections) && full.sections.length > 0) {
         const flatQs = [];
         let countSoFar = 0;
+        const uiSections = [];
         full.sections.forEach((sec, sIdx) => {
+          // Section UI marker: first is top-level (-1), others go after last q of previous section
+          const afterIndex = sIdx === 0 ? -1 : Math.max(0, countSoFar - 1);
+          uiSections.push({
+            afterIndex,
+            title: sec?.title || '',
+            description: sec?.description || ''
+          });
           const qs = Array.isArray(sec?.questions) ? sec.questions : [];
           qs.forEach(q => {
             flatQs.push({
@@ -196,6 +208,7 @@ const GlobalAssessments = () => {
           countSoFar += qs.length;
         });
         setQuestions(flatQs.length ? flatQs : [{ type: '', question_text: '', options: [''], correct_option: '', file_url: '' }]);
+        setInitialSectionsUI(uiSections.length ? uiSections : [{ afterIndex: -1, title: '', description: '' }]);
       } else {
         const mappedQuestions = Array.isArray(full.questions)
           ? full.questions.map(q => ({
@@ -213,6 +226,7 @@ const GlobalAssessments = () => {
         setQuestions(mappedQuestions.length
           ? mappedQuestions
           : [{ type: '', question_text: '', options: [''], correct_option: '', file_url: '' }]);
+        setInitialSectionsUI([{ afterIndex: -1, title: '', description: '' }]);
       }
       setShowForm(true);
     } catch (e) {
@@ -236,6 +250,7 @@ const GlobalAssessments = () => {
           assessment.display_answers_when || 'AfterAssessment',
       });
       setQuestions([{ type: '', question_text: '', options: ['', ''], correct_option: '', file_url: '', instructions: '', shuffle_options: false }]);
+      setInitialSectionsUI([{ afterIndex: -1, title: '', description: '' }]);
       setShowForm(true);
     }
   };
@@ -244,20 +259,33 @@ const GlobalAssessments = () => {
     if (e && typeof e.preventDefault === 'function') {
       e.preventDefault();
     }
-    // Format duration to "<minutes> mins"
+    // Normalize duration to minutes number (supports number, numeric string, or HH:MM)
     const minutesFromHhMm = (d) => {
-      if (!d) return 0;
-      const [h = '0', m = '0'] = String(d).split(':');
-      const hh = parseInt(h, 10) || 0;
-      const mm = parseInt(m, 10) || 0;
-      return (Math.max(0, hh) * 60) + Math.max(0, Math.min(59, mm));
+      if (typeof d === 'number' && Number.isFinite(d)) return Math.max(0, d);
+      if (typeof d === 'string') {
+        const trimmed = d.trim();
+        if (trimmed.includes(':')) {
+          const [h = '0', m = '0'] = trimmed.split(':');
+          const hh = parseInt(h, 10) || 0;
+          const mm = parseInt(m, 10) || 0;
+          return (Math.max(0, hh) * 60) + Math.max(0, Math.min(59, mm));
+        }
+        const asNum = parseInt(trimmed, 10);
+        if (Number.isFinite(asNum)) return Math.max(0, asNum);
+      }
+      return 0;
     };
+
+    // Build sections payload if available; fallback to single section with all questions
+    const builtSections = Array.isArray(sectionsPayload) && sectionsPayload.length
+      ? sectionsPayload
+      : [{ title: '', description: '', questions: questions }];
 
     const payload = {
       title: formData.title,
       description: formData.description,
       tags: Array.isArray(formData.tags) ? formData.tags : [],
-      duration: `${minutesFromHhMm(formData.duration)} mins`,
+      duration: minutesFromHhMm(formData.duration),
       team: formData.team,
       subteam: formData.subteam,
       attempts: formData.attempts,
@@ -266,30 +294,32 @@ const GlobalAssessments = () => {
       display_answers_when: formData.display_answers ? (formData.display_answers_when || 'AfterAssessment') : 'Never',
       status: formData.status || 'Draft',
       created_by: authUser?._id || authUser?.uuid || authUser?.id,
-      // Flat questions payload (sections removed)
-      questions: questions.map(q => {
-        // Normalize correct_option to array of integers
-        let correct = q.correct_option;
-        if (typeof correct === 'string') {
-          correct = correct.includes(',')
-            ? correct.split(',').map(s => parseInt(s.trim(), 10)).filter(n => Number.isInteger(n))
-            : (Number.isInteger(parseInt(correct.trim(), 10)) ? [parseInt(correct.trim(), 10)] : []);
-        } else if (Number.isInteger(correct)) {
-          correct = [correct];
-        } else if (Array.isArray(correct)) {
-          correct = correct.filter(n => Number.isInteger(n));
-        } else {
-          correct = [];
-        }
-        return {
-          question_text: q.question_text,
-          type: q.type,
-          options: q.options,
-          correct_option: correct,
-          file_url: q.file_url ,
-          total_points: Number.isFinite(q.total_points) ? q.total_points : 1,
-        };
-      })
+      sections: builtSections.map(sec => ({
+        title: sec.title || '',
+        description: sec.description || '',
+        questions: (sec.questions || []).map(q => {
+          // Normalize correct_option to array of integers
+          let correct = q.correct_option;
+          if (typeof correct === 'string') {
+            correct = correct.includes(',')
+              ? correct.split(',').map(s => parseInt(s.trim(), 10)).filter(n => Number.isInteger(n))
+              : (Number.isInteger(parseInt(correct.trim(), 10)) ? [parseInt(correct.trim(), 10)] : []);
+          } else if (Number.isInteger(correct)) {
+            correct = [correct];
+          } else if (Array.isArray(correct)) {
+            correct = correct.filter(n => Number.isInteger(n));
+          } else {
+            correct = [];
+          }
+          return {
+            question_text: q.question_text,
+            type: q.type,
+            options: q.options,
+            correct_option: correct,
+            total_points: Number.isFinite(q.total_points) ? q.total_points : 1,
+          };
+        })
+      }))
     };
 
     try {
@@ -458,6 +488,7 @@ const GlobalAssessments = () => {
   };
 
   const handleDeleteAssessment = async (id) => {
+    if(!window.confirm("Are you sure you want to delete this assessment?")) return;
     try {
       await dispatch(deleteGlobalAssessment(id)).unwrap();
       dispatch(fetchGlobalAssessments({ page, limit }));
@@ -592,19 +623,8 @@ const GlobalAssessments = () => {
                     </td>
                     <td>
                       <div className="assess-questions-info">
-                        {(() => {
-                          const qCount = Array.isArray(assessment?.questions)
-                            ? assessment.questions.length
-                            : Array.isArray(assessment?.sections)
-                              ? assessment.sections.reduce((total, section) => total + (Array.isArray(section?.questions) ? section.questions.length : 0), 0)
-                              : 0;
-                          return (
-                            <>
-                              <span className="assess-question-count">{qCount}</span>
-                              <span className="assess-question-label">{qCount === 1 ? 'Question' : 'Questions'}</span>
-                            </>
-                          );
-                        })()}
+                        <span className="assess-question-count">{Array.isArray(assessment?.sections) ? assessment.sections.reduce((total, section) => total + section.questions.length, 0) : 0}</span>
+                        <span className="assess-question-label">{(Array.isArray(assessment?.sections) ? assessment.sections.length : 0) <= 1 ? 'Question' : 'Questions'}</span>
                       </div>
                     </td>
                     <td>
@@ -713,6 +733,8 @@ const GlobalAssessments = () => {
           handleFileUpload={handleFileUpload}
           duplicateQuestion={duplicateQuestion}
           groups={groups}
+          setSectionsPayload={setSectionsPayload}
+          initialSections={initialSectionsUI}
         />
       )}
     </div>

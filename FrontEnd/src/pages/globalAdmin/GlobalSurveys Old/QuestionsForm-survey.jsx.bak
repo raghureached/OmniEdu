@@ -1,0 +1,1035 @@
+import React, { useEffect, useState } from 'react';
+import { FileText, Plus, X, Upload, Copy, Eye } from 'lucide-react';
+import api from '../../../services/api';
+import './QuestionsForm-survey.css';
+// Minimal URL resolver for previews (can be enhanced to handle relative URLs)
+const resolveUrl = (u) => u;
+
+const QuestionsForm = ({
+    formData,
+    setFormData,
+    formElements,
+    showForm,
+    setShowForm,
+    updateFormElementField,
+    addFormElement,
+    removeFormElement,
+    addOption,
+    updateOption,
+    removeOption,
+    duplicateFormElement,
+    groups = [],
+    feedback,
+    setFeedback,
+    currentAssessment,
+    handleUpdateAssessment,
+    handleSaveAssessment,
+}) => {
+    const [step, setStep] = useState(1);
+    const [passError, setPassError] = useState('');
+    // Tags picker state (free-form)
+    const [tagInput, setTagInput] = useState('');
+    // Local UI state for question preview modal; holds the qIndex or null
+    const [questionPreviewIndex, setQuestionPreviewIndex] = useState(null);
+    // Whole-assessment preview modal
+    const [assessmentPreviewOpen, setAssessmentPreviewOpen] = useState(false);
+    // Feedback section toggle (UI only)
+    const [feedbackOpen, setFeedbackOpen] = useState(false);
+    // Helper function to convert number to letter (0 -> A, 1 -> B, etc.)
+    const getLetterFromIndex = (index) => {
+        return String.fromCharCode(65 + index); // 65 is ASCII code for 'A'
+    };
+
+    // Auto-open feedback panel in edit mode when the survey already has feedback
+    useEffect(() => {
+        const hasFeedback = [
+            feedback?.instructionTop,
+            feedback?.question_text,
+            feedback?.instructionBottom,
+        ].some(v => (v || '').trim() !== '');
+        if (hasFeedback) {
+            setFeedbackOpen(true);
+        }
+    }, [feedback?.instructionTop, feedback?.question_text, feedback?.instructionBottom]);
+
+    // Close modals on ESC key
+    useEffect(() => {
+        const handleKey = (e) => {
+            if (e.key === 'Escape') {
+                if (assessmentPreviewOpen) {
+                    setAssessmentPreviewOpen(false);
+                } else if (questionPreviewIndex !== null) {
+                    setQuestionPreviewIndex(null);
+                }
+            }
+        };
+        const anyOpen = assessmentPreviewOpen || questionPreviewIndex !== null;
+        if (anyOpen) {
+            document.addEventListener('keydown', handleKey);
+            return () => document.removeEventListener('keydown', handleKey);
+        }
+    }, [assessmentPreviewOpen, questionPreviewIndex]);
+
+    return (
+        <>
+        <div className="assess-modal-overlay">
+            <div className="assess-modal-content">
+                {/* Modal Header */}
+                <div className="assess-modal-header">
+                    <div className="assess-modal-header-content">
+                        <div className="assess-modal-icon">
+                            <FileText size={24} />
+                        </div>
+                        <div>
+                            <h2>{currentAssessment ? "Edit Survey" : "Create New Survey"}</h2>
+                            <p className="assess-modal-subtitle">
+                                {currentAssessment
+                                    ? "Update survey details and questions"
+                                    : "Build a comprehensive survey"}
+                            </p>
+                        </div>
+                    </div>
+                    <button className="assess-close-btn" onClick={() => setShowForm(false)}>
+                        <X size={20} />
+                    </button>
+                </div>
+
+                {/* Form + Preview Panel */}
+                <div className="assess-modal-form-container">
+                    {/* Left Side - Form */}
+                    <div className="assess-modal-form">
+                        {/* Basic Information */}
+                        {step === 1 &&
+                            <div className="assess-form-section">
+                                <h3 className="assess-section-title">Basic Information</h3>
+
+                                <div className="assess-form-grid">
+                                    <div className="assess-form-group">
+                                        <label className="assess-form-label">
+                                            Survey Title<span className="assess-required">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className="assess-form-input"
+                                            placeholder="Enter assessment title"
+                                            value={formData.title}
+                                            onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="assess-form-group">
+                                        <label className="assess-form-label">Tags</label>
+                                        <div className="assess-tag-picker">
+                                            <div className="assess-tag-controls">
+                                                <input
+                                                    type="text"
+                                                    className="assess-form-input"
+                                                    placeholder="Type a tag and press Enter"
+                                                    value={tagInput}
+                                                    onChange={(e) => setTagInput(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            const t = tagInput.trim();
+                                                            if (!t) return;
+                                                            const current = Array.isArray(formData.tags) ? formData.tags : [];
+                                                            if (!current.includes(t)) {
+                                                                setFormData({ ...formData, tags: [...current, t] });
+                                                            }
+                                                            setTagInput('');
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                            {(formData.tags && formData.tags.length > 0) && (
+                                                <div className="assess-chips">
+                                                    {formData.tags.map((t, idx) => (
+                                                        <span key={`${t}-${idx}`} className="assess-chip">
+                                                            {t}
+                                                            <button
+                                                                type="button"
+                                                                className="assess-chip-remove"
+                                                                aria-label={`Remove ${t}`}
+                                                                onClick={() => {
+                                                                    const next = (formData.tags || []).filter(x => x !== t);
+                                                                    setFormData({ ...formData, tags: next });
+                                                                }}
+                                                                style={{ color: "#1e40af", fontSize: "17px" }}
+                                                            >
+                                                                {/* <X size={12} /> */} X
+                                                            </button>
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="assess-form-group">
+                                    <label className="assess-form-label">Description</label>
+                                    <textarea
+                                        className="assess-form-textarea"
+                                        placeholder="Provide a detailed description of this assessment"
+                                        rows="3"
+                                        value={formData.description}
+                                        onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                    />
+                                </div>
+
+                               
+                            </div>}
+
+                        {/* Form Elements Section */}
+                        {step === 2 && <div className="assess-form-section">
+                            <div className="assess-form-elements-header">
+                                <h3 className="assess-section-title">Form Elements ({formElements.length})</h3>
+                            </div>
+
+                            <div className="assess-form-elements-container">
+                                {formElements.map((element, elementIndex) => (
+                                    <div key={elementIndex} className={`assess-form-element-card ${element.type}`}>
+                                        {/* Info Box Element */}
+                                        {element.type === 'info' && (
+                                            <div className="assess-info-element">
+                                                <div className="assess-element-header">
+                                                    <span className="assess-element-number">Info Box {elementIndex + 1}</span>
+                                                    <div style={{ display: 'flex', gap: 8 }}>
+                                                        <button
+                                                            type="button"
+                                                            className="assess-duplicate-element"
+                                                            title="Duplicate Info Box"
+                                                            onClick={() => duplicateFormElement(elementIndex)}
+                                                        >
+                                                            <Copy size={16} /> Duplicate
+                                                        </button>
+                                                        {formElements.length > 2 && (
+                                                            <button
+                                                                type="button"
+                                                                className="assess-remove-element"
+                                                                onClick={() => removeFormElement(elementIndex)}
+                                                                title="Remove Info Box"
+                                                            >
+                                                                <X size={16} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="assess-info-content">
+                                                    <div className="form-group">
+                                                        <label className="form-label">Title</label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-input"
+                                                            placeholder="Enter info box title"
+                                                            value={element.title || ''}
+                                                            onChange={e => updateFormElementField(elementIndex, 'title', e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <div className="form-group">
+                                                        <label className="form-label">Description</label>
+                                                        <textarea
+                                                            className="form-textarea"
+                                                            placeholder="Enter info box description"
+                                                            rows={3}
+                                                            value={element.description || ''}
+                                                            onChange={e => updateFormElementField(elementIndex, 'description', e.target.value)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Question Element */}
+                                        {element.type === 'question' && (
+                                            <div className="assess-question-element">
+                                                <div className="assess-element-header">
+                                                    <span className="assess-element-number">Question {elementIndex + 1}</span>
+                                                    <div style={{ display: 'flex', gap: 8 }}>
+                                                        <button
+                                                            type="button"
+                                                            className="assess-duplicate-element"
+                                                            title="Duplicate Question"
+                                                            onClick={() => duplicateFormElement(elementIndex)}
+                                                        >
+                                                            <Copy size={16} /> Duplicate
+                                                        </button>
+                                                        {formElements.length > 2 && (
+                                                            <button
+                                                                type="button"
+                                                                className="assess-remove-element"
+                                                                onClick={() => removeFormElement(elementIndex)}
+                                                                title="Remove Question"
+                                                            >
+                                                                <X size={16} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="assess-question-content">
+                                                    {/* Question Type */}
+                                                    <div className="form-group">
+                                                        <label className="form-label">Question Type</label>
+                                                        <select
+                                                            className="form-select"
+                                                            value={element.question_type || ''}
+                                                            onChange={e => updateFormElementField(elementIndex, 'question_type', e.target.value)}
+                                                            required
+                                                        >
+                                                            <option value="">Select Type</option>
+                                                            <option value="Multiple Choice">Multiple Choice</option>
+                                                            <option value="Multi Select">Multi Select</option>
+                                                        </select>
+                                                    </div>
+
+                                                    {/* Question Text */}
+                                                    <div className="form-group">
+                                                        <label className="form-label">
+                                                            Question Text<span className="form-required">*</span>
+                                                        </label>
+                                                        <textarea
+                                                            className="form-textarea"
+                                                            placeholder="Enter your question here..."
+                                                            rows={2}
+                                                            value={element.question_text || ''}
+                                                            onChange={e => updateFormElementField(elementIndex, 'question_text', e.target.value)}
+                                                            required
+                                                        />
+                                                    </div>
+
+                                                    {/* Answer Options */}
+                                                    <div className="form-group">
+                                                        <label className="form-label">Answer Options</label>
+                                                        {(element.question_type === 'Multiple Choice' || element.question_type === 'Multi Select') && (
+                                                            <div className="assess-options-container">
+                                                                {(element.options || []).map((opt, optIndex) => (
+                                                                    <div key={optIndex} className="assess-option-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', width: 'fit-content' }}>
+                                                                        <div className="assess-option-index">{getLetterFromIndex(optIndex)}</div>
+                                                                        <input
+                                                                            type="text"
+                                                                            className="form-input"
+                                                                            placeholder={`Option ${getLetterFromIndex(optIndex)}`}
+                                                                            value={opt}
+                                                                            onChange={e => updateOption(elementIndex, optIndex, e.target.value)}
+                                                                            required
+                                                                        />
+                                                                        {(element.options || []).length > 2 && (
+                                                                            <button
+                                                                                type="button"
+                                                                                className="assess-remove-option"
+                                                                                onClick={() => removeOption(elementIndex, optIndex)}
+                                                                            >
+                                                                                <X size={16} />
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                                <button
+                                                                    type="button"
+                                                                    className="assess-add-option"
+                                                                    onClick={() => addOption(elementIndex)}
+                                                                >
+                                                                    <Plus size={14} />
+                                                                    Add Option
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Section Element */}
+                                        {element.type === 'section' && (
+                                            <div className="assess-section-element">
+                                                <div className="assess-element-header">
+                                                    <span className="assess-element-number">Section {elementIndex + 1}</span>
+                                                    <div style={{ display: 'flex', gap: 8 }}>
+                                                        <button
+                                                            type="button"
+                                                            className="assess-duplicate-element"
+                                                            title="Duplicate Section"
+                                                            onClick={() => duplicateFormElement(elementIndex)}
+                                                        >
+                                                            <Copy size={16} /> Duplicate
+                                                        </button>
+                                                        {formElements.length > 2 && (
+                                                            <button
+                                                                type="button"
+                                                                className="assess-remove-element"
+                                                                onClick={() => removeFormElement(elementIndex)}
+                                                                title="Remove Section"
+                                                            >
+                                                                <X size={16} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="assess-section-content">
+                                                    <div className="form-group">
+                                                        <label className="form-label">Section Title</label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-input"
+                                                            placeholder="Enter section title"
+                                                            value={element.title || ''}
+                                                            onChange={e => updateFormElementField(elementIndex, 'title', e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <div className="form-group">
+                                                        <label className="form-label">Section Description</label>
+                                                        <textarea
+                                                            className="form-textarea"
+                                                            placeholder="Enter section description"
+                                                            rows={2}
+                                                            value={element.description || ''}
+                                                            onChange={e => updateFormElementField(elementIndex, 'description', e.target.value)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+
+                                {!feedbackOpen && (() => {
+                                  const hasFeedback = [
+                                    feedback?.instructionTop,
+                                    feedback?.question_text,
+                                    feedback?.instructionBottom,
+                                  ].some(v => (v || '').trim() !== '');
+                                  return (
+                                    <div style={{ marginTop: '20px', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                                      {!hasFeedback && (
+                                        <button type="button" className="assess-btn-secondary" onClick={() => setFeedbackOpen(true)}>
+                                          <Plus size={16} />
+                                          Feedback
+                                        </button>
+                                      )}
+                                      <button type="button" className="assess-btn-secondary" onClick={() => addFormElement('question')}>
+                                        <Plus size={16} />
+                                        Add Question
+                                      </button>
+                                      <button type="button" className="assess-btn-secondary" onClick={() => addFormElement('info')}>
+                                        <Plus size={16} />
+                                        Add Info Box
+                                      </button>
+                                      <button type="button" className="assess-btn-secondary" onClick={() => addFormElement('section')}>
+                                        <Plus size={16} />
+                                        Add Section
+                                      </button>
+                                    </div>
+                                  );
+                                })()}
+                            </div>
+
+                            {/* When feedback panel is open, allow adding questions above feedback (Create & Edit) */}
+                            {feedbackOpen && (
+                              <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
+                                <button type="button" className="assess-btn-secondary" onClick={() => addFormElement('question')}>
+                                  <Plus size={16} />
+                                  Add Question
+                                </button>
+                              </div>
+                            )}
+
+                            {feedbackOpen && (
+                              <div className="assess-feedback" style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: 12, marginTop: 16 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                                  <div style={{ fontWeight: 600 }}>Feedback</div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    {/* <span style={{ fontSize: 12, color: '#475569', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: 999 }}>Info</span> */}
+                                    <button
+                                      type="button"
+                                      className="assess-remove-question"
+                                      title="Close feedback"
+                                      onClick={() => {
+                                        // Clear feedback content and close panel
+                                        setFeedback({ instructionTop: '', instruction_header_top: '', question_text: '', instructionBottom: '', instruction_header_bottom: '' });
+                                        setFeedbackOpen(false);
+                                      }}
+                                      aria-label="Close feedback"
+                                    >
+                                      <X size={16} />
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="form-group" style={{ marginBottom: 10 }}>
+                                  <label className="form-label">Instruction Header </label>
+                                  <input
+                                    type="text"
+                                    className="form-input"
+                                    placeholder="Enter instruction header (top)"
+                                    value={feedback.instruction_header_top || ''}
+                                    onChange={e => setFeedback(prev => ({ ...prev, instruction_header_top: e.target.value }))}
+                                  />
+                                </div>
+                                <div className="form-group" style={{ marginBottom: 10 }}>
+                                  <label className="form-label">Instructions</label>
+                                  <textarea
+                                    className="form-textarea"
+                                    rows={2}
+                                    placeholder="Enter instructions"
+                                    value={feedback.instructionTop}
+                                    onChange={e => setFeedback(prev => ({ ...prev, instructionTop: e.target.value }))}
+                                  />
+                                </div>
+                                
+                                <div className="form-group" style={{ marginBottom: 10 }}>
+                                  <label className="form-label">Question Text</label>
+                                  <textarea
+                                    className="form-textarea"
+                                    rows={2}
+                                    placeholder="Enter question text"
+                                    value={feedback.question_text}
+                                    onChange={e => setFeedback(prev => ({ ...prev, question_text: e.target.value }))}
+                                  />
+                                </div>
+                                
+                                <div className="form-group">
+                                  <label className="form-label">Submission Instructions</label>
+                                  <textarea
+                                    className="form-textarea"
+                                    rows={2}
+                                    placeholder="Enter instructions"
+                                    value={feedback.instructionBottom}
+                                    onChange={e => setFeedback(prev => ({ ...prev, instructionBottom: e.target.value }))}
+                                  />
+                                </div>
+                               
+                              </div>
+                            )}
+                        </div>}
+                        {/* next info */}
+                        {step === 3 && <div className='assess-form-section'>
+                            {/* <div className="assess-form-grid">
+
+                                <div className="assess-form-group">
+                                    <label className="assess-form-label">
+                                        Duration<span className="assess-required">*</span>
+                                    </label>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="1"
+                                            inputMode="numeric"
+                                            className="assess-form-input"
+                                            style={{ width: 140 }}
+                                            placeholder="Enter minutes"
+                                            value={(parseHm(formData.duration).hh * 60) + parseHm(formData.duration).mm}
+                                            onChange={e => {
+                                                const raw = parseInt(e.target.value, 10);
+                                                const totalMin = Number.isNaN(raw) ? 0 : Math.max(0, raw);
+                                                const hh = Math.floor(totalMin / 60);
+                                                const mm = totalMin % 60;
+                                                setFormData({ ...formData, duration: formatHm(hh, mm) });
+                                            }}
+                                            onKeyDown={e => { if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault(); }}
+                                            required
+                                        />
+                                        <span>minutes</span>
+                                    </div>
+                                    <small style={{ color: '#64748b', fontSize: '0.875rem' }}>
+                                        Enter total minutes 
+                                    </small>
+                                </div>
+
+                                <div className="assess-form-group">
+                                    <label className="assess-form-label">Attempts</label>
+                                    {formData.unlimited_attempts ? (
+                                        <input
+                                            type="text"
+                                            className="assess-form-input"
+                                            value="Unlimited"
+                                            readOnly
+                                            disabled
+                                        />
+                                    ) : (
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            step="1"
+                                            inputMode="numeric"
+                                            className="assess-form-input"
+                                            value={formData.attempts}
+                                            onChange={e => {
+                                                const n = parseInt(e.target.value, 10);
+                                                setFormData({ ...formData, attempts: Number.isNaN(n) ? '' : Math.max(1, n) });
+                                            }}
+                                            onBlur={e => {
+                                                const n = parseInt(e.target.value, 10);
+                                                setFormData({ ...formData, attempts: Number.isNaN(n) ? 1 : Math.max(1, n) });
+                                            }}
+                                            onKeyDown={e => {
+                                                // prevent non-integer characters commonly allowed by number inputs
+                                                if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault();
+                                            }}
+                                        />
+                                    )}
+                                    <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <input
+                                            id="unlimited-attempts"
+                                            type="checkbox"
+                                            checked={!!formData.unlimited_attempts}
+                                            onChange={(e) => {
+                                                const checked = e.target.checked;
+                                                setFormData({
+                                                    ...formData,
+                                                    unlimited_attempts: checked,
+                                                    // If display answers is enabled and unlimited is chosen, default to AfterPassing
+                                                    display_answers_when: checked && formData.display_answers
+                                                        ? 'AfterPassing'
+                                                        : formData.display_answers_when,
+                                                });
+                                            }}
+                                        />
+                                        <label htmlFor="unlimited-attempts" style={{ userSelect: 'none' }}>Unlimited attempts</label>
+                                    </div>
+                                </div>
+                            </div> */}
+                            <div className="assess-form-grid">
+
+                                <div className="assess-form-group">
+                                    <label className="assess-form-label">
+                                        Team<span className="assess-required">*</span>
+                                    </label>
+                                    <select
+                                        className="assess-form-select"
+                                        value={formData.team || ''}
+                                        onChange={e => {
+                                            const teamId = e.target.value;
+                                            // Reset sub-team when team changes
+                                            setFormData({ ...formData, team: teamId, subteam: '' });
+                                        }}
+                                    >
+                                        <option value="">Select Team</option>
+                                        {groups.map(team => (
+                                            <option key={team._id} value={team._id}>
+                                                {team.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="assess-form-group">
+                                    <label className="assess-form-label">
+                                        Sub-Team
+                                    </label>
+                                    <select
+                                        className="assess-form-select"
+                                        value={formData.subteam || ''}
+                                        onChange={e => setFormData({ ...formData, subteam: e.target.value })}
+                                        disabled={!formData.team}
+                                    >
+                                        <option value="">{formData.team ? 'Select Sub-Team' : 'Select Team first'}</option>
+                                        {subTeams && subTeams.map(st => (
+                                            <option key={st._id} value={st._id}>
+                                                {st.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                                    <label className="assess-form-label">Pass Percentage (0-100)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        step="3"
+                                        inputMode="numeric"
+                                        className="assess-form-input"
+                                        value={
+                                            formData.percentage_to_pass === 0 || formData.percentage_to_pass
+                                                ? formData.percentage_to_pass
+                                                : ''
+                                        }
+                                        onChange={e => {
+                                            const n = parseInt(e.target.value, 10);
+                                            setFormData({
+                                                ...formData,
+                                                percentage_to_pass: Number.isNaN(n) ? '' : n,
+                                            });
+                                            validatePass();
+                                        }}
+                                        onBlur={e => {
+                                            const n = parseInt(e.target.value, 10);
+                                            let clamped = Number.isNaN(n) ? 0 : Math.min(100, Math.max(0, n));
+                                            setFormData({ ...formData, percentage_to_pass: clamped });
+                                            validatePass();
+                                        }}
+                                        onKeyDown={e => {
+                                            if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault();
+                                        }}
+                                        placeholder="e.g., 60"
+                                    />
+                                    <small style={{ color: '#64748b', fontSize: '0.875rem' }}>
+                                    </small>
+                                    {passError && (
+                                        <div style={{ color: '#dc2626', marginTop: 6, fontSize: '0.875rem' }}>{passError}</div>
+                                    )}
+                                <div className="assess-form-group">
+                                    <label className="assess-form-label">
+                                        Display Answers<span className="assess-required">*</span>
+                                    </label>
+                                    <select
+                                        className="assess-form-select"
+                                        value={String(Boolean(formData.display_answers))}
+                                        onChange={e => {
+                                            const val = e.target.value === 'true';
+                                            setFormData({
+                                                ...formData,
+                                                display_answers: val,
+                                                display_answers_when: val
+                                                    ? (formData.unlimited_attempts ? 'AfterPassing' : (formData.display_answers_when || 'AfterAssessment'))
+                                                    : '',
+                                            });
+                                        }}
+                                    >
+                                        <option value="true">Yes</option>
+                                        <option value="false">No</option>
+                                    </select>
+                                </div>
+                                <div className="assess-form-group">
+                                    <label className="assess-form-label">
+                                        Display Answers When
+                                    </label>
+                                    <select
+                                        className="assess-form-select"
+                                        value={formData.display_answers_when || ''}
+                                        onChange={e => setFormData({ ...formData, display_answers_when: e.target.value })}
+                                        disabled={!formData.display_answers}
+                                    >
+                                        <option value="">Select when to display</option>
+                                        <option value="AfterAssessment">After submission</option>
+                                        <option value="AfterPassing">After passing</option>
+                                        <option value="AfterDueDate">After due date</option>
+                                        <option value="Always">Always</option>
+                                        <option value="Never">Never</option>
+                                    </select>
+                                </div>
+                            </div> }
+                        
+                        <div style={{ display: 'flex', justifyContent: step === 1 ? 'flex-end' : 'space-between', alignItems: 'center' }}>
+                           {step > 1 && <button type="button" className="assess-btn-secondary" style={{ color: '#5570f1', borderColor: '#5570f1' }} onClick={() => setStep(step - 1)}>
+                                Previous
+                            </button>}
+                           {step < 3 && <button type="button" className="assess-btn-secondary" style={{ color: '#5570f1', borderColor: '#5570f1' }} onClick={() => setStep(step + 1)}>
+                                Next
+                            </button>}
+
+                        </div>
+                        {/* Form Actions */}
+                        <div className="assess-form-actions">
+                            {step === 3 ? (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                    <button type="button" className="assess-btn-secondary" onClick={() => setShowForm(false)}>
+                                        Cancel
+                                    </button>
+                                    <div style={{ display: 'flex', gap: 12 }}>
+                                        <button
+                                            type="button"
+                                            className="assess-btn-secondary"
+                                            onClick={() => setAssessmentPreviewOpen(true)}
+                                            title="Preview the entire assessment as the user sees it"
+                                        >
+                                            <Eye size={16} />
+                                            <span>Preview Survey</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="assess-btn-secondary"
+                                            onClick={() => {
+                                                // Force status to Draft, then trigger save/update
+                                                setFormData(prev => ({ ...prev, status: 'Draft' }));
+                                                setTimeout(() => {
+                                                    if (currentAssessment) {
+                                                        handleUpdateAssessment();
+                                                    } else {
+                                                        handleSaveAssessment();
+                                                    }
+                                                }, 0);
+                                            }}
+                                            title="Save this survey as Draft"
+                                        >
+                                            <FileText size={16} />
+                                            <span>Save as Draft</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="assess-btn-primary"
+                                            onClick={() => {
+                                                if (currentAssessment) {
+                                                    handleUpdateAssessment();
+                                                } else {
+                                                    handleSaveAssessment();
+                                                }
+                                            }}
+                                        >
+                                            <FileText size={16} />
+                                            <span>{currentAssessment ? "Update Survey" : "Create Survey"}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <button type="button" className="assess-btn-secondary" onClick={() => setShowForm(false)}>
+                                    Cancel
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {/* Question Preview Modal (end-user view) */}
+        {questionPreviewIndex !== null && formElements[questionPreviewIndex] && formElements[questionPreviewIndex].type === 'question' && (
+            <div className="assess-qpreview-overlay" onClick={(e) => { if (e.target === e.currentTarget) setQuestionPreviewIndex(null); }}>
+                <div className="assess-qpreview-modal">
+                    <div className="assess-qpreview-header">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Eye size={16} />
+                            <span className="assess-qpreview-title">Question Preview</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setQuestionPreviewIndex(null)}
+                            aria-label="Close preview"
+                            className="assess-qpreview-close"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
+                    {(() => {
+                        const element = formElements[questionPreviewIndex];
+                        return (
+                            <div className="assess-qpreview-body">
+                                {/* Question type badge */}
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+                                    <span style={{
+                                        display: 'inline-block',
+                                        padding: '4px 12px',
+                                        borderRadius: '16px',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 600,
+                                        backgroundColor: element.question_type === 'Multi Select' ? '#e0f2fe' : '#f0f9ff',
+                                        color: element.question_type === 'Multi Select' ? '#0369a1' : '#0284c7',
+                                        border: `1px solid ${element.question_type === 'Multi Select' ? '#bae6fd' : '#bfdbfe'}`
+                                    }}>
+                                        {element.question_type === 'Multi Select' ? 'Multi Select' : 'Multiple Choice'}
+                                    </span>
+                                </div>
+
+                                {/* Question text */}
+                                <div className="assess-qpreview-section" >
+                                    <div className="label">Question</div>
+                                    <div style={{ whiteSpace: 'pre-wrap', color: '#0f172a' }}>{element.question_text || '—'}</div>
+                                </div>
+
+                                {/* Options (end-user view: not showing correct answers) */}
+                                {(element.question_type === 'Multiple Choice' || element.question_type === 'Multi Select') && Array.isArray(element.options) && element.options.length > 0 && (
+                                    <div className="assess-qpreview-section">
+                                        <div className="label">Options</div>
+                                        <div className="assess-qpreview-options">
+                                            {element.options.map((opt, idx) => (
+                                                <label key={idx} className="assess-qpreview-option">
+                                                    <input type={element.question_type === 'Multi Select' ? 'checkbox' : 'radio'} disabled name={`preview-q-${questionPreviewIndex}`} />
+                                                    <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                                        <span style={{fontWeight: 'bold', color: '#374151', minWidth: '20px'}}>
+                                                            {getLetterFromIndex(idx)}.
+                                                        </span>
+                                                        <span>{opt || `Option ${getLetterFromIndex(idx)}`}</span>
+                                                    </span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
+                </div>
+            </div>
+        )}
+        {assessmentPreviewOpen && (
+            <div className="assess-qpreview-overlay" onClick={(e) => { if (e.target === e.currentTarget) setAssessmentPreviewOpen(false); }}>
+                <div className="assess-qpreview-modal">
+                    <div className="assess-qpreview-header">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Eye size={16} />
+                            <span className="assess-qpreview-title">Survey Preview Preview</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setAssessmentPreviewOpen(false)}
+                            aria-label="Close preview"
+                            className="assess-qpreview-close"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
+                    <div className="assess-qpreview-body">
+                        {/* Compact header summary */}
+                        <div className="assess-qpreview-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, flexWrap: 'wrap', width: '100%' }}>
+                            {/* <span style={{ padding: '4px 10px', borderRadius: 9999, border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '0.85rem' }}>
+                                {formData.status || 'Draft'}
+                            </span> */}
+                            <div style={{ color: 'rgb(15, 23, 42)', fontWeight: 900, textAlign: 'center' }}>
+                                {formData.title}
+                                {/* {(groups.find(t => String(t._id) === String(formData.team))?.name) || '—'}
+                                {formData.subteam ? ` / ${(groups.find(t => String(t._id) === String(formData.team))?.subTeams || []).find(st => String(st._id) === String(formData.subteam))?.name || formData.subteam}` : ''}*/}
+                            </div> 
+                            {/* {Array.isArray(formData.tags) && formData.tags.length > 0 && (
+                                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                    {formData.tags.map((t, i) => (
+                                        <span key={`ph-tag-${i}`} className="assess-chip">{t}</span>
+                                    ))}
+                                </div>
+                            )} */}
+                        </div>
+                        {/* Summary */}
+                        <div className="assess-qpreview-section">
+                            {/* <div className="label">Title</div>
+                            <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#0f172a' }}>{formData.title || '—'}</div>*/}    
+                        </div> 
+                        {formData.description && (
+                            <div className="assess-qpreview-section">
+                                <div className="label">Description</div>
+                                <div style={{ whiteSpace: 'pre-wrap', color: '#334155' }}>{formData.description}</div>
+                            </div>
+                        )}
+                        {Array.isArray(formData.tags) && formData.tags.length > 0 && (
+                            <div className="assess-qpreview-section">
+                                <div className="label">Tags</div>
+                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                    {formData.tags.map((t, i) => (
+                                        <span key={`p-tag-${i}`} className="assess-chip">{t}</span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        <div className="assess-qpreview-section" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', columnGap: 500, rowGap: 12 }}>
+                            {/* <div>
+                                <div className="label">Duration</div>
+                                <div>{formData.duration || '—'}</div>
+                            </div>
+                            <div>
+                                <div className="label">Attempts</div>
+                                <div>{formData.attempts ?? '—'}</div>
+                            </div>
+                            <div>
+                                <div className="label">Pass Percentage</div>
+                                <div>{Number.isInteger(formData.percentage_to_pass) ? `${formData.percentage_to_pass}%` : '—'}</div>
+                            </div>
+                            <div>
+                                <div className="label">Display Answers</div>
+                                <div>{formData.display_answers ? (formData.display_answers_when || 'AfterAssessment') : 'Never'}</div>
+                            </div> */}
+                        </div>
+                        {/* Team/Subteam names */}
+                        {formData.team && (
+                            <div className="assess-qpreview-section" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', columnGap: 500, rowGap: 12}}>
+                                <div>
+                                    <div className="label">Team</div>
+                                    <div>{(groups.find(t => String(t._id) === String(formData.team))?.name) || formData.team}</div>
+                                </div>
+                                {formData.subteam && (
+                                    <div>
+                                        <div className="label">Sub-Team</div>
+                                        <div>{(groups.find(t => String(t._id) === String(formData.team))?.subTeams || []).find(st => String(st._id) === String(formData.subteam))?.name || formData.subteam}</div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        {/* Questions list */}
+                        <div className="assess-qpreview-section">
+                            <div className="label">
+                                <b>Questions ({formElements.filter(el => el.type === 'question').length})</b></div>
+                            <div className="assess-qpreview-questions">
+                                {formElements.filter(el => el.type === 'question').map((element, idx) => (
+                                    <div key={`pvq-${idx}`} className="assess-qpreview-card">
+                                        {/* Question type badge */}
+                                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+                                            <span style={{
+                                                display: 'inline-block',
+                                                padding: '2px 8px',
+                                                borderRadius: '12px',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 500,
+                                                backgroundColor: element.question_type === 'Multi Select' ? '#e0f2fe' : '#f0f9ff',
+                                                color: element.question_type === 'Multi Select' ? '#0369a1' : '#0284c7',
+                                                border: `1px solid ${element.question_type === 'Multi Select' ? '#bae6fd' : '#bfdbfe'}`
+                                            }}>
+                                                {element.question_type === 'Multi Select' ? 'Multi Select' : 'Multiple Choice'}
+                                            </span>
+                                        </div>
+
+                                        <div style={{ marginBottom: 8, whiteSpace: 'pre-wrap', color: '#0f172a' }}>
+                                        <span><b>{`Q${idx + 1}`}. </b></span>
+                                            {element.question_text || '—'}</div>
+                                        {(element.question_type === 'Multiple Choice' || element.question_type === 'Multi Select') && Array.isArray(element.options) && element.options.length > 0 && (
+                                            <div className="assess-qpreview-options">
+                                                {element.options.map((opt, oidx) => (
+                                                    <label key={`pvq-${idx}-opt-${oidx}`} className="assess-qpreview-option">
+                                                        <input type={element.question_type === 'Multi Select' ? 'checkbox' : 'radio'} disabled name={`pvq-${idx}`} />
+                                                        <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                                            <span style={{fontWeight: 'bold', color: '#374151', minWidth: '20px'}}>
+                                                                {getLetterFromIndex(oidx)}.
+                                                            </span>
+                                                            <span>{opt || `Option ${getLetterFromIndex(oidx)}`}</span>
+                                                        </span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        {/* Feedback (moved below Questions) */}
+                        {(() => {
+                            const hasFeedback = [
+                                feedback?.instructionTop,
+                                feedback?.question_text,
+                                feedback?.instructionBottom,
+                            ].some(v => (v || '').trim() !== '');
+                            if (!hasFeedback) return null;
+                            return (
+                                <div className="assess-qpreview-section">
+                                    <div className="assess-feedback-preview-card">
+                                        <div className="assess-feedback-title">{feedback.instruction_header_top}</div>
+                                        {feedback?.instructionTop && (
+                                            <div>
+                                                {/* <div className="label" style={{ fontWeight: 700, marginBottom: 4 }}>Instructions</div> */}
+                                                <div className="assess-qpreview-instructions">{feedback.instructionTop}</div>
+                                            </div>
+                                        )}
+                                        {/* Open text box mock */}
+                                        <div className="assess-open-text">
+                                            <div className="assess-open-text-placeholder">
+                                                {feedback?.question_text?.trim() ? feedback.question_text : 'Write your feedback here...'}
+                                            </div>
+                                            {/* <div className="assess-open-text-label">OPEN TEXT BOX</div> */}
+                                        </div>
+                                        {feedback?.instructionBottom && (
+                                            <div style={{ marginTop: 10 }}>
+                                                {/* <div className="label" style={{ fontWeight: 700, marginBottom: 4 }}>Submission Instructions</div> */}
+                                                <div className="assess-qpreview-instructions">{feedback.instructionBottom}</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                    </div>
+                </div>
+            </div>
+        )}
+        </>
+    );
+};
+
+export default QuestionsForm;

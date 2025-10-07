@@ -189,15 +189,15 @@
   
   .assess-question-card {
     background: #fafbfc;
-    border: 1px solid #aab1ba;
+    border: 2px solid rgb(206, 206, 206) ;
     border-radius: 16px;
     padding: 24px;
     transition: all 0.2s ease;
   }
   
   .assess-question-card:hover {
-    border-color: #cbd5e1;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-color:#afb2b6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.07);
   }
   
   .assess-question-header {
@@ -263,14 +263,11 @@
   .assess-option-row .assess-form-input {
     flex: 1;
   }
-  
   .assess-remove-option {
-    background: #fee2e2;
-    border: 1px solid #fecaca;
     border-radius: 8px;
-    padding: 8px;
+    padding: 3px;
     cursor: pointer;
-    color: #dc2626;
+    color: hsla(0, 0%, 0%, 0.776);
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
@@ -279,6 +276,7 @@
   
   .assess-remove-option:hover {
     background: #fecaca;
+    color: rgb(220, 38, 38);
   }
   
   .assess-add-option {
@@ -486,26 +484,28 @@
 .assess-file-preview-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(157, 177, 223, 0.75);
   backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1200;
-  padding: 12px;
+  padding: 20px;
 }
 .assess-file-preview-modal {
-  width: 96vw;
-  max-width: 1280px;
-  height: 92vh;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  overflow: hidden;
+  
+background: #ffffff;
+border-radius: 20px;
+width: 100%;
+max-width: 1000px;
+max-height: 90vh;
+overflow-y: auto;
+box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05);
+display: flex;
+backdrop-filter: blur(4px);
+flex-direction: column;
+border: 1px solid #e2e8f0;
+
 }
 .assess-file-preview-header {
   display: flex;
@@ -784,4 +784,56 @@
 .assess-upload-btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); /* blue focus ring */
+}
+
+.assess-progress {
+  margin-top: 10px;         /* directly under subtitle */
+  height: 4px;              /* thin line like screenshot */
+  width: 100%;
+  background: #e6ecfd;      /* light bluish track */
+  border-radius: 9999px;    /* fully rounded ends */
+  overflow: hidden;         /* clip fill to rounded */
+}
+
+.assess-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #5570f1 0%, #4338ca 100%);
+  transition: width 300ms ease;
+}
+
+/* Make headers relative so we can pin a thin progress bar to the very top */
+.assess-modal-header,
+.survey-assess-modal-header {
+  position: relative;
+}
+
+/* Top-of-header progress bar (matches Module modal style) */
+.assess-header-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #e6ecfd; /* light bluish track */
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  overflow: hidden; /* clip the fill to rounded corners */
+  pointer-events: none; /* avoid intercepting clicks */
+}
+.assess-header-progress .bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #5570f1 0%, #4338ca 100%);
+  transition: width 300ms ease;
+}
+
+/* Variant: pin the progress at the bottom edge of the header (desired location) */
+.assess-header-progress.bottom {
+  top: auto;
+  bottom: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
 }
