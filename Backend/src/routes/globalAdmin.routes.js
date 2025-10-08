@@ -28,7 +28,7 @@ const {
     fileUploadHandler,
   } = require("../controllers/globalAdmin.controller/globalAdmin_Assessments");
 const { getTeams } = require("../controllers/globalAdmin.controller/globalAdmin_Teams");
-const { enhanceText, enhanceAssessment, enhanceSurvey } = require("../controllers/globalAdmin.controller/globalAdmin_AI");
+const { enhanceText, enhanceAssessment, enhanceSurvey, createQuestions } = require("../controllers/globalAdmin.controller/globalAdmin_AI");
 
 const router = require("express").Router();
 
@@ -73,7 +73,7 @@ router.route('/getQuestionsRandom/:id').get(getQuestionsRandom)
 router.route('/editQuestion/:id').put(editQuestion)
 router.route('/deleteQuestion/:id').delete(deleteQuestion)
 router.post('/uploadFile', fileUploadMiddleware, fileUploadHandler);
-////
+
 //////////////Global Surveys////////////
 
 router.route('/createSurvey').post(upload.single('thumbnail'),uploadToCloudinary,createSurvey)
@@ -131,5 +131,6 @@ router.route('/enhanceText').post(enhanceText)
 // router.route('/generateImage').post(generateImage)
 router.route('/enhanceSurvey').post(enhanceSurvey)
 router.route('/enhanceAssessment').post(enhanceAssessment)
+router.route('/createQuestions').post(createQuestions)
 
 module.exports = router;

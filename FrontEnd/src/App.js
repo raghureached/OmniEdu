@@ -60,8 +60,6 @@ import AnalyticsView from './pages/globalAdmin/Analyticsview/AnalyticsView';
 import GlobalAdminDashboard from './pages/globalAdmin/GlobalAdminDashboard/GlobalAdminDashboard';
 import GlobalAssessments from './pages/globalAdmin/GlobalAssessments/GlobalAssessments';
 import GlobalModuleManagement from './pages/globalAdmin/GlobalModuleManagement/GlobalModuleManagement';
-// import ModulePreview from './pages/globalAdmin/GlobalModuleManagement/ModulePreview';
-import ModulePreview from './components/Module/ModulePreview';
 import Globalusers from './pages/globalAdmin/Users/Globalusers';
 import FullRichTextEditor, { RichTextEditor } from './pages/globalAdmin/GlobalModuleManagement/RichText';
 import GlobalSurveys from './pages/globalAdmin/GlobalSurveys/GlobalAssessments-survey';
@@ -167,7 +165,7 @@ function App() {
             <Route path="module" element={<GlobalModuleManagement />} />
             <Route path="users" element={<Globalusers />} />
             <Route path="module/:moduleId" element={<GlobalModuleDetail />} />
-            <Route path="module-preview" element={<ModulePreview />} />
+            {/* <Route path="module-preview" element={<ModulePreview />} /> */}
             <Route path="assessments" element={<GlobalAssessments />} />
             <Route path="surveys" element={<GlobalSurveys />} />
             <Route path="assignments" element={<GlobalCreateAssignment />} />
@@ -183,7 +181,6 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<div>Page Not Found</div>} />
           <Route path='test' element={<AssessmentQuiz/>}/>
-          <Route path='module-preview' element={<ModulePreview/>}/>
         </Routes>
       </div>
     </Router>

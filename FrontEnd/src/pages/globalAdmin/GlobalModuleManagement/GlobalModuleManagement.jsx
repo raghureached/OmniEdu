@@ -39,6 +39,7 @@ const GlobalModuleManagement = () => {
     instructions: "",
     externalResource: "",
     enableFeedback: false,
+    thumbnail: "",
   });
   const [uploading, setUploading] = useState(false)
   const navigate = useNavigate()
@@ -152,6 +153,7 @@ const GlobalModuleManagement = () => {
       externalResource: content.externalResource || "",
       enableFeedback: !!content.enableFeedback,
       richText: content.richText || "",
+      thumbnail: content.thumbnail || "",
     });
     setShowEditModal(true);
   };

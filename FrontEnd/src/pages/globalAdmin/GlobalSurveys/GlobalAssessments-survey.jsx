@@ -16,6 +16,7 @@ import {
 
 // import api from '../../../services/api';
 import QuestionsForm from './QuestionsForm-survey';
+import LoadingScreen from '../../../components/common/Loading/Loading';
 const GlobalSurveys = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
@@ -619,7 +620,9 @@ const GlobalSurveys = () => {
       console.error('Failed to delete assessment:', err?.response?.data || err.message);
     }
   };
-
+  if(loading){
+    return <LoadingScreen text="Loading Surveys..."/>
+  }
   return (
     <div className="assess-container">
       {/* Header Section */}
@@ -763,6 +766,13 @@ const GlobalSurveys = () => {
                     </td>
                     <td>
                       <div className="assess-actions">
+                      <button 
+                          className="assess-action-btn delete" 
+                          onClick={() => handleDeleteAssessment(assessment.uuid)}
+                          title="Delete Assessment"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                         <button 
                           className="assess-action-btn edit" 
                           onClick={() => handleEditAssessment(assessment)}
@@ -770,13 +780,7 @@ const GlobalSurveys = () => {
                         >
                           <Edit3 size={14} />
                         </button>
-                        <button 
-                          className="assess-action-btn delete" 
-                          onClick={() => handleDeleteAssessment(assessment.uuid)}
-                          title="Delete Assessment"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        
                       </div>
                     </td>
                   </tr>

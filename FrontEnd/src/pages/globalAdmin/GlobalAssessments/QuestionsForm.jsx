@@ -28,10 +28,12 @@ const QuestionsForm = ({
     handleFileUpload,
     duplicateQuestion,
     groups = [],
+    setQuestions
 }) => {
     // console.log(formData)
     const [step, setStep] = useState(1);
     const [aiProcessing, setAiProcessing] = useState(false);
+    const [creating,setCreating] = useState(false)
     const [passError, setPassError] = useState('');
     // Tags picker state (free-form)
     const [tagInput, setTagInput] = useState('');
@@ -133,11 +135,81 @@ const QuestionsForm = ({
         return isValid;
     };
 
-    // Sections removed: preview will render a single page with all questions
+    const createAIQuestions = async (title) => {
+        try {
+          setCreating(true);
+          const noOfQuestions = prompt("Enter no of questions");
+          if (!noOfQuestions) {
+            setCreating(false);
+            return;
+          }
+      
+          const resp = await api.post('/api/globalAdmin/createQuestions', { title, noOfQuestions });
+          const aiQs = resp?.data?.data?.questions;
+      
+          // Validate
+          if (!Array.isArray(aiQs) || aiQs.length === 0) {
+            alert('AI did not return a valid questions array. Please try again.');
+            setCreating(false);
+            return;
+          }
+      
+          // Normalize fields to what the UI expects
+          const normalized = aiQs.map((q) => ({
+            type: q?.type || 'Multiple Choice',
+            question_text: q?.question_text || '',
+            options: Array.isArray(q?.options) && q.options.length ? q.options : ['', ''],
+            correct_option: Array.isArray(q?.correct_option)
+              ? q.correct_option.filter((n) => Number.isInteger(n))
+              : (Number.isInteger(q?.correct_option) ? [q.correct_option] : []),
+            file_url: typeof q?.file_url === 'string' ? q.file_url : '',
+            instructions: typeof q?.instructions === 'string' ? q.instructions : '',
+            total_points: Number.isFinite(q?.total_points) ? q.total_points : 1,
+            shuffle_options: Boolean(q?.shuffle_options),
+          }));
+      
+          // Update both parent state (source of truth) and formData
+          setQuestions(normalized);
+          setFormData((prev) => ({ ...prev, questions: normalized }));
+        } catch (error) {
+          console.log(error);
+          alert('Failed to generate questions. Please try again.');
+        } finally {
+          setCreating(false);
+        }
+      };
+      const handleCloseForm = () => {
+        setShowForm(false);
+        // Reset questions in parent so the next open starts clean
+        setQuestions([{
+          type: '',
+          question_text: '',
+          options: ['', ''],
+          correct_option: '',
+          file_url: '',
+          instructions: ''
+        }]);
+      
+        // Reset formData fields
+        setFormData({
+          title: '',
+          description: '',
+          tags: [],
+          questions: [],
+          team: '',
+          duration: '',
+          passPercentage: '',
+          isPublished: false,
+          isRecurring: false,
+          assignDate: '',
+          assignTime: '',
+          dueDate: '',
+          dueTime: '',
+          notifyUsers: false,
+          orgIds: []
+        });
+      };
 
-    // Sections removed: no section payload mapping
-
-    // Reset preview state when opening
     React.useEffect(() => {
         if (assessmentPreviewOpen) {
             setPreviewResponses({});
@@ -151,7 +223,7 @@ const QuestionsForm = ({
         }
     }, [questionPreviewIndex]);
 
-    // Sections removed: no initialization needed
+    
 
     return (
         <>
@@ -178,7 +250,7 @@ const QuestionsForm = ({
                                 </p>
                             </div>
                         </div>
-                        <button className="assess-close-btn" onClick={() => setShowForm(false)}>
+                        <button className="assess-close-btn" onClick={() => handleCloseForm() }>
                             <X size={20} />
                         </button>
                         {/* Bottom-of-header progress bar (matches location in screenshot) */}
@@ -360,8 +432,11 @@ const QuestionsForm = ({
 
                                 </div>
 
-                                {/* Sections removed: no top-level section editors */}
+                                <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => createAIQuestions(formData.title, formData.description)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
 
+                                
+                                {creating ? <div>Please Wait...</div> 
+                                :
                                 <div className="assess-questions-container">
                                     {questions.map((q, qIndex) => (
                                         <React.Fragment key={qIndex}>
@@ -729,7 +804,7 @@ const QuestionsForm = ({
                                             {/* Sections removed: no section blocks after questions */}
                                         </React.Fragment>
                                     ))}
-                                </div>
+                                </div>}
                             </div>}
                             {/* next info */}
                             {step === 3 && <div className='assess-form-section'>

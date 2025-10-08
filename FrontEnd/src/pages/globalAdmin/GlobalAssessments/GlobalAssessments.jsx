@@ -725,6 +725,13 @@ const GlobalAssessments = () => {
                     </td>
                     <td>
                       <div className="assess-actions">
+                      <button 
+                          className="assess-action-btn delete" 
+                          onClick={() => handleDeleteAssessment(assessment.uuid)}
+                          title="Delete Assessment"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                         <button 
                           className="assess-action-btn edit" 
                           onClick={() => handleEditAssessment(assessment)}
@@ -732,13 +739,7 @@ const GlobalAssessments = () => {
                         >
                           <Edit3 size={14} />
                         </button>
-                        <button 
-                          className="assess-action-btn delete" 
-                          onClick={() => handleDeleteAssessment(assessment.uuid)}
-                          title="Delete Assessment"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                       
                       </div>
                     </td>
                   </tr>
@@ -814,6 +815,7 @@ const GlobalAssessments = () => {
           handleFileUpload={handleFileUpload}
           duplicateQuestion={duplicateQuestion}
           groups={groups}
+          setQuestions={setQuestions}
         />
       )}
     </div>

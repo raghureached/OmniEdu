@@ -150,5 +150,53 @@ Assessment Title: ${title}
     });
 }
 
+const createQuestions = async(req,res)=>{
+  const { title,noOfQuestions } = req.body;
+  const prompt = `
+You are a helpful assistant for an LMS app. Given the assessment title below, create ${noOfQuestions} questions for it.The type can Multiple Choice or Multi Select
+Return the questions in JSON format as:
+{
+"questions": [
+    {
+      "question_text": "The table below shows the sales of a company over five years (in ₹ lakhs):",
+      "type": "Multiple Choice",
+      "options": [
+        "fjhgd",
+        "djhfdjmsf",
+        "fdsf"
+      ],
+      "correct_option": [0],
+      "instructions": "<h3><strong>Instructions:</strong></h3><ul><li><p>Each question carries equal marks.</p></li><li><p>Choose the most appropriate answer.</p></li><li><p>No negative marking.</p></li></ul><p></p>",
+      "total_points": 1
+    }
+]
+}
+Assessment Title: ${title}
+  `;
+    
+    const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+    });
 
-module.exports = { enhanceText, generateImage, enhanceSurvey,enhanceAssessment };
+    let result = response.text || response.content || response;
+
+    // Clean out code block markers like ```json ... ```
+    result = result.replace(/```json|```/g, "").trim();
+
+    let enhanced;
+    try {
+        enhanced = JSON.parse(result);
+    } catch (e) {
+        console.error("Parsing error:", e);
+        enhanced = { raw: result }; // fallback if not valid JSON
+    }
+
+    return res.status(200).json({
+        isSuccess: true,
+        message: "Text enhanced successfully",
+        data: enhanced,
+    });
+}
+
+module.exports = { enhanceText, generateImage, enhanceSurvey,enhanceAssessment,createQuestions };

@@ -261,81 +261,112 @@ function normalizeCorrectOption(value) {
 // Create a full Assessment with Sections + Question
 
 // Controller for creating assessment
+// Controller for creating assessment (flat questions array, no sections)
 const createAssessment = async (req, res) => {
     try {
       const {
-        title, description, tags, duration, team, subteam,
-        attempts, unlimited_attempts, percentage_to_pass,
-        display_answers, display_answers_when, status,
-        classification, created_by, sections
+        title,
+        description,
+        tags,
+        duration,
+        team,
+        subteam,
+        attempts,
+        unlimited_attempts,
+        percentage_to_pass,
+        display_answers,         // e.g., 'AfterAssessment'
+        display_answers_when,    // kept for backward compatibility
+        status,
+        classification,
+        credits,
+        stars,
+        badges,
+        category,
+        feedbackEnabled,
+        shuffle_questions,
+        shuffle_options,
+        thumbnail_url,
+        questions,
       } = req.body;
   
-      if (!title) return res.status(400).json({ success: false, message: "Title is required" });
-      if (!sections || !Array.isArray(sections)) return res.status(400).json({ success: false, message: "Sections are required" });
-  
-      const sectionIds = [];
-      const parsedSections = typeof sections === "string" ? JSON.parse(sections) : sections;
-  
-      for (let secIndex = 0; secIndex < parsedSections.length; secIndex++) {
-        const section = parsedSections[secIndex];
-        const questionIds = [];
-  
-        for (let qIndex = 0; qIndex < (section.questions || []).length; qIndex++) {
-          const question = section.questions[qIndex];
-  
-          // Map file if uploaded
-          let file_url = null;
-          const fieldName = `sections[${secIndex}][questions][${qIndex}][file]`;
-          if (req.uploadedFiles && req.uploadedFiles[fieldName]) {
-            file_url = req.uploadedFiles[fieldName][0].url; // only 1 file per question
-          }
-  
-          const newQuestion = new GlobalQuestion({
-            question_text: question.question_text,
-            type: question.type,
-            options: question.options || [],
-            correct_option: question.correct_option || [],
-            total_points: question.total_points || 1,
-            instructions: question.instructions || "",
-            shuffle_options: question.shuffle_options || false,
-            file_url,
-          });
-  
-          const savedQuestion = await newQuestion.save();
-          questionIds.push(savedQuestion._id);
-        }
-  
-        const newSection = new GlobalAssesmentSection({
-          title: section.title,
-          description: section.description,
-          questions: questionIds,
-        });
-  
-        const savedSection = await newSection.save();
-        sectionIds.push(savedSection._id);
+      if (!title) {
+        return res.status(400).json({ isSuccess: false, message: 'Title is required' });
+      }
+      const parsedQuestions = typeof questions === 'string' ? JSON.parse(questions) : questions;
+      if (!Array.isArray(parsedQuestions) || parsedQuestions.length === 0) {
+        return res.status(400).json({ isSuccess: false, message: 'Questions are required' });
       }
   
-      const newAssessment = new GlobalAssessments({
-        title, description, tags, duration, team, subteam,
-        attempts, unlimited_attempts, percentage_to_pass,
-        display_answers, display_answers_when, status,
-        classification, created_by, sections: sectionIds,
+      // Save questions
+      const questionIds = [];
+      for (let i = 0; i < parsedQuestions.length; i++) {
+        const q = parsedQuestions[i];
+        if (!q || !q.type || !q.question_text) {
+          return res.status(400).json({ isSuccess: false, message: `Invalid question at index ${i}` });
+        }
+  
+        const normalizedCorrect = normalizeCorrectOption(q.correct_option);
+  
+        const newQuestion = new GlobalQuestion({
+          question_text: String(q.question_text).trim(),
+          type: String(q.type).trim(),
+          options: Array.isArray(q.options) ? q.options : [],
+          correct_option: normalizedCorrect,
+          total_points: Number.isFinite(q.total_points) ? q.total_points : 1,
+          instructions: typeof q.instructions === 'string' ? q.instructions : '',
+          shuffle_options: Boolean(q.shuffle_options),
+          file_url: typeof q.file_url === 'string' ? q.file_url : null,
+        });
+  
+        const savedQ = await newQuestion.save();
+        questionIds.push(savedQ._id);
+      }
+  
+      // Create assessment (flat)
+      const assessment = new GlobalAssessment({
+        title,
+        description: description || '',
+        questions: questionIds,
+        tags: Array.isArray(tags)
+          ? tags
+          : (typeof tags === 'string'
+              ? tags.split(',').map(t => t.trim()).filter(Boolean)
+              : []),
+        duration,
+        team,
+        subteam,
+        attempts,
+        unlimited_attempts: Boolean(unlimited_attempts),
+        percentage_to_pass,
+        display_answers: display_answers ?? display_answers_when,
+        status,
+        classification,
+        created_by,
+        credits,
+        stars,
+        badges,
+        category,
+        feedbackEnabled: Boolean(feedbackEnabled),
+        shuffle_questions: Boolean(shuffle_questions),
+        shuffle_options: Boolean(shuffle_options),
+        thumbnail_url: typeof thumbnail_url === 'string' ? thumbnail_url : undefined,
       });
   
-      const savedAssessment = await newAssessment.save();
+      await assessment.save();
+      const populated = await GlobalAssessment.findById(assessment._id).populate('questions');
   
-      const populatedAssessment = await GlobalAssessments.findById(savedAssessment._id)
-        .populate({ path: "sections", populate: { path: "questions" } });
-  
-      res.status(201).json({
-        success: true,
-        message: "Assessment created successfully",
-        assessment: populatedAssessment,
+      return res.status(201).json({
+        isSuccess: true,
+        message: 'Assessment created successfully',
+        data: populated,
       });
-  
     } catch (error) {
-      console.error("Error creating assessment:", error);
-      res.status(500).json({ success: false, message: "Failed to create assessment", error: error.message });
+      console.error('Error creating assessment:', error);
+      return res.status(500).json({
+        isSuccess: false,
+        message: 'Failed to create assessment',
+        error: error.message
+      });
     }
   };
   
