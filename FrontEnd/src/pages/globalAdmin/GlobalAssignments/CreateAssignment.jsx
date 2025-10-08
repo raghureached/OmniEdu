@@ -4,7 +4,7 @@ import AddOrgDateRangePickerSingle from '../../../components/common/CustomDatePi
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchContent } from '../../../store/slices/contentSlice';
 import { createGlobalAssignment } from '../../../store/slices/globalAssignmentSlice';
-import { fetchGlobalAssessments } from '../../../store/slices/globalAssessmentSlice';
+import { fetchGlobalAssessments, updateGlobalAssessment } from '../../../store/slices/globalAssessmentSlice';
 import { fetchOrganizations } from '../../../store/slices/organizationSlice';
 import { fetchSurveys } from '../../../store/slices/surveySlice';
 import { ChevronLeft, ChevronRight, Filter, Plus, Search, X } from 'lucide-react';
@@ -69,10 +69,23 @@ const GlobalCreateAssignment = () => {
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        formData.orgIds = selectedOrgs
-        dispatch(createGlobalAssignment(formData));
+        formData.orgIds = selectedOrgs;
+        try {
+            // Create the assignment first
+            await dispatch(createGlobalAssignment(formData)).unwrap();
+            // If the content is an Assessment, publish it
+            if (formData.contentType === 'Assessment' && formData.contentId) {
+                const id = formData.contentId; // uuid
+                await dispatch(updateGlobalAssessment({ id, data: { status: 'Published' } })).unwrap();
+                // Optionally refresh assessments list
+                dispatch(fetchGlobalAssessments());
+            }
+        } catch (err) {
+            // swallow here; existing slice handles error state
+            console.error('Create assignment or publish failed', err);
+        }
         setFormData({
             contentType: '',
             contentId: '',

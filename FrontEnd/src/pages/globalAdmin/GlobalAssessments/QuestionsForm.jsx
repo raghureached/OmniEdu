@@ -4,6 +4,7 @@ import api from '../../../services/api.js';
 import './QuestionsForm.css';
 import '../GlobalSurveys/QuestionsForm-survey.css';
 import RichText from './RichTextSurvey.jsx';
+import PreviewCard from '../../../components/common/PreviewCard/PreviewCard.jsx';
 
 const QuestionsForm = ({
     currentAssessment,
@@ -50,6 +51,9 @@ const QuestionsForm = ({
     // Sections removed: assessments are now flat (questions only)
 
     // Section helpers and actions removed
+
+    // Categories for Category select. Replace with API/Redux source if available.
+    const categories = useRef(['General', 'Quiz', 'Exam', 'Practice']).current;
 
     // Derive sub-teams for the selected team
     const selectedTeam = groups.find(t => String(t._id) === String(formData.team));
@@ -259,7 +263,7 @@ const QuestionsForm = ({
                                         </div>
                                     </div>
 
-                                    <div className="assess-form-group">
+                                    <div className="assess-form-group" style={{marginBottom:"15px"}}>
                                         <label className="assess-form-label">Description<span className="assess-required">*</span></label>
                                         <textarea
                                             className="assess-form-textarea"
@@ -273,7 +277,7 @@ const QuestionsForm = ({
 
 
                                     {/* Thumbnail upload */}
-                                    <div className="assess-form-group">
+                                    <div className="assess-form-group" style={{marginTop:"60px"}}>
                                         <label className="assess-form-label">Thumbnail</label>
 
                                         {formData.thumbnail_url ? (
@@ -335,38 +339,14 @@ const QuestionsForm = ({
                                         )}
                                     </div>
 
-                                    {/* Thumbnail preview overlay modal */}
+                                    {/* Thumbnail preview card */}
                                     {thumbPreviewOpen && formData.thumbnail_url && (
-                                        <div className="assess-file-preview-overlay" onClick={(e) => { if (e.target === e.currentTarget) setThumbPreviewOpen(false); }}>
-                                            <div className="assess-file-preview-modal">
-                                                <div className="assess-file-preview-header">
-                                                    <span className="assess-file-preview-title">File Preview</span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setThumbPreviewOpen(false)}
-                                                        aria-label="Close file preview"
-                                                        className="assess-file-preview-close"
-                                                    >
-                                                        <X size={18} />
-                                                    </button>
-                                                </div>
-                                                <div className="assess-file-preview-body">
-                                                    {(
-                                                        (formData.thumbnail_file && typeof formData.thumbnail_file.type === 'string' && formData.thumbnail_file.type.startsWith('image/'))
-                                                        || /\.(jpeg|jpg|png|gif|webp)$/i.test(String(formData.thumbnail_url || ''))
-                                                        || String(formData.thumbnail_url || '').startsWith('blob:')
-                                                    ) ? (
-                                                        <img src={resolveUrl(formData.thumbnail_url)} alt="Thumbnail Preview" />
-                                                    ) : (
-                                                        <div>
-                                                            <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: 6 }}>
-                                                                Preview available only for images.
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <PreviewCard
+                                            imageUrl={resolveUrl(formData.thumbnail_url)}
+                                            title={formData.title}
+                                            description={formData.description}
+                                            onClose={() => setThumbPreviewOpen(false)}
+                                        />
                                     )}
 
 
@@ -387,7 +367,7 @@ const QuestionsForm = ({
                                         <React.Fragment key={qIndex}>
                                             <div className="assess-question-card">
                                                 <div className="assess-question-header">
-                                                    <span className="assess-question-number">Question {qIndex + 1} of {questions.length}</span>
+                                                    <span className="assess-question-number">Question {qIndex + 1} </span>
                                                     <div style={{ display: 'flex', gap: 8 }}>
                                                         <button
                                                             type="button"
@@ -550,9 +530,8 @@ const QuestionsForm = ({
                                                 {previewOpen[qIndex] && (
                                                     <div className="assess-file-preview-overlay" onClick={(e) => { if (e.target === e.currentTarget) setPreviewOpen(prev => ({ ...prev, [qIndex]: false })); }}>
                                                         <div className="assess-file-preview-modal">
-                                                            <div className="assess-file-preview-header">
-                                                                <span className="assess-file-preview-title">File Preview</span>
-                                                                <button
+                                                            
+                                                        <button
                                                                     type="button"
                                                                     onClick={() => setPreviewOpen(prev => ({ ...prev, [qIndex]: false }))}
                                                                     aria-label="Close file preview"
@@ -560,8 +539,8 @@ const QuestionsForm = ({
                                                                 >
                                                                     <X size={18} />
                                                                 </button>
-                                                            </div>
                                                             <div className="assess-file-preview-body">
+
                                                                 {q.file_url ? (
                                                                     <>
                                                                         {q.file_url.match(/\.(jpeg|jpg|png|gif)$/i) && (
@@ -800,9 +779,9 @@ const QuestionsForm = ({
                                                         unlimited_attempts: true,
                                                         attempts: 100,
                                                         // If display answers is enabled and unlimited is chosen, default to AfterPassing
-                                                        display_answers_when: formData.display_answers
+                                                        display_answers: formData.display_answers
                                                             ? 'AfterPassing'
-                                                            : formData.display_answers_when,
+                                                            : formData.display_answers,
                                                     });
                                                 } else {
                                                     // Limited attempts
@@ -912,20 +891,136 @@ const QuestionsForm = ({
                                         </label>
                                         <select
                                             className="assess-form-select"
-                                            value={formData.display_answers_when || ''}
-                                            onChange={e => setFormData({ ...formData, display_answers_when: e.target.value })}
+                                            value={formData.display_answers || ''}
+                                            onChange={e => setFormData({ ...formData, display_answers: e.target.value })}
                                             disabled={!formData.display_answers}
                                         >
                                             <option value="">Select when to display</option>
                                             <option value="AfterAssessment">After submission</option>
                                             <option value="AfterPassing">After passing</option>
-                                            {/* <option value="AfterDueDate">After due date</option> */}
-                                            {/* <option value="Always">Always</option> */}
                                             <option value="Never">Never</option>
                                         </select>
                                     </div>
                                 </div>
+                                {/* adding new fileds */}
+                                <div className="assess-form-grid">
+                                <div className='assess-form-group'>
+                                    <label className="assess-form-label">
+                                        Credits<span className="assess-required">*</span>
+                                    </label>
+                                    <select name="credits" id="" value={Number.isFinite(formData.credits) ? formData.credits : 0} onChange={(e) => setFormData({ ...formData, credits: parseInt(e.target.value, 10) || 0 })} className='assess-form-input' >
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                    </select>
+                                </div>
+                                <div className='assess-form-group'>
+                                    <label className="assess-form-label">
+                                        Stars<span className="assess-required">*</span>
+                                    </label>
 
+                                    <select name="stars" id="" value={Number.isFinite(formData.stars) ? formData.stars : 0} onChange={(e) => setFormData({ ...formData, stars: parseInt(e.target.value, 10) || 0 })} className='assess-form-input' >
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                    </select>
+                                </div>
+                               
+                                </div>
+                                <div className='assess-form-grid'>
+                                <div className='assess-form-group'>
+                                    <label className="assess-form-label">
+                                        Badges<span className="assess-required">*</span>
+                                    </label>
+                                    {/* <span className="slider-value">{newContent.badges || 0}</span> */}
+                                    <select name="badges" id="" value={Number.isFinite(formData.badges) ? formData.badges : 0} onChange={(e) => setFormData({ ...formData, badges: parseInt(e.target.value, 10) || 0 })} className='assess-form-input' >
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                    </select>
+                                </div>
+                                <div className='assess-form-group'>
+                                    <label className="assess-form-label">
+                                        Category <span className="assess-required">*</span>
+                                    </label>
+                                    <select
+                                        name="category"
+                                        value={formData.category || ''}
+                                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                        className="assess-form-input"
+                                        required
+                                        
+                                    >
+                                        <option value="">Select Category</option>
+                                        {categories.map((cat) => (
+                                            <option key={cat} value={cat}>
+                                                {cat}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                </div>
+                               
+                                <div className="assess-form-group">
+                                <label className="assess-form-label module-overlay__checkbox">
+                                    <input
+                                        type="checkbox"
+                                        name="feedbackEnabled"
+                                        checked={!!formData.feedbackEnabled}
+                                        onChange={(e) => setFormData({ ...formData, feedbackEnabled: e.target.checked })}
+                                    />
+                                    Allow learners to submit feedback and reactions
+                                </label>
+                            </div>
+                           
+                           
+                            <div className="assess-form-group">
+                           
+                            <label className="assess-form-label">
+                                           
+                                </label>
+                                <label className="assess-form-label module-overlay__checkbox">
+                                    <input
+                                        type="checkbox"
+                                        name="shuffle_questions"
+                                        checked={!!formData.shuffle_questions}
+                                        onChange={(e) => setFormData({ ...formData, shuffle_questions: e.target.checked })}
+                                    />
+                                    Shuffle questions (randomize question order per student/attempt)
+                                </label>
+                            </div>
+                            <div className="assess-form-group">
+                                <label className="assess-form-label module-overlay__checkbox">
+                                    <input
+                                        type="checkbox"
+                                        name="shuffle_options"
+                                        checked={!!formData.shuffle_options}
+                                        onChange={(e) => setFormData({ ...formData, shuffle_options: e.target.checked })}
+                                    />
+                                    Shuffle options (randomize choices order per student/attempt)
+                                </label>
+                            </div>
 
                             </div>}
 
@@ -954,15 +1049,12 @@ const QuestionsForm = ({
                                                         if (step !== 1) setStep(1);
                                                         return;
                                                     }
-                                                    // Force status to Draft, then trigger save/update
-                                                    setFormData(prev => ({ ...prev, status: 'Draft' }));
-                                                    setTimeout(() => {
-                                                        if (currentAssessment) {
-                                                            handleUpdateAssessment();
-                                                        } else {
-                                                            handleSaveAssessment();
-                                                        }
-                                                    }, 0);
+                                                    // Save/Update explicitly as Draft
+                                                    if (currentAssessment) {
+                                                        handleUpdateAssessment('Draft');
+                                                    } else {
+                                                        handleSaveAssessment(undefined, 'Draft');
+                                                    }
                                                 }}
                                                 title="Save this assessment as Draft"
                                             >
@@ -977,10 +1069,11 @@ const QuestionsForm = ({
                                                         if (step !== 1) setStep(1);
                                                         return;
                                                     }
+                                                    // Create/Update explicitly as Saved
                                                     if (currentAssessment) {
-                                                        handleUpdateAssessment();
+                                                        handleUpdateAssessment('Saved');
                                                     } else {
-                                                        handleSaveAssessment();
+                                                        handleSaveAssessment(undefined, 'Saved');
                                                     }
                                                 }}
                                             >

@@ -28,7 +28,7 @@ const GlobalAssessments = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    status: 'Draft',
+    status: '',
     duration: '',            // NEW
     tags: [],                // NEW
     team: '',  
@@ -36,8 +36,21 @@ const GlobalAssessments = () => {
     attempts: 1,             // NEW
     unlimited_attempts: false,
     percentage_to_pass: 0,   // NEW
-    display_answers: true,
-    display_answers_when: 'AfterAssessment',
+   
+    display_answers: 'AfterAssessment',
+    // Newly added fields for assessments
+    credits: 0,
+    stars: 0,
+    badges: 0,
+    category: '',
+    feedbackEnabled: false,
+   
+    // Shuffle controls
+    shuffle_questions: false,
+    shuffle_options: false,
+    // Assessment thumbnail (UI preview + server URL)
+    thumbnail_url: '',
+    thumbnail_file: null,
   });
   const [questions, setQuestions] = useState([{
     type: '',
@@ -71,7 +84,7 @@ const GlobalAssessments = () => {
     setFormData({
       title: '',
       description: '',
-      status: 'Draft',
+      status: 'Saved',
       duration: '',            // NEW
       tags: [],                // NEW
       team: '',                // NEW
@@ -79,8 +92,21 @@ const GlobalAssessments = () => {
       attempts: 1,             // NEW
       unlimited_attempts: false,
       percentage_to_pass: 0,   // NEW
-      display_answers: true,
-      display_answers_when: 'AfterAssessment',
+      
+      display_answers: 'AfterAssessment',
+      // Newly added fields
+      credits: 0,
+      stars: 0,
+      badges: 0,
+      category: '',
+      feedbackEnabled: false,
+      
+      // Shuffle controls
+      shuffle_questions: false,
+      shuffle_options: false,
+      // Thumbnail reset
+      thumbnail_url: '',
+      thumbnail_file: null,
     });
     setQuestions([{
       type: '',
@@ -159,7 +185,7 @@ const GlobalAssessments = () => {
       setFormData({
         title: full.title || '',
         description: full.description || '',
-        status: full.status || 'Draft',
+        status: full.status || 'Saved',
         duration: full.duration || '',
         tags: full.tags || [],
         team: full.team || '',
@@ -167,10 +193,22 @@ const GlobalAssessments = () => {
         attempts: full.attempts ?? 1,
         unlimited_attempts: !!full.unlimited_attempts,
         percentage_to_pass: full.percentage_to_pass ?? 0,
+      
         display_answers:
-          typeof full.display_answers === 'boolean' ? full.display_answers : true,
-        display_answers_when:
-          full.display_answers_when || 'AfterAssessment',
+          full.display_answers || 'AfterAssessment',
+        // Newly added fields
+        credits: Number.isFinite(full.credits) ? full.credits : 0,
+        stars: Number.isFinite(full.stars) ? full.stars : 0,
+        badges: Number.isFinite(full.badges) ? full.badges : 0,
+        category: full.category || '',
+        feedbackEnabled: !!full.feedbackEnabled,
+       
+        // Shuffle controls
+        shuffle_questions: !!full.shuffle_questions,
+        shuffle_options: !!full.shuffle_options,
+        // Thumbnail (prefer explicit thumbnail_url, fallback to thumbnail)
+        thumbnail_url: full.thumbnail_url || full.thumbnail || '',
+        thumbnail_file: null,
       });
 
       // Prefer sections->questions if present; fallback to legacy top-level questions
@@ -189,13 +227,13 @@ const GlobalAssessments = () => {
               correct_option: Array.isArray(q.correct_option) ? q.correct_option : (Number.isInteger(q.correct_option) ? [q.correct_option] : []),
               file_url: q.file_url || '',
               instructions: q.instructions || '',
-              shuffle_options: Boolean(q.shuffle_options),
+             
               total_points: Number.isFinite(q.total_points) ? q.total_points : 1,
             });
           });
           countSoFar += qs.length;
         });
-        setQuestions(flatQs.length ? flatQs : [{ type: '', question_text: '', options: [''], correct_option: '', file_url: '' }]);
+        setQuestions(flatQs.length ? flatQs : [{ type: '', question_text: '', options: [''], correct_option: '', file_url: '', instructions:'' }]);
       } else {
         const mappedQuestions = Array.isArray(full.questions)
           ? full.questions.map(q => ({
@@ -207,12 +245,12 @@ const GlobalAssessments = () => {
               correct_option: Array.isArray(q.correct_option) ? q.correct_option : (Number.isInteger(q.correct_option) ? [q.correct_option] : []),
               file_url: q.file_url || '',
               instructions: q.instructions || '',
-              shuffle_options: Boolean(q.shuffle_options)
+              
             }))
           : [];
         setQuestions(mappedQuestions.length
           ? mappedQuestions
-          : [{ type: '', question_text: '', options: [''], correct_option: '', file_url: '' }]);
+          : [{ type: '', question_text: '', options: [''], correct_option: '', file_url: '', instructions:'' }]);
       }
       setShowForm(true);
     } catch (e) {
@@ -222,7 +260,7 @@ const GlobalAssessments = () => {
       setFormData({
         title: assessment.title || '',
         description: assessment.description || '',
-        status: assessment.status || 'Draft',
+        status: assessment.status || 'Saved',
         duration: assessment.duration || '',
         tags: assessment.tags || [],
         team: assessment.team || '',
@@ -230,17 +268,29 @@ const GlobalAssessments = () => {
         attempts: assessment.attempts ?? 1,
         unlimited_attempts: !!assessment.unlimited_attempts,
         percentage_to_pass: assessment.percentage_to_pass ?? 0,
+       
         display_answers:
-          typeof assessment.display_answers === 'boolean' ? assessment.display_answers : true,
-        display_answers_when:
-          assessment.display_answers_when || 'AfterAssessment',
+          assessment.display_answers || 'AfterAssessment',
+        // Newly added fields
+        credits: Number.isFinite(assessment.credits) ? assessment.credits : 0,
+        stars: Number.isFinite(assessment.stars) ? assessment.stars : 0,
+        badges: Number.isFinite(assessment.badges) ? assessment.badges : 0,
+        category: assessment.category || '',
+        feedbackEnabled: !!assessment.feedbackEnabled,
+     
+        // Shuffle controls
+        shuffle_questions: !!assessment.shuffle_questions,
+        shuffle_options: !!assessment.shuffle_options,
+        // Thumbnail (fallback)
+        thumbnail_url: assessment.thumbnail_url || assessment.thumbnail || '',
+        thumbnail_file: null,
       });
       setQuestions([{ type: '', question_text: '', options: ['', ''], correct_option: '', file_url: '', instructions: '', shuffle_options: false }]);
       setShowForm(true);
     }
   };
 
-  const handleSaveAssessment = async (e) => {
+  const handleSaveAssessment = async (e, statusOverride) => {
     if (e && typeof e.preventDefault === 'function') {
       e.preventDefault();
     }
@@ -253,6 +303,19 @@ const GlobalAssessments = () => {
       return (Math.max(0, hh) * 60) + Math.max(0, Math.min(59, mm));
     };
 
+    // Resolve thumbnail URL to send (upload if local file)
+    let resolvedThumbUrl = formData.thumbnail_url || '';
+    try {
+      if (formData.thumbnail_file && typeof formData.thumbnail_url === 'string' && formData.thumbnail_url.startsWith('blob:')) {
+        const uploaded = await dispatch(uploadAssessmentFile(formData.thumbnail_file)).unwrap();
+        if (uploaded) {
+          resolvedThumbUrl = uploaded;
+        }
+      }
+    } catch (thumbErr) {
+      console.error('Thumbnail upload failed', thumbErr?.response?.data || thumbErr.message);
+    }
+
     const payload = {
       title: formData.title,
       description: formData.description,
@@ -263,9 +326,21 @@ const GlobalAssessments = () => {
       attempts: formData.attempts,
       unlimited_attempts: Boolean(formData.unlimited_attempts),
       percentage_to_pass: formData.percentage_to_pass,
-      display_answers_when: formData.display_answers ? (formData.display_answers_when || 'AfterAssessment') : 'Never',
-      status: formData.status || 'Draft',
+      display_answers: formData.display_answers ,
+      status: statusOverride ?? (formData.status || 'Saved'),
       created_by: authUser?._id || authUser?.uuid || authUser?.id,
+      // Newly added fields
+      credits: Number.isFinite(formData.credits) ? formData.credits : 0,
+      stars: Number.isFinite(formData.stars) ? formData.stars : 0,
+      badges: Number.isFinite(formData.badges) ? formData.badges : 0,
+      category: formData.category || '',
+      feedbackEnabled: Boolean(formData.feedbackEnabled),
+    
+      // Shuffle controls
+      shuffle_questions: Boolean(formData.shuffle_questions),
+      shuffle_options: Boolean(formData.shuffle_options),
+      // Thumbnail URL (server path)
+      thumbnail_url: resolvedThumbUrl || '',
       // Flat questions payload (sections removed)
       questions: questions.map(q => {
         // Normalize correct_option to array of integers
@@ -287,6 +362,7 @@ const GlobalAssessments = () => {
           options: q.options,
           correct_option: correct,
           file_url: q.file_url ,
+          instructions: q.instructions || '',
           total_points: Number.isFinite(q.total_points) ? q.total_points : 1,
         };
       })
@@ -301,12 +377,25 @@ const GlobalAssessments = () => {
     }
   };
 
-  const handleUpdateAssessment = async () => {
+  const handleUpdateAssessment = async (statusOverride) => {
       // Build data for update (questions are not updated by edit endpoint)
+      // Resolve thumbnail URL (upload if local file)
+      let resolvedThumbUrl = formData.thumbnail_url || '';
+      try {
+        if (formData.thumbnail_file && typeof formData.thumbnail_url === 'string' && formData.thumbnail_url.startsWith('blob:')) {
+          const uploaded = await dispatch(uploadAssessmentFile(formData.thumbnail_file)).unwrap();
+          if (uploaded) {
+            resolvedThumbUrl = uploaded;
+          }
+        }
+      } catch (thumbErr) {
+        console.error('Thumbnail upload failed', thumbErr?.response?.data || thumbErr.message);
+      }
+
       const data = {
         title: formData.title,
         description: formData.description,
-        status: formData.status,
+        status: statusOverride ?? formData.status,
         tags: Array.isArray(formData.tags) ? formData.tags : [],
         duration: formData.duration,
         team: formData.team,
@@ -314,8 +403,20 @@ const GlobalAssessments = () => {
         attempts: formData.attempts,
         unlimited_attempts: Boolean(formData.unlimited_attempts),
         percentage_to_pass: formData.percentage_to_pass,
-        display_answers: Boolean(formData.display_answers),
-        display_answers_when: formData.display_answers ? (formData.display_answers_when || 'AfterAssessment') : 'Never',
+       
+        display_answers: formData.display_answers ,
+        // Newly added fields
+        credits: Number.isFinite(formData.credits) ? formData.credits : 0,
+        stars: Number.isFinite(formData.stars) ? formData.stars : 0,
+        badges: Number.isFinite(formData.badges) ? formData.badges : 0,
+        category: formData.category || '',
+        feedbackEnabled: Boolean(formData.feedbackEnabled),
+      
+        // Shuffle controls
+        shuffle_questions: Boolean(formData.shuffle_questions),
+        shuffle_options: Boolean(formData.shuffle_options),
+        // Thumbnail URL (server path)
+        thumbnail_url: resolvedThumbUrl || '',
         // Send questions with identifiers so backend can update GlobalQuestion
         questions: questions.map(q => {
           // Normalize correct_option to array of integers
@@ -339,7 +440,7 @@ const GlobalAssessments = () => {
             correct_option: correct,
             file_url: q.file_url || null,
             instructions: q.instructions || '',
-            shuffle_options: Boolean(q.shuffle_options)
+           
           };
         })
       };
@@ -367,7 +468,7 @@ const GlobalAssessments = () => {
       correct_option: '',
       file_url: '',
       instructions: '',
-      shuffle_options: false
+     
     }]);
   };
 
@@ -380,7 +481,7 @@ const GlobalAssessments = () => {
         correct_option: '',
         file_url: '',
         instructions: '',
-        shuffle_options: false
+       
       };
       const idx = Math.max(0, Math.min((afterIndex ?? prev.length - 1) + 1, prev.length));
       return [
@@ -433,7 +534,7 @@ const GlobalAssessments = () => {
           : (Number.isInteger(q.correct_option) ? q.correct_option : ''),
         file_url: q.file_url || '',
         instructions: q.instructions || '',
-        shuffle_options: Boolean(q.shuffle_options)
+       
       };
       return [
         ...arr.slice(0, index + 1),

@@ -492,7 +492,7 @@ const getAssessments = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 50;
-        const assessments = await GlobalAssessment.find().skip((page - 1) * limit).limit(limit).populate("sections")
+        const assessments = await GlobalAssessment.find().skip((page - 1) * limit).limit(limit).populate("questions")
         return res.status(200).json({
             isSuccess: true,
             message: "Assessments fetched successfully",

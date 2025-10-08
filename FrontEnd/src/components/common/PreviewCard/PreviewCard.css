@@ -1,0 +1,85 @@
+.previewcard-container {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, .6);
+    z-index: 9999;
+    padding: 24px
+}
+
+.previewcard-card {
+    width: min(450px, 50vw);
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(2, 6, 23, .2);
+    overflow: hidden;
+    position: relative
+}
+
+.previewcard-close {
+    position: absolute;
+    right: 9px;
+    background: transparent; /* no background */
+    color: #565a64; /* plain X color */
+    border: none; /* no border */
+    border-radius: 0; /* no rounded chip */
+    padding: 0; /* tighten click area visually */
+    cursor: pointer;
+    font-size: 25px; /* slightly larger X */
+    line-height: 1
+}
+
+.previewcard-close:hover { color: #ef4444; }
+.previewcard-close:focus { outline: none; box-shadow: none; }
+
+.previewcard-imageWrap {
+    background: #ffffff;;
+    border-bottom: 1px solid #ffffff;; /* clear separation from content */
+    padding: 20px; /* a bit more breathing room */
+    height: 260px; /* fixed preview box */
+    display: flex; /* center the image */
+    align-items: center;
+    justify-content: center;
+}
+
+
+.previewcard-image{
+    width: 100%;
+    height: 100%;
+    /* object-fit: contain; */
+     /* auto-fit without cropping */
+    border-radius: 6px;
+    border: 1px solid #d9e1e8;
+}
+
+.previewcard-image.placeholder {
+    height: 260px; /* match fixed image height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    background: #eef2ff;
+    border-radius: 12px
+}
+
+.previewcard-content {
+    
+    padding-bottom: 22px;
+   padding-left: 26px;
+   padding-right: 26px;
+    background: #fff;
+}
+
+.previewcard-title {
+    margin: 0 0 8px 0;
+    font-size: 22px;
+    color: #0f172a
+}
+
+.previewcard-description {
+    margin: 0;
+    color: #64748b;
+    font-size: 15px
+}

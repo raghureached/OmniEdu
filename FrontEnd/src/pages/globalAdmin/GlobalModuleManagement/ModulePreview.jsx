@@ -1,890 +1,323 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Play, FileText, Clock, Award, Tag, Globe, 
-  Download, X, Star, Users, BookOpen, Target, 
-  CheckCircle, MessageCircle, ExternalLink, Zap,
-  TrendingUp, Shield, Infinity,
-  Stars,
-  Coins
-} from 'lucide-react';
 
-const ModulePreview = ({ moduleData, onClose }) => {
-  const [isVisible, setIsVisible] = useState(false);
+import { useState } from 'react';
+import './ModulePreview.css';
+
+const ModulePreview = ({ isOpen = true, isPreview = true, onClose = () => { }, moduleData }) => {
   const [activeTab, setActiveTab] = useState('overview');
-  console.log(moduleData)
-  useEffect(() => {
-    setIsVisible(true);
-    document.body.style.overflow = 'hidden';
-    return () => (document.body.style.overflow = 'auto');
-  }, []);
+  const [viewTab, setViewTab] = useState('module'); // 'module' | 'resources'
+  const readOnly = !!isPreview; // preview mode => disable learner actions
+  // normalize helpers
+  const hasArray = (arr) => Array.isArray(arr) && arr.length > 0;
+  const hasText = (v) => typeof v === 'string' && v.trim().length > 0;
+  //   "trainingType": "Continuous Learning",
+  //   "category": "Product Knowledge",
+  //   "badges": "1",
+  //   "stars": "1",
+  //   "enableFeedback": false,
+  //   "externalResource": "https://www.youtube.com/embed/ohIAiuHMKMI?si=MivGl4sZwXS7lIzJ",
+  //   "description": "Embark on an illuminating journey into the core principles that govern our physical world. This comprehensive module systematically explores the fundamental laws of mechanics, thermodynamics, electricity, magnetism, waves, and an introduction to modern physics. Through engaging concepts, practical applications, and problem-solving exercises, you will develop a deep understanding of phenomena ranging from everyday observations to the grand scale of the cosmos. Cultivate critical thinking, analytical reasoning, and scientific inquiry skills essential for academic success and real-world innovation.",
+  //   "learning_outcomes": [
+  //     "Explain and apply fundamental principles of classical mechanics, including motion, forces, and energy.",
+  //     "Describe and analyze concepts related to heat, temperature, and the laws of thermodynamics.",
+  //     "Understand the principles of electricity, magnetism, and their interrelationship (electromagnetism).",
+  //     "Solve quantitative problems using appropriate physical laws, equations, and mathematical reasoning.",
+  //     "Develop critical thinking skills to analyze and interpret various physical phenomena and scientific data."
+  //   ],
+  //   "credits": 2,
+  //   "duration": 7,
+  //   "prerequisites": ["Basic Physics"],
+  //   "instructions": "Please complete the assignment",
+  //   "submissionEnabled": false,
+  //   "feedbackEnabled": true,
+  //   "thumbnail": "https://res.cloudinary.com/dwcuayp2u/image/upload/v1759721460/thumbnail/wjxvwjaif2l4qobuixws.png",
+  //   "status": "Saved"
+  // };
 
-  const handleClose = () => {
-    setIsVisible(false);
-    setTimeout(onClose, 300);
-  };
-
-  if (!moduleData) return null;
-
-  const renderStars = (rating) => {
-    const starsCount = Number(rating) || 0;
-    return (
-      <div className="rating-display">
-        <span className="rating-number">{starsCount.toFixed(1)}</span>
-        <div className="stars-wrapper">
-          {Array.from({ length: 5 }, (_, i) => (
-            <Star 
-              key={i} 
-              size={16}
-              className={i < starsCount ? 'star-filled' : 'star-empty'}
-              fill={i < starsCount ? '#f5c518' : 'none'}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  // Normalize prerequisites into an array regardless of backend shape (string or array)
-  const prerequisitesList = Array.isArray(moduleData.prerequisites)
-    ? moduleData.prerequisites
-    : typeof moduleData.prerequisites === 'string'
-      ? moduleData.prerequisites.split(',').map((s) => s.trim()).filter(Boolean)
-      : [];
+  if (!isOpen) return null;
 
   return (
-    <div className={`mp-modal-overlay ${isVisible ? 'mp-visible' : ''}`}>
-      <div className={`mp-modal-container ${isVisible ? 'mp-visible' : ''}`}>
-        
-        {/* Close Button */}
-        <button onClick={handleClose} className="mp-close-btn">
-          <X size={24} />
-        </button>
-
-        {/* Hero Section */}
-        <div className="mp-hero-section">
-          <div className="mp-hero-content">
-            <div className="mp-breadcrumb">
-              <span>{moduleData.team?.name || 'Training'}</span>
-              <span className="mp-separator">›</span>
-              <span style={{fontWeight:600}}>{moduleData.trainingType}</span>
+    <div className="module-modal-overlay" onClick={onClose}>
+      <div className="module-modal-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="module-preview-container">
+          {/* Header (match Assessment style) */}
+          <div className="module-preview-header">
+            <button className="module-close-btn" title="Close" onClick={onClose}>✕</button>
+            <div className="module-header-flex">
+              <div className="module-header-left">
+                {/* <h1 className="module-header-title">Module Preview</h1> */}
+              </div>
+              <div className="module-header-right">
+                <div className="module-switch-group">
+                  <button
+                    className={`module-switch-btn ${viewTab === 'module' ? 'is-active' : ''}`}
+                    onClick={() => setViewTab('module')}
+                    title="Module Details"
+                  >
+                    📘 Module
+                  </button>
+                  <button
+                    className={`module-switch-btn ${viewTab === 'resources' ? 'is-active' : ''}`}
+                    onClick={() => setViewTab('resources')}
+                    title="Resources"
+                  >
+                    📎 Resources
+                  </button>
+                </div>
+              </div>
             </div>
-            
-            <h1 className="mp-title">{moduleData.title}</h1>
-            
-            <p className="mp-subtitle">{moduleData.description}</p>
-            
-            <div className="mp-meta-bar">
-              {/* {renderStars(moduleData.stars)} */}
-              {/* <span className="mp-divider">|</span> */}
-                {/* <div className="mp-meta-item">
-                  <Users size={18} />
-                  <span>{moduleData.team?.members?.length || 0} enrolled</span>
-                </div> */}
-              {/* <span className="mp-divider">|</span> */}
-              <div className="mp-meta-item">
-                <Clock size={18} />
-                <span style={{fontWeight:600}}>{moduleData.duration} mins</span>
+          </div>
+
+          {/* Body */}
+          <div className="module-preview-content">
+            {/* Title row with right-side thumbnail card */}
+            <div className="module-title-section module-title-row">
+              <div className="module-title-col">
+                <h1 className="module-title">{moduleData.title}</h1>
+                <div className="module-quick-info">
+                  {moduleData.duration ? (
+                    <div className="module-info-item">
+                      <span className="module-info-icon">⏱️</span>
+                      <span className="module-info-text">{moduleData.duration} mins</span>
+                    </div>
+                  ) : null}
+                  {moduleData.credits ? (
+                    <div className="module-info-item">
+                      <span className="module-info-icon">🎓</span>
+                      <span className="module-info-text">{moduleData.credits} credits</span>
+                    </div>
+                  ) : null}
+                  {(moduleData.stars) || typeof moduleData.stars === 'number' ? (
+                    <div className="module-info-item">
+                      <span className="module-info-icon">⭐</span>
+                      <span className="module-info-text">{moduleData.stars} stars</span>
+                    </div>
+                  ) : null}
+                  {(moduleData.badges) || typeof moduleData.badges === 'number' ? (
+                    <div className="module-info-item">
+                      <span className="module-info-icon">🏆</span>
+                      <span className="module-info-text">{moduleData.badges} badge</span>
+                    </div>
+                  ) : null}
+                  {(moduleData.category) ? (
+                    <div className="module-info-item">
+                      <span className="module-info-icon">📂</span>
+                      <span className="module-info-text">{moduleData.category}</span>
+                    </div>
+                  ) : null}
+                  {(moduleData.trainingType) ? (
+                    <div className="module-info-item">
+                      <span className="module-info-icon">🧭</span>
+                      <span className="module-info-text">{moduleData.trainingType}</span>
+                    </div>
+                  ) : null}
+                  {(moduleData?.team?.name) ? (
+                    <div className="module-info-item">
+                      <span className="module-info-icon">👥</span>
+                      <span className="module-info-text">{moduleData.team.name}</span>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+              <div className="module-image-card">
+                {moduleData.thumbnail ? (
+                  <img src={moduleData.thumbnail} alt={moduleData.title} />
+                ) : (
+                  <div className="module-image-placeholder">{moduleData.title}</div>
+                )}
+                {readOnly && <span className="module-preview-badge">Preview</span>}
               </div>
             </div>
 
-              {/* <div className="mp-cta-section">
-                <button className="mp-btn-primary">
-                  <Play size={20} />
-                  Start Learning Now
-                </button>
-              </div> */}
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="mp-stats-grid">
-          <div className="mp-stat-card">
-            <div className="mp-stat-icon mp-icon-purple">
-              <Coins   size={24} />
-            </div>
-            <div className="mp-stat-content">
-              <div className="mp-stat-value">{moduleData.credits}</div>
-              <div className="mp-stat-label">Credits</div>
-            </div>
-          </div>
-          
-          <div className="mp-stat-card">
-            <div className="mp-stat-icon mp-icon-blue">
-              <Award size={24} />
-            </div>
-            <div className="mp-stat-content">
-              <div className="mp-stat-value">{moduleData.badges}</div>
-              <div className="mp-stat-label">Badges</div>
-            </div>
-          </div>
-          
-          <div className="mp-stat-card">
-            <div className="mp-stat-icon mp-icon-green">
-              <Star size={24} />
-            </div>
-            <div className="mp-stat-content">
-              <div className="mp-stat-value">{moduleData.stars  }</div>
-              <div className="mp-stat-label">Stars</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="mp-tabs">
-          <button 
-            className={`mp-tab ${activeTab === 'overview' ? 'mp-tab-active' : ''}`}
-            onClick={() => setActiveTab('overview')}
-          >
-            Overview
-          </button>
-          <button 
-            className={`mp-tab ${activeTab === 'curriculum' ? 'mp-tab-active' : ''}`}
-            onClick={() => setActiveTab('curriculum')}
-          >
-            Curriculum
-          </button>
-          <button 
-            className={`mp-tab ${activeTab === 'resources' ? 'mp-tab-active' : ''}`}
-            onClick={() => setActiveTab('resources')}
-          >
-            Resources
-          </button>
-        </div>
-
-        {/* Tab Content */}
-        <div className="mp-content">
-          {activeTab === 'overview' && (
-            <>
-              {/* What You'll Learn */}
-              <section className="mp-section">
-                <h2 className="mp-section-title">What you'll learn</h2>
-                <div className="mp-outcomes-grid">
-                  {moduleData.learningOutcomes?.map((outcome, i) => (
-                    <div key={i} className="mp-outcome-item">
-                      <CheckCircle size={20} className="mp-check-icon" />
-                      <span>{outcome}</span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* Prerequisites */}
-              {prerequisitesList.length > 0 && (
-                <section className="mp-section">
-                  <h2 className="mp-section-title">
-                    <BookOpen size={22} />
-                    Prerequisites
-                  </h2>
-                  <ul className="mp-prerequisites-list">
-                    {prerequisitesList.map((pre, i) => (
-                      <li key={i}>{pre}</li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-            </>
-          )}
-
-          {activeTab === 'curriculum' && (
-            <section className="mp-section">
-              <h2 className="mp-section-title">Course Content</h2>
-              <div className="mp-curriculum-info">
-                <p className="mp-curriculum-meta">
-                  <Clock size={16} /> {moduleData.duration} mins total length
-                </p>
-              </div>
-              {moduleData.richText ? (
-                <div className="mp-curriculum-box">
-                  <div 
-                    className="mp-rich-content"
-                    dangerouslySetInnerHTML={{ __html: moduleData.richText }}
-                  />
-                </div>
-              ) : (
-                <div className="mp-info-box">
-                  <Shield size={20} />
-                  <p>Full curriculum will be available once you enroll in this module.</p>
-                </div>
-              )}
-            </section>
-          )}
-
-          {activeTab === 'resources' && (
-            <section className="mp-section">
-              <h2 className="mp-section-title">Learning Resources</h2>
-              
-              <div className="mp-resources-grid">
-                {moduleData.primaryFile && (
-                  <a href={moduleData.primaryFile} target="_blank" rel="noopener noreferrer" className="mp-resource-card">
-                    <div className="mp-resource-icon mp-icon-purple">
-                      <FileText size={24} />
-                    </div>
-                    <div className="mp-resource-content">
-                      <h3>Primary Course Material</h3>
-                      <p>Main learning document</p>
-                    </div>
-                    <ExternalLink size={18} className="mp-external-icon" />
-                  </a>
-                )}
-                
-                {moduleData.additionalFile && (
-                  <a href={moduleData.additionalFile} target="_blank" rel="noopener noreferrer" className="mp-resource-card">
-                    <div className="mp-resource-icon mp-icon-blue">
-                      <Download size={24} />
-                    </div>
-                    <div className="mp-resource-content">
-                      <h3>Supplementary Materials</h3>
-                      <p>Additional resources</p>
-                    </div>
-                    <ExternalLink size={18} className="mp-external-icon" />
-                  </a>
-                )}
-                
-                {moduleData.externalResource && (
-                  <a href={moduleData.externalResource} target="_blank" rel="noopener noreferrer" className="mp-resource-card">
-                    <div className="mp-resource-icon mp-icon-green">
-                      <Globe size={24} />
-                    </div>
-                    <div className="mp-resource-content">
-                      <h3>External Resource</h3>
-                      <p>Reference material</p>
-                    </div>
-                    <ExternalLink size={18} className="mp-external-icon" />
-                  </a>
-                )}
-              </div>
-            </section>
-          )}
-
-          {/* Tags Section */}
-          {moduleData.tags?.length > 0 && (
-            <section className="mp-section mp-tags-section">
-              <h2 className="mp-section-title">
-                <Tag size={22} />
-                Topics Covered
-              </h2>
-              <div className="mp-tags-container">
-                {moduleData.tags.map((tag, i) => (
-                  <span key={i} className="mp-tag-badge">{tag}</span>
+            {/* Tags */}
+            {(moduleData.tags) && (
+              <div className="module-tags-section">
+                {moduleData.tags.map((tag, index) => (
+                  <span key={index} className="module-tag">{tag}</span>
                 ))}
               </div>
-            </section>
-          )}
+            )}
 
-          {/* Feedback Section */}
-          {moduleData.enableFeedback && (
-            <section className="mp-section">
-              <div className="mp-feedback-box">
-                <MessageCircle size={20} />
-                <p>Share your feedback and help us improve this course for future learners.</p>
-              </div>
-            </section>
-          )}
+            {/* Conditional content views */}
+            {viewTab === 'module' ? (
+              <>
+                <div className="module-tabs">
+                  <button
+                    className={`module-tab ${activeTab === 'overview' ? 'module-tab-active' : ''}`}
+                    onClick={() => setActiveTab('overview')}
+                  >
+                    Overview
+                  </button>
+                  <button
+                    className={`module-tab ${activeTab === 'requirements' ? 'module-tab-active' : ''}`}
+                    onClick={() => setActiveTab('requirements')}
+                  >
+                    Requirements
+                  </button>
+                </div>
+
+                <div className="module-tab-content">
+                  {activeTab === 'overview' && (
+                    <div className="module-overview">
+                      { (moduleData.description) && (
+                        <div className="module-section">
+                          <h3 className="module-section-title">Overview</h3>
+                          <p className="module-description">{moduleData.description}</p>
+                        </div>
+                      )}
+                      {(moduleData.learningOutcomes) && (
+                        <div className="module-section">
+                          <h3 className="module-section-title">What you'll learn</h3>
+                          <ul className="module-outcomes-list">
+                            {moduleData.learningOutcomes.map((outcome, index) => (
+                              <li key={index} className="module-outcome-item">
+                                <span className="module-outcome-icon">✓</span>
+                                {outcome}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {(moduleData.instructions) && (
+                        <div className="module-section">
+                          <h3 className="module-section-title">Instructions</h3>
+                          <p className="module-instructions">{moduleData.instructions}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'requirements' && (
+                    <div className="module-requirements-tab">
+                      <div className="module-section">
+                        <h3 className="module-section-title">Prerequisites</h3>
+                        {(moduleData.prerequisites.length > 0) ? (
+                          <ul className="module-prerequisites-list">
+                            {moduleData.prerequisites.map((prereq, index) => (
+                              <li key={index} className="module-prerequisite-item">
+                                <span className="module-prerequisite-icon">📚</span>
+                                {prereq}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="module-no-prerequisites">Nil</p>
+                        )}
+                      </div>
+                      <div className="module-section">
+                        <h3 className="module-section-title">Course Details</h3>
+                        <div className="module-details-grid">
+                          <div className="module-detail-item">
+                            <span className="module-detail-label">Duration:</span>
+                            <span className="module-detail-value">{moduleData.duration} mins</span>
+                          </div>
+                          <div className="module-detail-item">
+                            <span className="module-detail-label">Credits:</span>
+                            <span className="module-detail-value">{moduleData.credits}</span>
+                          </div>
+                          <div className="module-detail-item">
+                            <span className="module-detail-label">Category:</span>
+                            <span className="module-detail-value">{moduleData.category}</span>
+                          </div>
+                          <div className="module-detail-item">
+                            <span className="module-detail-label">Training Type:</span>
+                            <span className="module-detail-value">{moduleData.trainingType}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="module-tab-content">
+                  {/* Instructions */}
+                  {(moduleData.instructions) && (
+                    <div className="module-section">
+                      <h3 className="module-section-title">Instructions</h3>
+                      <p className="module-description">{moduleData.instructions}</p>
+                    </div>
+                  )}
+
+                  {/* Primary Material */}
+                  <div className="module-section">
+                    <h3 className="module-section-title">Primary Material</h3>
+                    {(moduleData.primaryFile) ? (
+                      <div className="module-video-container">
+                        <video className="module-video-iframe" src={moduleData.primaryFile} controls={!readOnly} />
+                      </div>
+                    ) : (
+                      <p className="module-description">No primary video provided.</p>
+                    )}
+                    {moduleData.duration && (
+                      <p className="module-description">Duration: {moduleData.duration} mins</p>
+                    )}
+                  </div>
+
+                  {/* Supplementary Materials */}
+                  <div className="module-section">
+                    <h3 className="module-section-title">Supplementary Materials</h3>
+                    {(moduleData.additionalFile) ? (
+                      <div className="module-supplementary">
+                        <div className="module-supp-item">
+                          <span className="module-supp-icon">📄</span>
+                          <span className="module-supp-name">Additional File</span>
+                          <div className="module-supp-actions">
+                            {readOnly ? (
+                              <span className="module-btn module-btn-secondary is-disabled" aria-disabled="true">Preview</span>
+                            ) : (
+                              <a href={moduleData.additionalFile} target="_blank" rel="noreferrer" className="module-btn module-btn-secondary">Preview</a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="module-description">No supplementary file provided.</p>
+                    )}
+                  </div>
+
+                  {(moduleData.richText) && (
+                    <div className="module-section">
+                      <h3 className="module-section-title">Text Content</h3>
+                      <div className="module-richtext" dangerouslySetInnerHTML={{ __html: moduleData.richText }} />
+                    </div>
+                  )}
+
+                  <div className="module-section">
+                    <h3 className="module-section-title">Settings</h3>
+                    <div className="module-content-info">
+                      <div className="module-content-info-item">
+                        <span className="module-content-info-label">Submission:</span>
+                        <span className={`module-status ${moduleData.submissionEnabled ? 'module-status-enabled' : 'module-status-disabled'}`}>
+                          {moduleData.submissionEnabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </div>
+                      <div className="module-content-info-item">
+                        <span className="module-content-info-label">Feedback:</span>
+                        <span className={`module-status ${moduleData.feedbackEnabled ? 'module-status-enabled' : 'module-status-disabled'}`}>
+                          {moduleData.feedbackEnabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Footer actions (match Assessment style) */}
+            <div className="module-actions">
+              <button className="module-btn module-btn-secondary" onClick={onClose}>Back</button>
+              {readOnly ? (
+                <button className="module-btn module-btn-primary" onClick={onClose}>Close</button>
+              ) : (
+                <button className="module-btn module-btn-primary">Start Module →</button>
+              )}
+            </div>
+          </div>
         </div>
-
       </div>
-
-      <style>{`
-        .mp-modal-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.75);
-          display: flex;
-          justify-content: center;
-          align-items: flex-start;
-          opacity: 0;
-          pointer-events: none;
-          transition: opacity 0.3s ease;
-          z-index: 1000;
-          overflow-y: auto;
-          padding: 20px 0;
-        }
-
-        .mp-modal-overlay.mp-visible {
-          opacity: 1;
-          pointer-events: all;
-        }
-
-        .mp-modal-container {
-          background: #fff;
-          max-width: 1000px;
-          width: 95%;
-          margin: 0 auto;
-          border-radius: 12px;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-          opacity: 0;
-          transform: translateY(30px);
-          transition: opacity 0.3s ease, transform 0.3s ease;
-          position: relative;
-        }
-
-        .mp-modal-container.mp-visible {
-          opacity: 1;
-          transform: translateY(0);
-        }
-
-        .mp-close-btn {
-          position: absolute;
-          top: 20px;
-          right: 20px;
-          background: rgba(255, 255, 255, 0.9);
-          border: none;
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 10;
-          transition: all 0.2s;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .mp-close-btn:hover {
-          background: #fff;
-          transform: scale(1.1);
-        }
-
-        .mp-hero-section {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          padding: 60px 50px 40px;
-          border-radius: 12px 12px 0 0;
-        }
-
-        .mp-breadcrumb {
-          font-size: 0.875rem;
-          opacity: 0.9;
-          margin-bottom: 12px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .mp-separator {
-          opacity: 0.6;
-        }
-
-        .mp-title {
-          font-size: 2.25rem;
-          font-weight: 700;
-          margin: 0 0 16px 0;
-          line-height: 1.2;
-        }
-
-        .mp-subtitle {
-          font-size: 1.125rem;
-          line-height: 1.6;
-          opacity: 0.95;
-          margin: 0 0 24px 0;
-          max-width: 800px;
-        }
-
-        .mp-meta-bar {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          flex-wrap: wrap;
-          margin-bottom: 32px;
-        }
-
-        .mp-rating-display {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .mp-rating-number {
-          font-size: 1.125rem;
-          font-weight: 700;
-        }
-
-        .mp-stars-wrapper {
-          display: flex;
-          gap: 2px;
-        }
-
-        .star-filled {
-          color: #f5c518;
-        }
-
-        .star-empty {
-          color: rgba(255, 255, 255, 0.3);
-        }
-
-        .mp-divider {
-          color: rgba(255, 255, 255, 0.4);
-          font-size: 1.25rem;
-        }
-
-        .mp-meta-item {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 0.95rem;
-        }
-
-        .mp-cta-section {
-          display: flex;
-          gap: 12px;
-        }
-
-        .mp-btn-primary {
-          background: #fff;
-          color: #667eea;
-          border: none;
-          padding: 14px 32px;
-          font-size: 1rem;
-          font-weight: 600;
-          border-radius: 8px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          transition: all 0.2s;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .mp-btn-primary:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .mp-stats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 20px;
-          padding: 40px 50px;
-          background: #f9fafb;
-          border-bottom: 1px solid #e5e7eb;
-        }
-
-        .mp-stat-card {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          background: white;
-          padding: 20px;
-          border-radius: 10px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
-
-        .mp-stat-icon {
-          width: 56px;
-          height: 56px;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .mp-icon-purple {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-        }
-
-        .mp-icon-blue {
-          background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-          color: white;
-        }
-
-        .mp-icon-green {
-          background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-          color: white;
-        }
-
-        .mp-icon-orange {
-          background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-          color: white;
-        }
-
-        .mp-stat-content {
-          flex: 1;
-        }
-
-        .mp-stat-value {
-          font-size: 1.5rem;
-          font-weight: 700;
-          color: #1f2937;
-          line-height: 1;
-          margin-bottom: 4px;
-        }
-
-        .mp-stat-label {
-          font-size: 0.875rem;
-          color: #6b7280;
-          font-weight:500;
-        }
-
-        .mp-tabs {
-          display: flex;
-          gap: 0;
-          border-bottom: 2px solid #e5e7eb;
-          padding: 0 50px;
-          background: white;
-        }
-
-        .mp-tab {
-          background: none;
-          border: none;
-          padding: 16px 24px;
-          font-size: 1rem;
-          font-weight: 600;
-          color: #6b7280;
-          cursor: pointer;
-          border-bottom: 3px solid transparent;
-          margin-bottom: -2px;
-          transition: all 0.2s;
-        }
-
-        .mp-tab:hover {
-          color: #667eea;
-        }
-
-        .mp-tab-active {
-          color: #667eea;
-          border-bottom-color: #667eea;
-        }
-
-        .mp-content {
-          padding: 40px 50px 50px;
-          background: white;
-          border-radius: 0 0 12px 12px;
-        }
-
-        .mp-section {
-          margin-bottom: 40px;
-        }
-
-        .mp-section:last-child {
-          margin-bottom: 0;
-        }
-
-        .mp-section-title {
-          font-size: 1.5rem;
-          font-weight: 700;
-          color: #1f2937;
-          margin: 0 0 24px 0;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .mp-outcomes-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-          gap: 16px;
-        }
-
-        .mp-outcome-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 12px;
-          padding: 16px;
-          background: #f9fafb;
-          border-radius: 8px;
-          border: 1px solid #e5e7eb;
-        }
-
-        .mp-check-icon {
-          color: #10b981;
-          flex-shrink: 0;
-          margin-top: 2px;
-        }
-
-        .mp-outcome-item span {
-          font-size: 0.95rem;
-          color: #374151;
-          line-height: 1.5;
-        }
-
-        .mp-prerequisites-list {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-        }
-
-        .mp-prerequisites-list li {
-          padding: 12px 16px;
-          background: #f9fafb;
-          border-left: 3px solid #667eea;
-          margin-bottom: 12px;
-          border-radius: 4px;
-          font-size: 0.95rem;
-          color: #374151;
-        }
-
-        .mp-instruction-box {
-          background: #eff6ff;
-          border: 1px solid #dbeafe;
-          border-radius: 8px;
-          padding: 20px;
-        }
-
-        .mp-instruction-box p {
-          margin: 0;
-          color: #1e40af;
-          line-height: 1.6;
-        }
-
-        .mp-curriculum-info {
-          margin-bottom: 20px;
-        }
-
-        .mp-curriculum-meta {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          color: #6b7280;
-          font-size: 0.95rem;
-        }
-
-        .mp-info-box {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 20px;
-          background: #f9fafb;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          color: #6b7280;
-        }
-
-        /* Rich text preview styles */
-        .mp-curriculum-box {
-          background: #ffffff;
-          border: 2px solid #e5e7eb;
-          border-radius: 12px;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-          overflow: hidden;
-        }
-
-        .mp-rich-content {
-          padding: 20px 24px;
-        }
-
-        .mp-rich-content p {
-          margin: 0 0 12px 0;
-          line-height: 1.7;
-          color: #1f2937;
-        }
-
-        .mp-rich-content h1 {
-          font-size: 2em;
-          font-weight: 700;
-          margin: 24px 0 16px 0;
-          color: #111827;
-          line-height: 1.2;
-        }
-
-        .mp-rich-content h2 {
-          font-size: 1.5em;
-          font-weight: 600;
-          margin: 20px 0 12px 0;
-          color: #111827;
-          line-height: 1.3;
-        }
-
-        .mp-rich-content h3 {
-          font-size: 1.25em;
-          font-weight: 600;
-          margin: 16px 0 10px 0;
-          color: #111827;
-          line-height: 1.4;
-        }
-
-        .mp-rich-content ul,
-        .mp-rich-content ol {
-          padding-left: 24px;
-          margin: 12px 0;
-        }
-
-        .mp-rich-content li {
-          margin: 6px 0;
-          line-height: 1.7;
-          color: #1f2937;
-        }
-
-        .mp-rich-content blockquote {
-          border-left: 4px solid #3b82f6;
-          padding-left: 16px;
-          margin: 16px 0;
-          color: #4b5563;
-          font-style: italic;
-          background: #f9fafb;
-          padding: 12px 16px;
-          border-radius: 0 6px 6px 0;
-        }
-
-        .mp-rich-content code {
-          background: #f3f4f6;
-          color: #dc2626;
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-size: 0.9em;
-          font-family: 'Courier New', monospace;
-        }
-
-        .mp-rich-content pre {
-          background: #1f2937;
-          color: #f9fafb;
-          padding: 16px;
-          border-radius: 8px;
-          overflow-x: auto;
-          margin: 16px 0;
-          font-family: 'Courier New', monospace;
-          font-size: 0.9em;
-          line-height: 1.5;
-        }
-
-        .mp-rich-content pre code {
-          background: transparent;
-          color: inherit;
-          padding: 0;
-        }
-
-        .mp-rich-content a {
-          color: #3b82f6;
-          text-decoration: underline;
-          cursor: pointer;
-        }
-
-        .mp-rich-content a:hover {
-          color: #2563eb;
-        }
-
-        .mp-rich-content strong { font-weight: 700; color: #111827; }
-        .mp-rich-content em { font-style: italic; }
-        .mp-rich-content s { text-decoration: line-through; }
-
-        .mp-resources-grid {
-          display: grid;
-          gap: 16px;
-        }
-
-        .mp-resource-card {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          padding: 20px;
-          background: white;
-          border: 2px solid #e5e7eb;
-          border-radius: 10px;
-          text-decoration: none;
-          transition: all 0.2s;
-        }
-
-        .mp-resource-card:hover {
-          border-color: #667eea;
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
-          transform: translateY(-2px);
-        }
-
-        .mp-resource-icon {
-          width: 56px;
-          height: 56px;
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .mp-resource-content {
-          flex: 1;
-        }
-
-        .mp-resource-content h3 {
-          margin: 0 0 4px 0;
-          font-size: 1rem;
-          font-weight: 600;
-          color: #1f2937;
-        }
-
-        .mp-resource-content p {
-          margin: 0;
-          font-size: 0.875rem;
-          color: #6b7280;
-        }
-
-        .mp-external-icon {
-          color: #9ca3af;
-          flex-shrink: 0;
-        }
-
-        .mp-tags-section {
-          background: #f9fafb;
-          padding: 30px;
-          border-radius: 10px;
-        }
-
-        .mp-tags-container {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 10px;
-        }
-
-        .mp-tag-badge {
-          background: white;
-          color: #667eea;
-          padding: 8px 16px;
-          border-radius: 20px;
-          font-size: 0.875rem;
-          font-weight: 600;
-          border: 2px solid #e0e7ff;
-          transition: all 0.2s;
-        }
-
-        .mp-tag-badge:hover {
-          background: #667eea;
-          color: white;
-          transform: translateY(-2px);
-        }
-
-        .mp-feedback-box {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 20px;
-          background: #fef3c7;
-          border: 1px solid #fde68a;
-          border-radius: 8px;
-          color: #92400e;
-        }
-
-        @media (max-width: 768px) {
-          .mp-hero-section {
-            padding: 40px 24px 30px;
-          }
-
-          .mp-title {
-            font-size: 1.75rem;
-          }
-
-          .mp-stats-grid {
-            padding: 24px;
-            grid-template-columns: 1fr;
-          }
-
-          .mp-tabs {
-            padding: 0 24px;
-          }
-
-          .mp-content {
-            padding: 24px;
-          }
-
-          .mp-outcomes-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
     </div>
   );
 };
+
 export default ModulePreview;

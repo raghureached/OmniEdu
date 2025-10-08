@@ -76,8 +76,8 @@ router.post('/uploadFile', fileUploadMiddleware, fileUploadHandler);
 ////
 //////////////Global Surveys////////////
 
-router.route('/createSurvey').post(createSurvey)
-router.route('/editSurvey/:id').put(editSurvey)
+router.route('/createSurvey').post(upload.single('thumbnail'),uploadToCloudinary,createSurvey)
+router.route('/editSurvey/:id').put(upload.single('thumbnail'),uploadToCloudinary,editSurvey)
 router.route('/deleteSurvey/:id').delete(deleteSurvey)
 router.route('/getSurveys').get(getSurveys)
 router.route('/getSurvey/:id').get(getSurvey)

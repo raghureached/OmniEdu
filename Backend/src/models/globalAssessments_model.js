@@ -23,10 +23,10 @@ const globalAssessmentsSchema = new mongoose.Schema({
   //     ref: "GlobalQuestion",
   //   },
   // ],
-  sections:[
+  questions:[
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref:"GlobalAssesmentSection"
+      ref:"GlobalQuestion"
     }
   ],
 

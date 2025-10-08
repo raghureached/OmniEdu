@@ -95,7 +95,7 @@ const GlobalSurveys = () => {
     setFormData({
       title: '',
       description: '',
-      status: 'Published',
+      status: 'published',
       // duration: '',            // NEW
       tags: [],                // NEW
       team: '',                // NEW
@@ -186,7 +186,7 @@ const GlobalSurveys = () => {
       setFormData({
         title: full.title || '',
         description: full.description || '',
-        status: full.status || 'Published',
+        status: full.status || 'published',
         // duration: full.duration || '',
         tags: full.tags || [],
         team: full.team || '',
@@ -644,7 +644,7 @@ const GlobalSurveys = () => {
                 <Users size={20} />
               </div>
               <div className="assess-stat-info">
-                <span className="assess-stat-number">{assessments.filter(a => a.status === 'Published').length}</span>
+                <span className="assess-stat-number">{assessments.filter(a => a.status === 'published').length}</span>
                 <span className="assess-stat-label">Published</span>
               </div>
             </div>

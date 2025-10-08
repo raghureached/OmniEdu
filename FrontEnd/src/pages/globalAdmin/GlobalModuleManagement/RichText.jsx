@@ -307,7 +307,7 @@ const MenuBar = ({ editor }) => {
 
       <div className="rich-divider" />
 
-      <button
+      {/* <button
         onClick={() => {
           const url = prompt('Enter URL:');
           if (url) {
@@ -318,9 +318,9 @@ const MenuBar = ({ editor }) => {
         aria-label="Add/edit link"
       >
         🔗 Link
-      </button>
+      </button> */}
 
-      <button
+      {/* <button
         onClick={() => editor.chain().focus().unsetLink().run()}
         className="rich-btn"
         aria-label="Remove link"
@@ -328,7 +328,7 @@ const MenuBar = ({ editor }) => {
         style={{ opacity: isActive('link') ? 1 : 0.5 }}
       >
         ❌ Link
-      </button>
+      </button> */}
 
       <div className="rich-divider" />
 

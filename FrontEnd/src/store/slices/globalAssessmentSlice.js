@@ -197,7 +197,7 @@ const globalAssessmentSlice = createSlice({
       })
       .addCase(fetchGlobalAssessments.fulfilled, (state, action) => {
         state.loading = false;
-        // console.log(action.payload)
+        console.log(action.payload)
         state.pagination = action.payload.pagination; 
         state.assessments = action.payload.data;
       })

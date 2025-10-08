@@ -45,6 +45,7 @@ const GlobalModuleModal = ({
     const [teams, setTeams] = useState([]);
     const [aiProcessing, setAiProcessing] = useState(false);
     const [generatingImage, setGeneratingImage] = useState(false);
+    const [filePreview, setFilePreview] = useState({ open: false, url: null, name: '', type: '', isBlob: false });
     const validateUrl = (url) => {
         try {
             const _url = new URL(url);
@@ -199,11 +200,34 @@ const GlobalModuleModal = ({
         // setEditContentId(null);
         // setNewContent({});
     };
-    /* File Preview */
+    /* File Preview (Modal) */
+    const getFileType = (file, url) => {
+        if (file && typeof file !== 'string' && file.type) return file.type;
+        const href = typeof file === 'string' ? file : url || '';
+        const lower = href.toLowerCase();
+        if (lower.endsWith('.pdf')) return 'application/pdf';
+        if (/(jpg|jpeg|png|gif|webp|bmp|svg)$/.test(lower)) return 'image/*';
+        if (/(mp4|webm|ogg)$/.test(lower)) return 'video/*';
+        if (/(mp3|wav|aac|m4a|ogg)$/.test(lower)) return 'audio/*';
+        return 'application/octet-stream';
+    };
+
     const handlePreviewFile = (file) => {
         if (!file) return;
-        const fileUrl = typeof file === 'string' ? file : URL.createObjectURL(file);
-        window.open(fileUrl, '_blank', 'noopener,noreferrer');
+        const isUrl = typeof file === 'string';
+        const url = isUrl ? file : URL.createObjectURL(file);
+        const name = isUrl ? (file.split('/').pop() || 'Preview') : (file.name || 'Preview');
+        const type = getFileType(file, url);
+        setFilePreview({ open: true, url, name, type, isBlob: !isUrl });
+    };
+
+    const closeFilePreview = () => {
+        setFilePreview((prev) => {
+            if (prev.isBlob && prev.url) {
+                try { URL.revokeObjectURL(prev.url); } catch (_) {}
+            }
+            return { open: false, url: null, name: '', type: '', isBlob: false };
+        });
     };
 
     const handleRemoveFile = () => {
@@ -329,7 +353,10 @@ const GlobalModuleModal = ({
                             </div>
 
                             <div className="module-overlay__form-group">
-                                <label className="module-overlay__form-label">Learning Outcomes<span className='module-overlay__required'>*</span></label>
+                                <label className="module-overlay__form-label">
+                                    <span style={{display:'flex',alignItems:'center',gap:'5px'}}>Learning Outcomes <span className="module-overlay__required">*</span>
+                                    {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}</span>
+                                </label>
                                 <div className="module-overlay__learning-outcomes">
                                     {learningOutcomes.map((outcome, index) => (
                                         <div key={index} className="module-overlay__learning-outcome-item">
@@ -340,9 +367,11 @@ const GlobalModuleModal = ({
                                                 className="addOrg-form-input"
                                                 placeholder={`Learning outcome ${index + 1}`}
                                                 style={{ width: '100%' }}
+                                                disabled={aiProcessing}
                                             />
                                             {learningOutcomes.length > 1 && (
                                                 <button
+                                                    disabled={aiProcessing}
                                                     type="button"
                                                     onClick={() => removeLearningOutcome(index)}
                                                     className="addOrg-close-btn"
@@ -358,7 +387,7 @@ const GlobalModuleModal = ({
                                         onClick={addLearningOutcome}
                                         className="add-btn"
                                         style={{ width: 'fit-content', alignSelf: 'flex-end' }}
-
+                                        disabled={aiProcessing}
                                     >
                                         <Plus size={16} /> Add Learning Outcome
                                     </button>
@@ -366,7 +395,10 @@ const GlobalModuleModal = ({
                             </div>
 
                             <div className="module-overlay__form-group">
-                                <label className="module-overlay__form-label">Tags<span className='module-overlay__required'>*</span></label>
+                                <label className="module-overlay__form-label">
+                                    <span style={{display:'flex',alignItems:'center',gap:'5px'}}>Tags<span className='module-overlay__required'>*</span>
+                                    {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}</span>
+                                </label>
                                 <input
                                     type="text"
                                     value={tagInput}
@@ -375,6 +407,7 @@ const GlobalModuleModal = ({
                                     className="addOrg-form-input"
                                     placeholder="Type a tag and press Enter or comma"
                                     autoComplete="off"
+                                    disabled={aiProcessing}
                                     style={{ width: '100%' }}
                                 />
                                 <div className="module-overlay__tags-container">
@@ -386,6 +419,7 @@ const GlobalModuleModal = ({
                                                 onClick={() => removeTag(tag)}
                                                 className="module-overlay__tag-remove"
                                                 aria-label={`Remove tag ${tag}`}
+                                                disabled={aiProcessing}
                                             >
                                                 <X size={12} />
                                             </button>
@@ -593,7 +627,7 @@ const GlobalModuleModal = ({
                                         {isValidUrl && (
                                             <button
                                                 type="button"
-                                                className="module-overlay__btn-view"
+                                                className="btn-primary"
                                                 onClick={() => setShowIframe(!showIframe)}
                                                 aria-expanded={showIframe}
                                                 aria-controls="externalResourceIframe"
@@ -835,6 +869,47 @@ const GlobalModuleModal = ({
 
                 </div>
                 {preview && <ModulePreview moduleData={newContent} onClose={() => setPreview(false)} />}
+
+                {filePreview.open && (
+                    <div className="addOrg-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="filePreviewTitle">
+                        <div className="addOrg-modal-content" style={{ maxWidth: '960px', width: '95%', height: '80vh', display: 'flex', flexDirection: 'column' }}>
+                            <div className="addOrg-modal-header">
+                                <div className="addOrg-header-content">
+                                    <div className="addOrg-header-icon">
+                                        <EyeIcon size={24} color="#5570f1" />
+                                    </div>
+                                    <div>
+                                        <h2 id="filePreviewTitle">Preview: {filePreview.name}</h2>
+                                    </div>
+                                </div>
+                                <button type="button" className="addOrg-close-btn" onClick={closeFilePreview} aria-label="Close file preview">
+                                    <GoX size={20} />
+                                </button>
+                            </div>
+                            <div className="module-overlay__body" style={{ flex: 1, overflow: 'hidden' }}>
+                                {/* Viewer */}
+                                {filePreview.type === 'application/pdf' || /^https?:/i.test(filePreview.url) ? (
+                                    <iframe title="File Preview" src={filePreview.url} width="100%" height="100%" style={{ border: 'none', height: '100%' }} />
+                                ) : filePreview.type.startsWith('image/') || filePreview.type === 'image/*' ? (
+                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f7f7f7' }}>
+                                        <img src={filePreview.url} alt={filePreview.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                                    </div>
+                                ) : filePreview.type.startsWith('video/') || filePreview.type === 'video/*' ? (
+                                    <video src={filePreview.url} controls style={{ width: '100%', height: '100%' }} />
+                                ) : filePreview.type.startsWith('audio/') || filePreview.type === 'audio/*' ? (
+                                    <div style={{ padding: '16px' }}>
+                                        <audio src={filePreview.url} controls style={{ width: '100%' }} />
+                                    </div>
+                                ) : (
+                                    <div style={{ padding: '16px' }}>
+                                        <p>Preview not supported. You can download and view the file.</p>
+                                        <a href={filePreview.url} download={filePreview.name} className="btn-primary">Download</a>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* FOOTER ACTIONS */}
                 <div className="module-overlay__footer">

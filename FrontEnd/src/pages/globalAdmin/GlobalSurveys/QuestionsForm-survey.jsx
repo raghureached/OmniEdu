@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FileText, Plus, X, Upload, Copy, Eye, Info, ChevronLeft, ChevronRight } from 'lucide-react';
-import api from '../../../services/api';
+import api from '../../../services/api.js';
 import './QuestionsForm-survey.css';
 import '../GlobalAssessments/QuestionsForm.css';
-import RichText from '../GlobalSurveys/RichTextSurvey.jsx';
+import RichText from './RichTextSurvey.jsx';
+import PreviewCard from '../../../components/common/PreviewCard/PreviewCard.jsx';
 // Minimal URL resolver for previews (can be enhanced to handle relative URLs)
 const resolveUrl = (u) => u;
 
@@ -118,6 +119,15 @@ const QuestionsForm = ({
             setPreviewResponses({});
         }
     }, [assessmentPreviewOpen]);
+
+    // Ensure default duration is 10 mins if not set
+    useEffect(() => {
+        if (!formData?.duration) {
+            setFormData(prev => ({ ...prev, duration: formatHm(0, 10) }));
+        }
+        // run once on mount
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
     // Reset single-question preview selections when opening
     useEffect(() => {
         if (questionPreviewIndex !== null) {
@@ -199,8 +209,8 @@ const QuestionsForm = ({
     
     return (
         <>
-            <div className="survey-assess-modal-overlay">
-                <div className="survey-assess-modal-content">
+            <div className="addOrg-modal-overlay">
+                <div className="addOrg-modal-content">
                     {/* Modal Header */}
                     <div className="survey-assess-modal-header">
                         <div className="survey-assess-modal-header-content">
@@ -307,7 +317,7 @@ const QuestionsForm = ({
                                         </div>
                                     </div>
 
-                                    <div className="survey-assess-form-group">
+                                    <div className="survey-assess-form-group" style={{marginBottom:"15px"}}>
                                         <label className="survey-assess-form-label">Description<span className="assess-required">*</span></label>
                                         <textarea
                                             className="survey-assess-form-textarea"
@@ -320,7 +330,7 @@ const QuestionsForm = ({
                                     <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(formData.title)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
 
                                     {/* Thumbnail upload */}
-                                    <div className="survey-assess-form-group">
+                                    <div className="survey-assess-form-group" >
                                         <label className="survey-assess-form-label">Thumbnail</label>
 
                                         {formData.thumbnail_url ? (
@@ -390,38 +400,14 @@ const QuestionsForm = ({
 
                                     </div>
 
-                                    {/* Thumbnail preview overlay modal */}
+                                    {/* Thumbnail preview card */}
                                     {thumbPreviewOpen && formData.thumbnail_url && (
-                                        <div className="assess-file-preview-overlay" onClick={(e) => { if (e.target === e.currentTarget) setThumbPreviewOpen(false); }}>
-                                            <div className="assess-file-preview-modal">
-                                                <div className="assess-file-preview-header">
-                                                    <span className="assess-file-preview-title">File Preview</span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setThumbPreviewOpen(false)}
-                                                        aria-label="Close file preview"
-                                                        className="assess-file-preview-close"
-                                                    >
-                                                        <X size={18} />
-                                                    </button>
-                                                </div>
-                                                <div className="assess-file-preview-body">
-                                                    {(
-                                                        (formData.thumbnail_file && typeof formData.thumbnail_file.type === 'string' && formData.thumbnail_file.type.startsWith('image/'))
-                                                        || /\.(jpeg|jpg|png|gif|webp)$/i.test(String(formData.thumbnail_url || ''))
-                                                        || String(formData.thumbnail_url || '').startsWith('blob:')
-                                                    ) ? (
-                                                        <img src={resolveUrl(formData.thumbnail_url)} alt="Thumbnail Preview" />
-                                                    ) : (
-                                                        <div>
-                                                            <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: 6 }}>
-                                                                Preview available only for images.
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <PreviewCard
+                                            imageUrl={resolveUrl(formData.thumbnail_url)}
+                                            title={formData.title}
+                                            description={formData.description}
+                                            onClose={() => setThumbPreviewOpen(false)}
+                                        />
                                     )}
 
 
@@ -922,31 +908,24 @@ const QuestionsForm = ({
                                         Duration<span className="assess-required">*</span>
                                     </label>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <input
-  type="text" /* plain input, no native steppers */
-  inputMode="numeric"
-  pattern="[0-9]*"
-  className="survey-assess-form-input"
- 
-  placeholder="Enter minutes"
-  value={(parseHm(formData.duration).hh * 60) + parseHm(formData.duration).mm}
-  onChange={e => {
-    const raw = parseInt(e.target.value, 10);
-    const totalMin = Number.isNaN(raw) ? 0 : Math.max(0, raw);
-    const hh = Math.floor(totalMin / 60);
-    const mm = totalMin % 60;
-    setFormData({ ...formData, duration: formatHm(hh, mm) });
-  }}
-  onKeyDown={e => {
-    if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault();
-  }}
-  required
-/>
-                                        <span>minutes</span>
+                                        <select
+                                            className="survey-assess-form-select"
+                                            value={(parseHm(formData.duration).hh * 60) + parseHm(formData.duration).mm}
+                                            onChange={e => {
+                                                const mins = parseInt(e.target.value, 10) || 10;
+                                                const hh = Math.floor(mins / 60);
+                                                const mm = mins % 60;
+                                                setFormData({ ...formData, duration: formatHm(hh, mm) });
+                                            }}
+                                            required
+                                        >
+                                            <option value={5}>5 mins</option>
+                                            <option value={10}>10 mins</option>
+                                            <option value={15}>15 mins</option>
+                                            <option value={20}>20 mins</option>
+                                        </select>
                                     </div>
-                                    <small style={{ color: '#64748b', fontSize: '0.875rem' }}>
-                                        Enter total minutes 
-                                    </small>
+                                   
                                 </div>
                             </div> 
                             </div>}
@@ -973,7 +952,7 @@ const QuestionsForm = ({
                                                 className="btn-secondary"
                                                 onClick={() => {
                                                     // Force status to Draft, then trigger save/update
-                                                    setFormData(prev => ({ ...prev, status: 'Draft' }));
+                                                    setFormData(prev => ({ ...prev, status: 'draft' }));
                                                     setTimeout(() => {
                                                         if (currentAssessment) {
                                                             handleUpdateAssessment();
