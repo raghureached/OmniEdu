@@ -121,7 +121,6 @@ export const createSurvey = createAsyncThunk(
   async (surveyData, { rejectWithValue }) => {
     try {
       const response = await api.post("/api/globalAdmin/createSurvey", surveyData);
-      console.log(surveyData)
       return response.data.data; // survey with uuid from backend
     } catch (error) {
       return rejectWithValue(error.response?.data || "Failed to create survey");
@@ -172,6 +171,9 @@ const initialState = {
   error: null,
   pagination: { total: 0, page: 1, limit: 50, totalPages: 0, hasNextPage: false },
   current: null,
+  creating:false,
+  updating:false,
+  deleting:false
 };
 
 const surveySlice = createSlice({
@@ -187,6 +189,7 @@ const surveySlice = createSlice({
       // Fetch
       .addCase(fetchSurveys.pending, (state) => {
         state.loading = true;
+        
       })
       .addCase(fetchSurveys.fulfilled, (state, action) => {
         state.loading = false;
@@ -199,16 +202,29 @@ const surveySlice = createSlice({
       })
 
       // Create
+      .addCase(createSurvey.pending, (state) => {
+        state.creating = true;
+      })
       .addCase(createSurvey.fulfilled, (state, action) => {
+        state.creating = false;
         state.surveys.push(action.payload);
       })
-
+      .addCase(createSurvey.rejected,(state) => {
+        state.creating = false;
+      })
       // Update
+      .addCase(updateSurvey.pending, (state) => {
+        state.updating = true;
+      })
       .addCase(updateSurvey.fulfilled, (state, action) => {
+        state.updating = false;
         const idx = state.surveys.findIndex((s) => s.uuid === action.payload.uuid);
         if (idx !== -1) {
           state.surveys[idx] = action.payload;
         }
+      })
+      .addCase(updateSurvey.rejected, (state) => {
+        state.updating = false;
       })
       // Get by id
       .addCase(getSurveyById.pending, (state) => {

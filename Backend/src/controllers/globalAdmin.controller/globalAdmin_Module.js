@@ -52,7 +52,7 @@ const addContent = async (req, res) => {
     const primaryFile = req.uploadedFiles?.primaryFile?.[0]?.url;
     const additionalFile = req.uploadedFiles?.additionalFile?.[0]?.url;
     const thumbnail = req.uploadedFiles?.thumbnail?.[0]?.url;
-    const { title,trainingType,team,category,submissionEnabled,feedbackEnabled,instructions, badges,stars,credits,description,enableFeedback,externalResource, pushable_to_orgs, tags, duration,learningOutcomes,prerequisites,richText } = req.body;
+    const { title,trainingType,team,category,submissionEnabled,feedbackEnabled,instructions, badges,stars,credits,description,externalResource, pushable_to_orgs, tags, duration,learningOutcomes,prerequisites,richText } = req.body;
     const created_by = req.user?._id || null;
     const newModule = new GlobalModule({
       title,
@@ -65,7 +65,6 @@ const addContent = async (req, res) => {
       badges,
       stars,
       credits,
-      enableFeedback,
       externalResource,
       primaryFile,
       additionalFile,

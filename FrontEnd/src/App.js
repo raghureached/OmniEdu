@@ -64,6 +64,7 @@ import Globalusers from './pages/globalAdmin/Users/Globalusers';
 import FullRichTextEditor, { RichTextEditor } from './pages/globalAdmin/GlobalModuleManagement/RichText';
 import GlobalSurveys from './pages/globalAdmin/GlobalSurveys/GlobalAssessments-survey';
 import AssessmentQuiz from './components/Assessments/Assessment';
+import ModulePreview from './components/common/Preview/Preview';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, loading, role } = useSelector((state) => state.auth);
@@ -181,6 +182,7 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<div>Page Not Found</div>} />
           <Route path='test' element={<AssessmentQuiz/>}/>
+          <Route path='preview' element={<ModulePreview/>}/>
         </Routes>
       </div>
     </Router>

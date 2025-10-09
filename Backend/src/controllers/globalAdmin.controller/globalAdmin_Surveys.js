@@ -14,7 +14,7 @@ const createSurvey = async (req, res) => {
   let session;
   try {
     const { title, description, sections, tags = [], team, subteam, status, feedback } = req.body;
-    // console.log(sections[0].questions)
+
     const created_by = req.user?.id || req.body.created_by; // Ensure created_by is passed or derived
 
     if (!title || !title.trim()) {
@@ -69,8 +69,7 @@ const createSurvey = async (req, res) => {
         },
       ],
       { session }
-    );
-
+    );  
     // Commit transaction
     await session.commitTransaction();
 

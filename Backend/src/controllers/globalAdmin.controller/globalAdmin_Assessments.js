@@ -100,171 +100,72 @@ function normalizeCorrectOption(value) {
     }
     return [];
 }
-// const createAssessment = async (req, res) => {
-//     try {
-//         const { title, description, sections, status, duration, tags, team, subteam, attempts, unlimited_attempts, percentage_to_pass, display_answers, display_answers_when } = req.body;
-//         if (!title || !sections || !Array.isArray(sections) || sections.length === 0) {
-//             return res.status(400).json({
-//                 isSuccess: false,
-//                 message: "Title and sections are required"
-//             });
-//         }
 
-//         if (!Array.isArray(tags) || tags.length === 0) {
-//             return res.status(400).json({ isSuccess: false, message: "Tags (array) are required" });
-//         }
-//         if (!duration || typeof duration !== "string") {
-//             return res.status(400).json({ isSuccess: false, message: "Duration (string) is required" });
-//         }
-//         if (!team) {
-//             return res.status(400).json({ isSuccess: false, message: "Team is required" });
-//         }
-//         if (!subteam) {
-//             return res.status(400).json({ isSuccess: false, message: "SubTeam is required" });
-//         }
-//         const unlimited = Boolean(unlimited_attempts);
-//         const attemptsNum = unlimited ? 1 : (Number.isFinite(Number(attempts)) ? Math.max(1, Number(attempts)) : 1);
-//         const passPct = Number(percentage_to_pass);
-//         if (!Number.isFinite(passPct) || passPct < 0 || passPct > 100) {
-//             return res.status(400).json({ isSuccess: false, message: "percentage_to_pass must be between 0 and 100" });
-//         }
-
-//         // Validate duration format HH:MM (optional but safer)
-//         if (!duration || typeof duration !== 'string' || !isValidDuration(duration)) {
-//             return res.status(400).json({
-//                 isSuccess: false,
-//                 message: 'Duration must be a string in HH:MM format',
-//             });
-//         }
-//         const errors = [];
-        
-//         const validQuestions = [];
-
-//         // Validate each question
-//         questions.forEach((q, index) => {
-//             try {
-//                 if (!q.type || !q.question_text) {
-//                     errors.push({ index, reason: "Missing type or question text" });
-//                     return;
-//                 }
-
-
-//                 if (!q.options || !Array.isArray(q.options) || q.options.length === 0) {
-//                     errors.push({ index, reason: "Options must be a non-empty array" });
-//                     return;
-//                 }
-
-//                 if (q.correct_option === undefined || q.correct_option === null ||
-//                     (Array.isArray(q.correct_option) && q.correct_option.length === 0)) {
-//                     errors.push({ index, reason: "Missing or invalid correct_option" });
-//                     return;
-//                 }
-//                 const type = String(q.type || '').trim();
-//                 if (!['Multiple Choice', 'Multi Select'].includes(type)) {
-//                     errors.push({ index, reason: 'Invalid type. Allowed: Multiple Choice, Multi Select' });
-//                     return;
-//                 }
-
-//                 // Normalize correct_option to array of ints
-//                 const normalizedCorrect = normalizeCorrectOption(q.correct_option);
-
-//                 // Enforce counts based on type
-//                 if (type === 'Multiple Choice') {
-//                     if (normalizedCorrect.length !== 1) {
-//                         errors.push({ index, reason: 'Multiple Choice must have exactly 1 correct option index' });
-//                         return;
-//                     }
-//                 } else if (type === 'Multi Select') {
-//                     if (normalizedCorrect.length < 1) { // set to < 2 if you want strictly multiple
-//                         errors.push({ index, reason: 'Multi Select must have at least 1 correct option index' });
-//                         return;
-//                     }
-//                 }
-
-//                 // Also ensure correct indexes are within options bounds
-//                 const maxIndex = (q.options || []).length - 1;
-//                 if (normalizedCorrect.some(n => n < 0 || n > maxIndex)) {
-//                     errors.push({ index, reason: 'correct_option indexes out of range for provided options' });
-//                     return;
-//                 }
-
-//                 // DO NOT require instructions; just normalize
-//                 const instructions = typeof q.instructions === 'string' ? q.instructions : '';
-
-//                 validQuestions.push({
-//                     type: q.type.trim(),
-//                     question_text: q.question_text.trim(),
-//                     file_url: q.file_url?.trim() || null,
-//                     options: q.options,
-//                     correct_option: normalizedCorrect,
-//                     instructions: q.instructions?.trim() || "", // NEW
-//                     shuffle_options: Boolean(q.shuffle_options), // NEW
-//                 });
-//             } catch (questionError) {
-//                 errors.push({ index, reason: `Question validation failed: ${questionError.message}` });
-//                 return res.status(400).json({
-//                     isSuccess: false,
-//                     message: "Invalid question format",
-//                     errors
-//                 });
-//             }
-//         });
-
-//         if (validQuestions.length === 0) {
-//             return res.status(400).json({
-//                 isSuccess: false,
-//                 message: "No valid questions found",
-//                 errors
-//             });
-//         }
-//         if (errors.length > 0) {
-//             return res.status(400).json({
-//                 isSuccess: false,
-//                 message: "Invalid question format",
-//                 errors
-//             });
-//         }
-
-//         const savedQuestions = await GlobalQuestion.insertMany(validQuestions, { ordered: false });
-//         const assessment = new GlobalAssessment({
-//             title,
-//             description: description || "",
-//             questions: savedQuestions.map(q => q._id),
-//             tags,
-//             duration,
-//             team,
-//             subteam,
-//             attempts: attemptsNum,
-//             unlimited_attempts: unlimited,
-//             percentage_to_pass: passPct,
-//             display_answers: display_answers ?? false,
-//             display_answers_when: display_answers_when || "Never",
-//             created_by: req.user?._id,
-//             status,
-//         });
-
-//         await assessment.save();
-//         res.status(201).json({
-//             isSuccess: true,
-//             message: "Assessment created successfully",
-//             data: assessment,
-//             errors
-//         });
-
-//     } catch (error) {
-//         console.error("Error creating assessment:", error);
-//         res.status(500).json({ isSuccess: false, message: error.message });
-//     }
-// };
-
-
-// Create a full Assessment with Sections + Question
 
 // Controller for creating assessment
-// Controller for creating assessment (flat questions array, no sections)
 const createAssessment = async (req, res) => {
     try {
       const {
+        title, description, tags, duration, team, subteam,
+        attempts, unlimited_attempts, percentage_to_pass,
+         display_answers, status,credits,stars,badges,category,feedbackEnabled,shuffle_questions,shuffle_options,thumbnail_url,questions=[],instructions
+       
+      } = req.body;
+
+      // Build and save questions
+      const questionIds = [];
+      const inputQuestions = Array.isArray(questions) ? questions : [];
+      if (inputQuestions.length === 0) {
+        return res.status(400).json({ success: false, message: "At least one question is required" });
+      }
+
+      for (let index = 0; index < inputQuestions.length; index++) {
+        const q = inputQuestions[index];
+        if (!q || typeof q.question_text !== 'string' || typeof q.type !== 'string') {
+          return res.status(400).json({ success: false, message: `Invalid question at index ${index}: missing type or question_text` });
+        }
+
+        const type = String(q.type || '').trim();
+        if (!['Multiple Choice', 'Multi Select'].includes(type)) {
+          return res.status(400).json({ success: false, message: `Invalid type for question ${index}. Allowed: Multiple Choice, Multi Select` });
+        }
+
+        const options = Array.isArray(q.options) ? q.options.filter(o => typeof o === 'string' && o.length > 0) : [];
+        if (options.length < 2) {
+          return res.status(400).json({ success: false, message: `Question ${index} must have at least two options` });
+        }
+
+        const normalizedCorrect = normalizeCorrectOption(q.correct_option);
+        if (type === 'Multiple Choice') {
+          if (normalizedCorrect.length !== 1) {
+            return res.status(400).json({ success: false, message: `Question ${index}: Multiple Choice must have exactly 1 correct option index` });
+          }
+        } else {
+          if (normalizedCorrect.length < 1) {
+            return res.status(400).json({ success: false, message: `Question ${index}: Multi Select must have at least 1 correct option index` });
+          }
+        }
+        const maxIndex = options.length - 1;
+        if (normalizedCorrect.some(n => n < 0 || n > maxIndex)) {
+          return res.status(400).json({ success: false, message: `Question ${index}: correct_option indexes out of range for provided options` });
+        }
+        console.log(req.uploadedFiles)
+        const newQuestion = new GlobalQuestion({
+          question_text: q.question_text.trim(),
+          type,
+          options,
+          correct_option: normalizedCorrect,
+          total_points: Number.isFinite(Number(q.total_points)) ? Number(q.total_points) : 1,
+          instructions: typeof q.instructions === 'string' ? q.instructions : "",
+          file_url: typeof q.file_url === 'string' && q.file_url.trim() ? q.file_url.trim() : null,
+        });
+
+        const savedQuestion = await newQuestion.save();
+        questionIds.push(savedQuestion._id);
+      }
+
+      // Create assessment using the saved question ids
+      const newAssessment = new GlobalAssessment({
         title,
         description,
         tags,
@@ -274,10 +175,8 @@ const createAssessment = async (req, res) => {
         attempts,
         unlimited_attempts,
         percentage_to_pass,
-        display_answers,         // e.g., 'AfterAssessment'
-        display_answers_when,    // kept for backward compatibility
+        display_answers,
         status,
-        classification,
         credits,
         stars,
         badges,
@@ -286,90 +185,27 @@ const createAssessment = async (req, res) => {
         shuffle_questions,
         shuffle_options,
         thumbnail_url,
-        questions,
-      } = req.body;
-  
-      if (!title) {
-        return res.status(400).json({ isSuccess: false, message: 'Title is required' });
-      }
-      const parsedQuestions = typeof questions === 'string' ? JSON.parse(questions) : questions;
-      if (!Array.isArray(parsedQuestions) || parsedQuestions.length === 0) {
-        return res.status(400).json({ isSuccess: false, message: 'Questions are required' });
-      }
-  
-      // Save questions
-      const questionIds = [];
-      for (let i = 0; i < parsedQuestions.length; i++) {
-        const q = parsedQuestions[i];
-        if (!q || !q.type || !q.question_text) {
-          return res.status(400).json({ isSuccess: false, message: `Invalid question at index ${i}` });
-        }
-  
-        const normalizedCorrect = normalizeCorrectOption(q.correct_option);
-  
-        const newQuestion = new GlobalQuestion({
-          question_text: String(q.question_text).trim(),
-          type: String(q.type).trim(),
-          options: Array.isArray(q.options) ? q.options : [],
-          correct_option: normalizedCorrect,
-          total_points: Number.isFinite(q.total_points) ? q.total_points : 1,
-          instructions: typeof q.instructions === 'string' ? q.instructions : '',
-          shuffle_options: Boolean(q.shuffle_options),
-          file_url: typeof q.file_url === 'string' ? q.file_url : null,
-        });
-  
-        const savedQ = await newQuestion.save();
-        questionIds.push(savedQ._id);
-      }
-  
-      // Create assessment (flat)
-      const assessment = new GlobalAssessment({
-        title,
-        description: description || '',
         questions: questionIds,
-        tags: Array.isArray(tags)
-          ? tags
-          : (typeof tags === 'string'
-              ? tags.split(',').map(t => t.trim()).filter(Boolean)
-              : []),
-        duration,
-        team,
-        subteam,
-        attempts,
-        unlimited_attempts: Boolean(unlimited_attempts),
-        percentage_to_pass,
-        display_answers: display_answers ?? display_answers_when,
-        status,
-        classification,
-        created_by,
-        credits,
-        stars,
-        badges,
-        category,
-        feedbackEnabled: Boolean(feedbackEnabled),
-        shuffle_questions: Boolean(shuffle_questions),
-        shuffle_options: Boolean(shuffle_options),
-        thumbnail_url: typeof thumbnail_url === 'string' ? thumbnail_url : undefined,
+        instructions:instructions
+      });
+
+      const savedAssessment = await newAssessment.save();
+
+      const populatedAssessment = await GlobalAssessment.findById(savedAssessment._id)
+        .populate('questions');
+
+      res.status(201).json({
+        success: true,
+        message: "Assessment created successfully",
+        assessment: populatedAssessment,
       });
   
-      await assessment.save();
-      const populated = await GlobalAssessment.findById(assessment._id).populate('questions');
-  
-      return res.status(201).json({
-        isSuccess: true,
-        message: 'Assessment created successfully',
-        data: populated,
-      });
     } catch (error) {
-      console.error('Error creating assessment:', error);
-      return res.status(500).json({
-        isSuccess: false,
-        message: 'Failed to create assessment',
-        error: error.message
-      });
-    }
-  };
+      console.error("Error creating assessment:", error);
+      res.status(500).json({ success: false, message: "Failed to create assessment", error: error.message });
+    };
   
+}
 
 
 
@@ -634,13 +470,7 @@ const getQuestionsRandom = async (req, res) => {
 
 const getAssessmentById = async (req, res) => {
     try {
-        const assessment = await GlobalAssessment.findOne({ uuid: req.params.id }).populate({
-            path: "sections",
-            populate: {
-              path: "questions",
-              model: "GlobalQuestion",
-            },
-        })
+        const assessment = await GlobalAssessment.findOne({ uuid: req.params.id }).populate("questions")
         return res.status(200).json({
             isSuccess: true,
             message: "Assessment fetched successfully",
@@ -657,31 +487,47 @@ const getAssessmentById = async (req, res) => {
 
 const editAssessment = async (req, res) => {
     try {
-        // Update assessment-level fields first
-        const assessment = await GlobalAssessment.findOneAndUpdate(
+            // Update assessment-level fields first (normalize types)
+        const durationNum = req.body.duration !== undefined && req.body.duration !== '' ? Number(req.body.duration) : undefined;
+        const attemptsNum = req.body.attempts !== undefined && req.body.attempts !== '' ? Number(req.body.attempts) : undefined;
+        const passNum = req.body.percentage_to_pass !== undefined && req.body.percentage_to_pass !== '' ? Number(req.body.percentage_to_pass) : undefined;
+        const unlimited = req.body.unlimited_attempts === true || req.body.unlimited_attempts === 'true';
+        const tagsArr = Array.isArray(req.body.tags) ? req.body.tags : (typeof req.body.tags === 'string' ? req.body.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined);
+
+        const updateDoc = {
+            ...(typeof req.body.title === 'string' ? { title: req.body.title } : {}),
+            ...(typeof req.body.description === 'string' ? { description: req.body.description } : {}),
+            ...(typeof req.body.status === 'string' ? { status: req.body.status } : {}),
+            ...(tagsArr !== undefined ? { tags: tagsArr } : {}),
+            ...(Number.isFinite(durationNum) && durationNum >= 0 ? { duration: durationNum } : {}),
+            ...(req.body.team ? { team: req.body.team } : {}),
+            ...(req.body.subteam ? { subteam: req.body.subteam } : {}),
+            ...(Number.isFinite(attemptsNum) && attemptsNum >= 1 ? { attempts: attemptsNum } : {}),
+            unlimited_attempts: unlimited,
+            ...(Number.isFinite(passNum) && passNum >= 0 && passNum <= 100 ? { percentage_to_pass: passNum } : {}),
+            ...(typeof req.body.display_answers === 'string' ? { display_answers: req.body.display_answers } : {}),
+            ...(req.body.credits !== undefined ? { credits: Number(req.body.credits) } : {}),
+            ...(req.body.stars !== undefined ? { stars: Number(req.body.stars) } : {}),
+            ...(req.body.badges !== undefined ? { badges: Number(req.body.badges) } : {}),
+            ...(typeof req.body.category === 'string' ? { category: req.body.category } : {}),
+            ...(req.body.feedbackEnabled !== undefined ? { feedbackEnabled: req.body.feedbackEnabled === true || req.body.feedbackEnabled === 'true' } : {}),
+            ...(req.body.shuffle_questions !== undefined ? { shuffle_questions: req.body.shuffle_questions === true || req.body.shuffle_questions === 'true' } : {}),
+            ...(req.body.shuffle_options !== undefined ? { shuffle_options: req.body.shuffle_options === true || req.body.shuffle_options === 'true' } : {}),
+            ...(typeof req.body.thumbnail_url === 'string' ? { thumbnail_url: req.body.thumbnail_url } : {}),
+        };
+
+        let assessment = await GlobalAssessment.findOneAndUpdate(
             { uuid: req.params.id },
-            {
-                title: req.body.title,
-                description: req.body.description,
-                status: req.body.status,
-                tags: req.body.tags,
-                duration: req.body.duration,
-                team: req.body.team,
-                subteam: req.body.subteam,
-                attempts: req.body.attempts,
-                unlimited_attempts: req.body.unlimited_attempts === true || req.body.unlimited_attempts === 'true',
-                percentage_to_pass: req.body.percentage_to_pass,
-                display_answers: req.body.display_answers,
-                display_answers_when: req.body.display_answers_when,
-            },
+            updateDoc,
             { new: true }
         );
 
         // Optionally update related questions if provided
-        const questions = Array.isArray(req.body.questions) ? req.body.questions : [];
-        if (questions.length > 0) {
+        const qPayload = Array.isArray(req.body.questions) ? req.body.questions : [];
+        if (qPayload.length > 0) {
+            const newQuestionIds = [];
             await Promise.all(
-                questions.map(async (q) => {
+                qPayload.map(async (q) => {
                     const id = q.id || q.uuid || q._id;
                     if (!id) {
                         // This is a new question - create it
@@ -719,16 +565,11 @@ const editAssessment = async (req, res) => {
                                 options: q.options,
                                 correct_option: normalizedCorrect,
                                 instructions,
-                                shuffle_options: Boolean(q.shuffle_options),
+                               
                             });
 
                             const savedQuestion = await newQuestion.save();
-
-                            // Add the new question to the assessment
-                            await GlobalAssessment.findOneAndUpdate(
-                                { uuid: req.params.id },
-                                { $push: { questions: savedQuestion._id } }
-                            );
+                            newQuestionIds.push(savedQuestion._id);
                         } catch (questionError) {
                             console.error('Failed to create new question:', questionError);
                             throw questionError;
@@ -783,11 +624,21 @@ const editAssessment = async (req, res) => {
                             ...(typeof q.type === 'string' ? { type } : {}),
                             ...(typeof q.file_url === 'string' ? { file_url: q.file_url } : {}),
                             ...(typeof q.instructions === 'string' ? { instructions: q.instructions } : {}),
-                            ...(typeof q.shuffle_options === 'boolean' ? { shuffle_options: q.shuffle_options } : {}),
-                        },
+                            },
                         { new: false }
                     );
+
+                    // Push the ObjectId for this existing question
+                    const existingDoc = await GlobalQuestion.findOne(filter).select('_id');
+                    if (existingDoc) newQuestionIds.push(existingDoc._id);
                 })
+            );
+
+            // After processing all questions, set the assessment's questions array to the collected ObjectIds
+            assessment = await GlobalAssessment.findOneAndUpdate(
+                { uuid: req.params.id },
+                { $set: { questions: newQuestionIds } },
+                { new: true }
             );
         }
 
@@ -827,24 +678,7 @@ const deleteAssessment = async (req, res) => {
 
 const editQuestion = async (req, res) => {
     try {
-        // const question = await GlobalQuestion.findOneAndUpdate({ uuid: req.params.id }, {
-        //     question_text: req.body.question_text,
-        //     options: req.body.options,
-        //     correct_option: req.body.correct_option
-        // })
-        // const question = await GlobalQuestion.findOneAndUpdate(
-        //     { uuid: req.params.id }, // or _id
-        //     {
-        //         question_text: req.body.question_text,
-        //         options: req.body.options,
-        //         correct_option: req.body.correct_option,
-        //         ...(typeof req.body.type === 'string' ? { type: req.body.type } : {}),
-        //         ...(typeof req.body.file_url === 'string' ? { file_url: req.body.file_url } : {}),
-        //         ...(typeof req.body.instructions === 'string' ? { instructions: req.body.instructions } : {}), // NEW
-        //     },
-        //     { new: true }
-        // );
-
+       
         const payload = {
             ...(typeof req.body.question_text === 'string' ? { question_text: req.body.question_text } : {}),
             ...(Array.isArray(req.body.options) ? { options: req.body.options } : {}),

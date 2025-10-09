@@ -38,8 +38,9 @@ const GlobalModuleManagement = () => {
     trainingType: "",
     instructions: "",
     externalResource: "",
-    enableFeedback: false,
+    feedbackEnabled: false,
     thumbnail: "",
+    submissionEnabled: false,
   });
   const [uploading, setUploading] = useState(false)
   const navigate = useNavigate()
@@ -151,9 +152,10 @@ const GlobalModuleManagement = () => {
       trainingType: content.trainingType || "",
       instructions: content.instructions || "",
       externalResource: content.externalResource || "",
-      enableFeedback: !!content.enableFeedback,
+      feedbackEnabled: !!content.feedbackEnabled,
       richText: content.richText || "",
       thumbnail: content.thumbnail || "",
+      submissionEnabled: content.submissionEnabled || false,
     });
     setShowEditModal(true);
   };

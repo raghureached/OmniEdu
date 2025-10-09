@@ -5,7 +5,7 @@ import { RiDeleteBin2Fill } from 'react-icons/ri';
 import { useDispatch, useSelector } from 'react-redux';
 import { createContent, enhanceText, updateContent } from '../../../store/slices/contentSlice';
 import CustomLoader2 from '../../../components/common/Loading/CustomLoader2';
-import ModulePreview from './ModulePreview';
+import ModulePreview from '../../../components/common/Preview/Preview';
 import api from '../../../services/api';
 import FullRichTextEditor from './RichText';
 import CustomError from '../../../components/common/Error/Error';
@@ -868,7 +868,7 @@ const GlobalModuleModal = ({
                     )}
 
                 </div>
-                {preview && <ModulePreview moduleData={newContent} onClose={() => setPreview(false)} />}
+                {preview && <ModulePreview data={newContent} onClose={() => setPreview(false)} />}
 
                 {filePreview.open && (
                     <div className="addOrg-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="filePreviewTitle">

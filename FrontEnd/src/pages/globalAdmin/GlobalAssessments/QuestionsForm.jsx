@@ -33,8 +33,9 @@ const QuestionsForm = ({
     // console.log(formData)
     const [step, setStep] = useState(1);
     const [aiProcessing, setAiProcessing] = useState(false);
-    const [creating,setCreating] = useState(false)
+    const [creating, setCreating] = useState(false)
     const [passError, setPassError] = useState('');
+    const [noOfQuestions, setNoOfQuestions] = useState(0);
     // Tags picker state (free-form)
     const [tagInput, setTagInput] = useState('');
     // Local UI state to toggle optional instructions per question index
@@ -61,14 +62,7 @@ const QuestionsForm = ({
     const selectedTeam = groups.find(t => String(t._id) === String(formData.team));
     const subTeams = selectedTeam?.subTeams || [];
 
-    // Helpers for duration in HH:MM without relying on browser time picker (to avoid AM/PM)
-    const parseHm = (d) => {
-        const [h = '0', m = '0'] = (d || '').split(':');
-        const hh = Math.max(0, parseInt(h, 10) || 0);
-        const mm = Math.max(0, Math.min(59, parseInt(m, 10) || 0));
-        return { hh, mm };
-    };
-    const formatHm = (hh, mm) => `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+    // Duration will be stored as a plain number of minutes (integer)
     const enhanceTexthelper = async (title) => {
         try {
             setAiProcessing(true);
@@ -137,78 +131,75 @@ const QuestionsForm = ({
 
     const createAIQuestions = async (title) => {
         try {
-          setCreating(true);
-          const noOfQuestions = prompt("Enter no of questions");
-          if (!noOfQuestions) {
-            setCreating(false);
-            return;
-          }
-      
-          const resp = await api.post('/api/globalAdmin/createQuestions', { title, noOfQuestions });
-          const aiQs = resp?.data?.data?.questions;
-      
-          // Validate
-          if (!Array.isArray(aiQs) || aiQs.length === 0) {
-            alert('AI did not return a valid questions array. Please try again.');
-            setCreating(false);
-            return;
-          }
-      
-          // Normalize fields to what the UI expects
-          const normalized = aiQs.map((q) => ({
-            type: q?.type || 'Multiple Choice',
-            question_text: q?.question_text || '',
-            options: Array.isArray(q?.options) && q.options.length ? q.options : ['', ''],
-            correct_option: Array.isArray(q?.correct_option)
-              ? q.correct_option.filter((n) => Number.isInteger(n))
-              : (Number.isInteger(q?.correct_option) ? [q.correct_option] : []),
-            file_url: typeof q?.file_url === 'string' ? q.file_url : '',
-            instructions: typeof q?.instructions === 'string' ? q.instructions : '',
-            total_points: Number.isFinite(q?.total_points) ? q.total_points : 1,
-            shuffle_options: Boolean(q?.shuffle_options),
-          }));
-      
-          // Update both parent state (source of truth) and formData
-          setQuestions(normalized);
-          setFormData((prev) => ({ ...prev, questions: normalized }));
+            setCreating(true);
+            const noOfQuestions = prompt("Enter no of questions");
+            if (!noOfQuestions) {
+                setCreating(false);
+                return;
+            }
+
+            const resp = await api.post('/api/globalAdmin/createQuestions', { title, noOfQuestions });
+            const aiQs = resp?.data?.data?.questions;
+
+            // Validate
+            if (!Array.isArray(aiQs) || aiQs.length === 0) {
+                alert('AI did not return a valid questions array. Please try again.');
+                setCreating(false);
+                return;
+            }
+
+            // Normalize fields to what the UI expects
+            const normalized = aiQs.map((q) => ({
+                type: q?.type || 'Multiple Choice',
+                question_text: q?.question_text || '',
+                options: Array.isArray(q?.options) && q.options.length ? q.options : ['', ''],
+                correct_option: Array.isArray(q?.correct_option)
+                    ? q.correct_option.filter((n) => Number.isInteger(n))
+                    : (Number.isInteger(q?.correct_option) ? [q.correct_option] : []),
+                file_url: typeof q?.file_url === 'string' ? q.file_url : '',
+                instructions: typeof q?.instructions === 'string' ? q.instructions : '',
+                total_points: Number.isFinite(q?.total_points) ? q.total_points : 1,
+                shuffle_options: Boolean(q?.shuffle_options),
+            }));
+
+            // Update both parent state (source of truth) and formData
+            setQuestions(normalized);
+            setFormData((prev) => ({ ...prev, questions: normalized }));
         } catch (error) {
-          console.log(error);
-          alert('Failed to generate questions. Please try again.');
+            console.log(error);
+            alert('Failed to generate questions. Please try again.');
         } finally {
-          setCreating(false);
+            setCreating(false);
         }
-      };
-      const handleCloseForm = () => {
+    };
+    const handleCloseForm = () => {
         setShowForm(false);
         // Reset questions in parent so the next open starts clean
         setQuestions([{
-          type: '',
-          question_text: '',
-          options: ['', ''],
-          correct_option: '',
-          file_url: '',
-          instructions: ''
+            type: '',
+            question_text: '',
+            options: ['', ''],
+            correct_option: '',
+            instructions: ''
         }]);
-      
+
         // Reset formData fields
         setFormData({
-          title: '',
-          description: '',
-          tags: [],
-          questions: [],
-          team: '',
-          duration: '',
-          passPercentage: '',
-          isPublished: false,
-          isRecurring: false,
-          assignDate: '',
-          assignTime: '',
-          dueDate: '',
-          dueTime: '',
-          notifyUsers: false,
-          orgIds: []
+            title: '',
+            description: '',
+            tags: [],
+            questions: [],
+            team: '',
+            duration: 0,
+            passPercentage: '',
+            isPublished: false,
+            isRecurring: false,
+            assignDate: '',
+            dueDate: '',
+            notifyUsers: false,
+            orgIds: []
         });
-      };
+    };
 
     React.useEffect(() => {
         if (assessmentPreviewOpen) {
@@ -223,7 +214,7 @@ const QuestionsForm = ({
         }
     }, [questionPreviewIndex]);
 
-    
+
 
     return (
         <>
@@ -250,7 +241,7 @@ const QuestionsForm = ({
                                 </p>
                             </div>
                         </div>
-                        <button className="assess-close-btn" onClick={() => handleCloseForm() }>
+                        <button className="assess-close-btn" onClick={() => handleCloseForm()}>
                             <X size={20} />
                         </button>
                         {/* Bottom-of-header progress bar (matches location in screenshot) */}
@@ -335,7 +326,7 @@ const QuestionsForm = ({
                                         </div>
                                     </div>
 
-                                    <div className="assess-form-group" style={{marginBottom:"15px"}}>
+                                    <div className="assess-form-group" style={{ marginBottom: "15px" }}>
                                         <label className="assess-form-label">Description<span className="assess-required">*</span></label>
                                         <textarea
                                             className="assess-form-textarea"
@@ -345,13 +336,9 @@ const QuestionsForm = ({
                                             onChange={e => setFormData({ ...formData, description: e.target.value })}
                                         />
                                     </div>
-                                    <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(formData.title, formData.description)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
 
-
-                                    {/* Thumbnail upload */}
-                                    <div className="assess-form-group" style={{marginTop:"60px"}}>
+                                    <div className="assess-form-group">
                                         <label className="assess-form-label">Thumbnail</label>
-
                                         {formData.thumbnail_url ? (
                                             <div
                                                 style={{
@@ -386,7 +373,7 @@ const QuestionsForm = ({
                                                         }}
                                                         style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4f46e5', background: 'transparent' }}
                                                     >
-                                                       <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="16" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M7 6V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7ZM13.4142 13.9997L15.182 12.232L13.7678 10.8178L12 12.5855L10.2322 10.8178L8.81802 12.232L10.5858 13.9997L8.81802 15.7675L10.2322 17.1817L12 15.4139L13.7678 17.1817L15.182 15.7675L13.4142 13.9997ZM9 4V6H15V4H9Z"></path></svg> Delete
+                                                        <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="16" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M7 6V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7ZM13.4142 13.9997L15.182 12.232L13.7678 10.8178L12 12.5855L10.2322 10.8178L8.81802 12.232L10.5858 13.9997L8.81802 15.7675L10.2322 17.1817L12 15.4139L13.7678 17.1817L15.182 15.7675L13.4142 13.9997ZM9 4V6H15V4H9Z"></path></svg> Delete
                                                     </button>
                                                 </div>
                                             </div>
@@ -410,8 +397,25 @@ const QuestionsForm = ({
                                             </div>
                                         )}
                                     </div>
+                                    <div className='assess-form-group'>
+                                        <label className="assess-form-label">Instructions</label>
+                                        <div className="assess-instructions-box">
+                                            <RichText value={formData.instructions || ''} onChange={(value) => setFormData({ ...formData, instructions: value })} />
+                                        </div>
+                                    </div>
+                                    <div style={{display:"flex",gap:12}}>
+                                        <div style={{width:"50%"}} >
+                                            <label className='assess-form-label' style={{margin:"10px"}}>Number of Questions</label>
+                                            <input type="number" value={noOfQuestions} className='assess-form-input' onChange={(e) => setNoOfQuestions(e.target.value)} />
+                                        </div>
+                                        <div style={{width:"50%"}}>
+                                            <label className='assess-form-label' style={{margin:"10px"}}>Number of Questions</label>
+                                            <input type="number" value={noOfQuestions} className='assess-form-input' onChange={(e) => setNoOfQuestions(e.target.value)} />
+                                        </div>
+                                    </div>
+                                    <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(formData.title, formData.description)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
 
-                                    {/* Thumbnail preview card */}
+
                                     {thumbPreviewOpen && formData.thumbnail_url && (
                                         <PreviewCard
                                             imageUrl={resolveUrl(formData.thumbnail_url)}
@@ -420,54 +424,42 @@ const QuestionsForm = ({
                                             onClose={() => setThumbPreviewOpen(false)}
                                         />
                                     )}
-
-
                                 </div>}
-
-
-                            {/* Questions Section */}
                             {step === 2 && <div className="assess-form-section">
-                                <div className="assess-questions-header" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    {/* <h3 className="assess-section-title" style={{ margin: 0 }}>Questions ({questions.length})</h3> */}
 
-                                </div>
-
-                                <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => createAIQuestions(formData.title, formData.description)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
-
-                                
-                                {creating ? <div>Please Wait...</div> 
-                                :
-                                <div className="assess-questions-container">
-                                    {questions.map((q, qIndex) => (
-                                        <React.Fragment key={qIndex}>
-                                            <div className="assess-question-card">
-                                                <div className="assess-question-header">
-                                                    <span className="assess-question-number">Question {qIndex + 1} </span>
-                                                    <div style={{ display: 'flex', gap: 8 }}>
-                                                        <button
-                                                            type="button"
-                                                            className="btn-primary"
-                                                            title="Duplicate Question"
-                                                            onClick={() => duplicateQuestion(qIndex)} style={{ display: 'flex', gap: 8, border: '1px solid #e2e8f0', borderRadius: '8px' }}
-                                                        >
-                                                            <Copy size={16} />  Duplicate
-                                                        </button>
-                                                        {questions.length > 1 && (
+                                {creating ? <div>Please Wait...</div>
+                                    :
+                                    <div className="assess-questions-container">
+                                        {questions.map((q, qIndex) => (
+                                            <React.Fragment key={qIndex}>
+                                                <div className="assess-question-card">
+                                                    <div className="assess-question-header">
+                                                        <span className="assess-question-num">Question {qIndex + 1} </span>
+                                                        <div style={{ display: 'flex', gap: 8 }}>
                                                             <button
                                                                 type="button"
-                                                                className="assess-remove-question"
-                                                                onClick={() => removeQuestion(qIndex)}
-                                                                title="Remove Question"
+                                                                className="btn-primary"
+                                                                title="Duplicate Question"
+                                                                onClick={() => duplicateQuestion(qIndex)} style={{ display: 'flex', gap: 8, border: '1px solid #e2e8f0', borderRadius: '8px' }}
                                                             >
-                                                                <X size={16} />
+                                                                <Copy size={16} />  Duplicate
                                                             </button>
-                                                        )}
+                                                            {questions.length > 1 && (
+                                                                <button
+                                                                    type="button"
+                                                                    className="assess-remove-question"
+                                                                    onClick={() => removeQuestion(qIndex)}
+                                                                    title="Remove Question"
+                                                                >
+                                                                    <X size={16} />
+                                                                </button>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                </div>
 
-                                                {/* Container with left side for inputs and right side for preview */}
-                                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px' }}>
-                                                    <div style={{ flex: 2 }}>
+
+                                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px' }}>
+                                                        <div style={{ flex: 2 }}>
                                                         {/* Optional Instructions (above Question Type) */}
                                                         <div className="assess-form-group">
                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -508,105 +500,105 @@ const QuestionsForm = ({
                                                             )}
                                                         </div>
 
-                                                        {/* Question Type */}
-                                                        <div className="assess-form-group">
-                                                            <label className="assess-form-label" style={{ marginTop: "10px" }}>Question Type<span className="assess-required">*</span></label>
-                                                            <select
-                                                                className="assess-form-input"
-                                                                value={q.type}
-                                                                onChange={e => updateQuestionField(qIndex, 'type', e.target.value)}
-                                                                required
-                                                            >
-                                                                <option value="">Select Type</option>
-                                                                <option value="Multiple Choice">Multiple Choice</option>
-                                                                <option value="Multi Select">Multi Select</option>
-                                                            </select>
+                                                            {/* Question Type */}
+                                                            <div className="assess-form-group">
+                                                                <label className="assess-form-label" style={{ marginTop: "10px" }}>Question Type<span className="assess-required">*</span></label>
+                                                                <select
+                                                                    className="assess-form-input"
+                                                                    value={q.type}
+                                                                    onChange={e => updateQuestionField(qIndex, 'type', e.target.value)}
+                                                                    required
+                                                                >
+                                                                    <option value="">Select Type</option>
+                                                                    <option value="Multiple Choice">Multiple Choice</option>
+                                                                    <option value="Multi Select">Multi Select</option>
+                                                                </select>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
 
-                                                {/* Attach File + Upload */}
-                                                <div className="assess-form-group" style={{ marginTop: '20px' }}>
-                                                    <label className="assess-form-label">Attach File (Optional)</label>
-                                                    <div
-                                                        className="assess-file-upload-container"
-                                                        style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
-                                                    >
-                                                        <select
-                                                            className="assess-form-select"
-                                                            value={q.file_url || ''}
-                                                            onChange={e => updateQuestionField(qIndex, 'file_url', e.target.value)}
-                                                        >
-                                                            <option value="">No file selected</option>
-                                                            {/* Show existing file option if it's not part of uploadedFiles list */}
-                                                            {q.file_url && !uploadedFiles.includes(q.file_url) && (
-                                                                <option value={q.file_url}>
-                                                                    {q.file_url.split('/').pop() || 'Current File'}
-                                                                </option>
-                                                            )}
-                                                            {uploadedFiles.map((fUrl, i) => (
-                                                                <option key={i} value={fUrl}>
-                                                                    {`Uploaded File ${i + 1}`}
-                                                                </option>
-                                                            ))}
-                                                        </select>
+
+                                                    <div className="assess-form-group" style={{ marginTop: '20px' }}>
+                                                        <label className="assess-form-label">Attach File (Optional)</label>
                                                         <div
-                                                            className="assess-file-upload"
-                                                            style={{ position: 'relative' }}
+                                                            className="assess-file-upload-container"
+                                                            style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
                                                         >
-                                                            <input
-                                                                type="file"
-                                                                id={`file-${qIndex}`}
-                                                                className="assess-file-input"
-                                                                onChange={e => handleFileUpload(e, qIndex)}
-                                                            />
-                                                            <label
-                                                                htmlFor={`file-${qIndex}`}
-                                                                className="assess-file-label"
+                                                            <select
+                                                                className="assess-form-select"
+                                                                value={q.file_url || ''}
+                                                                onChange={e => updateQuestionField(qIndex, 'file_url', e.target.value)}
+                                                            >
+                                                                <option value="">No file selected</option>
+                                                                {/* Show existing file option if it's not part of uploadedFiles list */}
+                                                                {q.file_url && !uploadedFiles.includes(q.file_url) && (
+                                                                    <option value={q.file_url}>
+                                                                        {q.file_url.split('/').pop() || 'Current File'}
+                                                                    </option>
+                                                                )}
+                                                                {uploadedFiles.map((fUrl, i) => (
+                                                                    <option key={i} value={fUrl}>
+                                                                        {`Uploaded File ${i + 1}`}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                            <div
+                                                                className="assess-file-upload"
+                                                                style={{ position: 'relative' }}
+                                                            >
+                                                                <input
+                                                                    type="file"
+                                                                    id={`file-${qIndex}`}
+                                                                    className="assess-file-input"
+                                                                    onChange={e => handleFileUpload(e, qIndex)}
+                                                                />
+                                                                <label
+                                                                    htmlFor={`file-${qIndex}`}
+                                                                    className="assess-file-label"
+                                                                    style={{
+                                                                        cursor: 'pointer',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '8px',
+                                                                    }}
+                                                                >
+                                                                    <Upload size={16} />
+                                                                    Upload File
+                                                                </label>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                className="assess-preview-toggle"
+                                                                title="Preview File"
+                                                                onClick={() => setPreviewOpen(prev => ({ ...prev, [qIndex]: !prev[qIndex] }))}
+                                                                disabled={!q.file_url}
+                                                                style={{ whiteSpace: 'nowrap' }}
+                                                            >
+                                                                <Eye size={16} /> {previewOpen[qIndex] ? 'Hide Preview' : 'Preview'}
+                                                            </button>
+                                                        </div>
+
+                                                        {/* File name display */}
+                                                        {q.file_url && (
+                                                            <div
                                                                 style={{
-                                                                    cursor: 'pointer',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    gap: '8px',
+                                                                    marginTop: '6px',
+                                                                    fontSize: '0.9rem',
+                                                                    color: '#64748b',
                                                                 }}
                                                             >
-                                                                <Upload size={16} />
-                                                                Upload File
-                                                            </label>
-                                                        </div>
-                                                        <button
-                                                            type="button"
-                                                            className="assess-preview-toggle"
-                                                            title="Preview File"
-                                                            onClick={() => setPreviewOpen(prev => ({ ...prev, [qIndex]: !prev[qIndex] }))}
-                                                            disabled={!q.file_url}
-                                                            style={{ whiteSpace: 'nowrap' }}
-                                                        >
-                                                            <Eye size={16} /> {previewOpen[qIndex] ? 'Hide Preview' : 'Preview'}
-                                                        </button>
+                                                                File: {q.file_url.split('/').pop()}
+                                                            </div>
+                                                        )}
                                                     </div>
 
-                                                    {/* File name display */}
-                                                    {q.file_url && (
-                                                        <div
-                                                            style={{
-                                                                marginTop: '6px',
-                                                                fontSize: '0.9rem',
-                                                                color: '#64748b',
-                                                            }}
-                                                        >
-                                                            File: {q.file_url.split('/').pop()}
-                                                        </div>
-                                                    )}
-                                                </div>
 
+                                                    {/* Preview overlay (opens on clicking Preview; closes with X) */}
+                                                    {previewOpen[qIndex] && (
+                                                        <div className="assess-file-preview-overlay" onClick={(e) => { if (e.target === e.currentTarget) setPreviewOpen(prev => ({ ...prev, [qIndex]: false })); }}>
+                                                            <div className="assess-file-preview-modal">
 
-                                                {/* Preview overlay (opens on clicking Preview; closes with X) */}
-                                                {previewOpen[qIndex] && (
-                                                    <div className="assess-file-preview-overlay" onClick={(e) => { if (e.target === e.currentTarget) setPreviewOpen(prev => ({ ...prev, [qIndex]: false })); }}>
-                                                        <div className="assess-file-preview-modal">
-                                                            
-                                                        <button
+                                                                <button
                                                                     type="button"
                                                                     onClick={() => setPreviewOpen(prev => ({ ...prev, [qIndex]: false }))}
                                                                     aria-label="Close file preview"
@@ -614,197 +606,197 @@ const QuestionsForm = ({
                                                                 >
                                                                     <X size={18} />
                                                                 </button>
-                                                            <div className="assess-file-preview-body">
+                                                                <div className="assess-file-preview-body">
 
-                                                                {q.file_url ? (
-                                                                    <>
-                                                                        {q.file_url.match(/\.(jpeg|jpg|png|gif)$/i) && (
-                                                                            <img src={resolveUrl(q.file_url)} alt="Preview" />
-                                                                        )}
-                                                                        {q.file_url.match(/\.(mp4|webm|ogg)$/i) && (
-                                                                            <video src={resolveUrl(q.file_url)} controls />
-                                                                        )}
-                                                                        {q.file_url.match(/\.(mp3|wav|ogg)$/i) && (
-                                                                            <audio src={resolveUrl(q.file_url)} controls />
-                                                                        )}
-                                                                        {q.file_url.match(/\.pdf$/i) && (
-                                                                            <iframe src={resolveUrl(q.file_url)} title="PDF Preview" />
-                                                                        )}
-                                                                        {!q.file_url.match(/\.(jpeg|jpg|png|gif|mp4|webm|ogg|mp3|wav|pdf)$/i) && (
-                                                                            <div>
-                                                                                <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: 6 }}>
-                                                                                    Preview not supported for this file type.
-                                                                                </p>
-                                                                            </div>
-                                                                        )}
-                                                                    </>
-                                                                ) : (
-                                                                    <p>No file attached.</p>
-                                                                )}
+                                                                    {q.file_url ? (
+                                                                        <>
+                                                                            {q.file_url.match(/\.(jpeg|jpg|png|gif)$/i) && (
+                                                                                <img src={resolveUrl(q.file_url)} alt="Preview" />
+                                                                            )}
+                                                                            {q.file_url.match(/\.(mp4|webm|ogg)$/i) && (
+                                                                                <video src={resolveUrl(q.file_url)} controls />
+                                                                            )}
+                                                                            {q.file_url.match(/\.(mp3|wav|ogg)$/i) && (
+                                                                                <audio src={resolveUrl(q.file_url)} controls />
+                                                                            )}
+                                                                            {q.file_url.match(/\.pdf$/i) && (
+                                                                                <iframe src={resolveUrl(q.file_url)} title="PDF Preview" />
+                                                                            )}
+                                                                            {!q.file_url.match(/\.(jpeg|jpg|png|gif|mp4|webm|ogg|mp3|wav|pdf)$/i) && (
+                                                                                <div>
+                                                                                    <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: 6 }}>
+                                                                                        Preview not supported for this file type.
+                                                                                    </p>
+                                                                                </div>
+                                                                            )}
+                                                                        </>
+                                                                    ) : (
+                                                                        <p>No file attached.</p>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </div>
+                                                    )}
+
+
+                                                    {/* Question Text */}
+                                                    <div className="assess-form-group" style={{ marginTop: '20px' }}>
+                                                        <label className="assess-form-label">
+                                                            Question Text<span className="assess-required">*</span>
+                                                        </label>
+                                                        <textarea
+                                                            className="assess-form-textarea"
+                                                            placeholder="Enter your question here..."
+                                                            rows={2}
+                                                            value={q.question_text}
+                                                            onChange={e => updateQuestionField(qIndex, 'question_text', e.target.value)}
+                                                            required
+                                                        />
                                                     </div>
-                                                )}
-
-
-                                                {/* Question Text */}
-                                                <div className="assess-form-group" style={{ marginTop: '20px' }}>
-                                                    <label className="assess-form-label">
-                                                        Question Text<span className="assess-required">*</span>
-                                                    </label>
-                                                    <textarea
-                                                        className="assess-form-textarea"
-                                                        placeholder="Enter your question here..."
-                                                        rows={2}
-                                                        value={q.question_text}
-                                                        onChange={e => updateQuestionField(qIndex, 'question_text', e.target.value)}
-                                                        required
-                                                    />
-                                                </div>
-                                                {/* Answer Options and Correct Answer Index */}
-                                                <div className="assess-form-group" style={{ marginTop: '20px' }}>
-                                                    <label className="assess-form-label">Answer Options</label>
-                                                    {(q.type === 'Multiple Choice' || q.type === 'Multi Select') && <div className="assess-options-container">
-                                                        {q.options.map((opt, optIndex) => (
-                                                            <div key={optIndex} className="assess-option-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', width: 'fit-content' }}>
-                                                                <div className="assess-option-index">{getLetterFromIndex(optIndex)}</div>
-                                                                <input
-                                                                    type="text"
-                                                                    className="assess-form-input"
-                                                                    placeholder={`Option ${getLetterFromIndex(optIndex)}`}
-                                                                    value={opt}
-                                                                    onChange={e => updateOption(qIndex, optIndex, e.target.value)}
-                                                                    required
-                                                                />
-                                                                {q.options.length > 1 && (
-                                                                    <button
-                                                                        type="button"
-                                                                        className="assess-remove-option"
-                                                                        onClick={() => removeOption(qIndex, optIndex)}
-                                                                    >
-                                                                        <X size={16} />
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                        <button
-                                                            type="button"
-                                                            className="assess-add-option"
-                                                            onClick={() => addOption(qIndex)}
-                                                        >
-                                                            <Plus size={14} />
-                                                            Add Option
-                                                        </button>
-                                                        {/* Correct Answer Index(es) + Save aligned right */}
-                                                        <div className="assess-correct-row">
-                                                            <div className="assess-form-group assess-correct-group">
-                                                                <label className="assess-form-label">{q.type === 'Multi Select' ? 'Correct Answer ' : 'Correct Answer '}</label>
-                                                                <input
-                                                                    type="text"
-                                                                    className="assess-form-input"
-                                                                    placeholder={q.type === 'Multi Select' ? 'e.g., A,C for multiple' : 'e.g., A'}
-                                                                    value={
-                                                                        (() => {
-                                                                            if (Array.isArray(q.correct_option)) {
-                                                                                return q.correct_option.map(idx => {
-                                                                                    if (typeof idx === 'number') {
-                                                                                        return getLetterFromIndex(idx);
-                                                                                    }
-                                                                                    return getLetterFromIndex(0); // fallback
-                                                                                }).join(',');
-                                                                            }
-                                                                            if (typeof q.correct_option === 'number') {
-                                                                                return getLetterFromIndex(q.correct_option);
-                                                                            }
-                                                                            if (typeof q.correct_option === 'string' && q.correct_option !== '') {
-                                                                                // If it's already a letter string, return as-is
-                                                                                return q.correct_option.toUpperCase();
-                                                                            }
-                                                                            return '';
-                                                                        })()
-                                                                    }
-                                                                    onChange={e => {
-                                                                        const value = e.target.value.toUpperCase();
-                                                                        // Allow letters A-Z, commas, and spaces
-                                                                        if (/^[A-Z,\s]*$/.test(value) || value === '') {
-                                                                            updateQuestionField(qIndex, 'correct_option', value);
+                                                    {/* Answer Options and Correct Answer Index */}
+                                                    <div className="assess-form-group" style={{ marginTop: '20px' }}>
+                                                        <label className="assess-form-label">Answer Options</label>
+                                                        {(q.type === 'Multiple Choice' || q.type === 'Multi Select') && <div className="assess-options-container">
+                                                            {q.options.map((opt, optIndex) => (
+                                                                <div key={optIndex} className="assess-option-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', width: 'fit-content' }}>
+                                                                    <div className="assess-option-index">{getLetterFromIndex(optIndex)}</div>
+                                                                    <input
+                                                                        type="text"
+                                                                        className="assess-form-input"
+                                                                        placeholder={`Option ${getLetterFromIndex(optIndex)}`}
+                                                                        value={opt}
+                                                                        onChange={e => updateOption(qIndex, optIndex, e.target.value)}
+                                                                        required
+                                                                    />
+                                                                    {q.options.length > 1 && (
+                                                                        <button
+                                                                            type="button"
+                                                                            className="assess-remove-option"
+                                                                            onClick={() => removeOption(qIndex, optIndex)}
+                                                                        >
+                                                                            <X size={16} />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                            <button
+                                                                type="button"
+                                                                className="assess-add-option"
+                                                                onClick={() => addOption(qIndex)}
+                                                            >
+                                                                <Plus size={14} />
+                                                                Add Option
+                                                            </button>
+                                                            {/* Correct Answer Index(es) + Save aligned right */}
+                                                            <div className="assess-correct-row">
+                                                                <div className="assess-form-group assess-correct-group">
+                                                                    <label className="assess-form-label">{q.type === 'Multi Select' ? 'Correct Answer ' : 'Correct Answer '}</label>
+                                                                    <input
+                                                                        type="text"
+                                                                        className="assess-form-input"
+                                                                        placeholder={q.type === 'Multi Select' ? 'e.g., A,C for multiple' : 'e.g., A'}
+                                                                        value={
+                                                                            (() => {
+                                                                                if (Array.isArray(q.correct_option)) {
+                                                                                    return q.correct_option.map(idx => {
+                                                                                        if (typeof idx === 'number') {
+                                                                                            return getLetterFromIndex(idx);
+                                                                                        }
+                                                                                        return getLetterFromIndex(0); // fallback
+                                                                                    }).join(',');
+                                                                                }
+                                                                                if (typeof q.correct_option === 'number') {
+                                                                                    return getLetterFromIndex(q.correct_option);
+                                                                                }
+                                                                                if (typeof q.correct_option === 'string' && q.correct_option !== '') {
+                                                                                    // If it's already a letter string, return as-is
+                                                                                    return q.correct_option.toUpperCase();
+                                                                                }
+                                                                                return '';
+                                                                            })()
                                                                         }
-                                                                    }}
-                                                                    onBlur={e => {
-                                                                        // Parse and normalize on blur - convert letters to numbers for backend
-                                                                        const raw = String(e.target.value || '');
-                                                                        const parts = raw.split(',').map(s => s.trim().toUpperCase()).filter(s => s.length > 0);
-                                                                        if (parts.length === 0) {
-                                                                            updateQuestionField(qIndex, 'correct_option', '');
-                                                                            return;
-                                                                        }
-                                                                        if (parts.length > 1) {
-                                                                            const arr = parts
-                                                                                .map(s => {
-                                                                                    if (/^[A-Z]$/.test(s)) {
-                                                                                        return s.charCodeAt(0) - 65;
-                                                                                    }
-                                                                                    return -1;
-                                                                                })
-                                                                                .filter(n => n >= 0);
-                                                                            const uniqueSorted = Array.from(new Set(arr)).sort((a, b) => a - b);
-                                                                            updateQuestionField(qIndex, 'correct_option', uniqueSorted);
-                                                                        } else {
-                                                                            if (/^[A-Z]$/.test(parts[0])) {
-                                                                                const letterIndex = parts[0].charCodeAt(0) - 65;
-                                                                                updateQuestionField(qIndex, 'correct_option', letterIndex);
-                                                                            } else {
+                                                                        onChange={e => {
+                                                                            const value = e.target.value.toUpperCase();
+                                                                            // Allow letters A-Z, commas, and spaces
+                                                                            if (/^[A-Z,\s]*$/.test(value) || value === '') {
+                                                                                updateQuestionField(qIndex, 'correct_option', value);
+                                                                            }
+                                                                        }}
+                                                                        onBlur={e => {
+                                                                            // Parse and normalize on blur - convert letters to numbers for backend
+                                                                            const raw = String(e.target.value || '');
+                                                                            const parts = raw.split(',').map(s => s.trim().toUpperCase()).filter(s => s.length > 0);
+                                                                            if (parts.length === 0) {
                                                                                 updateQuestionField(qIndex, 'correct_option', '');
+                                                                                return;
                                                                             }
-                                                                        }
-                                                                    }}
-                                                                    required
-                                                                />
+                                                                            if (parts.length > 1) {
+                                                                                const arr = parts
+                                                                                    .map(s => {
+                                                                                        if (/^[A-Z]$/.test(s)) {
+                                                                                            return s.charCodeAt(0) - 65;
+                                                                                        }
+                                                                                        return -1;
+                                                                                    })
+                                                                                    .filter(n => n >= 0);
+                                                                                const uniqueSorted = Array.from(new Set(arr)).sort((a, b) => a - b);
+                                                                                updateQuestionField(qIndex, 'correct_option', uniqueSorted);
+                                                                            } else {
+                                                                                if (/^[A-Z]$/.test(parts[0])) {
+                                                                                    const letterIndex = parts[0].charCodeAt(0) - 65;
+                                                                                    updateQuestionField(qIndex, 'correct_option', letterIndex);
+                                                                                } else {
+                                                                                    updateQuestionField(qIndex, 'correct_option', '');
+                                                                                }
+                                                                            }
+                                                                        }}
+                                                                        required
+                                                                    />
+                                                                </div>
                                                             </div>
+
+
+
+                                                        </div>}
+
+                                                        {/* Footer actions similar to Surveys: Add Question + Add Section gated by readiness */}
+                                                        <div className="assess-correct-row" style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }}>
+                                                            {(() => {
+                                                                const textOk = !!(q.question_text || '').trim();
+                                                                const optsOk = Array.isArray(q.options) && q.options.filter(o => (o || '').trim()).length >= 2;
+                                                                const qReady = textOk && optsOk;
+                                                                const hint = qReady ? undefined : 'Enter question text and at least two options to enable';
+                                                                return (
+                                                                    <>
+                                                                        <button
+                                                                            type="button"
+                                                                            className="btn-secondary"
+                                                                            onClick={() => addQuestionAfter(qIndex)}
+                                                                            disabled={!qReady}
+                                                                            title={hint}
+                                                                        >
+                                                                            <Plus size={14} /> Add Question
+                                                                        </button>
+                                                                        {/* Sections removed: no Add Section button */}
+                                                                        <button
+                                                                            type="button"
+                                                                            className="assess-btn-primary assess-save-inline"
+                                                                            title={qReady ? 'Save and Preview this question' : hint}
+                                                                            onClick={() => setQuestionPreviewIndex(qIndex)}
+                                                                            disabled={!qReady}
+                                                                        >
+                                                                            <Eye size={16} /> Preview Question
+                                                                        </button>
+                                                                    </>
+                                                                );
+                                                            })()}
                                                         </div>
-
-
-
-                                                    </div>}
-
-                                                    {/* Footer actions similar to Surveys: Add Question + Add Section gated by readiness */}
-                                                    <div className="assess-correct-row" style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }}>
-                                                        {(() => {
-                                                            const textOk = !!(q.question_text || '').trim();
-                                                            const optsOk = Array.isArray(q.options) && q.options.filter(o => (o || '').trim()).length >= 2;
-                                                            const qReady = textOk && optsOk;
-                                                            const hint = qReady ? undefined : 'Enter question text and at least two options to enable';
-                                                            return (
-                                                                <>
-                                                                    <button
-                                                                        type="button"
-                                                                        className="btn-secondary"
-                                                                        onClick={() => addQuestionAfter(qIndex)}
-                                                                        disabled={!qReady}
-                                                                        title={hint}
-                                                                    >
-                                                                        <Plus size={14} /> Add Question
-                                                                    </button>
-                                                                    {/* Sections removed: no Add Section button */}
-                                                                    <button
-                                                                        type="button"
-                                                                        className="assess-btn-primary assess-save-inline"
-                                                                        title={qReady ? 'Save and Preview this question' : hint}
-                                                                        onClick={() => setQuestionPreviewIndex(qIndex)}
-                                                                        disabled={!qReady}
-                                                                    >
-                                                                        <Eye size={16} /> Preview Question
-                                                                    </button>
-                                                                </>
-                                                            );
-                                                        })()}
                                                     </div>
                                                 </div>
-                                            </div>
-                                            {/* Sections removed: no section blocks after questions */}
-                                        </React.Fragment>
-                                    ))}
-                                </div>}
+                                                {/* Sections removed: no section blocks after questions */}
+                                            </React.Fragment>
+                                        ))}
+                                    </div>}
                             </div>}
                             {/* next info */}
                             {step === 3 && <div className='assess-form-section'>
@@ -816,24 +808,17 @@ const QuestionsForm = ({
                                         </label>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                             <input
-                                                type="text" /* plain input, no native steppers */
-                                                inputMode="numeric"
-                                                pattern="[0-9]*"
+                                                type="number"
+                                                min={0}
+                                                step={1}
                                                 className="assess-form-input"
-                                               
                                                 placeholder="Enter minutes"
-                                                value={(parseHm(formData.duration).hh * 60) + parseHm(formData.duration).mm}
+                                                value={formData.duration}
                                                 onChange={e => {
-                                                    const raw = parseInt(e.target.value, 10);
-                                                    const totalMin = Number.isNaN(raw) ? 0 : Math.max(0, raw);
-                                                    const hh = Math.floor(totalMin / 60);
-                                                    const mm = totalMin % 60;
-                                                    setFormData({ ...formData, duration: formatHm(hh, mm) });
+                                                    setFormData({ ...formData, duration: e.target.value });
                                                 }}
-                                                onKeyDown={e => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }}
                                                 required
                                             />
-                                            <span>minutes</span>
                                         </div>
                                         <small style={{ color: '#64748b', fontSize: '0.875rem' }}>
                                             Enter total minutes
@@ -979,123 +964,123 @@ const QuestionsForm = ({
                                 </div>
                                 {/* adding new fileds */}
                                 <div className="assess-form-grid">
-                                <div className='assess-form-group'>
-                                    <label className="assess-form-label">
-                                        Credits<span className="assess-required">*</span>
-                                    </label>
-                                    <select name="credits" id="" value={Number.isFinite(formData.credits) ? formData.credits : 0} onChange={(e) => setFormData({ ...formData, credits: parseInt(e.target.value, 10) || 0 })} className='assess-form-input' >
-                                        <option value="0">0</option>
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                        <option value="4">4</option>
-                                        <option value="5">5</option>
-                                        <option value="6">6</option>
-                                        <option value="7">7</option>
-                                        <option value="8">8</option>
-                                        <option value="9">9</option>
-                                    </select>
-                                </div>
-                                <div className='assess-form-group'>
-                                    <label className="assess-form-label">
-                                        Stars<span className="assess-required">*</span>
-                                    </label>
+                                    <div className='assess-form-group'>
+                                        <label className="assess-form-label">
+                                            Credits<span className="assess-required">*</span>
+                                        </label>
+                                        <select name="credits" id="" value={Number.isFinite(formData.credits) ? formData.credits : 0} onChange={(e) => setFormData({ ...formData, credits: parseInt(e.target.value, 10) || 0 })} className='assess-form-input' >
+                                            <option value="0">0</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                            <option value="5">5</option>
+                                            <option value="6">6</option>
+                                            <option value="7">7</option>
+                                            <option value="8">8</option>
+                                            <option value="9">9</option>
+                                        </select>
+                                    </div>
+                                    <div className='assess-form-group'>
+                                        <label className="assess-form-label">
+                                            Stars<span className="assess-required">*</span>
+                                        </label>
 
-                                    <select name="stars" id="" value={Number.isFinite(formData.stars) ? formData.stars : 0} onChange={(e) => setFormData({ ...formData, stars: parseInt(e.target.value, 10) || 0 })} className='assess-form-input' >
-                                        <option value="0">0</option>
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                        <option value="4">4</option>
-                                        <option value="5">5</option>
-                                        <option value="6">6</option>
-                                        <option value="7">7</option>
-                                        <option value="8">8</option>
-                                        <option value="9">9</option>
-                                    </select>
-                                </div>
-                               
+                                        <select name="stars" id="" value={Number.isFinite(formData.stars) ? formData.stars : 0} onChange={(e) => setFormData({ ...formData, stars: parseInt(e.target.value, 10) || 0 })} className='assess-form-input' >
+                                            <option value="0">0</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                            <option value="5">5</option>
+                                            <option value="6">6</option>
+                                            <option value="7">7</option>
+                                            <option value="8">8</option>
+                                            <option value="9">9</option>
+                                        </select>
+                                    </div>
+
                                 </div>
                                 <div className='assess-form-grid'>
-                                <div className='assess-form-group'>
-                                    <label className="assess-form-label">
-                                        Badges<span className="assess-required">*</span>
-                                    </label>
-                                    {/* <span className="slider-value">{newContent.badges || 0}</span> */}
-                                    <select name="badges" id="" value={Number.isFinite(formData.badges) ? formData.badges : 0} onChange={(e) => setFormData({ ...formData, badges: parseInt(e.target.value, 10) || 0 })} className='assess-form-input' >
-                                        <option value="0">0</option>
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                        <option value="4">4</option>
-                                        <option value="5">5</option>
-                                        <option value="6">6</option>
-                                        <option value="7">7</option>
-                                        <option value="8">8</option>
-                                        <option value="9">9</option>
-                                    </select>
+                                    <div className='assess-form-group'>
+                                        <label className="assess-form-label">
+                                            Badges<span className="assess-required">*</span>
+                                        </label>
+                                        {/* <span className="slider-value">{newContent.badges || 0}</span> */}
+                                        <select name="badges" id="" value={Number.isFinite(formData.badges) ? formData.badges : 0} onChange={(e) => setFormData({ ...formData, badges: parseInt(e.target.value, 10) || 0 })} className='assess-form-input' >
+                                            <option value="0">0</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                            <option value="5">5</option>
+                                            <option value="6">6</option>
+                                            <option value="7">7</option>
+                                            <option value="8">8</option>
+                                            <option value="9">9</option>
+                                        </select>
+                                    </div>
+                                    <div className='assess-form-group'>
+                                        <label className="assess-form-label">
+                                            Category <span className="assess-required">*</span>
+                                        </label>
+                                        <select
+                                            name="category"
+                                            value={formData.category || ''}
+                                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                            className="assess-form-input"
+                                            required
+
+                                        >
+                                            <option value="">Select Category</option>
+                                            {categories.map((cat) => (
+                                                <option key={cat} value={cat}>
+                                                    {cat}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
-                                <div className='assess-form-group'>
-                                    <label className="assess-form-label">
-                                        Category <span className="assess-required">*</span>
-                                    </label>
-                                    <select
-                                        name="category"
-                                        value={formData.category || ''}
-                                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                        className="assess-form-input"
-                                        required
-                                        
-                                    >
-                                        <option value="">Select Category</option>
-                                        {categories.map((cat) => (
-                                            <option key={cat} value={cat}>
-                                                {cat}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                </div>
-                               
+
                                 <div className="assess-form-group">
-                                <label className="assess-form-label module-overlay__checkbox">
-                                    <input
-                                        type="checkbox"
-                                        name="feedbackEnabled"
-                                        checked={!!formData.feedbackEnabled}
-                                        onChange={(e) => setFormData({ ...formData, feedbackEnabled: e.target.checked })}
-                                    />
-                                    Allow learners to submit feedback and reactions
-                                </label>
-                            </div>
-                           
-                           
-                            <div className="assess-form-group">
-                           
-                            <label className="assess-form-label">
-                                           
-                                </label>
-                                <label className="assess-form-label module-overlay__checkbox">
-                                    <input
-                                        type="checkbox"
-                                        name="shuffle_questions"
-                                        checked={!!formData.shuffle_questions}
-                                        onChange={(e) => setFormData({ ...formData, shuffle_questions: e.target.checked })}
-                                    />
-                                    Shuffle questions (randomize question order per student/attempt)
-                                </label>
-                            </div>
-                            <div className="assess-form-group">
-                                <label className="assess-form-label module-overlay__checkbox">
-                                    <input
-                                        type="checkbox"
-                                        name="shuffle_options"
-                                        checked={!!formData.shuffle_options}
-                                        onChange={(e) => setFormData({ ...formData, shuffle_options: e.target.checked })}
-                                    />
-                                    Shuffle options (randomize choices order per student/attempt)
-                                </label>
-                            </div>
+                                    <label className="assess-form-label module-overlay__checkbox">
+                                        <input
+                                            type="checkbox"
+                                            name="feedbackEnabled"
+                                            checked={!!formData.feedbackEnabled}
+                                            onChange={(e) => setFormData({ ...formData, feedbackEnabled: e.target.checked })}
+                                        />
+                                        Allow learners to submit feedback and reactions
+                                    </label>
+                                </div>
+
+
+                                <div className="assess-form-group">
+
+                                    <label className="assess-form-label">
+
+                                    </label>
+                                    <label className="assess-form-label module-overlay__checkbox">
+                                        <input
+                                            type="checkbox"
+                                            name="shuffle_questions"
+                                            checked={!!formData.shuffle_questions}
+                                            onChange={(e) => setFormData({ ...formData, shuffle_questions: e.target.checked })}
+                                        />
+                                        Shuffle questions (randomize question order per student/attempt)
+                                    </label>
+                                </div>
+                                <div className="assess-form-group">
+                                    <label className="assess-form-label module-overlay__checkbox">
+                                        <input
+                                            type="checkbox"
+                                            name="shuffle_options"
+                                            checked={!!formData.shuffle_options}
+                                            onChange={(e) => setFormData({ ...formData, shuffle_options: e.target.checked })}
+                                        />
+                                        Shuffle options (randomize choices order per student/attempt)
+                                    </label>
+                                </div>
 
                             </div>}
 

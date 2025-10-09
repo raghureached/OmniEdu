@@ -64,7 +64,6 @@ const uploadMultipleToCloudinary = async (req, res, next) => {
               fs.unlinkSync(file.path);
             }
           } catch (err) {
-            // Log the error, but do not crash the app
             console.warn(`Could not delete file at ${file.path}`, err);
           }
           req.uploadedFiles[fieldName].push({
@@ -73,7 +72,7 @@ const uploadMultipleToCloudinary = async (req, res, next) => {
             format: result.format,
             size: result.bytes,
           });
-          // console.log(req.uploadedFiles)
+
         }
       }
   
@@ -92,13 +91,13 @@ const uploadMultipleToCloudinary = async (req, res, next) => {
   const uploadQuestionFilesToCloud = async (req, res, next) => {
     try {
       if (!req.files) return next();
-  
+      console.log(req.files)
       req.uploadedFiles = {};
   
       for (const fieldName of Object.keys(req.files)) {
         const files = req.files[fieldName];
         req.uploadedFiles[fieldName] = [];
-  
+        
         for (const file of files) {
           const result = await cloudinary.uploader.upload(file.path, {
             folder: "questionFiles",

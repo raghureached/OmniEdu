@@ -22,9 +22,6 @@ const GlobalAssessments = () => {
   //   status: 'Draft',
   //   date: ''
   // });
-  
-  
-  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -36,7 +33,7 @@ const GlobalAssessments = () => {
     attempts: 1,             // NEW
     unlimited_attempts: false,
     percentage_to_pass: 0,   // NEW
-   
+    instructions: '',
     display_answers: 'AfterAssessment',
     // Newly added fields for assessments
     credits: 0,
@@ -92,6 +89,7 @@ const GlobalAssessments = () => {
       attempts: 1,             // NEW
       unlimited_attempts: false,
       percentage_to_pass: 0,   // NEW
+      instructions: '',
       
       display_answers: 'AfterAssessment',
       // Newly added fields
@@ -114,7 +112,6 @@ const GlobalAssessments = () => {
       options: ['', ''],
       correct_option: '',
       file_url: '',
-      instructions: ''
     }]);
     setShowForm(true);
   };
@@ -193,7 +190,7 @@ const GlobalAssessments = () => {
         attempts: full.attempts ?? 1,
         unlimited_attempts: !!full.unlimited_attempts,
         percentage_to_pass: full.percentage_to_pass ?? 0,
-      
+        instructions:full.instructions,
         display_answers:
           full.display_answers || 'AfterAssessment',
         // Newly added fields
@@ -244,13 +241,11 @@ const GlobalAssessments = () => {
               options: Array.isArray(q.options) && q.options.length ? q.options : [''],
               correct_option: Array.isArray(q.correct_option) ? q.correct_option : (Number.isInteger(q.correct_option) ? [q.correct_option] : []),
               file_url: q.file_url || '',
-              instructions: q.instructions || '',
-              
             }))
           : [];
         setQuestions(mappedQuestions.length
           ? mappedQuestions
-          : [{ type: '', question_text: '', options: [''], correct_option: '', file_url: '', instructions:'' }]);
+          : [{ type: '', question_text: '', options: [''], correct_option: '', file_url: ''}]);
       }
       setShowForm(true);
     } catch (e) {
@@ -268,7 +263,7 @@ const GlobalAssessments = () => {
         attempts: assessment.attempts ?? 1,
         unlimited_attempts: !!assessment.unlimited_attempts,
         percentage_to_pass: assessment.percentage_to_pass ?? 0,
-       
+        instructions:assessment.instructions,
         display_answers:
           assessment.display_answers || 'AfterAssessment',
         // Newly added fields
@@ -285,7 +280,7 @@ const GlobalAssessments = () => {
         thumbnail_url: assessment.thumbnail_url || assessment.thumbnail || '',
         thumbnail_file: null,
       });
-      setQuestions([{ type: '', question_text: '', options: ['', ''], correct_option: '', file_url: '', instructions: '', shuffle_options: false }]);
+      setQuestions([{ type: '', question_text: '', options: ['', ''], correct_option: '', file_url: '', shuffle_options: false }]);
       setShowForm(true);
     }
   };
@@ -294,13 +289,17 @@ const GlobalAssessments = () => {
     if (e && typeof e.preventDefault === 'function') {
       e.preventDefault();
     }
-    // Format duration to "<minutes> mins"
-    const minutesFromHhMm = (d) => {
-      if (!d) return 0;
-      const [h = '0', m = '0'] = String(d).split(':');
-      const hh = parseInt(h, 10) || 0;
-      const mm = parseInt(m, 10) || 0;
-      return (Math.max(0, hh) * 60) + Math.max(0, Math.min(59, mm));
+    // Normalize duration to a plain number of minutes
+    const toMinutesNumber = (d) => {
+      if (d === undefined || d === null || d === '') return 0;
+      if (typeof d === 'number') return Math.max(0, d);
+      const s = String(d).trim();
+      // Handle values like "120 mins"
+      const match = s.match(/^(\d+)\s*min/i);
+      if (match) return Math.max(0, parseInt(match[1], 10) || 0);
+      // Fallback: try plain integer string
+      const n = parseInt(s, 10);
+      return Number.isNaN(n) ? 0 : Math.max(0, n);
     };
 
     // Resolve thumbnail URL to send (upload if local file)
@@ -319,8 +318,9 @@ const GlobalAssessments = () => {
     const payload = {
       title: formData.title,
       description: formData.description,
+      instructions: formData.instructions || '',
       tags: Array.isArray(formData.tags) ? formData.tags : [],
-      duration: `${minutesFromHhMm(formData.duration)} mins`,
+      duration: toMinutesNumber(formData.duration),
       team: formData.team,
       subteam: formData.subteam,
       attempts: formData.attempts,
@@ -362,7 +362,6 @@ const GlobalAssessments = () => {
           options: q.options,
           correct_option: correct,
           file_url: q.file_url ,
-          instructions: q.instructions || '',
           total_points: Number.isFinite(q.total_points) ? q.total_points : 1,
         };
       })
@@ -370,8 +369,8 @@ const GlobalAssessments = () => {
 
     try {
       await dispatch(createGlobalAssessment(payload)).unwrap();
-      setShowForm(false);
-      dispatch(fetchGlobalAssessments({ page, limit }));
+      // setShowForm(false);
+      // dispatch(fetchGlobalAssessments({ page, limit }));
     } catch (err) {
       console.error('Failed to create assessment:', err?.response?.data || err.message);
     }
@@ -395,6 +394,7 @@ const GlobalAssessments = () => {
       const data = {
         title: formData.title,
         description: formData.description,
+        instructions: formData.instructions || '',
         status: statusOverride ?? formData.status,
         tags: Array.isArray(formData.tags) ? formData.tags : [],
         duration: formData.duration,
@@ -439,7 +439,6 @@ const GlobalAssessments = () => {
             options: q.options,
             correct_option: correct,
             file_url: q.file_url || null,
-            instructions: q.instructions || '',
            
           };
         })
@@ -467,7 +466,6 @@ const GlobalAssessments = () => {
       options: ['', ''],
       correct_option: '',
       file_url: '',
-      instructions: '',
      
     }]);
   };
@@ -480,7 +478,6 @@ const GlobalAssessments = () => {
         options: ['', ''],
         correct_option: '',
         file_url: '',
-        instructions: '',
        
       };
       const idx = Math.max(0, Math.min((afterIndex ?? prev.length - 1) + 1, prev.length));
@@ -533,7 +530,6 @@ const GlobalAssessments = () => {
           ? [...q.correct_option]
           : (Number.isInteger(q.correct_option) ? q.correct_option : ''),
         file_url: q.file_url || '',
-        instructions: q.instructions || '',
        
       };
       return [
@@ -566,7 +562,7 @@ const GlobalAssessments = () => {
       console.error('Failed to delete assessment:', err?.response?.data || err.message);
     }
   };
-  console.log(assessments)
+
   if(loading){
     return <LoadingScreen text="Loading Assessments..." />
   }

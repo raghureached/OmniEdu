@@ -65,6 +65,7 @@ const GlobalSurveys = () => {
   const sel = useSelector((state) => state.surveys || {});
   const surveys = sel.surveys || [];
   const loading = !!sel.loading;
+  const creating = !!sel.creating;
   const pagination = sel.pagination || { total: 0, page: 1, limit: 6, totalPages: 0, hasNextPage: false };
   const assessments = surveys; // keep variable name used throughout component
   const [page, setPage] = useState(pagination.page || 1);
@@ -271,17 +272,10 @@ const GlobalSurveys = () => {
         title: assessment.title || '',
         description: assessment.description || '',
         status: assessment.status || 'Draft',
-        // duration: assessment.duration || '',
+        duration: assessment.duration || '',
         tags: assessment.tags || [],
         team: assessment.team || '',
         subteam: assessment.subteam || '',
-        // attempts: assessment.attempts ?? 1,
-        // unlimited_attempts: !!assessment.unlimited_attempts,
-        // percentage_to_pass: assessment.percentage_to_pass ?? 0,
-        // display_answers:
-        //   typeof assessment.display_answers === 'boolean' ? assessment.display_answers : true,
-        // display_answers_when:
-        //   assessment.display_answers_when || 'AfterAssessment',
       });
       setFeedback({ instructionTop: '', instruction_header_top: '', question_text: '', instructionBottom: '', instruction_header_bottom: '' });
       setFormElements([
@@ -374,7 +368,7 @@ const GlobalSurveys = () => {
       
       }
     };
- console.log(sections )
+//  console.log(sections )
     try {
       await dispatch(createSurvey(payload)).unwrap();
       setShowForm(false);
@@ -620,6 +614,9 @@ const GlobalSurveys = () => {
       console.error('Failed to delete assessment:', err?.response?.data || err.message);
     }
   };
+  if(creating){
+    return <LoadingScreen text="Creating Surveys..." />
+  }
   if(loading){
     return <LoadingScreen text="Loading Surveys..."/>
   }

@@ -47,10 +47,6 @@ const GlobalModuleSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-    enableFeedback: {
-      type: Boolean,
-      default: false,
-    },
     externalResource: {
       type: String,
       default: null,
