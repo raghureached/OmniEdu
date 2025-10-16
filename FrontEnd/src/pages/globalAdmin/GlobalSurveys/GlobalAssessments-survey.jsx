@@ -17,6 +17,7 @@ import {
 // import api from '../../../services/api';
 import QuestionsForm from './QuestionsForm-survey';
 import LoadingScreen from '../../../components/common/Loading/Loading';
+import api from '../../../services/api';
 const GlobalSurveys = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,7 +25,7 @@ const GlobalSurveys = () => {
   const [currentAssessment, setCurrentAssessment] = useState(null);
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState([]);
- 
+  const [groups,setGroups] = useState([])
   // const [formData, setFormData] = useState({
   //   title: '',
   //   description: '',
@@ -78,10 +79,18 @@ const GlobalSurveys = () => {
     dispatch(fetchSurveys({ page, limit }))
   }, [dispatch, page, limit])
   useEffect(() => {
-    dispatch(fetchGroups()); // fetch teams/subteams
+    const fetchGroups = async () => {
+      try {
+        const response = await api.get('/api/globalAdmin/getGroups');
+        setGroups(response.data.data)
+      } catch (error) {
+        console.error('Error fetching groups:', error);
+      }
+    };
+    fetchGroups(); // fetch teams/subteams
   }, [dispatch]);
 
-  const { groups } = useSelector(state => state.groups); 
+  // const { groups } = useSelector(state => state.groups); 
   // console.log("groups in assessments: ",groups)
   const splitInstructions = (str) => {
     const raw = String(str || '');

@@ -1,8 +1,8 @@
 const Team = require("../../models/teams_model");
 
-const getTeams = async (req, res) => {
+const getGroups = async (req, res) => {
     try {
-        const teams = await Team.find();
+        const teams = await Team.find().populate("subTeams");
         res.status(200).json(
             {
                 isSuccess: true,
@@ -20,6 +20,6 @@ const getTeams = async (req, res) => {
 }
 
 module.exports = {
-    getTeams
+    getGroups
 }
     

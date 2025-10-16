@@ -8,7 +8,7 @@ import PreviewCard from '../../../components/common/PreviewCard/PreviewCard.jsx'
 
 import AssessmentPreview from '../../../components/common/Preview/AssessmentPreview.jsx';
 import CsvUpload from '../GlobalAssessments/CsvUpload.jsx';
-
+import { useSelector } from 'react-redux';
 const QuestionsForm = ({
     currentAssessment,
     formData,
@@ -25,21 +25,21 @@ const QuestionsForm = ({
     addQuestion,
     addQuestionAfter,
     removeQuestion,
+    handleAddFile,
     addOption,
     updateOption,
     removeOption,
-    handleFileUpload,
     duplicateQuestion,
     groups = [],
     setQuestions
 }) => {
     // console.log(formData)
+    const {fileupload} = useSelector((state) => state.globalAssessments);
     const [step, setStep] = useState(1);
     const [aiProcessing, setAiProcessing] = useState(false);
     const [creating, setCreating] = useState(false)
     const [passError, setPassError] = useState('');
     const [noOfQuestions, setNoOfQuestions] = useState(0);
-    // Tags picker state (free-form)
     const [tagInput, setTagInput] = useState('');
     // Local UI state to toggle optional instructions per question index
     const [instructionsOpen, setInstructionsOpen] = useState({});
@@ -422,7 +422,7 @@ const QuestionsForm = ({
 
                                     <div className="assess-form-group">
                                         <label className="assess-form-label">Thumbnail</label>
-                                        {formData.thumbnail_url ? (
+                                        {formData.thumbnail ? (
                                             <div
                                                 style={{
                                                     display: 'flex',
@@ -436,7 +436,12 @@ const QuestionsForm = ({
                                                 }}
                                             >
                                                 <div style={{ color: '#1f2937', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {(formData.thumbnail_file && formData.thumbnail_file.name) || (String(formData.thumbnail_url).split('/').pop() || 'thumbnail')}
+                                                    {(() => {
+                                                        if (formData.thumbnail && typeof formData.thumbnail !== 'string') {
+                                                            return formData.thumbnail.name || 'thumbnail';
+                                                        }
+                                                        return (String(formData.thumbnail).split('/').pop() || 'thumbnail');
+                                                    })()}
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                                                     <button
@@ -451,8 +456,8 @@ const QuestionsForm = ({
                                                         type="button"
                                                         className="survey-assess-btn-link"
                                                         onClick={() => {
-                                                            try { if ((formData.thumbnail_url || '').startsWith('blob:')) URL.revokeObjectURL(formData.thumbnail_url); } catch { }
-                                                            setFormData({ ...formData, thumbnail_url: '', thumbnail_file: null });
+                                                            try { if ((formData.thumbnail_preview || '').startsWith('blob:')) URL.revokeObjectURL(formData.thumbnail_preview); } catch { }
+                                                            setFormData({ ...formData, thumbnail: '', thumbnail_preview: '' });
                                                         }}
                                                         style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4f46e5', background: 'transparent' }}
                                                     >
@@ -470,8 +475,8 @@ const QuestionsForm = ({
                                                     onChange={(e) => {
                                                         const file = e.target.files && e.target.files[0];
                                                         if (!file) return;
-                                                        const blobUrl = URL.createObjectURL(file);
-                                                        setFormData({ ...formData, thumbnail_url: blobUrl, thumbnail_file: file });
+                                                        const preview = URL.createObjectURL(file);
+                                                        setFormData({ ...formData, thumbnail: file, thumbnail_preview: preview });
                                                     }}
                                                 />
                                                 <label htmlFor="assess-thumb-input" className="assess-upload-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
@@ -499,9 +504,15 @@ const QuestionsForm = ({
                                     <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(formData.title, formData.description)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
 
 
-                                    {thumbPreviewOpen && formData.thumbnail_url && (
+                                    {thumbPreviewOpen && formData.thumbnail && (
                                         <PreviewCard
-                                            imageUrl={resolveUrl(formData.thumbnail_url)}
+                                            imageUrl={(() => {
+                                                // Prefer created preview URL for File; fallback to string URL
+                                                if (formData.thumbnail && typeof formData.thumbnail !== 'string') {
+                                                    return formData.thumbnail_preview;
+                                                }
+                                                return resolveUrl(formData.thumbnail);
+                                            })()}
                                             title={formData.title}
                                             description={formData.description}
                                             onClose={() => setThumbPreviewOpen(false)}
@@ -605,7 +616,14 @@ const QuestionsForm = ({
                                                     </div>
 
 
+                                                    {fileupload ?  
                                                     <div className="assess-form-group" style={{ marginTop: '20px' }}>
+                                                        <div style={{width:'100%',backgroundColor:'#f5f5f5',height:'100px'}}>
+                                                            <p>Please Wait..</p>
+
+                                                        </div>
+                                                        </div> 
+                                                    :<div className="assess-form-group" style={{ marginTop: '20px' }}>
                                                         <label className="assess-form-label">Attach File (Optional)</label>
                                                         <div
                                                             className="assess-file-upload-container"
@@ -637,7 +655,8 @@ const QuestionsForm = ({
                                                                     type="file"
                                                                     id={`file-${qIndex}`}
                                                                     className="assess-file-input"
-                                                                    onChange={e => handleFileUpload(e, qIndex)}
+                                                                    name="files"
+                                                                    onChange={(e)=>handleAddFile(qIndex, e)}
                                                                 />
                                                                 <label
                                                                     htmlFor={`file-${qIndex}`}
@@ -677,7 +696,7 @@ const QuestionsForm = ({
                                                                 File: {q.file_url.split('/').pop()}
                                                             </div>
                                                         )}
-                                                    </div>
+                                                    </div>}
 
 
                                                     {/* Preview overlay (opens on clicking Preview; closes with X) */}

@@ -4,9 +4,6 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// ===== File Upload: store under Backend/uploads and return permanent URL =====
-// __dirname is Backend/src/controllers/globalAdmin.controller
-// Go up three levels to reach Backend/ then into uploads
 const UPLOADS_DIR = path.join(__dirname, '../../../uploads');
 if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -30,24 +27,11 @@ const fileUploadMiddleware = upload.single('file');
 
 const fileUploadHandler = async (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ isSuccess: false, message: 'No file uploaded' });
-        }
-        // const filename = req.file.filename;
-        // const url = `/uploads/${filename}`;
-        // return res.status(200).json({ isSuccess: true, url });
-        // inside fileUploadHandler
-        const filename = req.file.filename;
-
-        // Respect reverse proxy headers when available (e.g., Nginx)
-        const forwardedProto = req.headers['x-forwarded-proto'];
-        const forwardedHost = req.headers['x-forwarded-host'];
-        const proto = forwardedProto || req.protocol;
-        const host = forwardedHost || req.get('host');
-
-        const absoluteUrl = `${proto}://${host}/uploads/${filename}`;
+        console.log(req.uploadedFile)
+        const absoluteUrl = req.uploadedFile.url;
         return res.status(200).json({ isSuccess: true, url: absoluteUrl });
     } catch (error) {
+        console.log(error)
         return res.status(500).json({ isSuccess: false, message: 'Upload failed', error: error.message });
     }
 };
@@ -108,7 +92,7 @@ const createAssessment = async (req, res) => {
       const {
         title, description, tags, duration, team, subteam,
         attempts, unlimited_attempts, percentage_to_pass,
-         display_answers, status,credits,stars,badges,category,feedbackEnabled,shuffle_questions,shuffle_options,thumbnail_url,questions=[],instructions
+         display_answers, status,credits,stars,badges,category,feedbackEnabled,shuffle_questions,shuffle_options,questions=[],instructions
        
       } = req.body;
 
@@ -149,7 +133,7 @@ const createAssessment = async (req, res) => {
         if (normalizedCorrect.some(n => n < 0 || n > maxIndex)) {
           return res.status(400).json({ success: false, message: `Question ${index}: correct_option indexes out of range for provided options` });
         }
-        console.log(req.uploadedFiles)
+        // console.log(req.uploadedFiles)
         const newQuestion = new GlobalQuestion({
           question_text: q.question_text.trim(),
           type,
@@ -183,7 +167,7 @@ const createAssessment = async (req, res) => {
         feedbackEnabled,
         shuffle_questions,
         shuffle_options,
-        thumbnail_url,
+        // thumbnail_url:req.uploadedFile.url,
         questions: questionIds,
         instructions:instructions
       });

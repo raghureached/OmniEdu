@@ -57,9 +57,9 @@ const GlobalModuleModal = ({
     useEffect(() => {
         const fetchTeams = async () => {
             try {
-                const response = await api.get('/api/globalAdmin/getTeams');
+                const response = await api.get('/api/globalAdmin/getGroups');
                 setTeams(response.data.data);
-                // console.log(response.data.data);
+                console.log(response.data.data);
             } catch (error) {
                 console.error('Error fetching teams:', error);
             }
@@ -811,7 +811,7 @@ const GlobalModuleModal = ({
                                 </div>
                                 <div className="module-overlay__form-group">
                                     <label className="module-overlay__form-label">
-                                        Target Team/Sub Team <span className="module-overlay__required">*</span>
+                                        Target Team <span className="module-overlay__required">*</span>
                                     </label>
                                     <select
                                         name="team"
@@ -821,7 +821,7 @@ const GlobalModuleModal = ({
                                         required
                                         style={{ width: '250px' }}
                                     >
-                                        <option value="">Select Team/Sub Team</option>
+                                        <option value="">Select Team</option>
                                         {teams?.map((team) => (
                                             <option key={team._id} value={team._id}>
                                                 {team.name}

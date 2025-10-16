@@ -7,6 +7,7 @@ import { fetchGroups } from '../../../store/slices/groupSlice';
 // import api from '../../../services/api';
 import QuestionsForm from './QuestionsForm';
 import LoadingScreen from '../../../components/common/Loading/Loading';
+import api from '../../../services/api';
 const GlobalAssessments = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
@@ -14,7 +15,7 @@ const GlobalAssessments = () => {
   const [currentAssessment, setCurrentAssessment] = useState(null);
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState([]);
- 
+ const [groups,setGroups] = useState([])
   // const [formData, setFormData] = useState({
   //   title: '',
   //   description: '',
@@ -46,8 +47,8 @@ const GlobalAssessments = () => {
     shuffle_questions: false,
     shuffle_options: false,
     // Assessment thumbnail (UI preview + server URL)
-    thumbnail_url: '',
-    thumbnail_file: null,
+    thumbnail: '',
+    // thumbnail_file: null,
   });
   const [questions, setQuestions] = useState([{
     type: '',
@@ -71,10 +72,18 @@ const GlobalAssessments = () => {
     dispatch(fetchGlobalAssessments({ page, limit }))
   }, [dispatch, page, limit])
   useEffect(() => {
-    dispatch(fetchGroups()); // fetch teams/subteams
-  }, [dispatch]);
+    const fetchGroups = async () => {
+      try {
+        const response = await api.get('/api/globalAdmin/getGroups');
+        setGroups(response.data.data)
+      } catch (error) {
+        console.error('Error fetching groups:', error);
+      }
+    };
+    fetchGroups(); // fetch teams/subteams
+  }, []);
 
-  const { groups } = useSelector(state => state.groups); 
+  // const { groups } = useSelector(state => state.groups); 
   // console.log("groups in assessments: ",groups)
   const handleAddAssessment = () => {
     setCurrentAssessment(null);
@@ -103,8 +112,8 @@ const GlobalAssessments = () => {
       shuffle_questions: false,
       shuffle_options: false,
       // Thumbnail reset
-      thumbnail_url: '',
-      thumbnail_file: null,
+      thumbnail: '',
+      // thumbnail_file: null,
     });
     setQuestions([{
       type: '',
@@ -204,8 +213,8 @@ const GlobalAssessments = () => {
         shuffle_questions: !!full.shuffle_questions,
         shuffle_options: !!full.shuffle_options,
         // Thumbnail (prefer explicit thumbnail_url, fallback to thumbnail)
-        thumbnail_url: full.thumbnail_url || full.thumbnail || '',
-        thumbnail_file: null,
+        thumbnail: full.thumbnail || '',
+        // thumbnail_file: null,
       });
 
       // Prefer sections->questions if present; fallback to legacy top-level questions
@@ -277,7 +286,7 @@ const GlobalAssessments = () => {
         shuffle_questions: !!assessment.shuffle_questions,
         shuffle_options: !!assessment.shuffle_options,
         // Thumbnail (fallback)
-        thumbnail_url: assessment.thumbnail_url || assessment.thumbnail || '',
+        thumbnail: assessment.thumbnail_url || assessment.thumbnail || '',
         thumbnail_file: null,
       });
       setQuestions([{ type: '', question_text: '', options: ['', ''], correct_option: '', file_url: '', shuffle_options: false }]);
@@ -303,9 +312,9 @@ const GlobalAssessments = () => {
     };
 
     // Resolve thumbnail URL to send (upload if local file)
-    let resolvedThumbUrl = formData.thumbnail_url || '';
+    let resolvedThumbUrl = formData.thumbnail || '';
     try {
-      if (formData.thumbnail_file && typeof formData.thumbnail_url === 'string' && formData.thumbnail_url.startsWith('blob:')) {
+      if (formData.thumbnail && typeof formData.thumbnail === 'string' && formData.thumbnail.startsWith('blob:')) {
         const uploaded = await dispatch(uploadAssessmentFile(formData.thumbnail_file)).unwrap();
         if (uploaded) {
           resolvedThumbUrl = uploaded;
@@ -340,7 +349,7 @@ const GlobalAssessments = () => {
       shuffle_questions: Boolean(formData.shuffle_questions),
       shuffle_options: Boolean(formData.shuffle_options),
       // Thumbnail URL (server path)
-      thumbnail_url: resolvedThumbUrl || '',
+      thumbnail: resolvedThumbUrl || '',
       // Flat questions payload (sections removed)
       questions: questions.map(q => {
         // Normalize correct_option to array of integers
@@ -416,7 +425,7 @@ const GlobalAssessments = () => {
         shuffle_questions: Boolean(formData.shuffle_questions),
         shuffle_options: Boolean(formData.shuffle_options),
         // Thumbnail URL (server path)
-        thumbnail_url: resolvedThumbUrl || '',
+        thumbnail: resolvedThumbUrl || '',
         // Send questions with identifiers so backend can update GlobalQuestion
         questions: questions.map(q => {
           // Normalize correct_option to array of integers
@@ -488,6 +497,31 @@ const GlobalAssessments = () => {
       ];
     });
   };
+  const handleAddFile = async (qIndex, e) => {
+    const file = e?.target?.files?.[0];
+    if (!file) return;
+    try {
+      const url = await dispatch(uploadAssessmentFile(file)).unwrap();
+      if (url) {
+        // Set the uploaded file URL on the specific question
+        setQuestions(prev => {
+          const arr = Array.isArray(prev) ? [...prev] : [];
+          if (arr[qIndex]) {
+            arr[qIndex] = { ...arr[qIndex], file_url: url };
+          }
+          return arr;
+        });
+        // Keep a flat list of uploaded file URLs for selection dropdown
+        setUploadedFiles(prev => {
+          const next = Array.isArray(prev) ? [...prev, url] : [url];
+          // de-dupe
+          return Array.from(new Set(next));
+        });
+      }
+    } catch (err) {
+      console.error('File upload failed:', err?.response?.data || err.message);
+    }
+  };
 
   const removeQuestion = (index) => {
     if (questions.length > 1) {
@@ -548,20 +582,6 @@ const GlobalAssessments = () => {
         ...arr.slice(index + 1)
       ];
     });
-  };
-
-  const handleFileUpload = async (e, qIndex) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    try {
-      const url = await dispatch(uploadAssessmentFile(file)).unwrap();
-      if (url) {
-        setUploadedFiles(prev => [...prev, url]);
-        updateQuestionField(qIndex, 'file_url', url);
-      }
-    } catch (err) {
-      console.error('File upload failed', err?.response?.data || err.message);
-    }
   };
 
   const handleDeleteAssessment = async (id) => {
@@ -818,7 +838,7 @@ const GlobalAssessments = () => {
           addOption={addOption}
           updateOption={updateOption}
           removeOption={removeOption}
-          handleFileUpload={handleFileUpload}
+          handleAddFile={handleAddFile}
           duplicateQuestion={duplicateQuestion}
           groups={groups}
           setQuestions={setQuestions}

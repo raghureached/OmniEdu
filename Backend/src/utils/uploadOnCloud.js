@@ -4,17 +4,14 @@ const cloudinary = require("../config/cloudinary");
 // Middleware: upload file to Cloudinary & attach result to req
 const uploadToCloudinary = (folder) => {
   return async (req, res, next) => {
+    console.log(req.file)
     if (!req.file) return next();
     try {
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder,
         resource_type: "auto",
       });
-
-      // Delete from local after upload
       fs.unlinkSync(req.file.path);
-
-      // Attach Cloudinary result to req for later use in DB
       req.uploadedFile = {
         url: result.secure_url,
         public_id: result.public_id,
@@ -90,8 +87,8 @@ const uploadMultipleToCloudinary = async (req, res, next) => {
 
   const uploadQuestionFilesToCloud = async (req, res, next) => {
     try {
-      if (!req.files) return next();
-      console.log(req.files)
+      // if (!req.files) return next();
+      console.log(req)
       req.uploadedFiles = {};
   
       for (const fieldName of Object.keys(req.files)) {

@@ -29,6 +29,7 @@ const {
   } = require("../controllers/globalAdmin.controller/globalAdmin_Assessments");
 const { getTeams } = require("../controllers/globalAdmin.controller/globalAdmin_Teams");
 const { enhanceText, enhanceAssessment, enhanceSurvey, createQuestions } = require("../controllers/globalAdmin.controller/globalAdmin_AI");
+const { getGroups } = require("../controllers/globalAdmin.controller/globalAdmin_Teams");
 
 const router = require("express").Router();
 
@@ -62,7 +63,7 @@ router.route('/deleteContent/:id').delete(deleteContent)
 router.route('/bulkDeleteContent').delete(bulkDelete)
 /////////////Global Assesments////////////
 
-router.route('/createAssessment').post(uploadQuestionFile.array('files'),uploadQuestionFilesToCloud,createAssessment)
+router.route('/createAssessment').post(upload.single('thumbnail'),uploadToCloudinary('assessments'),createAssessment)
 router.route('/uploadAssessmentCSV').post(uploadAssessmentCSV)
 router.route('/editAssessment/:id').put(editAssessment)
 router.route('/deleteAssessment/:id').delete(deleteAssessment)
@@ -72,7 +73,7 @@ router.route('/getQuestions/:id').get(getQuestions)
 router.route('/getQuestionsRandom/:id').get(getQuestionsRandom)
 router.route('/editQuestion/:id').put(editQuestion)
 router.route('/deleteQuestion/:id').delete(deleteQuestion)
-router.post('/uploadFile', fileUploadMiddleware, fileUploadHandler);
+router.post('/uploadFile', uploadQuestionFile.single('file'),uploadToCloudinary('questions'), fileUploadHandler);
 
 //////////////Global Surveys////////////
 
@@ -122,7 +123,7 @@ router.route('/getUserDashBoardPermissions').get(getUserDashBoardPermissions)
 
 
 ///////getTeams////////
-router.route('/getTeams').get(getTeams)
+router.route('/getGroups').get(getGroups)
 
 
 

@@ -180,7 +180,8 @@ const globalAssessmentSlice = createSlice({
     selectedAssessment: null,
     questions: [],
     uploadUrl: '',
-    pagination:''
+    pagination:'',
+    fileupload:false
   },
   reducers: {
     setFilters: (state, action) => {
@@ -363,12 +364,15 @@ const globalAssessmentSlice = createSlice({
       // Upload file
       .addCase(uploadAssessmentFile.pending, (state) => {
         state.error = null;
+        state.fileupload = true;
       })
       .addCase(uploadAssessmentFile.fulfilled, (state, action) => {
         state.uploadUrl = action.payload || '';
+        state.fileupload = false;
       })
       .addCase(uploadAssessmentFile.rejected, (state, action) => {
         state.error = action.payload;
+        state.fileupload = false;
       });
   }
 });
