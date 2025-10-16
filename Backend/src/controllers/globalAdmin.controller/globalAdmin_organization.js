@@ -121,7 +121,7 @@ const addOrganization = async (req, res) => {
   
       const org = Array.isArray(newOrg) ? newOrg[0] : newOrg;
   
-      // -------- 4. Initial admin user --------
+      
       const password = name.toLowerCase().replace(/\s/g, "").slice(0, 6) + "@123";
       await User.create([{
         name,

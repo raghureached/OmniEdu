@@ -1,9 +1,8 @@
 import axios from 'axios';
 
-// Create axios instance with base URL
-// console.log(process.env.REACT_APP_API_URL);
+const production=false;
 const api = axios.create({
-    baseURL: process.env.production ? process.env.REACT_APP_API_URL : 'http://localhost:5003',
+    baseURL: production ? "https://omniedu-server.onrender.com": 'http://localhost:5003',
     // baseURL: process.env.REACT_APP_API_URL,
     headers: {
         'Content-Type': 'application/json',
@@ -11,29 +10,18 @@ const api = axios.create({
     withCredentials:true
 });
 
-// Add request interceptor for authentication
-api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
-
-// Add response interceptor for error handling
-api.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        // Handle 401 Unauthorized errors (token expired)
-        if (error.response && error.response.status === 401) {
-            localStorage.removeItem('token');
-            window.location.href = '/';
-        }
-        return Promise.reject(error);
-    }
-);
+// api.interceptors.response.use(
+//     (response) => response,
+//     (error) => {
+//         if (error.response && error.response.status === 401) {
+//             try {
+//                 localStorage.removeItem('authState');
+//                 localStorage.removeItem('token');
+//             } catch(_) {}
+//             window.location.href = '/login';
+//         }
+//         return Promise.reject(error);
+//     }
+// );
 
 export default api;

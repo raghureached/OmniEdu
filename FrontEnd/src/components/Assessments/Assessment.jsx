@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './Assessment.css';
+import SubmissionPopup from './SubmissionPopup';
 import { MdApps, MdQuestionAnswer, MdQuiz, MdTimer } from 'react-icons/md';
 import { ChevronRight, Submit } from 'lucide-react';
 
@@ -7,9 +8,11 @@ import { ChevronRight, Submit } from 'lucide-react';
 // - isOpen: controls modal visibility (default true)
 // - onClose: callback when modal should close
 // - previewMode: when true, timer freezes and submission/result screen is hidden
-const AssessmentQuiz = ({ isOpen = true, onClose = () => { }, previewMode = true }) => {
-  // Dummy assessment data based on your updated structure (no sections)
-  const assessment = {
+// - assessmentData: the assessment data object containing title, description, questions, etc.
+const AssessmentQuiz = ({ isOpen = true, onClose = () => { }, previewMode = true, assessmentData, onSwitchToPreview = () => { } }) => {
+  // Use assessment data from props, fallback to dummy data for backward compatibility
+  console.log("AssessmentQuiz received assessmentData:", assessmentData);
+  const assessment = assessmentData || {
     title: 'JavaScript Fundamentals & Concepts',
     description: 'A comprehensive quiz designed to test your understanding of JavaScript fundamentals, ES6 concepts, and core programming logic.',
     tags: ['JavaScript', 'Frontend', 'Web', 'ES6', 'Logic'],
@@ -181,36 +184,76 @@ const AssessmentQuiz = ({ isOpen = true, onClose = () => { }, previewMode = true
   };
 
 
+  // Helper function to resolve URLs (same as in QuestionsForm.jsx)
+  const resolveUrl = (u) => {
+    if (!u) return u;
+    // Keep local object URLs and data URLs untouched
+    if (typeof u === 'string' && (u.startsWith('blob:') || u.startsWith('data:'))) {
+      return u;
+    }
+    // For now, just return the URL as-is since we don't have access to the API baseURL in this component
+    return u;
+  };
+
   // Questions live at the root now
   const questions = assessment.questions || [];
 
-  // Parse duration like "30 mins" -> minutes
+  // Parse duration like "30 mins" -> minutes, or handle numeric minutes directly
   const parseDuration = (durationStr) => {
-    if (!durationStr || typeof durationStr !== 'string') return { hours: 0, minutes: 0, seconds: 0 };
-    const lower = durationStr.toLowerCase();
-    const num = parseInt(lower.replace(/[^0-9]/g, ''), 10);
-    if (Number.isNaN(num)) return { hours: 0, minutes: 0, seconds: 0 };
-    if (lower.includes('hour')) return { hours: num, minutes: 0, seconds: 0 };
-    if (lower.includes('min')) return { hours: Math.floor(num / 60), minutes: num % 60, seconds: 0 };
-    return { hours: 0, minutes: num, seconds: 0 };
+    if (!durationStr) return { hours: 0, minutes: 0, seconds: 0 };
+
+    // If it's already a number (minutes), convert to hours/minutes
+    if (typeof durationStr === 'number') {
+      return {
+        hours: Math.floor(durationStr / 60),
+        minutes: durationStr % 60,
+        seconds: 0
+      };
+    }
+
+    // Handle string formats like "30 mins", "45 mins", etc.
+    if (typeof durationStr === 'string') {
+      const lower = durationStr.toLowerCase();
+      const num = parseInt(lower.replace(/[^0-9]/g, ''), 10);
+      if (Number.isNaN(num)) return { hours: 0, minutes: 0, seconds: 0 };
+      if (lower.includes('hour')) return { hours: num, minutes: 0, seconds: 0 };
+      if (lower.includes('min')) return { hours: Math.floor(num / 60), minutes: num % 60, seconds: 0 };
+      return { hours: 0, minutes: num, seconds: 0 };
+    }
+
+    return { hours: 0, minutes: 0, seconds: 0 };
   };
 
   const initialTime = parseDuration(assessment.duration);
-  const [timeLeft, setTimeLeft] = useState({ hours: initialTime.hours, minutes: initialTime.minutes, seconds: initialTime.seconds });
 
+  console.log("Assessment duration:", assessment.duration);
+  console.log("Parsed initial time:", initialTime);
+
+  const [timeLeft, setTimeLeft] = useState({ hours: initialTime.hours, minutes: initialTime.minutes, seconds: initialTime.seconds });
+  const [isTimerActive, setIsTimerActive] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState(() => questions.map(() => [])); // array of arrays
-  const [unsureFlags, setUnsureFlags] = useState(() => questions.map(() => false));
-  const [submitted, setSubmitted] = useState(false);
+
+  // Initialize state based on questions length
+  const [selectedAnswers, setSelectedAnswers] = useState([]);
+  const [unsureFlags, setUnsureFlags] = useState([]);
   const [showNav, setShowNav] = useState(false);
   const [navFilter, setNavFilter] = useState('all'); // all | answered | not_answered | unsure
 
-  const currentQ = questions[currentIndex] || { options: [], correct_option: [], type: '' };
-  const isMulti = (
-    typeof currentQ.type === 'string' && currentQ.type.toLowerCase().includes('multiple select')
-  ) || (Array.isArray(currentQ.correct_option) && currentQ.correct_option.length > 1);
+  // Submission popup state
+  const [showSubmissionPopup, setShowSubmissionPopup] = useState(false);
+  const [submissionTimeSpent, setSubmissionTimeSpent] = useState(0);
+  const [currentAttempt, setCurrentAttempt] = useState(1);
 
-  // Toggle answer by option index; single vs multi based on correct_option length
+  // Initialize arrays when questions change
+  React.useEffect(() => {
+    setSelectedAnswers(new Array(questions.length).fill([]));
+    setUnsureFlags(new Array(questions.length).fill(false));
+  }, [questions.length]);
+
+  const currentQ = questions[currentIndex] || { options: [], correct_option: [], type: '' };
+  const isMulti = currentQ.type === 'Multi Select';
+
+  // Toggle answer by option index; single vs multi based on question type
   const toggleAnswer = (optionIdx) => {
     setSelectedAnswers((prev) => {
       const next = [...prev];
@@ -228,11 +271,29 @@ const AssessmentQuiz = ({ isOpen = true, onClose = () => { }, previewMode = true
 
   // Timer
   React.useEffect(() => {
-    if (previewMode) return; // freeze timer in preview mode
+    if (previewMode || showSubmissionPopup) {
+      setIsTimerActive(false);
+      return; // freeze timer in preview mode or when submission popup is shown
+    }
+
+    setIsTimerActive(true); // Timer is active during assessment
+
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         let { hours, minutes, seconds } = prev;
-        if (hours === 0 && minutes === 0 && seconds === 0) return prev;
+
+        // Check if time is already up
+        if (hours === 0 && minutes === 0 && seconds === 0) {
+          clearInterval(timer);
+          setIsTimerActive(false);
+          // Show time completed message and close
+          setTimeout(() => {
+            alert('Time is completed! Assessment will now close.');
+            onClose();
+          }, 100);
+          return prev;
+        }
+
         if (seconds > 0) {
           seconds -= 1;
         } else if (minutes > 0) {
@@ -246,27 +307,28 @@ const AssessmentQuiz = ({ isOpen = true, onClose = () => { }, previewMode = true
         return { hours, minutes, seconds };
       });
     }, 1000);
-    return () => clearInterval(timer);
-  }, [previewMode]);
+    return () => {
+      clearInterval(timer);
+      setIsTimerActive(false);
+    };
+  }, [previewMode, showSubmissionPopup, onClose]);
 
   const goNext = () => setCurrentIndex((i) => Math.min(i + 1, questions.length - 1));
   const goPrev = () => setCurrentIndex((i) => Math.max(i - 1, 0));
 
   const submit = () => {
-    setSubmitted(true);
+    // Calculate time spent (initial time minus time left)
+    const initialSeconds = (initialTime.hours * 3600) + (initialTime.minutes * 60) + initialTime.seconds;
+    const remainingSeconds = (timeLeft.hours * 3600) + (timeLeft.minutes * 60) + timeLeft.seconds;
+    const timeSpent = initialSeconds - remainingSeconds;
+
+    setSubmissionTimeSpent(timeSpent);
+    setShowSubmissionPopup(true);
   };
 
-  const calcScore = () => {
-    let score = 0;
-    questions.forEach((q, idx) => {
-      const correct = (q.correct_option || []).slice().sort((a, b) => a - b);
-      const chosen = (selectedAnswers[idx] || []).slice().sort((a, b) => a - b);
-      const isCorrect = JSON.stringify(correct) === JSON.stringify(chosen);
-      if (isCorrect) score += q.total_points ?? 1;
-    });
-    return score;
-  };
-  const allAnswered = selectedAnswers.every((arr) => arr.length > 0 || true); // allow skip
+  // Calculate score (kept for potential future use but not displayed)
+  // Check if current question has an answer selected
+  const currentQuestionAnswered = (selectedAnswers[currentIndex] || []).length > 0;
   const answeredCount = selectedAnswers.filter((arr) => arr.length > 0).length;
   const progressPct = questions.length ? Math.round((answeredCount / questions.length) * 100) : 0;
 
@@ -288,93 +350,200 @@ const AssessmentQuiz = ({ isOpen = true, onClose = () => { }, previewMode = true
     return allIdx;
   }, [questions, selectedAnswers, unsureFlags, navFilter]);
 
-  // Close handling
+  // Close handling - shows confirmation, then submission popup if confirmed
   const handleClose = () => {
-    if(window.confirm("Closing Assessment will result in submission of assessment. Are you sure you want to close?")) {
-      onClose();
-    }else{
+   
+    if (window.confirm("Closing Assessment will result in submission of assessment. Are you sure you want to close?")) {
+      // User clicked OK - freeze timer immediately and proceed with submission
+      setIsTimerActive(false); // Freeze timer immediately
+
+      // Calculate time spent (initial time minus time left) - same as submit function
+      const initialSeconds = (initialTime.hours * 3600) + (initialTime.minutes * 60) + initialTime.seconds;
+      const remainingSeconds = (timeLeft.hours * 3600) + (timeLeft.minutes * 60) + timeLeft.seconds;
+      const timeSpent = initialSeconds - remainingSeconds;
+
+      setSubmissionTimeSpent(timeSpent);
+      setShowSubmissionPopup(true);
+    } else {
+      // User clicked Cancel - continue with assessment, do nothing
       return;
     }
   };
 
-  if (!isOpen) return null;
+
+  const hasImage = currentQ.file_url?.match(/\.(jpeg|jpg|png|gif)$/i);
+  const hasVideo = currentQ.file_url?.match(/\.(mp4|webm|ogg)$/i);
+  const hasVisualMedia = hasImage || hasVideo;
+
 
   return (
-    <div className="assess-modal-overlay" onClick={handleClose}>
-      <div className="assess-modal-panel" onClick={(e) => e.stopPropagation()}>
-        <div className="assess-container">
-          <div className="assess-header">
-            <button className="assess-close-btn" title="Close" onClick={handleClose}>✕</button>
-            <div className="assess-timer">
+    <div className="assesspreview-modal-overlay" onClick={handleClose}>
+      <div className="assesspreview-modal-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="assesspreview-container">
+          <div className="assesspreview-header" >
+         
+            <div className="assesspreview-timer" style={{paddingLeft:"10px"}}>
               <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span className="assess-timer-icon"><MdTimer  size={16} /></span>
-                <span className="assess-timer-label" style={{ fontWeight: "800" }}>Time left:</span>
+                <span className="assesspreview-timer-icon"><MdTimer size={16} /></span>
+                <span className="assesspreview-timer-label" style={{ fontWeight: "800" }}>Time left:</span>
+                {isTimerActive && <span className="timer-indicator" title="Timer is running"></span>}
               </span>
-              <span className="assess-timer-digit">{String(timeLeft.hours).padStart(2, '0')}</span>
-              <span className="assess-timer-separator">:</span>
-              <span className="assess-timer-digit">{String(timeLeft.minutes).padStart(2, '0')}</span>
-              <span className="assess-timer-separator">:</span>
-              <span className="assess-timer-digit">{String(timeLeft.seconds).padStart(2, '0')}</span>
+              <span className={`assesspreview-timer-digit ${isTimerActive ? 'timer-active' : ''}`}>
+                {String(timeLeft.hours).padStart(2, '0')}
+              </span>
+              <span className="assesspreview-timer-separator">:</span>
+              <span className={`assesspreview-timer-digit ${isTimerActive ? 'timer-active' : ''}`}>
+                {String(timeLeft.minutes).padStart(2, '0')}
+              </span>
+              <span className="assesspreview-timer-separator">:</span>
+              <span className={`assesspreview-timer-digit ${isTimerActive ? 'timer-active' : ''}`}>
+                {String(timeLeft.seconds).padStart(2, '0')}
+              </span>
             </div>
-            <div className="assess-header-right">
-              <button className="assess-nav-btn" style={{fontWeight:"700"}} onClick={() => setShowNav(true)}><MdApps size={16} /> Questions Nav</button>
+              
+            <div className="assesspreview-header-right">
+            <button className="assesspreview-close-btn" title="Close" onClick={handleClose}>✕</button>
+              <button className="assesspreview-nav-btn" style={{ fontWeight: "700", display: "none" }} onClick={() => setShowNav(true)}><MdApps size={16} /> Questions Nav</button>
             </div>
           </div>
 
-          <div className="assess-question-number" style={{marginBottom:"20px"}}>
-            <span className="assess-q-icon">❓</span>
+          <div className="assesspreview-question-number" style={{ marginBottom: "20px", marginTop: "20px" }}>
+            <span className="assesspreview-q-icon"></span>
             Question {currentIndex + 1} of {questions.length}
           </div>
+          {hasVisualMedia ?(  <p className="assesspreview-instruction" style={{marginLeft:"65px"}}>{isMulti ? 'Select all that apply' : 'Select one'}</p>):(  <p className="assesspreview-instruction">{isMulti ? 'Select all that apply' : 'Select one'}</p>)}
+        
+          {hasVisualMedia ? (
+           
 
-          <h2 className="assess-question-title">{currentQ.question_text}</h2>
-          <p className="assess-instruction">{isMulti ? 'Select all that apply' : 'Select one'}</p>
-
-          {/* Media (image/audio) */}
-          {(currentQ.image_url || currentQ.audio_url) && (
-            <div className="assess-media-container">
-              {currentQ.image_url && (
-                <img src={currentQ.image_url} alt="Question visual" className="assess-media-image" />
-              )}
-              {currentQ.audio_url && (
-                <div style={{ marginTop: currentQ.image_url ? 16 : 0 }}>
-                  <audio src={currentQ.audio_url} controls style={{ width: '100%' }} />
-                </div>
-              )}
-            </div>
+              <h2 className="assesspreview-question-title" style={{marginLeft:"65px",maxWidth:"960px",paddingBottom:"20px"}}>Q{currentIndex + 1}. {currentQ.question_text}</h2>
+           
+          ) : (
+            
+            <h2 className="assesspreview-question-title"style={{paddingBottom:"10px"}}>Q{currentIndex + 1}. {currentQ.question_text}</h2>
           )}
 
-          <div className="assess-options-grid assess-options-list">
-            {currentQ.options.map((opt, idx) => {
-              const selected = (selectedAnswers[currentIndex] || []).includes(idx);
-              const letter = String.fromCharCode(65 + idx);
-              return (
-                <div
-                  key={idx}
-                  className={`assess-option-card assess-option-row ${selected ? 'assess-option-selected' : ''}`}
-                  onClick={() => toggleAnswer(idx)}
-                  style={{ backgroundColor: selected ? '#f0f5ff' : 'white' }}
-                >
-                  <div className="assess-option-letter">{letter}</div>
-                  <div className="assess-option-text">{opt}</div>
-                  {/* Show radio for single-select, checkbox for multi-select (right aligned) */}
-                  <div className={isMulti ? `assess-option-checkbox ${selected ? 'assess-option-checkbox-checked' : ''}` : 'assess-option-radio'}>
-                    {!isMulti && selected && <div className="assess-option-radio-inner"></div>}
-                    {isMulti && selected && '✓'}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
 
-          <div className="assess-actions-preview">
-            <div className="assess-actions-preview-left">
-              <button className="assess-btn assess-btn-secondary" disabled={currentIndex === 0} onClick={goPrev}>
+          {/* Check if we have visual media (image or video) for side-by-side layout */}
+          {(() => {
+            if (!isOpen) return null;
+            return (
+              <>
+                {/* Audio and PDF stay in their original position */}
+                {currentQ.file_url?.match(/\.(mp3|wav|ogg)$/i) && (
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+                    <audio src={resolveUrl(currentQ.file_url)} controls style={{ width: '600px', maxWidth: '80%' }} />
+                  </div>
+                )}
+                {currentQ.file_url?.match(/\.pdf$/i) && (
+                  <iframe src={resolveUrl(currentQ.file_url)} title="PDF Preview" style={{ width: '100%', height: 360, border: '1px solid #e2e8f0', borderRadius: 6 }} />
+                )}
+
+                {/* Visual media (image/video) with side-by-side layout */}
+                {hasVisualMedia ? (
+                  <div className="assesspreview-side-by-side-layout">
+                     <div className="assesspreview-media-section">
+                      {hasImage && (
+                        <img
+                          src={resolveUrl(currentQ.file_url)}
+                          alt="Question visual"
+                          className="assesspreview-media-image"
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: '350px',
+                            width: '100%',
+                            height: 'auto',
+                            objectFit: 'contain',
+                            borderRadius: '8px',
+                            display: 'block',
+                            minWidth: '100%',
+                            minHeight: '350px',
+
+                          }}
+                        />
+                      )}
+                      {hasVideo && (
+                        <video src={resolveUrl(currentQ.file_url)} controls  className="assesspreview-media-image" style={{
+                          maxWidth: '100%',
+                          maxHeight: '350px',
+                          width: '100%',
+                          height: 'auto',
+                          objectFit: 'contain',
+                          borderRadius: '8px',
+                          display: 'block',
+                          minWidth: '100%',
+                          minHeight: '350px',
+
+                        }} />
+                      )}
+                    </div>
+                    <div className="assesspreview-options-section" style={{marginRight:"22px"}}>
+                      <div className={`assesspreview-options-grid assesspreview-options-list ${currentQ.options.length >=2 ? 'compact-options' : ''}`} >
+                        <h4>Options</h4>
+                        {currentQ.options.map((opt, idx) => {
+                          const selected = (selectedAnswers[currentIndex] || []).includes(idx);
+                          const letter = String.fromCharCode(65 + idx);
+                          return (
+                            <div
+                              key={idx}
+                              className={`assesspreview-option-card assesspreview-option-row ${selected ? 'assesspreview-option-selected' : ''}`}
+                              onClick={() => toggleAnswer(idx)}
+                              style={{ backgroundColor: selected ? '#f0f5ff' : 'white' }}
+                            >
+                              <div className={isMulti ? `assesspreview-option-checkbox ${selected ? 'assesspreview-option-checkbox-checked' : ''}` : 'assesspreview-option-radio'}>
+                                {!isMulti && selected && <div className="assesspreview-option-radio-inner"></div>}
+                                {isMulti && selected && '✓'}
+                              </div>
+                              <div className="assesspreview-option-letter">{letter}</div>
+
+                              <div className="assesspreview-option-text">{opt}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                   
+                  </div>
+                ) : (
+                  <>
+                    {/* Normal layout for questions without visual media */}
+                    <div className={`assesspreview-options-grid assesspreview-options-list`}>
+                      {currentQ.options.map((opt, idx) => {
+                        const selected = (selectedAnswers[currentIndex] || []).includes(idx);
+                        const letter = String.fromCharCode(65 + idx);
+                        return (
+                          <div
+                            key={idx}
+                            className={`assesspreview-option-card assesspreview-option-row ${selected ? 'assesspreview-option-selected' : ''}`}
+                            onClick={() => toggleAnswer(idx)}
+                            style={{ backgroundColor: selected ? '#f0f5ff' : 'white' }}
+                          >
+                            <div className={isMulti ? `assesspreview-option-checkbox ${selected ? 'assesspreview-option-checkbox-checked' : ''}` : 'assesspreview-option-radio'}>
+                              {!isMulti && selected && <div className="assesspreview-option-radio-inner"></div>}
+                              {isMulti && selected && '✓'}
+                            </div>
+                            <div className="assesspreview-option-letter">{letter}</div>
+
+                            <div className="assesspreview-option-text">{opt}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </>
+            );
+          })()}
+
+          <div className="assesspreview-actions-preview">
+            <div className="assesspreview-actions-preview-left" style={{marginLeft:"20px"}}>
+              <button className="assesspreview-btn assesspreview-btn-secondary" disabled={currentIndex === 0} onClick={goPrev}>
                 Previous
               </button>
             </div>
-            <div className="assess-actions-preview-right">
+            <div className="assesspreview-actions-preview-right" style={{marginRight:"20px"}}>
               <button
-                className={`assess-btn assess-btn-review ${unsureFlags[currentIndex] ? 'is-marked' : ''}`}
+                className={`assesspreview-btn assesspreview-btn-review ${unsureFlags[currentIndex] ? 'is-marked' : ''}`}
                 onClick={() =>
                   setUnsureFlags((prev) => {
                     const next = [...prev];
@@ -382,20 +551,24 @@ const AssessmentQuiz = ({ isOpen = true, onClose = () => { }, previewMode = true
                     return next;
                   })
                 }
+                style={{ display: 'none' }}
               >
                 {unsureFlags[currentIndex] ? 'Unmark Review' : 'Mark for Review'}
               </button>
               {currentIndex < questions.length - 1 ? (
-                <button className="assess-btn assess-btn-primary" onClick={goNext}>
-                  Save & Next <ChevronRight size={16} />
+               
+                <button className="assesspreview-btn assesspreview-btn-primary" onClick={goNext} disabled={!currentQuestionAnswered}  style={{display:"flex",alignItems:"center",gap:"2px"}}>
+                  Save & Next<ChevronRight size={16} />
                 </button>
+               
+               
               ) : (
                 previewMode ? (
-                  <button className="assess-btn assess-btn-primary" onClick={handleClose}>
+                  <button className="assesspreview-btn assesspreview-btn-primary" onClick={handleClose}>
                     Close
                   </button>
                 ) : (
-                  <button className="assess-btn assess-btn-primary" onClick={submit} disabled={!allAnswered}>
+                  <button className="assesspreview-btn assesspreview-btn-primary" onClick={submit}>
                     Submit
                   </button>
                 )
@@ -405,69 +578,52 @@ const AssessmentQuiz = ({ isOpen = true, onClose = () => { }, previewMode = true
 
         </div>
 
-        {submitted && !previewMode && (
-          <div className="assess-content">
-            <div className="assess-question-number">
-              <span className="assess-q-icon">✅</span>
-              Results
-            </div>
-            <h2 className="assess-question-title">{assessment.title} • Score</h2>
-            <p className="assess-instruction">You scored {calcScore()} points.</p>
-            <div className="assess-actions-preview">
-              <div className="assess-actions-preview-left" />
-              <div className="assess-actions-preview-right">
-                <button className="assess-btn assess-btn-primary" onClick={() => { setSubmitted(false); setCurrentIndex(0); }}>
-                  Review
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Results screen removed - now just closes and returns to preview */}
 
         {/* Review Navigation Overlay */}
         {showNav && (
-          <div className="assess-nav-overlay" onClick={() => setShowNav(false)}>
-            <div className="assess-nav-panel" onClick={(e) => e.stopPropagation()}>
-              <div className="assess-nav-header">
+          <div className="assesspreview-nav-overlay" onClick={() => setShowNav(false)}>
+            <div className="assesspreview-nav-panel" onClick={(e) => e.stopPropagation()}>
+              <div className="assesspreview-nav-header">
                 <h3>Quiz Navigation • {navCounts.total} Questions</h3>
-                <button className="assess-close-btn" onClick={() => setShowNav(false)}>✕</button>
+                <button className="assesspreview-close-btn" onClick={() => setShowNav(false)}>✕</button>
               </div>
-              <div className="assess-nav-body">
-                <div className="assess-nav-sidebar">
-                  <div className="assess-nav-filter-title">Show question</div>
+              <div className="assesspreview-nav-body">
+                <div className="assesspreview-nav-sidebar">
+                  <div className="assesspreview-nav-filter-title">Show question</div>
                   <button
-                    className={`assess-nav-filter ${navFilter === 'all' ? 'is-active' : ''}`}
+                    className={`assesspreview-nav-filter ${navFilter === 'all' ? 'is-active' : ''}`}
                     onClick={() => setNavFilter('all')}
                   >
                     <span className="filter-label">All Question</span>
                     <span className="filter-badge">{navCounts.total}</span>
                   </button>
                   <button
-                    className={`assess-nav-filter ${navFilter === 'answered' ? 'is-active' : ''}`}
+                    className={`assesspreview-nav-filter ${navFilter === 'answered' ? 'is-active' : ''}`}
                     onClick={() => setNavFilter('answered')}
                   >
                     <span className="filter-label">Answered</span>
                     <span className="filter-badge">{navCounts.answered}</span>
                   </button>
                   <button
-                    className={`assess-nav-filter ${navFilter === 'not_answered' ? 'is-active' : ''}`}
+                    className={`assesspreview-nav-filter ${navFilter === 'not_answered' ? 'is-active' : ''}`}
                     onClick={() => setNavFilter('not_answered')}
                   >
                     <span className="filter-label">Not Answered</span>
                     <span className="filter-badge">{navCounts.notAnswered}</span>
                   </button>
                   <button
-                    className={`assess-nav-filter ${navFilter === 'unsure' ? 'is-active' : ''}`}
+                    className={`assesspreview-nav-filter ${navFilter === 'unsure' ? 'is-active' : ''}`}
                     onClick={() => setNavFilter('unsure')}
                   >
                     <span className="filter-label">Not Sure</span>
                     <span className="filter-badge">{navCounts.unsure}</span>
                   </button>
-                  <div className="assess-nav-hint">Choose tab to filter questions.</div>
+                  <div className="assesspreview-nav-hint">Choose tab to filter questions.</div>
                 </div>
-                <div className="assess-nav-main">
-                  <div className="assess-nav-list-title">List Number Question</div>
-                  <div className="assess-nav-circles">
+                <div className="assesspreview-nav-main">
+                  <div className="assesspreview-nav-list-title">List Number Question</div>
+                  <div className="assesspreview-nav-circles">
                     {filteredIndices.map((idx) => {
                       const isCurrent = idx === currentIndex;
                       const isAnswered = (selectedAnswers[idx] || []).length > 0;
@@ -475,12 +631,12 @@ const AssessmentQuiz = ({ isOpen = true, onClose = () => { }, previewMode = true
                       return (
                         <button
                           key={idx}
-                          className={`assess-circle ${isCurrent ? 'is-current' : ''} ${isAnswered ? 'is-answered' : ''} ${isUnsure ? 'is-unsure' : ''}`}
+                          className={`assesspreview-circle ${isCurrent ? 'is-current' : ''} ${isAnswered ? 'is-answered' : ''} ${isUnsure ? 'is-unsure' : ''}`}
                           onClick={() => { setCurrentIndex(idx); setShowNav(false); }}
                           title={`Question ${idx + 1}`}
                         >
                           <span>{idx + 1}</span>
-                          {isUnsure && <span className="assess-circle-dot" />}
+                          {isUnsure && <span className="assesspreview-circle-dot" />}
                         </button>
                       );
                     })}
@@ -491,11 +647,43 @@ const AssessmentQuiz = ({ isOpen = true, onClose = () => { }, previewMode = true
           </div>
         )}
 
-        <div className="assess-footer">
-          <span className="assess-footer-text">Have an issue with this question?</span>
-          <button className="assess-report-btn">🚩 Report An Issue</button>
+        <div className="assesspreview-footer">
+          <span className="assesspreview-footer-text">Have an issue with this question?</span>
+          <button className="assesspreview-report-btn">🚩 Report An Issue</button>
         </div>
       </div>
+
+      {/* Submission Popup */}
+      <SubmissionPopup
+        isOpen={showSubmissionPopup}
+        onClose={() => {
+          setShowSubmissionPopup(false);
+          // Call the original onClose prop (handleQuizClose from AssessmentPreview)
+          // This will properly go to preview mode
+          onClose();
+        }}
+        assessmentData={assessment}
+        answers={selectedAnswers}
+        timeSpent={submissionTimeSpent}
+        currentAttempt={currentAttempt} // Track this in parent component
+        onRetake={() => {
+          // Check if user has exceeded maximum attempts
+          if (!assessment.unlimited_attempts && currentAttempt >= assessment.attempts) {
+            alert(`You have reached the maximum number of attempts (${assessment.attempts}).`);
+            return;
+          }
+          
+          setShowSubmissionPopup(false);
+          // Increment attempt count for retake
+          setCurrentAttempt(prev => prev + 1);
+          // Reset assessment state for retake
+          setCurrentIndex(0);
+          setSelectedAnswers(new Array(questions.length).fill([]));
+          setUnsureFlags(new Array(questions.length).fill(false));
+          setTimeLeft({ hours: initialTime.hours, minutes: initialTime.minutes, seconds: initialTime.seconds });
+          setIsTimerActive(!previewMode);
+        }}
+      />
     </div>
   );
 };

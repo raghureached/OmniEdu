@@ -1,14 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import SurveyPreview from '../../../pages/globalAdmin/GlobalSurveys/SurveyPreview.jsx';
 import './Preview.css';
 import { GoBook } from 'react-icons/go';
 import { RiDeleteBin2Fill } from 'react-icons/ri';
-import { EyeIcon, Plus, ThumbsUp, ThumbsDown, Send, Play, Pause, Volume2, VolumeX, Maximize, Minimize, ChevronLast, ChevronLeft, ChevronRight ,FileText} from 'lucide-react';
-import AssessmentQuiz from '../../Assessments/Assessment';
-const AssessmentPreview = ({ isOpen, onClose, data }) => {
-   
+import { EyeIcon, Plus, ThumbsUp, ThumbsDown, Send, Play, Pause, Volume2, VolumeX, Maximize, Minimize, ChevronLast, ChevronLeft, ChevronRight,FileText } from 'lucide-react';
+
+const SurveyMainPreview = ({ isOpen, onClose, data }) => {
     const navigate = useNavigate();
-    const [showQuiz, setShowQuiz] = useState(false);
     const [activeTab, setActiveTab] = useState('preview');
     const [showModal, setShowModal] = useState(false);
     const [modalContent, setModalContent] = useState({ title: '', body: '' });
@@ -16,7 +15,6 @@ const AssessmentPreview = ({ isOpen, onClose, data }) => {
     const objectUrlRef = useRef(null);
     const [feedbackReaction, setFeedbackReaction] = useState(null); // 'like' | 'dislike' | null
     const [feedbackComment, setFeedbackComment] = useState('');
-    const [isAssessmentActive, setIsAssessmentActive] = useState(false); // Track if assessment is active (not preview)
     // Initialize from incoming data
     useEffect(() => {
         if (!data) return;
@@ -111,7 +109,7 @@ const AssessmentPreview = ({ isOpen, onClose, data }) => {
     }, []);
 
     // Derived display values with safe fallbacks
-    const title = data?.title || 'Untitled Assessment';
+    const title = data?.title || 'Untitled Survey';
     const category = data?.category || 'Uncategorized';
     const trainingType = data?.trainingType || '—';
     const teamName = data?.team?.name || '—';
@@ -125,12 +123,14 @@ const AssessmentPreview = ({ isOpen, onClose, data }) => {
     const description = data?.description || 'No overview provided.';
     const outcomes = Array.isArray(data?.learningOutcomes) ? data.learningOutcomes : [];
     const videoSrc = data?.primaryFile || null;
-    const thumbnail = data?.thumbnail_url
-    || '';
+    const thumbnail = data?.thumbnail_url || '';
     const resource = data?.externalResource || null;
     const resourceKind = resource ? guessKind(getFileExt(resource)) : null;
-    const additionalFile = data?.additionalFile || null
-    const instructions=data?.instructions||null
+    const additionalFile = data?.additionalFile || null;
+
+    // Debug logging
+    console.log('SurveyMainPreview data:', data);
+    console.log('SurveyMainPreview tags:', tags, 'length:', tags.length);
 
     // Determine modal open state: default open if not controlled via props
     const open = typeof isOpen === 'boolean' ? isOpen : true;
@@ -140,25 +140,7 @@ const AssessmentPreview = ({ isOpen, onClose, data }) => {
         navigate(-1);
     };
 
-    const handleSwitchToPreview = () => {
-        setActiveTab('preview');
-    };
-
-    const handleQuizClose = () => {
-        setShowQuiz(false);
-        setIsAssessmentActive(false); // Reset to preview mode when quiz closes
-        setActiveTab('preview');
-        
-    };
-
-    const handleStartAssessment = () => {
-        setShowQuiz(true);
-        setIsAssessmentActive(true); // Set assessment to active mode (not preview)
-    };
-
     const handleTabChange = (tab) => {
-        setShowQuiz(false);
-        setIsAssessmentActive(false); // Reset to preview mode when changing tabs
         setActiveTab(tab);
     };
 
@@ -195,7 +177,7 @@ const AssessmentPreview = ({ isOpen, onClose, data }) => {
     };
 
     const handleComplete = () => {
-        alert('Assessment marked complete (dummy action).');
+        alert('Module marked complete (dummy action).');
     };
 
     // Feedback helpers
@@ -211,9 +193,6 @@ const AssessmentPreview = ({ isOpen, onClose, data }) => {
         alert(`Feedback submitted: ${feedbackReaction || 'no reaction'} | '${feedbackComment}'`);
         setFeedbackReaction(null);
         setFeedbackComment('');
-        // Close resources and go to preview after feedback submission
-        setShowQuiz(false);
-        setActiveTab('preview');
     };
 
     // Progress header removed; tabs moved to modal header
@@ -366,7 +345,7 @@ const AssessmentPreview = ({ isOpen, onClose, data }) => {
                                 <FileText size={24} />
                             </div>
                         <div>
-                            <div className="module-preview-title">Assessment Preview</div>
+                            <div className="module-preview-title">Survey Preview</div>
                             {/* <div className="module-preview-subtitle">Review details and resources before publishing</div> */}
                         </div>
                     </div>
@@ -382,12 +361,11 @@ const AssessmentPreview = ({ isOpen, onClose, data }) => {
                         </button>
                         <button
                             className={`${activeTab === 'resources' ? 'btn-primary' : 'btn-secondary'}`}
-                            onClick={handleStartAssessment}
+                            onClick={() => handleTabChange('resources')}
                             role="tab"
                             aria-selected={activeTab === 'resources'}
-                            style={{width:"120px",justifyContent:"center"}}
-
-                        >Assessment
+                            style={{width:"120px",justifyContent:"center"}}>
+                             Survey
                         </button>
                     </div>
                     <button className="module-preview-close-btn" onClick={handleClose} aria-label="Close preview">✕</button>
@@ -405,12 +383,10 @@ const AssessmentPreview = ({ isOpen, onClose, data }) => {
                                         <div className="global-preview-left-col">
                                             <div className="global-preview-title-row">
                                                 <div className="global-preview-module-title">{title}</div>
-                                                <div className="global-preview-training-category">
-                                                    Training Category: {category}
-                                                </div>
+                                              
                                                 <div className="global-preview-meta-row">
                                                     <div>
-                                                        <strong className="global-preview-meta-label">Target Team</strong>
+                                                        <strong className="global-preview-meta-label">Target Team </strong>
                                                         <span className="global-preview-meta-value">{teamName}</span>
                                                     </div>
                                                     <div>
@@ -424,7 +400,7 @@ const AssessmentPreview = ({ isOpen, onClose, data }) => {
                                                 <div className="global-preview-stat" data-tooltip="Total run-time of all videos and activities">
                                                     <span className="global-preview-icon">⏱</span>{durationMins ? `${durationMins} mins` : '—'}
                                                 </div>
-                                                <div className="global-preview-stat" data-tooltip="Credits awarded after completion">
+                                                {/* <div className="global-preview-stat" data-tooltip="Credits awarded after completion">
                                                     <span className="global-preview-icon">🎓</span>{credits} Credit{Number(credits) === 1 ? '' : 's'}
                                                 </div>
                                                 <div className="global-preview-stat" data-tooltip="Badges achievable in this module">
@@ -432,27 +408,34 @@ const AssessmentPreview = ({ isOpen, onClose, data }) => {
                                                 </div>
                                                 <div className="global-preview-stat" data-tooltip="Stars achievable in this module">
                                                     <span className="global-preview-icon">⭐</span>{stars} Star{Number(stars) === 1 ? '' : 's'}
-                                                </div>
+                                                </div> */}
                                             </div>
 
                                             <div className="global-preview-small-row">
-                                                
+                                                {/* <div className="global-preview-card">
+                                                    <h3>Prerequisites</h3>
+                                                    {prerequisitesArr.length ? (
+                                                        <ul className="global-preview-learn-list">
+                                                            {prerequisitesArr.map((p, idx) => (
+                                                                <li key={idx}>• {p}</li>
+                                                            ))}
+                                                        </ul>
+                                                    ) : (
+                                                        <p className="global-preview-prereq">Nil</p>
+                                                    )}
+                                                </div> */}
 
                                                 <div className="global-preview-card">
                                                     <h3>Tags</h3>
                                                     <div className="global-preview-tags-wrap">
-                                                        {tags.length ? (
+                                                        {tags.length > 0 ? (
                                                             tags.map((t, idx) => (
                                                                 <div key={idx} className="global-preview-tag">{t}</div>
                                                             ))
                                                         ) : (
-                                                            <div className="global-preview-tag">No tags</div>
+                                                            <div className="global-preview-tag" style={{color: '#64748b', fontStyle: 'italic'}}>No tags</div>
                                                         )}
                                                     </div>
-                                                </div>
-                                                <div className="global-preview-card">
-                                                    <h3>Total Number of Questions : {data.questions.length}</h3>
-                                                    
                                                 </div>
                                             </div>
                                         </div>
@@ -460,36 +443,23 @@ const AssessmentPreview = ({ isOpen, onClose, data }) => {
                                         <div className="global-preview-right-col-content">
                                             <div className="global-preview-image-card">
                                                 {thumbnail ? (
-                                                    <img src={thumbnail} alt="Module thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '10px' }} />
+                                                    <img src={thumbnail} alt="Module thumbnail" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'cover', borderRadius: '10px' }} />
                                                 ) : (
-                                                    <span>Assessment Thumbnail</span>
+                                                    <span>Survey Thumbnail</span>
                                                 )}
                                             </div>
 
                                             <div className="global-preview-details">
                                                 <div className="global-preview-card">
                                                     <h3>Overview</h3>
-                                                    <p>{description}</p>
+                                                    <p style={{color:"#0f1724",fontWeight:"400"}}>{description}</p>
                                                 </div>
-
-                                               
+                                              
+                                                {/* <div className="global-preview-card">
+                                                  <h2>Questions{data.sections}</h2>
                                                    
-                                                    {instructions ? (
-                                                        <div
-                                                            className="global-preview-richtext"
-                                                            style={{
-                                                                maxWidth: '100%',
-                                                                overflow: 'hidden',
-                                                                wordWrap: 'break-word',
-                                                                overflowWrap: 'break-word',paddingTop:'0px'
-                                                            }}
-                                                            dangerouslySetInnerHTML={{ __html: instructions }}
-                                                        />
-                                                    ) : (
-                                                        <p className="global-preview-prereq">No Instructions provided.</p>
-                                                    )}
-                                                </div>
-                                            
+                                                </div> */}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -499,176 +469,29 @@ const AssessmentPreview = ({ isOpen, onClose, data }) => {
                                             {/* <button className="global-preview-btn global-preview-btn-ghost" onClick={handleSaveDraft}>
                                                 Save Draft
                                             </button> */}
-                                            <button className="btn-primary" onClick={handleStartAssessment}>
-                                                Start Assessment <ChevronRight size={16} /> 
+                                            <button className="btn-primary" onClick={() => handleTabChange('resources')}>
+                                                Start Survey <ChevronRight size={16} /> 
                                             </button>
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                          
-                            {!showQuiz && activeTab === 'resources' && (
-                                <div className="global-preview-tab-pane global-preview-resources-pane">
-                                    <div className="global-preview-resources-content">
-                                    {data.feedbackEnabled ? (
-                                        <div className="global-preview-card" style={{height:'22%'}} >
-                                            <div className="feedback-header-row" style={{marginBottom:"20px"}}>
-                                                <h3 className="feedback-title">Feedback</h3>
-                                                <div className="feedback-actions">
-                                                    <button
-                                                        type="button"
-                                                        className={`feedback-btn ${feedbackReaction === 'like' ? 'active like' : ''}`}
-                                                        onClick={() => toggleReaction('like')}
-                                                        aria-pressed={feedbackReaction === 'like'}
-                                                    >
-                                                        <ThumbsUp size={16} /> Like
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className={`feedback-btn ${feedbackReaction === 'dislike' ? 'active dislike' : ''}`}
-                                                        onClick={() => toggleReaction('dislike')}
-                                                        aria-pressed={feedbackReaction === 'dislike'}
-                                                    >
-                                                        <ThumbsDown size={16} /> Dislike
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div className="feedback-input-row">
-                                                <input
-                                                    type="text"
-                                                    className="feedback-input"
-                                                    placeholder="Add a comment (max 50 chars)"
-                                                    value={feedbackComment}
-                                                    onChange={handleCommentChange}
-                                                    maxLength={50}
-                                                />
-                                                <div className="feedback-right">
-                                                    <span className="feedback-count">{feedbackComment.length}/50</span>
-                                                    <button
-                                                        type="button"
-                                                        className="feedback-submit"
-                                                        onClick={handleFeedbackSubmit}
-                                                        disabled={!feedbackReaction && feedbackComment.trim().length === 0}
-                                                    >
-                                                        <Send size={14} /> Submit
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            {data.feedback && (
-                                                <div className="global-preview-iframe-container" style={{ marginTop: 8 }}>
-                                                    <iframe src={data.feedback} frameBorder="0" title="Feedback"></iframe>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ) : null}
-
-
-                                        {/* {data.instructions && (
-                                            <div className="global-preview-card global-preview-instructions-card">
-                                                <h3 className="global-preview-card-title">Instructions</h3>
-                                                <div>
-                                                    {data.instructions}
-                                                </div>
-                                            </div>
-                                        )} */}
-
-                                        {/* <div className="global-preview-card global-preview-primary-card">
-                                            <h3 className="global-preview-card-title">Primary Material</h3>
-                                           
-                                            {videoSrc === null ?
-                                                <div className="global-preview-richtext" dangerouslySetInnerHTML={{ __html: data.richText }} />
-                                                :
-                                                <VideoPlayer src={videoSrc} poster={thumbnail} theme="light" />
-                                            }
-                                        </div> */}
-                                        {/* {resource && (
-                                            <div className="global-preview-card">
-                                                <h3 className="global-preview-card-title">Supplementary Material</h3>
-                                                <div className="global-preview-iframe-container">
-                                                    {resourceKind === 'video' ? (
-                                                        <VideoPlayer src={resource} poster={thumbnail} />
-                                                    ) : (
-                                                        <iframe src={resource} title="Supplementary Resource" />
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )} */}
-
-                                        {/* {additionalFile && (
-                                            <div className="global-preview-card">
-                                                <h3 className="global-preview-card-title">Additional Material</h3>
-                                                <div className="global-preview-resources-list">
-                                                    <div className="global-preview-resource-item">
-                                                        <p className="global-preview-resource-name">Additional File</p>
-                                                        <div className="global-preview-resource-actions">
-                                                            <button onClick={() => handlePreview(additionalFile)} className="global-preview-btn global-preview-btn-primary">Preview</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )} */}
-
-                                    </div>
-                                    {/* {data.submissionEnabled && <div className="global-preview-actions">
-                                        <div>
-                                            <h3 style={{margin:"10px"}}>Submission <span className='module-overlay__required'>*</span></h3>
-
-                                            <input
-                                                type="file"
-                                                name="primaryFile"
-                                                style={{ display: 'none' }}
-                                                accept=".pdf,.doc,.docx,.mp4,.mp3,.scorm"
-                                                id="uploadFiles"
-                                                onChange={handleFileChange}
-                                            />
-                                            {submission ? (
-                                                <div className="module-overlay__uploaded-file-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',width:"980px"}}>
-                                                    <span className="module-overlay__uploaded-file-name" title={typeof submission === 'string' ? submission.split('/').pop() : submission.name}>
-                                                        {typeof submission === 'string' ? submission.split('/').pop() : submission.name}
-                                                    </span>
-                                                    <div className="module-overlay__file-actions">
-                                                        <button
-                                                            type="button"
-                                                            className="module-overlay__btn-preview"
-                                                            onClick={() => handlePreviewFile(submission)}
-                                                            aria-label="Preview uploaded file"
-                                                        >
-                                                            <EyeIcon size={16} /> Preview
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            className="module-overlay__btn-delete"
-                                                            onClick={handleRemoveFile}
-                                                            aria-label="Delete uploaded file"
-                                                        >
-                                                            <RiDeleteBin2Fill size={16} /> Delete
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <label htmlFor="uploadFiles" className="module-overlay__upload-label" tabIndex={0} onKeyPress={e => { if (e.key === 'Enter') document.getElementById('uploadFiles').click(); }}>
-                                                    <Plus size={16} /> Upload File
-                                                </label>
-                                            )}
-                                        </div>
-                                    </div>} */}
-                                  
-                                    {/* <div className="global-preview-actions">
-                                        <div></div>
-                                        <div className="global-preview-actions-buttons" style={{display:"flex",justifyContent:"space-between",alignItems:"center",width:"100%"}}>
-                                            <button className="btn-secondary" onClick={() => handleTabChange('preview')}>
-                                                <span style={{display:"flex",alignItems:"center",gap:4}}><ChevronLeft size={16} /> Previous</span>
-                                            </button>
-                                            <button className="btn-primary" onClick={handleComplete}>
-                                                ✓ Mark Complete
-                                            </button>
-                                        </div>
-                                    </div> */}
-                                    
+                            {activeTab === 'resources' && (
+                                <div className="global-preview-tab-pane">
+                                    <SurveyPreview
+                                        isOpen={true}
+                                        onClose={() => setActiveTab('preview')}
+                                        formData={{
+                                            title: data.title || 'Untitled Survey',
+                                            description: data.description || ''
+                                        }}
+                                        formElements={data.formElements || []}
+                                        groups={data.groups || []}
+                                        feedback={data.feedback || {}}
+                                    />
                                 </div>
-                            )} 
-                            {showQuiz && (<AssessmentQuiz isOpen={open} onClose={handleQuizClose} previewMode={!isAssessmentActive} assessmentData={data} />)}
+                            )}
                         </div>
                     </div>
                 </div>
@@ -716,4 +539,4 @@ const AssessmentPreview = ({ isOpen, onClose, data }) => {
     );
 };
 
-export default AssessmentPreview;
+export default SurveyMainPreview;

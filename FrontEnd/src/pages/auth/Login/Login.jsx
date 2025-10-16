@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
-import { login, loginWithSSO, clearError, mockLogin } from '../../../store/slices/authSlice';
+import { login, loginWithSSO, clearError } from '../../../store/slices/authSlice';
 import './Login.css';
 
 const Login = () => {
@@ -11,17 +11,15 @@ const Login = () => {
   const navigate = useNavigate();
   const { isAuthenticated, loading, error, user, role } = useSelector((state) => state.auth);
 
-  // Clear errors only once when component mounts
   useEffect(() => {
     dispatch(clearError());
-  }, []); // Empty dependency array - runs only once
+  }, []);
 
-  // Handle navigation when authentication state changes
   useEffect(() => {
     if (isAuthenticated && role) {
       if (role === 'GlobalAdmin') {
         navigate('/global-admin/organizations', { replace: true });
-      } else if (role === 'Admin') {
+      } else if (role === 'Administrator') {
         navigate('/admin', { replace: true });
       } else {
         navigate('/user/learning-hub', { replace: true });
@@ -32,17 +30,6 @@ const Login = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     dispatch(login({ email, password }));
-    
-    // Always use mockLogin for now until backend is ready
-    // dispatch(mockLogin({ username: email, password }));
-    
-    // Uncomment this when you have a real backend
-    // const isDevelopment = process.env.NODE_ENV === 'development';
-    // if (isDevelopment) {
-    //   dispatch(mockLogin({ username: email, password }));
-    // } else {
-    //   dispatch(login({ email, password }));
-    // }
   };
 
   const handleSSOLogin = (provider) => {

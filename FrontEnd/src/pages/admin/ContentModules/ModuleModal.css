@@ -1,0 +1,410 @@
+.module-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  .module-overlay__content {
+    background: #fff;
+    border-radius: 10px;
+    width: 650px;
+    max-width: 95vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+  }
+  
+  .module-overlay__header {
+    padding: 24px 32px;
+    background-color: #f5f7ff;
+    border-bottom: 1px solid #d0d4e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .module-overlay__title {
+    margin: 0;
+    font-weight: 700;
+    font-size: 1.8rem;
+    color: #2c3e50;
+  }
+  
+  .module-overlay__step-indicator {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #657786;
+    margin-top: 4px;
+  }
+  
+  .module-overlay__close {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: #657786;
+    transition: color 0.2s ease;
+  }
+  .module-overlay__close:hover {
+    color: #ff3b30;
+  }
+  
+  .module-overlay__progress {
+    height: 4px;
+    background: #e0e4ff;
+    width: 100%;
+  }
+  
+  .module-overlay__progress-bar {
+    height: 4px;
+    background: #5570f1;
+    transition: width 0.3s ease;
+  }
+  
+  .module-overlay__body {
+    padding: 24px 32px;
+    overflow-y: auto;
+    flex-grow: 1;
+  }
+  
+  .module-overlay__form-group {
+    margin-bottom: 24px;
+  }
+  
+  .module-overlay__form-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #34495e;
+    margin-left: 8px;
+  }
+  
+  .module-overlay__required {
+    color: #e74c3c;
+    margin-left: 4px;
+  }
+  
+  .module-overlay__form-input,
+  .module-overlay__form-select,
+  .module-overlay__form-textarea {
+    width: 100%;
+    border: 1.5px solid #cbd3e1;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+    font-family: inherit;
+  }
+  
+  .module-overlay__form-input:focus,
+  .module-overlay__form-select:focus,
+  .module-overlay__form-textarea:focus {
+    border-color: #5570f1;
+    outline: none;
+    box-shadow: 0 0 6px rgba(85, 112, 241, 0.4);
+  }
+  
+  .module-overlay__form-textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+    line-height: 1.5;
+  }
+  
+  .module-overlay__learning-outcomes {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .module-overlay__learning-outcome-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .module-overlay__learning-outcome-remove {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #e74c3c;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+  }
+  .module-overlay__learning-outcome-remove:hover {
+    background-color: #fcebea;
+  }
+  
+  .module-overlay__add-outcome-btn {
+    font-weight: 600;
+    background: #5570f1;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 0.3s ease;
+  }
+  .module-overlay__add-outcome-btn:hover {
+    background: #3f57d4;
+  }
+  
+  .module-overlay__tags-container {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .module-overlay__tag {
+    background: #5570f1;
+    border-radius: 20px;
+    padding: 4px 12px;
+    color: #fff;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+  }
+  
+  .module-overlay__tag-remove {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #d0d4e6;
+    padding: 0;
+    display: flex;
+  }
+  .module-overlay__tag-remove:hover {
+    color: #ff3b30;
+  }
+  
+  .module-overlay__content-type-buttons {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  
+  .module-overlay__content-type-btn {
+    flex: 1;
+    border: 2px solid #cbd3e1;
+    background: #f9faff;
+    color: #4a5a78;
+    font-weight: 600;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-align: center;
+  }
+  .module-overlay__content-type-btn.active,
+  .module-overlay__content-type-btn:hover {
+    border-color: #5570f1;
+    background: #5570f1;
+    color: #fff;
+    box-shadow: 0 4px 8px rgba(85, 112, 241, 0.3);
+  }
+  
+  .module-overlay__uploaded-file-container {
+    background: #f0f4ff;
+    padding: 12px 16px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  
+  .module-overlay__uploaded-file-name {
+    font-weight: 600;
+    color: #34495e;
+    max-width: 280px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  
+  .module-overlay__file-actions button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #5570f1;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    font-weight: 600;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+  }
+  .module-overlay__file-actions button:hover {
+    background: #dde5ff;
+  }
+  
+  .module-overlay__upload-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #5570f1;
+    border: 2px dashed #5570f1;
+    padding: 14px 18px;
+    border-radius: 8px;
+    transition: background-color 0.25s ease, color 0.25s ease;
+    user-select: none;
+  }
+  .module-overlay__upload-label:hover,
+  .module-overlay__upload-label:focus {
+    background-color: #5570f1;
+    color: white;
+    outline: none;
+  }
+  
+  .module-overlay__form-row {
+    display: flex;
+    gap: 50px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  
+  .module-overlay__slider {
+    cursor: pointer;
+    width: 160px;
+    accent-color: #5570f1;
+  }
+  
+  .module-overlay__checkbox {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #34495e;
+  }
+  
+  .module-overlay__checkbox input {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+  }
+  
+  .module-overlay__footer {
+    padding: 16px 32px;
+    border-top: 1px solid #d0d4e6;
+    background-color: #f5f7ff;
+  }
+  
+  .module-overlay__step-navigation {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  
+  .module-overlay__btn-prev,
+  .module-overlay__btn-next,
+  .module-overlay__btn-add,
+  .module-overlay__btn-cancel {
+    font-weight: 700;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    padding: 8px 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    transition: background-color 0.25s ease;
+  }
+  
+  .module-overlay__btn-prev {
+    background-color: #e0e4ff;
+    color: #5570f1;
+  }
+  .module-overlay__btn-prev:hover:not(:disabled) {
+    background-color: #c9d1ff;
+  }
+  
+  .module-overlay__btn-next {
+    background-color: #5570f1;
+    color: white;
+  }
+  .module-overlay__btn-next:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .module-overlay__btn-next:hover:not(:disabled) {
+    background-color: #3f57d4;
+  }
+  
+  .module-overlay__btn-add {
+    background-color: #2ecc71;
+    color: white;
+  }
+  .module-overlay__btn-add:hover {
+    background-color: #27ae60;
+  }
+  
+  .module-overlay__btn-cancel {
+    background-color: #dddde1;
+    color: #555d66;
+  }
+  .module-overlay__btn-cancel:hover {
+    background-color: #c1c3c8;
+  }
+  
+  .module-overlay__step-dots {
+    display: flex;
+    gap: 8px;
+    flex-grow: 1;
+    justify-content: center;
+  }
+  
+  .module-overlay__step-dot {
+    width: 12px;
+    height: 12px;
+    background-color: #cbd3e1;
+    border-radius: 50%;
+    transition: background-color 0.3s ease;
+  }
+  .module-overlay__step-dot.active {
+    background-color: #5570f1;
+    box-shadow: 0 0 8px rgba(85, 112, 241, 0.4);
+  }
+  .module-overlay__btn-save {
+    background-color: #5570f1;
+    color: white;
+  }
+  .module-overlay__btn-preview {
+    background-color: gray;
+    color: white;
+  }
+  .module-overlay__drafts{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .module-overlay__drafts p{
+    font-weight: 600;
+    color: #5570f1;
+  }
+  .module-overlay__drafts button{
+    font-weight: 600;
+    background-color: #5570f1;
+    color: white;
+  }
+  

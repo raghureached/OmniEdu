@@ -49,22 +49,23 @@ router.route('/searchAssessment').get(addUserId,searchAssessment)
 
 //////Module////////
 
-router.route('/createModule').post(addUserId,uploadContent.single('file'),uploadToCloudinary("modules"),addModule)
-router.route('/editModule/:id').put(addUserId,uploadContent.single('file'),uploadToCloudinary("modules"),editModule)
-router.route('/deleteModule/:id').delete(addUserId,deleteModule)
-router.route('/previewModule/:id').get(addUserId,previewModule)
-router.route('/searchModules').get(addUserId,searchModules)   
+router.route('/createModule').post(uploadContent.fields([{name:'primaryFile',maxCount:1},{name:'additionalFile',maxCount:1},{name:'thumbnail',maxCount:1}]),uploadMultipleToCloudinary,addModule)
+router.route('/editModule/:id').put(uploadContent.fields([{name:'primaryFile',maxCount:1},{name:'additionalFile',maxCount:1},{name:'thumbnail',maxCount:1}]),uploadMultipleToCloudinary,editModule)
+router.route('/deleteModule/:id').delete(deleteModule)
+
+// router.route('/previewModule/:id').get(addUserId,previewModule)
+// router.route('/searchModules').get(addUserId,searchModules)   
 
 //////Groups////////
 
-router.route('/addGroup').post(addUserId,addGroup)
-router.route('/getGroups').get(addUserId,getGroups)
-router.route('/editGroup/:id').put(addUserId,editGroup)
-router.route('/deleteGroup/:id').delete(addUserId,deleteGroup)
+router.route('/addGroup').post(addGroup)
+router.route('/getGroups').get(getGroups)
+router.route('/editGroup/:id').put(editGroup)
+router.route('/deleteGroup/:id').delete(deleteGroup)
 
 //////Learning Path////////
 
-router.route('/addLearningPath').post(addUserId,addLearningPath)
+router.route('/addLearningPath').post(addLearningPath)
 router.route('/getLearningPaths').get(addUserId,getLearningPaths)
 router.route('/getLearningPathContents/:id').get(addUserId,getContentsOfLearningPath)
 router.route('/editLearningPath/:id').put(addUserId,editLearningPath)

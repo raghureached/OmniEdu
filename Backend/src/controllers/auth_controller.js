@@ -4,13 +4,17 @@ const GlobalRoles = require("../models/globalRoles_model");
 const User = require("../models/users_model");
 const jwt = require("jsonwebtoken");
 
+const canonicalRole = (role) => {
+  const r = String(role || '').toLowerCase().replace(/[^a-z]/g, '');
+  if (r === 'globaladmin') return 'GlobalAdmin';
+  if (r === 'administrator' || r === 'admin') return 'Administrator';
+  if (r === 'user' || r === 'learner') return 'User';
+  return role || null;
+};
 
-
-////For admin and learners
 const login = async (req,res) => {
     try {
         const {email,password} = req.body;
-        
         if(!email || !password){
             return res.status(400).json({
                 isSuccess:false,
@@ -22,14 +26,20 @@ const login = async (req,res) => {
             return handleLogin(globalAdmin,password,"GlobalAdmin",res)
         }
         const user = await User.findOne({email})
-        const role = await GlobalRoles.findById(user.global_role_id).select("name");
         if(!user){
             return res.status(401).json({
                 isSuccess:false,
                 message:"Invalid email or password"
             })
         }
-        return handleLogin(user,password,role.name,res)
+        let roleDoc = null;
+        try {
+          if (user.global_role_id) {
+            roleDoc = await GlobalRoles.findById(user.global_role_id).select("name");
+          }
+        } catch (_) {}
+        const resolvedRole = canonicalRole(roleDoc?.name) || 'User';
+        return handleLogin(user,password,resolvedRole,res)
     } catch (error) {
         return res.status(500).json({
             isSuccess:false,
@@ -38,7 +48,6 @@ const login = async (req,res) => {
         })
     }
 }
-
 
 const logout = async(req,res)=>{
     try {
@@ -73,13 +82,12 @@ const logout = async(req,res)=>{
 }
 
 const generateTokens = async (userId,role) => {
-    const accessToken = jwt.sign({_id:userId,role:role},process.env.ACCESS_TOKEN_SECRET)
-    const refreshToken = jwt.sign({_id:userId,role:role},process.env.REFRESH_TOKEN_SECRET)
+    const canon = canonicalRole(role);
+    const accessToken = jwt.sign({_id:userId,role:canon},process.env.ACCESS_TOKEN_SECRET)
+    const refreshToken = jwt.sign({_id:userId,role:canon},process.env.REFRESH_TOKEN_SECRET)
     return {accessToken,refreshToken}
 }
 
-
-// ====== helpers ======
 const handleLogin = async (entity, password, role, res) => {
   if (!entity) {
     return res.status(401).json({
@@ -88,35 +96,32 @@ const handleLogin = async (entity, password, role, res) => {
     });
   }
 
-  const isPasswordValid = await entity.comparePassword(password);
+const isPasswordValid = await entity.comparePassword(password);
   if (!isPasswordValid) {
     return res.status(401).json({
       isSuccess: false,
       message: "Invalid email or password",
     });
   }
-
   entity.last_login = new Date();
   await entity.save();
   entity.password = undefined;
-
-  const { accessToken, refreshToken } = await generateTokens(entity._id, role);
-  
+  const canonRole = canonicalRole(role);
+  const { accessToken, refreshToken } = await generateTokens(entity._id, canonRole);
   res.cookie("refreshToken", refreshToken, options);
   res.cookie("accessToken", accessToken, options);
-
   return res.status(200).json({
     isSuccess: true,
     message: "Login successful",
     data: entity,
-    role,
+    role: canonRole,
   });
 };
 
 const checkAuth = async (req,res) => {
     try {
         const userId = req.user._id;
-        const role = req.user.role;
+        const role = canonicalRole(req.user.role);
         if(role === "GlobalAdmin"){
             const globalAdmin = await GlobalAdmin.findById(userId)
             return res.status(200).json({
@@ -132,7 +137,7 @@ const checkAuth = async (req,res) => {
             isSuccess:true,
             message:"User authenticated successfully",
             data:user,
-            role:globalRole.name
+            role: canonicalRole(globalRole?.name)
         })
     } catch (error) {
         return res.status(500).json({

@@ -1,39 +1,89 @@
-const Assessment = require("../../models/assessment_model");
 const LearningPath = require("../../models/learningPath_model");
-const Module = require("../../models/moduleOrganization_model");
 const logAdminActivity = require("./admin_activity");
+
 const addLearningPath = async (req, res) => {
-    try {
-        const { title, description, schedule, status, organization_id } = req.body;
-        const learningPath = new LearningPath({
-            title,
-            description,
-            schedule,
-            status,
-            organization_id,
-            //Change when authentication is added
-            created_by: req.user?._id
-        });
-        await learningPath.save();
-        await logAdminActivity(req, "add", `Learning path added successfully: ${learningPath.title}`);
-        return res.status(201).json({
-            isSuccess: true,
-            message: 'Learning path added successfully.',
-            data: learningPath
-        });
-    } catch (error) {
-        return res.status(500).json({
-            isSuccess: false,
-            message: 'Failed to add learning path.',
-            error: error.message
-        });
-    }
-}
-////Need changes//////
+  try {
+    const {
+      title,
+      description,
+      prerequisite,
+      tags,
+      team,
+      subteam,
+      category,
+      duration,
+      trainingType,
+      credits,
+      badges,
+      stars,
+      coverImage,
+      enforceOrder,
+      bypassRewards,
+      enableFeedback,
+      lessons = [],
+      organization_id,
+      status,
+    } = req.body;
+
+    const typeToModel = {
+      module: 'OrganizationModule',
+      assessment: 'Assessment',
+      survey: 'OrganizationSurvey',
+    };
+
+    const normalizedLessons = Array.isArray(lessons)
+      ? lessons.map((l) => ({
+          id: l.id,
+          type: (l.type || '').toLowerCase(),
+          model: typeToModel[(l.type || '').toLowerCase()],
+          title: l.title || null,
+          order: typeof l.order === 'number' ? l.order : undefined,
+        }))
+      : [];
+
+    const learningPath = new LearningPath({
+      title,
+      description,
+      prerequisite,
+      tags,
+      team,
+      subteam,
+      category,
+      duration,
+      trainingType,
+      credits,
+      badges,
+      stars,
+      coverImage,
+      enforceOrder,
+      bypassRewards,
+      enableFeedback,
+      lessons: normalizedLessons,
+      organization_id,
+      status,
+      created_by: req.user?._id,
+    });
+
+    await learningPath.save();
+    await logAdminActivity(req, 'add', `Learning path added successfully: ${learningPath.title}`);
+    return res.status(201).json({
+      isSuccess: true,
+      message: 'Learning path added successfully.',
+      data: learningPath,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      isSuccess: false,
+      message: 'Failed to add learning path.',
+      error: error.message,
+    });
+  }
+};
+
 const getLearningPaths = async (req, res) => {
     try {
         // const orgId = req.user.orgId || "68bc0898fdb4a64d5a727a60";
-        const learningPath = await LearningPath.find({organization_id: "68bc0898fdb4a64d5a727a60"}).lean();
+        const learningPath = await LearningPath.find({organization_id: "68bc0898fdb4a64d5a727a60"}).populate('lessons.id').lean();
         await logAdminActivity(req, "view", `Learning paths fetched successfully: ${learningPath.length}`);
         return res.status(200).json({
             isSuccess: true,
@@ -52,60 +102,117 @@ const getLearningPaths = async (req, res) => {
 const getContentsOfLearningPath = async (req, res) => {
   try {
     const learningPath = await LearningPath.findOne({ uuid: req.params.id })
-      .populate({
-        path: "schedule",
-        populate: [
-          { path: "modules" },
-          { path: "assessments" }
-        ]
-      });
+      .populate('lessons.id');
 
     if (!learningPath) {
-      await logAdminActivity(req, "view", `Learning path not found: ${req.params.id}`);
+      await logAdminActivity(req, 'view', `Learning path not found: ${req.params.id}`);
       return res.status(404).json({
         isSuccess: false,
-        message: "Learning path not found",
+        message: 'Learning path not found',
       });
     }
-    await logAdminActivity(req, "view", `Learning path fetched successfully: ${learningPath.title}`);
+    await logAdminActivity(req, 'view', `Learning path fetched successfully: ${learningPath.title}`);
     return res.status(200).json({
       isSuccess: true,
-      message: "Learning path fetched successfully",
+      message: 'Learning path fetched successfully',
       data: learningPath,
     });
   } catch (error) {
     return res.status(500).json({
       isSuccess: false,
-      message: "Failed to fetch learning path contents",
+      message: 'Failed to fetch learning path contents',
       error: error.message,
     });
   }
 };
 
 const editLearningPath = async (req, res) => {
-    try {
-        const { title, description, schedule, status, organization_id } = req.body;
-        const learningPath = await LearningPath.findOneAndUpdate({ uuid: req.params.id }, { title, description, schedule, status, organization_id }, { new: true });
-        if(!learningPath){
-          await logAdminActivity(req, "edit", `Learning path not found: ${req.params.id}`);
-          return res.status(404).json({
-            isSuccess:false,
-            message:"Learning path not found"
-          })
-        }
-        await logAdminActivity(req, "edit", `Learning path updated successfully: ${learningPath.title}`);
-        return res.status(200).json({
-            isSuccess: true,
-            message: 'Learning path updated successfully.',
-            data: learningPath
-        });
-    } catch (error) {
-        return res.status(500).json({
-            isSuccess: false,
-            message: 'Failed to update learning path.',
-            error: error.message
-        });
+  try {
+    const {
+      title,
+      description,
+      prerequisite,
+      tags,
+      team,
+      subteam,
+      category,
+      duration,
+      trainingType,
+      credits,
+      badges,
+      stars,
+      coverImage,
+      enforceOrder,
+      bypassRewards,
+      enableFeedback,
+      lessons,
+      organization_id,
+      status,
+    } = req.body;
+
+    const typeToModel = {
+      module: 'OrganizationModule',
+      assessment: 'Assessment',
+      survey: 'OrganizationSurvey',
+    };
+
+    const normalizedLessons = Array.isArray(lessons)
+      ? lessons.map((l) => ({
+          id: l.id,
+          type: (l.type || '').toLowerCase(),
+          model: typeToModel[(l.type || '').toLowerCase()],
+          title: l.title || null,
+          order: typeof l.order === 'number' ? l.order : undefined,
+        }))
+      : undefined;
+
+    const updateDoc = {
+      title,
+      description,
+      prerequisite,
+      tags,
+      team,
+      subteam,
+      category,
+      duration,
+      trainingType,
+      credits,
+      badges,
+      stars,
+      coverImage,
+      enforceOrder,
+      bypassRewards,
+      enableFeedback,
+      organization_id,
+      status,
+    };
+    if (normalizedLessons) updateDoc.lessons = normalizedLessons;
+
+    const learningPath = await LearningPath.findOneAndUpdate(
+      { uuid: req.params.id },
+      updateDoc,
+      { new: true }
+    );
+    if (!learningPath) {
+      await logAdminActivity(req, 'edit', `Learning path not found: ${req.params.id}`);
+      return res.status(404).json({
+        isSuccess: false,
+        message: 'Learning path not found',
+      });
     }
+    await logAdminActivity(req, 'edit', `Learning path updated successfully: ${learningPath.title}`);
+    return res.status(200).json({
+      isSuccess: true,
+      message: 'Learning path updated successfully.',
+      data: learningPath,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      isSuccess: false,
+      message: 'Failed to update learning path.',
+      error: error.message,
+    });
+  }
 }
 
 const deleteLearningPath = async(req,res)=>{

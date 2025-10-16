@@ -82,7 +82,7 @@ const GlobalSurveys = () => {
   }, [dispatch]);
 
   const { groups } = useSelector(state => state.groups); 
-  console.log("groups in assessments: ",groups)
+  // console.log("groups in assessments: ",groups)
   const splitInstructions = (str) => {
     const raw = String(str || '');
     if (!raw.trim()) return { instruction_header: '', instruction_text: '' };

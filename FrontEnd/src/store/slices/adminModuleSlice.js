@@ -2,11 +2,11 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
 
 // Async thunks for content management
-export const fetchContent = createAsyncThunk(
-  'content/fetchContent',
+export const adminfetchContent = createAsyncThunk(
+  'adminModule/fetchContent',
   async (filters, { rejectWithValue }) => {
     try {
-      const response = await api.get('api/globalAdmin/getContent', { params: filters });
+      const response = await api.get('api/admin/getContent', { params: filters });
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -14,12 +14,12 @@ export const fetchContent = createAsyncThunk(
   }
 );
 
-export const fetchContentById = createAsyncThunk(
-  'content/fetchContentById',
+export const adminfetchContentById = createAsyncThunk(
+  'adminModule/fetchContentById',
   async (id, { rejectWithValue }) => {
     try {
       // console.log(id)
-      const response = await api.get(`/api/globalAdmin/getContentById/${id}`);
+      const response = await api.get(`/api/admin/getContentById/${id}`);
       console.log(response.data.data);
       return response.data.data;
     } catch (error) {
@@ -28,12 +28,12 @@ export const fetchContentById = createAsyncThunk(
   }
 );
 
-export const createContent = createAsyncThunk(
-  'content/createContent',
+export const admincreateContent = createAsyncThunk(
+  'adminModule/createContent',
   async (moduleData, { rejectWithValue }) => {
     try {
       // Do not set Content-Type here!
-      const response = await api.post('/api/globalAdmin/addcontent', moduleData,{headers:{'Content-Type':'multipart/form-data'}});
+      const response = await api.post('/api/admin/createModule', moduleData,{headers:{'Content-Type':'multipart/form-data'}});
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -41,11 +41,11 @@ export const createContent = createAsyncThunk(
   }
 );
 
-export const updateContent = createAsyncThunk(
-  'content/updateContent',
+export const adminupdateContent = createAsyncThunk(
+  'adminModule/updateContent',
   async ({ id, updatedData }, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/api/globalAdmin/editContent/${id}`, updatedData,{headers:{'Content-Type':'multipart/form-data'}});
+      const response = await api.put(`/api/admin/editModule/${id}`, updatedData,{headers:{'Content-Type':'multipart/form-data'}});
       // console.log(response.data.data)
       return response.data.data;
     } catch (error) {
@@ -54,11 +54,11 @@ export const updateContent = createAsyncThunk(
   }
 );
 
-export const deleteContent = createAsyncThunk(
-  'content/deleteContent',
+export const admindeleteContent = createAsyncThunk(
+  'adminModule/deleteContent',
   async (id, { rejectWithValue }) => {
     try {
-      await api.delete(`/api/globalAdmin/deleteContent/${id}`);
+      await api.delete(`/api/admin/deleteModule/${id}`);
       return id;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -66,11 +66,11 @@ export const deleteContent = createAsyncThunk(
   }
 );
 
-export const bulkDeleteContent = createAsyncThunk(
-  'content/bulkDeleteContent',
+export const adminbulkDeleteContent = createAsyncThunk(
+  'adminModule/bulkDeleteContent',
   async (ids, { rejectWithValue }) => {
     try {
-      const response = await api.delete(`/api/globalAdmin/bulkDeleteContent`, { data: ids });
+      const response = await api.delete(`/api/admin/bulkDeleteModule`, { data: ids });
       // console.log(response.data.data)
       return ids;
     } catch (error) {
@@ -78,11 +78,11 @@ export const bulkDeleteContent = createAsyncThunk(
     }
   }
 );
-export const enhanceText = createAsyncThunk(
-    'content/enhanceText',
+export const adminenhanceText = createAsyncThunk(
+    'adminModule/enhanceText',
     async ({title,description}, { rejectWithValue }) => {
       try {
-        const response = await api.post('/api/globalAdmin/enhanceText', {title,description});
+        const response = await api.post('/api/admin/enhanceText', {title,description});
         return response.data.data;
       } catch (error) {
         return rejectWithValue(error.response.data);
@@ -90,8 +90,8 @@ export const enhanceText = createAsyncThunk(
     }
   );
 // Content slice
-const contentSlice = createSlice({
-  name: 'content',
+const adminModuleSlice = createSlice({
+  name: 'adminModule',
   initialState: {
     items: [],
     uploading: false,
@@ -112,84 +112,84 @@ const contentSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // Fetch content
-      .addCase(fetchContent.pending, (state) => {
+      .addCase(adminfetchContent.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchContent.fulfilled, (state, action) => {
+      .addCase(adminfetchContent.fulfilled, (state, action) => {
         state.loading = false;
         state.items = action.payload;
         // console.log(action.payload);
         
         state.totalCount = action.payload.totalCount;
       })
-      .addCase(fetchContent.rejected, (state, action) => {
+      .addCase(adminfetchContent.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || 'Failed to fetch content';
       })
-      .addCase(fetchContentById.pending, (state) => {
+      .addCase(adminfetchContentById.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchContentById.fulfilled, (state, action) => {
+      .addCase(adminfetchContentById.fulfilled, (state, action) => {
         state.loading = false;
         state.selectedContent = action.payload;
       })
-      .addCase(fetchContentById.rejected, (state, action) => {
+      .addCase(adminfetchContentById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || 'Failed to fetch content by id';
       })
       // Create content
-      .addCase(createContent.pending, (state) => {
+      .addCase(admincreateContent.pending, (state) => {
         state.loading = true;
         state.uploading = true;
       })
-      .addCase(createContent.fulfilled, (state, action) => {
+      .addCase(admincreateContent.fulfilled, (state, action) => {
         state.loading = false;
         state.items.push(action.payload);
         state.uploading = false;
       })
-      .addCase(createContent.rejected, (state, action) => {
+      .addCase(admincreateContent.rejected, (state, action) => {
         state.loading = false;
         state.uploading = false;
         state.error = action.payload?.message || 'Failed to create content';
       })
       
       // Update content
-      .addCase(updateContent.pending, (state) => {
+      .addCase(adminupdateContent.pending, (state) => {
         state.loading = true;
       })
-      .addCase(updateContent.fulfilled, (state, action) => {
+      .addCase(adminupdateContent.fulfilled, (state, action) => {
         state.loading = false;
         const index = state.items.findIndex(item => item.uuid === action.payload.uuid);
         if (index !== -1) {
           state.items[index] = action.payload;
         }
       })
-      .addCase(updateContent.rejected, (state, action) => {
+      .addCase(adminupdateContent.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || 'Failed to update content';
       })
       
       // Delete content
-      .addCase(deleteContent.pending, (state) => {
+      .addCase(admindeleteContent.pending, (state) => {
         state.loading = true;
       })
-      .addCase(deleteContent.fulfilled, (state, action) => {
+      .addCase(admindeleteContent.fulfilled, (state, action) => {
         state.loading = false;
         state.items = state.items.filter(item => item.uuid !== action.payload);
       })
-      .addCase(deleteContent.rejected, (state, action) => {
+      .addCase(admindeleteContent.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || 'Failed to delete content';
       })
-      .addCase(bulkDeleteContent.pending, (state) => {
+      .addCase(adminbulkDeleteContent.pending, (state) => {
         state.loading = true;
       })
-      .addCase(bulkDeleteContent.fulfilled, (state, action) => {
+      .addCase(adminbulkDeleteContent.fulfilled, (state, action) => {
         state.loading = false;
         state.items = state.items.filter(item => !action.payload.includes(item.uuid));
       })
-      .addCase(bulkDeleteContent.rejected, (state, action) => {
+      .addCase(adminbulkDeleteContent.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || 'Failed to bulk delete content';
       });
@@ -197,5 +197,5 @@ const contentSlice = createSlice({
   }
 });
 
-export const { setFilters, clearFilters } = contentSlice.actions;
-export default contentSlice.reducer;
+export const { setFilters, clearFilters } = adminModuleSlice.actions;
+export default adminModuleSlice.reducer;

@@ -202,7 +202,6 @@ const GlobalAdminLayout = () => {
                     </li>
                     <li>
                         <Link to="/global-admin/message-board" className={isActive("/global-admin/message-board") ? "globaladmin_link_active" : ""}>
-                            {/* <MessageCircle size={20} /> */}
                             <MessageCircleCode size={20} />
                             {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Message Board</span>}
                         </Link>
@@ -231,42 +230,22 @@ const GlobalAdminLayout = () => {
                     </li>
                     <li>
                         <Link to="/global-admin/assessments" className={isActive("/global-admin/assessments") ? "globaladmin_link_active" : ""}>
-                            {/* <MdAssessment size={20} /> */}
                             <BookOpenCheck size={20} />
                             {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Assessments</span>}
                         </Link>
                     </li>
-
                     <li>
                         <Link to="/global-admin/surveys" className={isActive("/global-admin/surveys") ? "globaladmin_link_active" : ""}>
                             <NotepadText size={20} />
                             {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Surveys</span>}
                         </Link>
                     </li>
-                    {/* <li className="globaladmin_menu_section">
-                        {!sidebarCollapsed && <div className="globaladmin_section_title">Assignments</div>}
-                    </li> */}
                     <li>
                         <Link to="/global-admin/assignments" className={isActive("/global-admin/assignments") ? "globaladmin_link_active" : ""}>
                             <CheckCircle size={20} />
                             {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Create Assignment</span>}
                         </Link>
                     </li>
-
-                    {/* <li>
-                        <Link to="/global-admin/library-user" className={isActive("/global-admin/library-user") ? "globaladmin_link_active" : ""}>
-                            <BookCopy size={20} />
-                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Library (User)</span>}
-                        </Link>
-                    </li> */}
-
-                    {/* <li>
-                        <Link to="/global-admin/portal-library-admin" className={isActive("/global-admin/portal-library-admin") ? "globaladmin_link_active" : ""}>
-                            <BookCopy size={20} />
-                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Portal Library (Admin)</span>}
-                        </Link>
-                    </li> */}
-
 
                     <li className="globaladmin_menu_section">
                         {!sidebarCollapsed && <div className="globaladmin_section_title">Global Analytics</div>}
@@ -279,12 +258,9 @@ const GlobalAdminLayout = () => {
                         </Link>
                     </li>
 
-                    {/* GLOBAL SETTINGS */}
                     <li className="globaladmin_menu_section">
                         {!sidebarCollapsed && <div className="globaladmin_section_title">GLOBAL SETTINGS</div>}
                     </li>
-
-
 
                     <li>
                         <Link to="/global-admin/activity-log" className={isActive("/global-admin/activity-log") ? "globaladmin_link_active" : ""}>

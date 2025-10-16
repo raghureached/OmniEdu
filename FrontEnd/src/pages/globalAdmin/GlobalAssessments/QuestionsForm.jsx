@@ -6,6 +6,9 @@ import '../GlobalSurveys/QuestionsForm-survey.css';
 import RichText from './RichTextSurvey.jsx';
 import PreviewCard from '../../../components/common/PreviewCard/PreviewCard.jsx';
 
+import AssessmentPreview from '../../../components/common/Preview/AssessmentPreview.jsx';
+import CsvUpload from '../GlobalAssessments/CsvUpload.jsx';
+
 const QuestionsForm = ({
     currentAssessment,
     formData,
@@ -128,6 +131,46 @@ const QuestionsForm = ({
         setPassError(isValid ? '' : 'Pass percentage must be an integer between 0 and 100');
         return isValid;
     };
+    // Step validation functions
+    const validateStep1 = () => {
+        return formData.title.trim() !== '' &&
+            formData.description.trim() !== '' &&
+            Array.isArray(formData.tags) && formData.tags.length > 0;
+    };
+
+    const validateStep2 = () => {
+        return Array.isArray(questions) &&
+            questions.length > 0 
+          
+    };
+
+    const validateStep3 = () => {
+        return formData.team !== '' &&
+            formData.duration > 0 &&
+            formData.percentage_to_pass !== '' &&
+            !passError;
+    };
+
+    const canProceedToNext = () => {
+        switch (step) {
+            case 1: return validateStep1();
+            case 2: return validateStep2();
+            case 3: return validateStep3();
+            default: return false;
+        }
+    };
+
+    const handleNext = () => {
+        if (canProceedToNext() && step < 3) {
+            setStep(step + 1);
+        }
+    };
+
+    const handlePrev = () => {
+        if (step > 1) {
+            setStep(step - 1);
+        }
+    };
 
     const createAIQuestions = async (title) => {
         try {
@@ -200,19 +243,60 @@ const QuestionsForm = ({
             orgIds: []
         });
     };
+    const handleCsvQuestionsUpload = (csvQuestions) => {
+        // Debug: Log the incoming CSV questions to see if type is present
+        console.log('CSV Questions received:', csvQuestions);
 
+        // Normalize CSV questions to match the expected format
+        const normalizedQuestions = csvQuestions.map(q => ({
+            type: q.type || 'Multiple Choice',
+            question_text: q.question_text || '',
+            options: Array.isArray(q.options) && q.options.length ? q.options : ['', ''],
+            correct_option: q.correct_option !== undefined ? q.correct_option : '',      
+            total_points: 1,
+           
+        }));
+
+        // Debug: Log the normalized questions
+        console.log('Normalized questions:', normalizedQuestions);
+
+        // Update both parent state (source of truth) and formData
+        setQuestions(normalizedQuestions);
+        setFormData((prev) => {
+            console.log('Updating formData with questions:', normalizedQuestions);
+            const newFormData = { ...prev, questions: normalizedQuestions };
+            console.log('New formData:', newFormData);
+            return newFormData;
+        });
+
+        // Force a re-render by updating a state that triggers re-render
+        setTimeout(() => {
+            console.log('Current questions state after upload:', questions);
+        }, 100);
+    };
     React.useEffect(() => {
         if (assessmentPreviewOpen) {
             setPreviewResponses({});
         }
     }, [assessmentPreviewOpen]);
 
-    // Reset single-question preview selections when opening
+    // Close modals on ESC key
     React.useEffect(() => {
-        if (questionPreviewIndex !== null) {
-            setPreviewResponses({});
+        const handleKey = (e) => {
+            if (e.key === 'Escape') {
+                if (assessmentPreviewOpen) {
+                    setAssessmentPreviewOpen(false);
+                } else if (questionPreviewIndex !== null) {
+                    setQuestionPreviewIndex(null);
+                }
+            }
+        };
+        const anyOpen = assessmentPreviewOpen || questionPreviewIndex !== null;
+        if (anyOpen) {
+            document.addEventListener('keydown', handleKey);
+            return () => document.removeEventListener('keydown', handleKey);
         }
-    }, [questionPreviewIndex]);
+    }, [assessmentPreviewOpen, questionPreviewIndex]);
 
 
 
@@ -283,11 +367,11 @@ const QuestionsForm = ({
                                                     <input
                                                         type="text"
                                                         className="assess-form-input"
-                                                        placeholder="Type a tag and press Enter"
+                                                        placeholder="Type a tag and press Enter or comma"
                                                         value={tagInput}
                                                         onChange={(e) => setTagInput(e.target.value)}
                                                         onKeyDown={(e) => {
-                                                            if (e.key === 'Enter') {
+                                                            if (e.key === 'Enter' || e.key === ',') {
                                                                 e.preventDefault();
                                                                 const t = tagInput.trim();
                                                                 if (!t) return;
@@ -301,21 +385,20 @@ const QuestionsForm = ({
                                                     />
                                                 </div>
                                                 {(formData.tags && formData.tags.length > 0) && (
-                                                    <div className="assess-chips">
+                                                    <div className="module-overlay__tags-container">
                                                         {formData.tags.map((t, idx) => (
-                                                            <span key={`${t}-${idx}`} className="assess-chip">
+                                                            <span key={`${t}-${idx}`} className="module-overlay__tag">
                                                                 {t}
                                                                 <button
                                                                     type="button"
-                                                                    className="assess-chip-remove"
-                                                                    aria-label={`Remove ${t}`}
+                                                                    className="module-overlay__tag-remove"
+                                                                    aria-label={`Remove tag ${t}`}
                                                                     onClick={() => {
                                                                         const next = (formData.tags || []).filter(x => x !== t);
                                                                         setFormData({ ...formData, tags: next });
                                                                     }}
-                                                                    style={{ color: "#1e40af", fontSize: "17px" }}
                                                                 >
-                                                                    {/* <X size={12} /> */} X
+                                                                    <X size={12} />
                                                                 </button>
                                                             </span>
                                                         ))}
@@ -403,13 +486,13 @@ const QuestionsForm = ({
                                             <RichText value={formData.instructions || ''} onChange={(value) => setFormData({ ...formData, instructions: value })} />
                                         </div>
                                     </div>
-                                    <div style={{display:"flex",gap:12}}>
-                                        <div style={{width:"50%"}} >
-                                            <label className='assess-form-label' style={{margin:"10px"}}>Number of Questions</label>
+                                    <div style={{ display: "flex", gap: 12 }}>
+                                        <div style={{ width: "50%" }} >
+                                            <label className='assess-form-label' style={{ margin: "10px" }}>Number of Questions</label>
                                             <input type="number" value={noOfQuestions} className='assess-form-input' onChange={(e) => setNoOfQuestions(e.target.value)} />
                                         </div>
-                                        <div style={{width:"50%"}}>
-                                            <label className='assess-form-label' style={{margin:"10px"}}>Number of Questions</label>
+                                        <div style={{ width: "50%" }}>
+                                            <label className='assess-form-label' style={{ margin: "10px" }}>Level</label>
                                             <input type="number" value={noOfQuestions} className='assess-form-input' onChange={(e) => setNoOfQuestions(e.target.value)} />
                                         </div>
                                     </div>
@@ -425,7 +508,10 @@ const QuestionsForm = ({
                                         />
                                     )}
                                 </div>}
+
                             {step === 2 && <div className="assess-form-section">
+
+                                <CsvUpload onQuestionsUpload={handleCsvQuestionsUpload} />
 
                                 {creating ? <div>Please Wait...</div>
                                     :
@@ -460,52 +546,53 @@ const QuestionsForm = ({
 
                                                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px' }}>
                                                         <div style={{ flex: 2 }}>
-                                                        {/* Optional Instructions (above Question Type) */}
-                                                        <div className="assess-form-group">
-                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                <label className="assess-form-label" style={{ marginBottom: 0 }}>Instructions (optional)</label>
-                                                                <button
-                                                                    type="button"
-                                                                    className="survey-assess-btn-secondary"
-                                                                    style={{ padding: '6px 10px', fontSize: 15, fontWeight: 'bold' }}
-                                                                    onClick={() => setInstructionsOpen(prev => ({ ...prev, [qIndex]: !prev[qIndex] }))}
-                                                                >
-                                                                    {instructionsOpen[qIndex] || !!q.instructions ? 'Hide' : 'Add'} Instructions
-                                                                </button>
-                                                            </div>
-                                                            {(instructionsOpen[qIndex] || !!q.instructions) && (
-                                                                <div style={{ marginTop: 8 }}>
-                                                                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
-                                                                        <button
-                                                                            type="button"
-                                                                            className="assess-remove-question"
-                                                                            aria-label="Close instructions"
-                                                                            title="Close instructions"
-                                                                            onClick={() => {
-                                                                                // Clear instruction text and hide the instruction box
-                                                                                updateQuestionField(qIndex, 'instructions', '');
-                                                                                setInstructionsOpen(prev => ({ ...prev, [qIndex]: false }));
-                                                                            }}
-                                                                        >
-                                                                            <X size={16} />
-                                                                        </button>
-                                                                    </div>
-                                                                    <div className="assess-instructions-box">
-                                                                        <RichText
-                                                                            value={q.instructions || ''}
-                                                                            onChange={(html) => updateQuestionField(qIndex, 'instructions', html)}
-                                                                        />
-                                                                    </div>
+                                                            {/* Optional Instructions (above Question Type) */}
+                                                            {/* <div className="assess-form-group">
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                    <label className="assess-form-label" style={{ marginBottom: 0 }}>Instructions (optional)</label>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="survey-assess-btn-secondary"
+                                                                        style={{ padding: '6px 10px', fontSize: 15, fontWeight: 'bold' }}
+                                                                        onClick={() => setInstructionsOpen(prev => ({ ...prev, [qIndex]: !prev[qIndex] }))}
+                                                                    >
+                                                                        {instructionsOpen[qIndex] || !!q.instructions ? 'Hide' : 'Add'} Instructions
+                                                                    </button>
                                                                 </div>
-                                                            )}
-                                                        </div>
+                                                                {(instructionsOpen[qIndex] || !!q.instructions) && (
+                                                                    <div style={{ marginTop: 8 }}>
+                                                                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
+                                                                            <button
+                                                                                type="button"
+                                                                                className="assess-remove-question"
+                                                                                aria-label="Close instructions"
+                                                                                title="Close instructions"
+                                                                                onClick={() => {
+                                                                                   
+                                                                                    updateQuestionField(qIndex, 'instructions', '');
+                                                                                    setInstructionsOpen(prev => ({ ...prev, [qIndex]: false }));
+                                                                                }}
+                                                                            >
+                                                                                <X size={16} />
+                                                                            </button>
+                                                                        </div>
+                                                                        <div className="assess-instructions-box">
+                                                                            <RichText
+                                                                                value={q.instructions || ''}
+                                                                                onChange={(html) => updateQuestionField(qIndex, 'instructions', html)}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div> */}
 
                                                             {/* Question Type */}
                                                             <div className="assess-form-group">
                                                                 <label className="assess-form-label" style={{ marginTop: "10px" }}>Question Type<span className="assess-required">*</span></label>
                                                                 <select
+                                                                    key={`type-${qIndex}-${q.type}`} // Force re-render when type changes
                                                                     className="assess-form-input"
-                                                                    value={q.type}
+                                                                    value={q.type || ''}
                                                                     onChange={e => updateQuestionField(qIndex, 'type', e.target.value)}
                                                                     required
                                                                 >
@@ -693,7 +780,49 @@ const QuestionsForm = ({
                                                                     <label className="assess-form-label">{q.type === 'Multi Select' ? 'Correct Answer ' : 'Correct Answer '}</label>
                                                                     <input
                                                                         type="text"
-                                                                        className="assess-form-input"
+                                                                        className={`assess-form-input ${(() => {
+                                                                            const value = (() => {
+                                                                                if (Array.isArray(q.correct_option)) {
+                                                                                    return q.correct_option.map(idx => getLetterFromIndex(idx)).join(',');
+                                                                                }
+                                                                                if (typeof q.correct_option === 'number') {
+                                                                                    return getLetterFromIndex(q.correct_option);
+                                                                                }
+                                                                                if (typeof q.correct_option === 'string' && q.correct_option !== '') {
+                                                                                    return q.correct_option.toUpperCase();
+                                                                                }
+                                                                                return '';
+                                                                            })();
+
+                                                                            if (!value) return '';
+
+                                                                            const validOptions = Array.isArray(q.options) ? q.options.filter(opt => opt && opt.trim() !== '').length : 0;
+                                                                            if (validOptions === 0) return '';
+
+                                                                            // For Multiple Choice, don't allow commas or multiple letters
+                                                                            if (q.type === 'Multiple Choice') {
+                                                                                const singleLetter = value.replace(/[^A-Z]/g, '');
+                                                                                if (singleLetter.length > 1) {
+                                                                                    return 'assess-correct-error'; // Multiple letters in single choice
+                                                                                }
+                                                                                if (singleLetter && singleLetter.charCodeAt(0) - 65 >= validOptions) {
+                                                                                    return 'assess-correct-error'; // Letter out of range
+                                                                                }
+                                                                                return singleLetter ? 'assess-correct-valid' : '';
+                                                                            }
+
+                                                                            // For Multi Select, check each part
+                                                                            const parts = value.split(',').map(s => s.trim().toUpperCase()).filter(s => s.length > 0);
+                                                                            const invalidParts = parts.filter(part => {
+                                                                                if (/^[A-Z]$/.test(part)) {
+                                                                                    const index = part.charCodeAt(0) - 65;
+                                                                                    return index >= validOptions;
+                                                                                }
+                                                                                return true;
+                                                                            });
+
+                                                                            return invalidParts.length > 0 ? 'assess-correct-error' : 'assess-correct-valid';
+                                                                        })()}`}
                                                                         placeholder={q.type === 'Multi Select' ? 'e.g., A,C for multiple' : 'e.g., A'}
                                                                         value={
                                                                             (() => {
@@ -719,7 +848,16 @@ const QuestionsForm = ({
                                                                             const value = e.target.value.toUpperCase();
                                                                             // Allow letters A-Z, commas, and spaces
                                                                             if (/^[A-Z,\s]*$/.test(value) || value === '') {
-                                                                                updateQuestionField(qIndex, 'correct_option', value);
+                                                                                // For Multiple Choice, only allow single letter (no commas)
+                                                                                if (q.type === 'Multiple Choice') {
+                                                                                    const cleanValue = value.replace(/[^A-Z]/g, ''); // Remove everything except letters
+                                                                                    if (cleanValue.length <= 1) {
+                                                                                        updateQuestionField(qIndex, 'correct_option', cleanValue);
+                                                                                    }
+                                                                                } else {
+                                                                                    // For Multi Select, allow commas
+                                                                                    updateQuestionField(qIndex, 'correct_option', value);
+                                                                                }
                                                                             }
                                                                         }}
                                                                         onBlur={e => {
@@ -730,24 +868,45 @@ const QuestionsForm = ({
                                                                                 updateQuestionField(qIndex, 'correct_option', '');
                                                                                 return;
                                                                             }
+
+                                                                            // Check if indices are within valid range
+                                                                            const validOptions = Array.isArray(q.options) ? q.options.filter(opt => opt && opt.trim() !== '').length : 0;
+                                                                            const maxValidIndex = validOptions - 1; // 0-based index
+
+                                                                            let hasInvalidIndex = false;
                                                                             if (parts.length > 1) {
+                                                                                // Multi-select: check each index
                                                                                 const arr = parts
                                                                                     .map(s => {
                                                                                         if (/^[A-Z]$/.test(s)) {
-                                                                                            return s.charCodeAt(0) - 65;
+                                                                                            const index = s.charCodeAt(0) - 65;
+                                                                                            if (index > maxValidIndex) {
+                                                                                                hasInvalidIndex = true;
+                                                                                            }
+                                                                                            return index;
                                                                                         }
                                                                                         return -1;
                                                                                     })
-                                                                                    .filter(n => n >= 0);
+                                                                                    .filter(n => n >= 0 && n <= maxValidIndex);
                                                                                 const uniqueSorted = Array.from(new Set(arr)).sort((a, b) => a - b);
                                                                                 updateQuestionField(qIndex, 'correct_option', uniqueSorted);
                                                                             } else {
+                                                                                // Single choice: check single index
                                                                                 if (/^[A-Z]$/.test(parts[0])) {
                                                                                     const letterIndex = parts[0].charCodeAt(0) - 65;
+                                                                                    if (letterIndex > maxValidIndex) {
+                                                                                        hasInvalidIndex = true;
+                                                                                    }
                                                                                     updateQuestionField(qIndex, 'correct_option', letterIndex);
                                                                                 } else {
                                                                                     updateQuestionField(qIndex, 'correct_option', '');
                                                                                 }
+                                                                            }
+
+                                                                            // Show popup if any index is out of range
+                                                                            if (hasInvalidIndex) {
+                                                                                const optionLetters = Array.from({length: validOptions}, (_, i) => getLetterFromIndex(i)).join(', ');
+                                                                                alert(`Invalid correct answer index. Please select from options: ${optionLetters}`);
                                                                             }
                                                                         }}
                                                                         required
@@ -778,7 +937,7 @@ const QuestionsForm = ({
                                                                             <Plus size={14} /> Add Question
                                                                         </button>
                                                                         {/* Sections removed: no Add Section button */}
-                                                                        <button
+                                                                        {/* <button
                                                                             type="button"
                                                                             className="assess-btn-primary assess-save-inline"
                                                                             title={qReady ? 'Save and Preview this question' : hint}
@@ -786,7 +945,7 @@ const QuestionsForm = ({
                                                                             disabled={!qReady}
                                                                         >
                                                                             <Eye size={16} /> Preview Question
-                                                                        </button>
+                                                                        </button> */}
                                                                     </>
                                                                 );
                                                             })()}
@@ -1084,8 +1243,11 @@ const QuestionsForm = ({
 
                             </div>}
 
-                            {/* Form Actions */}
-                            <div className="assess-form-actions">
+                            
+                        </div>
+                    </div>
+                    {/* Form Actions */}
+                    <div className="assess-form-actions">
                                 {step === 3 ? (
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                                         {step > 1 && <button type="button" className="btn-secondary" onClick={() => setStep(step - 1)}>
@@ -1096,6 +1258,7 @@ const QuestionsForm = ({
                                                 type="button"
                                                 className="btn-secondary"
                                                 onClick={() => setAssessmentPreviewOpen(true)}
+                                                disabled={!canProceedToNext()}
                                                 title="Preview the entire assessment as the user sees it"
                                             >
                                                 <Eye size={16} />
@@ -1116,6 +1279,7 @@ const QuestionsForm = ({
                                                         handleSaveAssessment(undefined, 'Draft');
                                                     }
                                                 }}
+                                                disabled={!canProceedToNext()}
                                                 title="Save this assessment as Draft"
                                             >
                                                 <FileText size={16} />
@@ -1136,6 +1300,7 @@ const QuestionsForm = ({
                                                         handleSaveAssessment(undefined, 'Saved');
                                                     }
                                                 }}
+                                                disabled={!canProceedToNext()}
                                             >
                                                 <FileText size={16} />
                                                 <span>{currentAssessment ? "Update Assessment" : "Create Assessment"}</span>
@@ -1145,14 +1310,30 @@ const QuestionsForm = ({
                                 ) : (
                                     <>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                            {step > 1 && <button type="button" className="btn-secondary" onClick={() => setStep(step - 1)}>
+                                            {/* {step > 1 && <button type="button" className="btn-secondary" onClick={() => setStep(step - 1)}>
+                                                <ChevronLeft size={16} />Previous
+                                            </button>} */}
+                                            {step > 1 && <button
+                                                type="button"
+                                                className="btn-secondary"
+                                                onClick={handlePrev}
+                                                disabled={step === 1}
+                                            >
                                                 <ChevronLeft size={16} />Previous
                                             </button>}
                                             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', width: '100%', gap: "10px   " }}>
                                                 <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>
                                                     Cancel
                                                 </button>
-                                                {step < 3 && <button type="button" className="btn-primary" onClick={() => setStep(step + 1)}>
+                                                {/* {step < 3 && <button type="button" className="btn-primary" onClick={() => setStep(step + 1)}>
+                                                    Next <ChevronRight size={16} />
+                                                </button>} */}
+                                                {step < 3 && <button
+                                                    type="button"
+                                                    className="btn-primary"
+                                                    onClick={handleNext}
+                                                    disabled={!canProceedToNext()}
+                                                >
                                                     Next <ChevronRight size={16} />
                                                 </button>}
                                             </div>
@@ -1160,8 +1341,6 @@ const QuestionsForm = ({
                                     </>
                                 )}
                             </div>
-                        </div>
-                    </div>
                 </div>
             </div>
             {/* Question Preview Modal (end-user view) */}
@@ -1254,132 +1433,8 @@ const QuestionsForm = ({
                 </div>
             )}
             {/* Assessment Preview Modal (single page, no sections) */}
-            {assessmentPreviewOpen && (
-                <div className="survey-assess-qpreview-overlay" onClick={(e) => { if (e.target === e.currentTarget) { setAssessmentPreviewOpen(false); setPreviewResponses({}); } }}>
-                    <div className="survey-assess-apreview-modal">
-                        <div className="survey-assess-qpreview-header">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <Eye size={16} />
-                                <span className="survey-assess-qpreview-title">Assessment Preview</span>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => { setAssessmentPreviewOpen(false); setPreviewResponses({}); }}
-                                aria-label="Close preview"
-                                className="survey-assess-qpreview-close"
-                            >
-                                <X size={18} />
-                            </button>
-                        </div>
-                        <div className="survey-assess-qpreview-body">
-                            {/* Header card like Google Forms */}
-                            <div className="survey-assess-qpreview-section">
-                                <div className="survey-gforms-card">
-                                    <div className="survey-gforms-card-topbar" />
-                                    <div className="survey-gforms-card-body">
-                                        <div className="survey-gforms-card-title">{formData.title || 'Untitled form'}</div>
-                                        {formData.description && (
-                                            <div className="survey-gforms-card-description" dangerouslySetInnerHTML={{ __html: formData.description }} />
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* All questions in a single page */}
-                            {questions.map((q, idx) => (
-                                <div key={`qprev-${idx}`} className="survey-assess-qpreview-section">
-                                    <div className="survey-gforms-card">
-                                        <div className="survey-gforms-card-body">
-                                            {/* Instructions (HTML) */}
-                                            {q.instructions && (
-                                                <div
-                                                    className="survey-assess-qpreview-instructions"
-                                                    style={{ color: '#334155', marginBottom: 6 }}
-                                                    dangerouslySetInnerHTML={{ __html: q.instructions }}
-                                                />
-                                            )}
-                                            <div className="survey-gforms-question-title">{q.question_text || '—'}</div>
-
-                                            {/* Media (assessment extra) */}
-                                            {q.file_url && (
-                                                <div className="survey-assess-form-group" style={{ marginTop: 8 }}>
-                                                    {q.file_url.match(/\.(jpeg|jpg|png|gif)$/i) && (
-                                                        <img src={resolveUrl(q.file_url)} alt="Question media" style={{ maxWidth: '100%', borderRadius: 6 }} />
-                                                    )}
-                                                    {q.file_url.match(/\.(mp4|webm|ogg)$/i) && (
-                                                        <video src={resolveUrl(q.file_url)} controls style={{ width: '100%', borderRadius: 6 }} />
-                                                    )}
-                                                    {q.file_url.match(/\.(mp3|wav|ogg)$/i) && (
-                                                        <audio src={resolveUrl(q.file_url)} controls style={{ width: '100%' }} />
-                                                    )}
-                                                    {q.file_url.match(/\.pdf$/i) && (
-                                                        <iframe src={resolveUrl(q.file_url)} title="PDF Preview" style={{ width: '100%', height: 360, border: '1px solid #e2e8f0', borderRadius: 6 }} />
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            {(q.type === 'Multiple Choice' || q.type === 'Multi Select') && Array.isArray(q.options) && q.options.length > 0 && (
-                                                <div className="survey-assess-qpreview-options">
-                                                    {(() => {
-                                                        const qKey = `q-${idx}`;
-                                                        const isMulti = q.type === 'Multi Select';
-                                                        // Build or reuse a stable shuffle order for this question key
-                                                        if (!previewShuffleRef.current[qKey]) {
-                                                            const order = q.options.map((_, i) => i);
-                                                            for (let i = order.length - 1; i > 0; i--) {
-                                                                const j = Math.floor(Math.random() * (i + 1));
-                                                                [order[i], order[j]] = [order[j], order[i]];
-                                                            }
-                                                            previewShuffleRef.current[qKey] = order;
-                                                        }
-                                                        const order = previewShuffleRef.current[qKey];
-                                                        const displayOptions = order.map((originalIndex, displayIndex) => ({ opt: q.options[originalIndex], originalIndex, displayIndex }));
-                                                        return displayOptions.map(({ opt, originalIndex, displayIndex }) => {
-                                                            const selected = previewResponses[qKey];
-                                                            const checked = isMulti
-                                                                ? Array.isArray(selected) && selected.includes(originalIndex)
-                                                                : selected === originalIndex;
-                                                            const onChange = (e) => {
-                                                                setPreviewResponses(prev => {
-                                                                    if (isMulti) {
-                                                                        const arr = Array.isArray(prev[qKey]) ? [...prev[qKey]] : [];
-                                                                        const i = arr.indexOf(originalIndex);
-                                                                        if (e.target.checked && i === -1) arr.push(originalIndex);
-                                                                        if (!e.target.checked && i !== -1) arr.splice(i, 1);
-                                                                        return { ...prev, [qKey]: arr };
-                                                                    } else {
-                                                                        return { ...prev, [qKey]: originalIndex };
-                                                                    }
-                                                                });
-                                                            };
-                                                            return (
-                                                                <label key={`q-${idx}-opt-${originalIndex}`} className="survey-assess-qpreview-option">
-                                                                    <input
-                                                                        type={isMulti ? 'checkbox' : 'radio'}
-                                                                        name={`q-${idx}`}
-                                                                        checked={!!checked}
-                                                                        onChange={onChange}
-                                                                    />
-                                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                        <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '20px' }}>
-                                                                            {getLetterFromIndex(displayIndex)}.
-                                                                        </span>
-                                                                        <span className="opt-text">{opt || `Option ${displayIndex + 1}`}</span>
-                                                                    </span>
-                                                                </label>
-                                                            );
-                                                        });
-                                                    })()}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
+           
+            {assessmentPreviewOpen && (<AssessmentPreview data={{ ...formData, questions }} onClose={() => setAssessmentPreviewOpen(false)} />)}
 
             {/* Single Question Preview Modal (Survey UI) */}
             {questionPreviewIndex !== null && questions[questionPreviewIndex] && (
@@ -1486,6 +1541,44 @@ const QuestionsForm = ({
                         })()}
                     </div>
                 </div>
+            )}
+
+            {assessmentPreviewOpen && (
+                <AssessmentPreview
+                    isOpen={assessmentPreviewOpen}
+                    onClose={() => { setAssessmentPreviewOpen(false); setPreviewResponses({}); }}
+                    data={{
+                        title: formData.title || 'Untitled Assessment',
+                        description: formData.description || '',
+                        instructions: formData.instructions || '',
+                        questions: questions || [],
+                        tags: formData.tags || [],
+                        team: groups.find(t => String(t._id) === String(formData.team)) || { name: formData.team || '—' },
+                        subteam: (() => {
+                            // Find the team that contains this subteam ID
+                            const teamWithSubteam = groups.find(t => t.subTeams?.some(st => String(st._id) === String(formData.subteam)));
+                            // Then find the specific subteam within that team
+                            return teamWithSubteam?.subTeams?.find(st => String(st._id) === String(formData.subteam)) || { name: formData.subteam || '—' };
+                        })(),
+                        duration: parseInt(formData.duration) || 10,
+                        thumbnail_url: formData.thumbnail_url || '',
+                        credits: formData.credits || 0,
+                        badges: formData.badges || 0,
+                        stars: formData.stars || 0,
+                        prerequisites: formData.prerequisites || [],
+                        learningOutcomes: formData.learningOutcomes || [],
+                        primaryFile: formData.primaryFile || null,
+                        externalResource: formData.externalResource || null,
+                        additionalFile: formData.additionalFile || null,
+                        submissionEnabled: formData.submissionEnabled || false,
+                        feedbackEnabled: formData.feedbackEnabled || false,
+                        feedback: formData.feedback || null,
+                        attempts: formData.attempts || 1,
+                        passPercentage: formData.passPercentage || 50,
+                        isPublished: formData.isPublished || false,
+                        
+                    }}
+                />
             )}
 
         </>

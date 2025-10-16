@@ -7,7 +7,7 @@ import { createGlobalAssignment } from '../../../store/slices/globalAssignmentSl
 import { fetchGlobalAssessments, updateGlobalAssessment } from '../../../store/slices/globalAssessmentSlice';
 import { fetchOrganizations } from '../../../store/slices/organizationSlice';
 import { fetchSurveys } from '../../../store/slices/surveySlice';
-import { ChevronLeft, ChevronRight, Filter, Plus, Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 
 const GlobalCreateAssignment = () => {
@@ -19,7 +19,6 @@ const GlobalCreateAssignment = () => {
         dispatch(fetchOrganizations());
         dispatch(fetchSurveys());
     }, [dispatch]);
-    const [showFilters, setShowFilters] = useState(false);
     const [currentStep, setCurrentStep] = useState(1);
     const [showAssignDatePicker, setShowAssignDatePicker] = useState(false);
     const [showDueDatePicker, setShowDueDatePicker] = useState(false);
@@ -55,7 +54,6 @@ const GlobalCreateAssignment = () => {
         const contentItem = allContentItems.find((contentItem) => contentItem.uuid === item)
         return contentItem?.duration + " minutes"
     }
-    const handleclickOutSide = () => setShowFilters(false);
     const handleContentSelection = (item) => {
         setFormData({
             ...formData,
@@ -102,19 +100,9 @@ const GlobalCreateAssignment = () => {
 
         setCurrentStep(1);
     };
-    const handleFilters = () => {
-        if (showFilters) {
-            clearFilters();
-            setShowFilters(false);
-        } else {
-            setShowFilters(true);
-        }
-    }
-
     const handleFilterChange = (e) => {
         setContentType(e.target.value);
         setContentSearchTerm('');
-        setShowFilters(false)
     }
     const handleNextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 5));
     const handlePrevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
@@ -129,10 +117,6 @@ const GlobalCreateAssignment = () => {
         allContentItems = surveys;
     } else {
         allContentItems = [...content, ...assessments, ...surveys];
-    }
-    const clearFilters = () => {
-        setContentType('');
-        setContentSearchTerm('');
     }
     const filteredContentItems = allContentItems.filter(item =>
         item.title.toLowerCase().includes(contentSearchTerm.toLowerCase())
@@ -314,7 +298,7 @@ const GlobalCreateAssignment = () => {
 
                     {/* Step 2: Choose Content */}
                     {currentStep === 2 && (
-                        <div className="global-assign-assignment-step-content">
+                        <div className="global-assign-assignment-step-content" style={{ height: 'fit-content' }}>
                             <h2 className="global-assign-step-title">Step 2: Choose Content to Assign</h2>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <input
@@ -324,24 +308,19 @@ const GlobalCreateAssignment = () => {
                                     onChange={(e) => setContentSearchTerm(e.target.value)}
                                     className="global-assign-content-search-input"
                                 />
-                                <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', border: '1px solid #ccc', padding: '10px 15px', borderRadius: '10px', backgroundColor: '#f5f5f5', width: 'fit-content' }} onClick={() => handleFilters()}>{showFilters && contentType ? "Clear" : <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><Filter size={20} />Filter</span>}</span>
+                                <select
+                                    value={contentType}
+                                    onChange={handleFilterChange}
+                                    name="contentType"
+                                    className="global-assign-type-select"
+                                    style={{ cursor: 'pointer', border: '1px solid #ccc', padding: '8px 12px', borderRadius: '10px', backgroundColor: '#f5f5f5', width: '160px' }}
+                                >
+                                    <option value="">All Types</option>
+                                    <option value="Module">Module</option>
+                                    <option value="Assessment">Assessment</option>
+                                    <option value="Survey">Survey</option>
+                                </select>
                             </div>
-                            {showFilters && <div className='filter-overlay' style={{ padding: '10px 15px' }}>
-
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                                    <span style={{ fontSize: '18px', fontWeight: 'bold' }}>Filters</span>
-                                    <span style={{ cursor: 'pointer' }}><X size={20} onClick={() => setShowFilters(false)} /></span>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <label style={{ fontWeight: 'bold' }}>Type</label>
-                                    <select value={contentType} onChange={(e) => handleFilterChange(e)} name="contentType">
-                                        <option value="">Select Content Type</option>
-                                        <option value="Module">Module</option>
-                                        <option value="Assessment">Assessment</option>
-                                        <option value="Survey">Survey</option>
-                                    </select>
-                                </div>
-                            </div>}
                             <div className="global-assign-content-items-list">
                                 {filteredContentItems.length > 0 ? (
                                     filteredContentItems.slice(0, 8).map(item => (

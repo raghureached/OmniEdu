@@ -10,12 +10,11 @@ const AdminProfile = () => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleString();
   };
-  
   // Admin data from user input
   const adminData = {
     personal: {
-      name: 'Admin User',
-      email: 'admin@example.com',
+      name: user.name,
+      email: user.email,
       designation: 'System Administrator',
       organization: 'Acme Corp',
       team: 'Administration',
@@ -64,11 +63,11 @@ const AdminProfile = () => {
           <div className="adminprofile-info">
             <div className="adminprofile-info-group">
               <span className="adminprofile-info-label">Name</span>
-              <span className="adminprofile-info-value">{adminData.personal.name}</span>
+              <span className="adminprofile-info-value">{user.name}</span>
             </div>
             <div className="adminprofile-info-group">
               <span className="adminprofile-info-label">Email</span>
-              <span className="adminprofile-info-value">{adminData.personal.email}</span>
+              <span className="adminprofile-info-value">{user.email}</span>
             </div>
             <div className="adminprofile-info-group">
               <span className="adminprofile-info-label">Designation</span>

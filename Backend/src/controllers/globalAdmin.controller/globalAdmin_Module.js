@@ -146,54 +146,97 @@ const bulkDelete = async(req,res) => {
 }
 const editContent = async (req, res) => {
   try {
-    const { title,trainingType,team,category,submissionEnabled,feedbackEnabled,instructions, badges,stars,credits,description,enableFeedback,externalResource, pushable_to_orgs, tags, duration,learningOutcomes,prerequisites,primaryFile,additionalFile,thumbnail  } = req.body;
-    // console.log(req.body)
-    // const bodyParsed = updateContentSchema.safeParse({ 
-    //   ...req.body,
-    //   file_url: req.uploadedFile?.url || req.body.file_url,
-    // }); 
-    // if (!bodyParsed.success) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: "Validation failed",
-    //     errors: bodyParsed.error.flatten(),
-    //   });
-    // }
-    if(req.uploadedFiles?.primaryFile){
-      primaryFile = req.uploadedFiles?.primaryFile[0]?.url
-    }
-    if(req.uploadedFiles?.additionalFile){
-      additionalFile = req.uploadedFiles?.additionalFile[0]?.url
-    }
-    if(req.uploadedFiles?.thumbnail){
-      thumbnail = req.uploadedFiles?.thumbnail[0]?.url
-    }
+    const {
+      title,
+      trainingType,
+      team,
+      category,
+      submissionEnabled,
+      feedbackEnabled,
+      instructions,
+      badges,
+      stars,
+      credits,
+      description,
+      enableFeedback,
+      externalResource,
+      pushable_to_orgs,
+      tags,
+      duration,
+      learningOutcomes,
+      prerequisites
+    } = req.body;
+    // console.log(req.uploadedFiles)
+    // 🧩 Extract uploaded file URLs safely
+    const uploadedFiles = req.uploadedFiles || {};
+    const primaryFileUrl = uploadedFiles.primaryFile?.[0]?.url || null;
+    const additionalFileUrl = uploadedFiles.additionalFile?.[0]?.url || null;
+    const thumbnailUrl = uploadedFiles.thumbnail?.[0]?.url || null;
+
+    // 🧠 Build the update object dynamically
+    const updateData = {
+      title,
+      trainingType,
+      team,
+      category,
+      submissionEnabled,
+      feedbackEnabled,
+      instructions,
+      badges,
+      stars,
+      credits,
+      description,
+      enableFeedback,
+      externalResource,
+      pushable_to_orgs,
+      tags,
+      duration,
+      learningOutcomes,
+      prerequisites,
+    };
+
+    // Only add file URLs if present
+    if (primaryFileUrl) updateData.primaryFile = primaryFileUrl;
+    if (additionalFileUrl) updateData.additionalFile = additionalFileUrl;
+    if (thumbnailUrl) updateData.thumbnail = thumbnailUrl;
+
+    // ✨ Update module
     const updatedModule = await GlobalModule.findOneAndUpdate(
       { uuid: req.params.id },
-      { title, trainingType, team, category, submissionEnabled, feedbackEnabled, instructions, badges, stars, credits, description, enableFeedback, externalResource, pushable_to_orgs, tags, duration, learningOutcomes, prerequisites,primaryFile,additionalFile,thumbnail },
+      updateData,
       { new: true }
     );
+
     if (!updatedModule) {
       return res.status(404).json({
         success: false,
-        message: "Content not found"
-      })
+        message: "Content not found",
+      });
     }
-    await logGlobalAdminActivity(req,"Edit Content","content",`Content updated successfully ${updatedModule.title}`)
+
+    // 📝 Log admin action
+    await logGlobalAdminActivity(
+      req,
+      "Edit Content",
+      "content",
+      `Content updated successfully: ${updatedModule.title}`
+    );
+
     return res.status(200).json({
       success: true,
       message: "Content updated successfully",
-      data: updatedModule
-    })
+      data: updatedModule,
+    });
   } catch (error) {
-    console.log(error)
+    console.error("❌ Edit Content Error:", error);
     return res.status(500).json({
       success: false,
       message: "Failed to update content",
-      error: error.message
-    })
+      error: error.message,
+    });
   }
-}
+};
+
 
 const deleteContent = async (req, res) => {
   try {

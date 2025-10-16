@@ -143,6 +143,7 @@
     font-size: 20px;
     font-weight: 800;
     line-height: 1.05;
+    margin-bottom: 10px;
   }
   
   .global-preview-training-category {
@@ -184,7 +185,7 @@
   /* Stats row */
   .global-preview-stats-row {
     display: flex;
-    gap: 10px;
+    gap: 13px;
     align-items: center;
   }
   
@@ -196,7 +197,7 @@
     border-radius: 8px;
     background: var(--global-preview-soft);
     font-weight: 600;
-    font-size: 13px;
+    font-size: 15px;
     color: #0f1724;
     position: relative;
     cursor: default;
@@ -234,6 +235,7 @@
     color: #0f1724;
     border-radius: 12px;
     height: 200px; /* shorter image block to save space */
+    width: 100%; /* ensure full width usage */
     display: flex;
     align-items: center;
     justify-content: center;

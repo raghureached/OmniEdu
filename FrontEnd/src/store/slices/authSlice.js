@@ -2,6 +2,16 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
 
+// Normalize backend role into app canonical role values
+const normalizeRole = (role) => {
+  if (!role) return null;
+  const r = String(role).toLowerCase().replace(/[^a-z]/g, '');
+  if (r === 'globaladmin') return 'GlobalAdmin';
+  if (r === 'administrator') return 'Administrator';
+  if (r === 'user') return 'User';
+  return null;
+};
+
 // Helper functions for localStorage
 const loadAuthState = () => {
   try {
@@ -28,69 +38,6 @@ const saveAuthState = (state) => {
   }
 };
 
-// Mock users for testing (remove in production)
-const mockUsers = {
-  'globaladmin': {  // Changed from globaladmin to 'globaladmin'
-    id: 1,
-    username: 'globaladmin',
-    email: 'globaladmin@example.com',
-    firstName: 'Global',
-    lastName: 'Admin',
-    roles: ['global-admin'],
-    password: 'Admin@123' // In a real app, never store plain text passwords
-  },
-  'orgadmin': {  // Changed from orgadmin to 'orgadmin'
-    id: 2,
-    username: 'orgadmin',
-    email: 'orgadmin@example.com',
-    firstName: 'Org',
-    lastName: 'Admin',
-    roles: ['admin'],
-    organizationId: 1,
-    password: 'Admin@123'
-  },
-  'testuser': {  // Changed from testuser to 'testuser'
-    id: 3,
-    username: 'testuser',
-    email: 'testuser@example.com',
-    firstName: 'Test',
-    lastName: 'User',
-    roles: ['user'],
-    organizationId: 1,
-    password: 'User@123'
-  }
-};
-
-// For development/testing only
-export const mockLogin = createAsyncThunk(
-  'auth/mockLogin',
-  async ({ username, password }, { rejectWithValue }) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Find user by username regardless of case
-    const user = Object.values(mockUsers).find(
-      u => u.username.toLowerCase() === username.toLowerCase()
-    );
-    
-    if (!user || user.password !== password) {
-      return rejectWithValue({ message: 'Invalid username or password' });
-    }
-    
-    // Create a mock token
-    const token = `mock-jwt-token-${Date.now()}`;
-    
-    // Remove password from returned user object
-    const { password: _, ...userWithoutPassword } = user;
-    
-    return {
-      user: userWithoutPassword,
-      token,
-      lastLoginDateTime: new Date().toISOString()
-    };
-  }
-);
-
 export const checkAuth = createAsyncThunk('auth/checkAuth', async (_,{rejectWithValue}) => {
   try {
     const response = await api.post('/auth/checkAuth');
@@ -105,13 +52,18 @@ export const login = createAsyncThunk(
   'auth/login',
   async ({ email, password }, { rejectWithValue }) => {
     try {
-      const response = await api.post('/auth/login', { email, password });
+      // Step 1: attempt login (sets httpOnly cookies on success)
+      await api.post('/auth/login', { email, password });
+      // Step 2: verify session via cookie-based check
+      const verify = await api.post('/auth/checkAuth');
+      console.log(verify.data.role)
       return {
-        ...response.data,
-        lastLoginDateTime: new Date().toISOString()
+        ...verify.data,
+        lastLoginDateTime: new Date().toISOString(),
       };
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      const payload = error?.response?.data || { message: 'Login failed' };
+      return rejectWithValue(payload);
     }
   }
 );
@@ -120,13 +72,15 @@ export const loginWithSSO = createAsyncThunk(
   'auth/loginWithSSO',
   async (provider, { rejectWithValue }) => {
     try {
-      const response = await api.post('/auth/sso', { provider });
+      await api.post('/auth/sso', { provider });
+      const verify = await api.post('/auth/checkAuth');
       return {
-        ...response.data,
-        lastLoginDateTime: new Date().toISOString()
+        ...verify.data,
+        lastLoginDateTime: new Date().toISOString(),
       };
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      const payload = error?.response?.data || { message: 'SSO login failed' };
+      return rejectWithValue(payload);
     }
   }
 );
@@ -162,13 +116,20 @@ export const logout = createAsyncThunk('auth/logout', async () => {
   try {
     await api.post('/auth/logout');
   } catch (error) {
+    console.log(error)
     console.log('Logout API call failed, but continuing logout process');
   }
   return null;
 });
 
-// Get persisted state from localStorage
-const persistedState = loadAuthState();
+// Get persisted state from localStorage and normalize
+const persistedStateRaw = loadAuthState();
+const persistedState = persistedStateRaw
+  ? {
+      ...persistedStateRaw,
+      role: normalizeRole(persistedStateRaw.role),
+    }
+  : null;
 
 // Auth slice
 const authSlice = createSlice({
@@ -213,13 +174,15 @@ const authSlice = createSlice({
         state.loading = false;
         state.isAuthenticated = true;
         state.user = action.payload.data;
-        state.token = action.payload.token;
-        state.role = action.payload.role;
+        {
+          const userData = action.payload?.data || {};
+          const incomingRole = action.payload?.role
+            || userData?.role
+            || (Array.isArray(userData?.roles) && userData.roles.length ? userData.roles[0] : null);
+          state.role = normalizeRole(incomingRole);
+        }
         state.lastLoginDateTime = action.payload.data.last_login;
         state.sessionStartTime = new Date().toISOString();
-        // Save token to localStorage for API requests
-        // localStorage.setItem('token', action.payload.token);
-        // Save auth state to localStorage
         saveAuthState(state);
       })
       .addCase(login.rejected, (state, action) => {
@@ -234,15 +197,15 @@ const authSlice = createSlice({
         state.loading = false;
         state.isAuthenticated = true;
         state.user = action.payload.data;
-        state.token = action.payload.token;
-        state.role = action.payload.role;
+        {
+          const userData = action.payload?.data || {};
+          const incomingRole = action.payload?.role
+            || userData?.role
+            || (Array.isArray(userData?.roles) && userData.roles.length ? userData.roles[0] : null);
+          state.role = normalizeRole(incomingRole);
+        }
         state.lastLoginDateTime = action.payload.data.last_login;
         state.sessionStartTime = new Date().toISOString();
-        // Save token to localStorage for API requests
-        if (action.payload.token) {
-          localStorage.setItem('token', action.payload.token);
-        }
-        // Save auth state to localStorage
         saveAuthState(state);
       })
       .addCase(checkAuth.rejected, (state, action) => {
@@ -251,32 +214,11 @@ const authSlice = createSlice({
         state.user = null;
         state.role = null;
         state.error = action.payload?.message || 'Login failed';
-      })
-      // Mock Login
-      .addCase(mockLogin.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(mockLogin.fulfilled, (state, action) => {
-        state.loading = false;
-        state.isAuthenticated = true;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-        state.lastLoginDateTime = action.payload.lastLoginDateTime;
-        state.sessionStartTime = new Date().toISOString();
-        
-        // Store token in localStorage for API requests
-        localStorage.setItem('token', action.payload.token);
-        
-        // Save auth state to localStorage
-        saveAuthState(state);
-      })
-      .addCase(mockLogin.rejected, (state, action) => {
-        state.loading = false;
-        state.isAuthenticated = false;
-        state.user = null;
-        state.role = null;
-        state.error = action.payload?.message || 'Login failed';
+        // Clear persisted auth to avoid infinite checkAuth loops
+        try {
+          localStorage.removeItem('authState');
+          localStorage.removeItem('token');
+        } catch (_) {}
       })
       
       // SSO Login
@@ -287,15 +229,16 @@ const authSlice = createSlice({
       .addCase(loginWithSSO.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
+        state.user = action.payload.data;
+        {
+          const userData = action.payload?.data || {};
+          const incomingRole = action.payload?.role
+            || userData?.role
+            || (Array.isArray(userData?.roles) && userData.roles.length ? userData.roles[0] : null);
+          state.role = normalizeRole(incomingRole);
+        }
         state.lastLoginDateTime = action.payload.lastLoginDateTime;
         state.sessionStartTime = new Date().toISOString();
-        
-        // Store token in localStorage for API requests
-        localStorage.setItem('token', action.payload.token);
-        
-        // Save auth state to localStorage
         saveAuthState(state);
       })
       .addCase(loginWithSSO.rejected, (state, action) => {

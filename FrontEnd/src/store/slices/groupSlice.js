@@ -214,6 +214,7 @@ export const fetchGroups = createAsyncThunk(
     try {
       const response = await api.get("/api/admin/getGroups", { params: filters });
       // return just the data (array of groups)
+      console.log(response.data.data)
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);

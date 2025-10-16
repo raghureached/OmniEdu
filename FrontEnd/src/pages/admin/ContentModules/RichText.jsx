@@ -5,19 +5,18 @@ import Link from '@tiptap/extension-link';
 
 const styles = `
   .rich-editor-wrapper {
-    max-width: 100%; /* take full container width like old editor */
     width: 100%;
-    margin: 8px 0; /* vertical spacing only */
+    margin-bottom:10px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 
   .rich-editor-container {
     background: #ffffff;
-    border: 1px solid #e5e7eb;
+    border: 2px solid #e5e7eb;
     border-radius: 12px;
-     overflow: hidden;
-   
-    width: 100%; /* ensure container spans full width */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    transition: all 0.3s ease;
   }
 
   .rich-editor-container:focus-within {
@@ -28,10 +27,10 @@ const styles = `
   .rich-menubar {
     background: linear-gradient(to bottom, #f9fafb, #f3f4f6);
     border-bottom: 1px solid #e5e7eb;
-    padding: 6px 8px; /* tighter toolbar */
+    padding: 12px 16px;
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 6px;
     align-items: center;
   }
 
@@ -39,8 +38,8 @@ const styles = `
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 4px 8px; /* smaller buttons */
-    font-size: 12px;  /* smaller icons/text */
+    padding: 8px 12px;
+    font-size: 14px;
     font-weight: 500;
     color: #374151;
     background: #ffffff;
@@ -49,7 +48,7 @@ const styles = `
     cursor: pointer;
     transition: all 0.2s ease;
     min-width: 36px;
-    height: 26px;
+    height: 36px;
   }
 
   .rich-btn:hover {
@@ -83,20 +82,16 @@ const styles = `
     margin: 0 4px;
   }
 
-  /* smaller heading buttons (H1, H2) */
-  .heading-btn { height: 24px; min-width: 24px; padding: 2px 6px; }
-  .heading-btn.h1, .heading-btn.h2 { font-size: 11px; }
-
   .rich-editor-content {
-    padding: 10px 12px; /* tighter padding */
-    min-height: 50px; /* compact when empty */
-    max-height: none; /* auto-expand with content */
-    overflow-y: visible; /* no internal scroll; let parent grow */
+    padding: 20px 24px;
+    min-height: 400px;
+    max-height: 600px;
+    overflow-y: auto;
   }
 
   .rich-editor-content .ProseMirror {
     outline: none;
-    min-height: 50px; /* match container's compact base height */
+    min-height: 360px;
   }
 
   .rich-editor-content .ProseMirror p {
@@ -106,7 +101,7 @@ const styles = `
   }
 
   .rich-editor-content .ProseMirror h1 {
-    font-size: 1.5em; /* smaller H1 */
+    font-size: 2em;
     font-weight: 700;
     margin: 24px 0 16px 0;
     color: #111827;
@@ -114,7 +109,7 @@ const styles = `
   }
 
   .rich-editor-content .ProseMirror h2 {
-    font-size: 1.25em; /* smaller H2 */
+    font-size: 1.5em;
     font-weight: 600;
     margin: 20px 0 12px 0;
     color: #111827;
@@ -122,7 +117,7 @@ const styles = `
   }
 
   .rich-editor-content .ProseMirror h3 {
-    font-size: 1.1em; /* smaller H3 */
+    font-size: 1.25em;
     font-weight: 600;
     margin: 16px 0 10px 0;
     color: #111827;
@@ -241,7 +236,7 @@ const MenuBar = ({ editor }) => {
         <button
           key={level}
           onClick={() => toggleHeading(level)}
-          className={`${buttonClass(isActive('heading', { level }))} heading-btn h${level}`}
+          className={buttonClass(isActive('heading', { level }))}
           aria-label={`Toggle heading level ${level}`}
         >
           H{level}
@@ -312,7 +307,7 @@ const MenuBar = ({ editor }) => {
 
       <div className="rich-divider" />
 
-      <button
+      {/* <button
         onClick={() => {
           const url = prompt('Enter URL:');
           if (url) {
@@ -323,9 +318,9 @@ const MenuBar = ({ editor }) => {
         aria-label="Add/edit link"
       >
         🔗 Link
-      </button>
+      </button> */}
 
-      <button
+      {/* <button
         onClick={() => editor.chain().focus().unsetLink().run()}
         className="rich-btn"
         aria-label="Remove link"
@@ -333,7 +328,7 @@ const MenuBar = ({ editor }) => {
         style={{ opacity: isActive('link') ? 1 : 0.5 }}
       >
         ❌ Link
-      </button>
+      </button> */}
 
       <div className="rich-divider" />
 

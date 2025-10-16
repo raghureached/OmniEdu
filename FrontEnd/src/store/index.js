@@ -15,7 +15,7 @@ import globalAssignmentReducer from './slices/globalAssignmentSlice'
 import globalAssessmentReducer from './slices/globalAssessmentSlice'
 import adminDashboardConfigReducer from './slices/adminDashboardConfigSlice'
 import userDashboardConfigReducer from './slices/userDashboardConfigSlice'
-
+import adminModuleReducer from './slices/adminModuleSlice'
 const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -33,7 +33,8 @@ const store = configureStore({
     globalAssignments: globalAssignmentReducer,
     globalAssessments: globalAssessmentReducer,
     adminDashboardConfig: adminDashboardConfigReducer,
-    userDashboardConfig: userDashboardConfigReducer
+    userDashboardConfig: userDashboardConfigReducer,
+    adminModule: adminModuleReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

@@ -8,7 +8,7 @@
 /* Sidebar Styles */
 .admin_sidebar {
   width: 240px;
-  background-color: #111827; /* Updated darker blue color */
+  background-color: #ffffff; /* Updated darker blue color */
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
@@ -29,7 +29,7 @@
 
 .admin_sidebar_header h3 {
   margin: 0;
-  color: white;
+  color: black;
   font-size: 1.5rem;
   font-weight: 600;
 }
@@ -66,7 +66,7 @@
   display: flex;
   align-items: center;
   padding: 0.75rem 1.5rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(0, 0, 0, 0.8);
   text-decoration: none;
   font-weight: 500;
   transition: all 0.2s;
@@ -75,13 +75,13 @@
 
 .admin_sidebar_menu a:hover {
   background-color: rgba(255, 255, 255, 0.1);
-  color: white;
+  /* color: white; */
   border-left-color: var(--primary-color);
 }
 
 .admin_sidebar_menu a.admin_link_active {
   background-color: rgba(255, 255, 255, 0.15);
-  color: white;
+  /* color: white; */
   border-left-color: var(--primary-color);
   font-weight: 600;
 }
@@ -90,7 +90,7 @@
   padding: 0.5rem 1.5rem;
   font-size: 1rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
+  /* color: rgba(255, 255, 255, 0.5); */
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -169,7 +169,7 @@
 
 /* Content Area Styles */
 .admin_content_header {
-  background-color: #111827; /* Match sidebar color */
+  background-color: #ffffff; /* Match sidebar color */
   padding: 0 2rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
@@ -177,7 +177,7 @@
   justify-content: space-between;
   box-shadow: var(--shadow-sm);
   height: 64px; /* Fixed height to match sidebar header */
-  color: white; /* Text color to match sidebar */
+  color: black; /* Text color to match sidebar */
   position: fixed; /* Fixed navbar */
   top: 0;
   right: 0;
@@ -195,7 +195,7 @@
   margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
-  color: white; /* Updated to match sidebar */
+  color: black; /* Updated to match sidebar */
 }
 
 .admin_content_body {
@@ -216,7 +216,7 @@
 .admin_menu_toggle {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.8);
+  color: #5570F1;
   cursor: pointer;
   padding: 0.25rem;
   border-radius: 0.25rem;
@@ -227,7 +227,7 @@
 }
 
 .admin_menu_toggle:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: #6b81f1;
   color: white;
 }
 
@@ -456,7 +456,6 @@
 .admin_notification_icon {
   position: relative;
   cursor: pointer;
-  color: white;
 }
 
 .admin_notification_badge {

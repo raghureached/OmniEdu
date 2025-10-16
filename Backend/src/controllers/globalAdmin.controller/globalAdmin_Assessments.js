@@ -156,7 +156,6 @@ const createAssessment = async (req, res) => {
           options,
           correct_option: normalizedCorrect,
           total_points: Number.isFinite(Number(q.total_points)) ? Number(q.total_points) : 1,
-          instructions: typeof q.instructions === 'string' ? q.instructions : "",
           file_url: typeof q.file_url === 'string' && q.file_url.trim() ? q.file_url.trim() : null,
         });
 
@@ -564,7 +563,7 @@ const editAssessment = async (req, res) => {
                                 file_url: q.file_url?.trim() || null,
                                 options: q.options,
                                 correct_option: normalizedCorrect,
-                                instructions,
+                               
                                
                             });
 
@@ -623,7 +622,6 @@ const editAssessment = async (req, res) => {
                             ...(q.correct_option !== undefined ? { correct_option: normalizedCorrect } : {}),
                             ...(typeof q.type === 'string' ? { type } : {}),
                             ...(typeof q.file_url === 'string' ? { file_url: q.file_url } : {}),
-                            ...(typeof q.instructions === 'string' ? { instructions: q.instructions } : {}),
                             },
                         { new: false }
                     );

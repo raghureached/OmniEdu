@@ -10,6 +10,7 @@ const authenticate = (req,res,next)=>{
     }
     jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,(err,user)=>{
         if(err){
+            // console.log(err)
             return res.status(401).json({
                 isSuccess:false,
                 message:"Unauthorized"
@@ -23,7 +24,9 @@ const authenticate = (req,res,next)=>{
 const authorize = (allowedRoles)=>{
     return async(req,res,next)=>{
         const {role} = req.user;
-        if(!allowedRoles.includes(role)){
+        const norm = (s)=> String(s||'').toLowerCase().replace(/[^a-z]/g,'');
+        const allowed = allowedRoles.map(norm);
+        if(!allowed.includes(norm(role))){
             return res.status(401).json({
                 isSuccess:false,
                 message:"Not allowed!!!"    

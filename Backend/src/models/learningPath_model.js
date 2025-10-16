@@ -4,7 +4,7 @@ const LearningPathSchema = new mongoose.Schema(
     {
       title: { type: String, required: true },
       description: { type: String },
-        organization_id:{type:mongoose.Schema.Types.ObjectId,ref:"Organization"},
+      organization_id:{type:mongoose.Schema.Types.ObjectId,ref:"Organization"},
       // Who created it
       created_by: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
       uuid:{
@@ -13,27 +13,29 @@ const LearningPathSchema = new mongoose.Schema(
         unique:true,
         index:true
       },
+      prerequisite:{type:String},
+      tags:{type:[String]},
+      team:{type:String},
+      subteam:{type:String},
+      category:{type:String},
+      duration:{type:String},
+      trainingType:{type:String},
+      credits:{type:String},
+      badges:{type:String},
+      stars:{type:String},
+      coverImage:{type:String},
+      enforceOrder:{type:Boolean},
+      bypassRewards:{type:Boolean},
+      enableFeedback:{type:Boolean},
   
-      // Array of days
-      schedule: [
+      // Ordered lessons (mixed content) with dynamic refs for populate
+      lessons: [
         {
-
-          
-          day: { type: Number, required: true }, // e.g., 1, 2, 3
-  
-          // Modules for this day
-          modules: [
-            { type: mongoose.Schema.Types.ObjectId, ref: "Module" }
-          ],
-  
-          // Assessments for this day
-          assessments: [
-            { type: mongoose.Schema.Types.ObjectId, ref: "Assessment" }
-          ],
-          survey:{
-            type:mongoose.Schema.Types.ObjectId,
-            ref:"OrganizationSurvey"
-          }
+          id: { type: mongoose.Schema.Types.ObjectId, refPath: 'lessons.model', required: true },
+          model: { type: String, enum: ["OrganizationModule", "Assessment", "OrganizationSurvey"], required: true },
+          type: { type: String, enum: ["module", "assessment", "survey"], required: true },
+          title: { type: String },
+          order: { type: Number },
         }
       ],
   

@@ -253,9 +253,154 @@ button:hover {
   color: #333;
   border: 1px solid #ddd;
   padding: 10px 20px;
-  font-size: 15px;
 }
 
-.learning-btn-cancel:hover {
-  background-color: #e9ecef;
+/* ========================= */
+/* New learnpath- prefixed UI */
+/* ========================= */
+
+.learnpath-container {
+  padding: 24px;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
 }
+
+.learnpath-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 24px 28px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.learnpath-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.learnpath-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.learnpath-header-content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  width: 100%;
+}
+
+.learnpath-header-info { display: flex; flex-direction: column; }
+
+.learnpath-stats { display: flex; gap: 12px; }
+.learnpath-stat-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 140px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.learnpath-stat-icon {
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #5570f1;
+  font-weight: 700;
+}
+.learnpath-stat-icon.published { background: #f0fdf4; border-color: #bbf7d0; color: #16a34a; }
+.learnpath-stat-info { display: flex; flex-direction: column; }
+.learnpath-stat-number { font-size: 18px; font-weight: 700; color: #1e293b; line-height: 1; }
+.learnpath-stat-label { font-size: 12px; color: #64748b; font-weight: 500; }
+
+.learnpath-btn-primary,
+.learnpath-btn-secondary,
+.learnpath-btn-tertiary,
+.learnpath-btn-danger,
+.learnpath-btn-link {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.learnpath-btn-primary {
+  background: linear-gradient(90deg, #5570F1 70%, #4056d9 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(85,112,241,0.12);
+}
+.learnpath-btn-secondary { background: #f1f5f9; color: #0f172a; border-color: #e2e8f0; }
+.learnpath-btn-tertiary { background: transparent; color: #334155; border-color: #e2e8f0; }
+.learnpath-btn-danger { background: #ef4444; color: #fff; }
+.learnpath-btn-link { background: transparent; color: #5570f1; padding: 0; }
+
+.learnpath-filters {
+  /* background: #ffffff; */
+  /* border: 1px solid #e5e7eb; */
+  /* border-radius: 12px; */
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.learnpath-filter-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: end; }
+.learnpath-filter-group { display: flex; flex-direction: column; min-width: 220px; }
+.learnpath-filter-group label { font-size: 12px; color: #64748b; margin-bottom: 6px; }
+.learnpath-filter-group input,
+.learnpath-filter-group select { padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; }
+.learnpath-filter-actions { display: flex; gap: 8px; }
+
+.learnpath-table-wrapper {
+  background: #ffffff;
+  border: 2px solid #cecece;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+.learnpath-table { width: 100%; border-collapse: collapse; }
+.learnpath-table thead th { background: #f8fafc; color: #0f172a; text-align: left; font-weight: 600; padding: 12px 14px; border-bottom: 1px solid #e5e7eb; font-size: 0.95rem; }
+.learnpath-table tbody td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; }
+.learnpath-table tbody tr:hover { background: #f9fafb; }
+
+.learnpath-name { display: flex; align-items: flex-start; }
+.learnpath-title-wrap { display: flex; flex-direction: column; gap: 6px; }
+.learnpath-name-title { margin: 0; font-size: 15px; font-weight: 600; color: #0f172a; }
+.learnpath-name-desc { margin: 0; color: #64748b; font-size: 13px; line-height: 1.4; }
+.learnpath-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.learnpath-tag { background: #eef2ff; color: #4338ca; border: 1px solid #e0e7ff; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+
+.learnpath-badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.learnpath-published { background: #5570F1; color: #ffffff; }
+.learnpath-draft { background: #fef9c3; color: #854d0e; }
+.learnpath-archived { background: #fee2e2; color: #991b1b; }
+
+.learnpath-action-btn { background: none; border: none; font-size: 14px; cursor: pointer; text-decoration: underline; transition: opacity 0.2s ease; padding: 0; }
+.learnpath-edit-btn { color: #6b7280; }
+.learnpath-delete-btn { color: #FF490D; }
+.learnpath-empty { padding: 24px; text-align: center; color: #64748b; }
+
+/* Modal */
+.learnpath-modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.learnpath-modal { width: 100%; max-width: 720px; background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 10px 30px rgba(2, 6, 23, 0.2); overflow: hidden; }
+.learnpath-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #e5e7eb; }
+.learnpath-modal-title { font-size: 18px; font-weight: 600; margin: 0; }
+.learnpath-modal-body { padding: 16px 20px; }
+.learnpath-modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid #e5e7eb; }
+
+.learnpath-form-row { display: flex; gap: 16px; flex-wrap: wrap; }
+.learnpath-form-group { flex: 1; min-width: 260px; }
+.learnpath-form-group label { display: block; margin-bottom: 6px; font-size: 12px; color: #64748b; }
+.learnpath-form-group input,
+.learnpath-form-group select,
+.learnpath-form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; }
+.learnpath-form-group textarea { min-height: 96px; resize: vertical; }

@@ -497,12 +497,19 @@ const GlobalAssessments = () => {
 
   const addOption = (qIndex) => {
     const updated = [...questions];
-    updated[qIndex].options.push('');
+    updated[qIndex] = {
+      ...updated[qIndex],
+      options: [...updated[qIndex].options, '']
+    };
     setQuestions(updated);
   };
 
   const updateOption = (qIndex, optIndex, value) => {
     const updated = [...questions];
+    updated[qIndex] = {
+      ...updated[qIndex],
+      options: [...updated[qIndex].options]
+    };
     updated[qIndex].options[optIndex] = value;
     setQuestions(updated);
   };
@@ -510,7 +517,10 @@ const GlobalAssessments = () => {
   const removeOption = (qIndex, optIndex) => {
     const updated = [...questions];
     if (updated[qIndex].options.length > 1) {
-      updated[qIndex].options.splice(optIndex, 1);
+      updated[qIndex] = {
+        ...updated[qIndex],
+        options: updated[qIndex].options.filter((_, i) => i !== optIndex)
+      };
       setQuestions(updated);
     }
   };

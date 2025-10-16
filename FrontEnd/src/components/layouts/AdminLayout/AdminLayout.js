@@ -180,7 +180,7 @@ const AdminLayout = () => {
               )}
             </Link>
           </li>
-          <li>
+          {/* <li>
             <Link
               to="/admin/roles"
               className={isActive("/admin/roles") ? "admin_link_active" : ""}
@@ -190,7 +190,7 @@ const AdminLayout = () => {
                 <span className="admin_sidebar_names">Roles</span>
               )}
             </Link>
-          </li>
+          </li> */}
           <li className="admin_menu_section">
             {!sidebarCollapsed && (
               <div className="admin_section_title">Content</div>
@@ -226,6 +226,19 @@ const AdminLayout = () => {
           </li>
           <li>
             <Link
+              to="/admin/manage-surveys"
+              className={
+                isActive("/admin/manage-surveys") ? "admin_link_active" : ""
+              }
+            >
+              <ClipboardType size={20} />
+              {!sidebarCollapsed && (
+                <span className="admin_sidebar_names">Surveys</span>
+              )}
+            </Link>
+          </li>
+          <li>
+            <Link
               to="/admin/learning-paths"
               className={
                 isActive("/admin/learning-paths") ? "admin_link_active" : ""
@@ -237,29 +250,10 @@ const AdminLayout = () => {
               )}
             </Link>
           </li>
-          <li>
-            <li className="admin_menu_section">
-              {!sidebarCollapsed && (
-                <div className="admin_section_title">Surveys</div>
-              )}
-            </li>
-          </li>
-          <li>
-            <Link
-              to="/admin/manage-surveys"
-              className={
-                isActive("/admin/manage-surveys") ? "admin_link_active" : ""
-              }
-            >
-              <ClipboardType size={20} />
-              {!sidebarCollapsed && (
-                <span className="admin_sidebar_names">Manage Surveys</span>
-              )}
-            </Link>
-          </li>
+          
           <li className="admin_menu_section">
             {!sidebarCollapsed && (
-              <div className="admin_section_title">Assessments</div>
+              <div className="admin_section_title">Assignments</div>
             )}
           </li>
           <li>

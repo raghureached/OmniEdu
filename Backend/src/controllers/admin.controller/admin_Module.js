@@ -1,197 +1,245 @@
+const OrganizationModule = require("../../models/moduleOrganization_model");
+const { z } = require("zod");
+const logAdminActivity = require("./admin_activity");
 
-const Module = require("../../models/moduleOrganization_model");
+const CONTENT_TYPES = ["PDF", "DOCX", "Theory"];
 
-const addModule = async(req,res)=>{
+const createContentSchema = z
+  .object({
+    title: z.string().min(1, "Title is required"),
+    type: z.enum(CONTENT_TYPES, {
+      message: `Type must be one of: ${CONTENT_TYPES.join(", ")}`,
+    }),
+    content: z.string().optional(),
+    is_active: z.boolean().optional(),
+    pushable_to_orgs: z.boolean().optional(),
+    file_url: z.string().url("Invalid file URL").optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.type === "Theory") return !!data.content;
+      if (["PDF", "DOCX"].includes(data.type)) return !!data.file_url;
+      return true;
+    },
+    {
+      message:
+        "Invalid content: Theory requires content text, PDF/DOCX require file_url",
+    }
+  );
+
+const updateContentSchema = createContentSchema.partial();
+
+const addModule = async (req, res) => {
   try {
-    const {
+    const primaryFile = req.uploadedFiles?.primaryFile?.[0]?.url;
+    const additionalFile = req.uploadedFiles?.additionalFile?.[0]?.url;
+    const thumbnail = req.uploadedFiles?.thumbnail?.[0]?.url;
+    const { title,trainingType,team,category,submissionEnabled,feedbackEnabled,instructions, badges,stars,credits,description,externalResource, pushable_to_orgs, tags, duration,learningOutcomes,prerequisites,richText } = req.body;
+    const created_by = req.user?._id || null;
+    const newModule = new OrganizationModule({
       title,
-      type,
-      content,
-      file_url,
-      sub_team_id,
-      status,
-      classification,
-      team_id
-    } = req.body;
-
-    // Optional: set this from auth middleware
-    const created_by = req.user?.id || null;
-
-    // Validate required fields
-    if (!title || !type) {
-      return res.status(400).json({
-        isSuccess: false,
-        message: 'Title and type are required.'
-      });
-    }
-
-    if (!['PDF', 'DOCX', 'Theory'].includes(type)) {
-      return res.status(400).json({
-        isSuccess: false,
-        message: 'Invalid content type. Must be PDF, DOCX, or Theory.'
-      });
-    }
-
-    // At least one of content or file_url should be present
-    if (type === 'Theory' && !content) {
-      return res.status(400).json({
-        isSuccess: false,
-        message: 'Theory content requires a text body.'
-      });
-    }
-
-    if ((type === 'PDF' || type === 'DOCX') && !file_url) {
-      return res.status(400).json({
-        isSuccess: false,
-        message: `${type} content requires a file URL.`
-      });
-    }
-    const moduleOrganization = await Module.create({
-      name:title,
-      organization_id: "68bc0898fdb4a64d5a727a60",
-      created_by: "68bc1d953f117b638adf49dc",
-      classification,
-      status,
-      team_id,  
-      content,
-      sub_team_id,
-      module_files:[req.uploadedFile?.url],
-      pushed_by:"68bc1d953f117b638adf49dc"
+      description,
+      trainingType,
+      team,
+      category,
+      submissionEnabled,
+      feedbackEnabled,
+      badges,
+      stars,
+      credits,
+      externalResource,
+      primaryFile,
+      additionalFile,
+      thumbnail,
+      pushable_to_orgs,
+      learning_outcomes:learningOutcomes,
+      prerequisites:prerequisites.split(","),
+      instructions,
+      tags,
+      duration,
+      created_by,
+      richText
     });
-    await logAdminActivity(req, "add", `Module added successfully: ${moduleOrganization.name}`);
+
+    await newModule.save();
+    await logAdminActivity(req,"Create Content","content",`Content created successfully ${newModule.title}`)
     return res.status(201).json({
-      isSuccess: true,
+      success: true,
       message: 'Module added successfully.',
-      data: moduleOrganization
+      data: newModule
     });
-
   } catch (error) {
+    console.log(error)
     return res.status(500).json({
-      isSuccess: false,
-      message: 'Failed to add Module.',
+      success: false,
+      message: 'Failed to add module.',
       error: error.message
     });
   }
-}
+};
 
+const getModule = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 50;
+    const skip = (page - 1) * limit;
+    const content = await OrganizationModule.find().populate("team").skip(skip).limit(limit)
+    const total = await OrganizationModule.countDocuments()
+
+    return res.status(200).json({
+      success: true,
+      message: 'Modules fetched successfully.',
+      data: content,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page * limit < total
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch modules.',
+      error: error.message
+    });
+  }
+};
+
+const getModuleById = async (req, res) => {
+  try {
+    const content = await OrganizationModule.findOne({ uuid: req.params.id }).populate("team").populate("created_by");
+    return res.status(200).json({ success: true, message: 'Module fetched successfully.', data: content });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch module.', error: error.message });
+  } 
+}
+const bulkDelete = async(req,res) => {
+  try {
+    const deletedModules = await OrganizationModule.deleteMany({ uuid: { $in: req.body } })
+    await logAdminActivity(req,"Bulk Delete Content","content",`Content deleted successfully ${deletedModules.deletedCount}`)
+    return res.status(200).json({ success: true, message: 'Content deleted successfully.', data: deletedModules })
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to delete content.', error: error.message })
+  }
+}
 const editModule = async (req, res) => {
   try {
     const {
       title,
-      type,
-      content,
-      file_url,
-      sub_team_id,
-      status,
-      classification,
-      team_id
+      trainingType,
+      team,
+      category,
+      submissionEnabled,
+      feedbackEnabled,
+      instructions,
+      badges,
+      stars,
+      credits,
+      description,
+      enableFeedback,
+      externalResource,
+      pushable_to_orgs,
+      tags,
+      duration,
+      learningOutcomes,
+      prerequisites
     } = req.body;
+    const uploadedFiles = req.uploadedFiles || {};
+    const primaryFileUrl = uploadedFiles.primaryFile?.[0]?.url || null;
+    const additionalFileUrl = uploadedFiles.additionalFile?.[0]?.url || null;
+    const thumbnailUrl = uploadedFiles.thumbnail?.[0]?.url || null;
 
-    // Update the Content doc and get the updated document back
-    const updatedContent = await Module.findOneAndUpdate(
+    const updateData = {
+      title,
+      trainingType,
+      team,
+      category,
+      submissionEnabled,
+      feedbackEnabled,
+      instructions,
+      badges,
+      stars,
+      credits,
+      description,
+      enableFeedback,
+      externalResource,
+      pushable_to_orgs,
+      tags,
+      duration,
+      learningOutcomes,
+      prerequisites,
+    };
+
+    if (primaryFileUrl) updateData.primaryFile = primaryFileUrl;
+    if (additionalFileUrl) updateData.additionalFile = additionalFileUrl;
+    if (thumbnailUrl) updateData.thumbnail = thumbnailUrl;
+    const updatedModule = await OrganizationModule.findOneAndUpdate(
       { uuid: req.params.id },
-      {
-        title,
-        content,
-        sub_team_id,
-        status,
-        classification,
-        team_id,
-        module_files:[req.uploadedFile?.url],
-      },
-      { new: true, runValidators: true }
+      updateData,
+      { new: true }
     );
 
-    if (!updatedContent) {
-      return res.status(404).json({ isSuccess: false, message: 'Module not found' });
-    }
-
-    await logAdminActivity(req, "edit", `Module edited successfully: ${updatedContent.name}`);
-    return res.status(200).json({
-      isSuccess: true,
-      message: "Module edited successfully",
-      data: updatedContent,
-    });
-  } catch (error) {
-    return res.status(500).json({ isSuccess: false, message: "Failed to edit module", error: error.message });
-  }
-};
-
-const deleteModule = async(req,res)=>{
-    try {
-        const deletedContent = await Module.findOneAndDelete({uuid:req.params.id})
-        await logAdminActivity(req, "delete", `Module deleted successfully: ${deletedContent.name}`);
-        return res.status(200).json({
-            isSuccess:true,
-            message:"Module deleted successfully",
-            data:deletedContent
-        })
-    } catch (error) {
-        return res.status(500).json({
-            isSuccess:false,
-            message:"Failed to delete module",
-            error:error.message
-        })
-    }
-}
-
-const previewModule = async(req,res)=>{
-    try {
-        const content = await Module.findOne({uuid:req.params.id})
-        await logAdminActivity(req, "view", `Module previewed successfully: ${content.name}`);
-        return res.status(200).json({
-            isSuccess:true,
-            message:"Module previewed successfully",
-            data:content
-        })
-    } catch (error) {
-        return res.status(500).json({
-            isSuccess:false,
-            message:"Failed to preview module",
-            error:error.message
-        })
-    }
-}
-
-
-const searchModules = async (req, res) => {
-  try {
-    const searchTerm = req.query.search?.trim();
-    const {classification,team_id,status} = req.query;
-    if (!searchTerm) {
-      return res.status(400).json({
-        isSuccess: false,
-        message: "Search term is required",
+    if (!updatedModule) {
+      return res.status(404).json({
+        success: false,
+        message: "Content not found",
       });
     }
-    const regex = new RegExp(searchTerm, "i"); // case-insensitive regex
-    const modules = await Module.find({
-      name: regex,
-      $or: [
-        { classification },
-        { team_id }, // make sure team_id is a String, else adjust
-        { status },
-      ],
-    });
-    await logAdminActivity(req, "search", `Modules searched successfully: ${modules.length}`);
+
+    await logAdminActivity(
+      req,
+      "Edit Content",
+      "content",
+      `Content updated successfully: ${updatedModule.title}`
+    );
+
     return res.status(200).json({
-      isSuccess: true,
-      message: "Modules searched successfully",
-      data: modules,
+      success: true,
+      message: "Content updated successfully",
+      data: updatedModule,
     });
   } catch (error) {
+    console.error("❌ Edit Content Error:", error);
     return res.status(500).json({
-      isSuccess: false,
-      message: "Failed to search modules",
+      success: false,
+      message: "Failed to update content",
       error: error.message,
     });
   }
 };
 
+
+const deleteModule = async (req, res) => {
+  try {
+    const deletedModule = await OrganizationModule.findOneAndDelete({ uuid: req.params.id })
+    if (!deletedModule) {
+      return res.status(404).json({
+        success: false,
+        message: "Content not found"
+      })
+    }
+    await logAdminActivity(req,"Delete Content","content",`Content deleted successfully ${deletedModule.title}`)
+    return res.status(200).json({
+      success: true,
+      message: "Content deleted successfully",
+      data: deletedModule
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete content",
+      error: error.message
+    })
+  }
+}
+
 module.exports = {
   addModule,
+  getModule,
   editModule,
   deleteModule,
-  previewModule,
-  searchModules,
-};
+  getModuleById,
+  bulkDelete
+}

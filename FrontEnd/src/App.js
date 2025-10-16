@@ -25,7 +25,7 @@ import Mandatory from './pages/user/Mandatory/Mandatory';
 import AdminHome from './pages/admin/AdminHome/AdminHome';
 import UsersManagement from './pages/admin/UsersManagement/UsersManagement';
 import GroupsManagement from './pages/admin/GroupsManagement/GroupsManagement';
-import ContentModules from './pages/admin/ContentModules/ContentModules';
+import ContentModules from './pages/admin/ContentModules/ModuleManagement';
 import ContentAssessments from './pages/admin/ContentAssessments/ContentAssessments';
 import LearningPaths from './pages/admin/LearningPaths/LearningPaths';
 import Surveys from './pages/admin/Surveys/Surveys';
@@ -39,9 +39,7 @@ import AdminPortalActivity from './pages/admin/AdminPortalActivity/AdminPortalAc
 
 // Global Admin Pages 
 import OrganizationManagement from './pages/globalAdmin/OrganizationManagement/OrganizationManagement';
-// import NewOrgManagement from './pages/globalAdmin/OrganizationManagement/NewOrgManagement';
 import GlobalRolesManagement from './pages/globalAdmin/GlobalRolesManagement/GlobalRolesManagement';
-// import GlobalSurveys from './pages/globalAdmin/GlobalSurveys/GlobalSurveys';
 import GlobalPortalActivity from './pages/globalAdmin/GlobalAdminLibraryPortal/GlobalPortal';
 import Dashboard from './pages/user/Dashboard/Dashboard';
 import { useEffect } from 'react';
@@ -61,41 +59,16 @@ import GlobalAdminDashboard from './pages/globalAdmin/GlobalAdminDashboard/Globa
 import GlobalAssessments from './pages/globalAdmin/GlobalAssessments/GlobalAssessments';
 import GlobalModuleManagement from './pages/globalAdmin/GlobalModuleManagement/GlobalModuleManagement';
 import Globalusers from './pages/globalAdmin/Users/Globalusers';
-import FullRichTextEditor, { RichTextEditor } from './pages/globalAdmin/GlobalModuleManagement/RichText';
 import GlobalSurveys from './pages/globalAdmin/GlobalSurveys/GlobalAssessments-survey';
-import AssessmentQuiz from './components/Assessments/Assessment';
-import ModulePreview from './components/common/Preview/Preview';
-
-const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { isAuthenticated, loading, role } = useSelector((state) => state.auth);
-
-  if (loading) return <LoadingScreen />;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (!allowedRoles.includes(role)) return <Navigate to="/login" replace />;
-
-  return children;
-};
+import LearningPath from './components/LearningPath/LearningPath';
+import ModuleManagement from './pages/admin/ContentModules/ModuleManagement';
 
 function App() {
-  // console.log(process.env);
   const dispatch = useDispatch();
   const { isAuthenticated, role, loading } = useSelector((state) => state.auth);
-  useEffect(() => {
-    if (!isAuthenticated && localStorage.getItem('authState')) {
-      dispatch(checkAuth());
-    }
-  }, [dispatch, isAuthenticated]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      dispatch(updateSessionTime());
-    }
-  }, [dispatch, isAuthenticated]);
-
   if (loading) {
     return <LoadingScreen />
   }
-
   return (
     <Router>
       <div className="App">
@@ -103,28 +76,12 @@ function App() {
           <Route
             path="/login"
             element={
-              loading ? (
-                <LoadingScreen text={"Logging in..."}/>
-              ) : isAuthenticated && role ? (
-                role === "GlobalAdmin" ? (
-                  <Navigate to="/global-admin" replace />
-                ) : role === "Admin" ? (
-                  <Navigate to="/admin" replace />
-                ) : role === "User" ? (
-                  <Navigate to="/user/learning-hub" replace />
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              ) : (
-                <Login />
-              )
+              <Login />
             }
           />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/email-confirmation" element={<EmailConfirmation />} />
-          <Route path="/user/*" element={<ProtectedRoute allowedRoles={["User"]}>
-            <UserLayout />
-          </ProtectedRoute>}>
+          <Route path="/user/*" element={<UserLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="profile" element={<UserProfile />} />
@@ -136,13 +93,11 @@ function App() {
             <Route path="additional" element={<Additional />} />
             <Route path="mandatory" element={<Mandatory />} />
           </Route>
-          <Route path="/admin/*" element={<ProtectedRoute allowedRoles={["Admin"]}>
-            <AdminLayout />
-          </ProtectedRoute>}>
+          <Route path="/admin/*" element={<AdminLayout />}>
             <Route index element={<AdminHome />} />
             <Route path="users" element={<UsersManagement />} />
             <Route path="groups" element={<GroupsManagement />} />
-            <Route path="content-modules" element={<ContentModules />} />
+            <Route path="content-modules" element={<ModuleManagement />} />
             <Route path="content-assessments" element={<ContentAssessments />} />
             <Route path="learning-paths" element={<LearningPaths />} />
             <Route path="manage-surveys" element={<Surveys />} />
@@ -155,18 +110,14 @@ function App() {
             <Route path="activity-log" element={<AdminActivityLog />} />
           </Route>
 
-          {/* Global Admin routes */}
-          <Route path="/global-admin/*" element={<ProtectedRoute allowedRoles={["GlobalAdmin"]}>
-            <GlobalAdminLayout />
-          </ProtectedRoute>}>
-            <Route index element={<GlobalAdminDashboard />} />
+          <Route path="/global-admin/*" element={<GlobalAdminLayout />}>
+            <Route index element={<Navigate to="assessments" replace />} />
             <Route path="organizations" element={<OrganizationManagement />} />
             <Route path="message-board" element={<GlobalMessageBoard />} />
             <Route path="roles" element={<GlobalRolesManagement />} />
             <Route path="module" element={<GlobalModuleManagement />} />
             <Route path="users" element={<Globalusers />} />
             <Route path="module/:moduleId" element={<GlobalModuleDetail />} />
-            {/* <Route path="module-preview" element={<ModulePreview />} /> */}
             <Route path="assessments" element={<GlobalAssessments />} />
             <Route path="surveys" element={<GlobalSurveys />} />
             <Route path="assignments" element={<GlobalCreateAssignment />} />
@@ -181,8 +132,8 @@ function App() {
           </Route>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<div>Page Not Found</div>} />
-          <Route path='test' element={<AssessmentQuiz/>}/>
-          <Route path='preview' element={<ModulePreview/>}/>
+          <Route path='test' element={<LearningPath/>}/>
+          <Route path='preview' element={<LearningPaths/>}/>
         </Routes>
       </div>
     </Router>

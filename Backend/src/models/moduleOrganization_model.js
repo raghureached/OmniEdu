@@ -3,69 +3,114 @@ const { v4: uuidv4 } = require("uuid");
 
 const moduleSchema = new mongoose.Schema(
   {
-    uuid: {
-      type: String,
-      default: uuidv4,
-      unique: true,
-      index:true
+      uuid: {
+        type: String,
+        default: uuidv4,
+        unique: true,
+        index: true,
+      },
+      title: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+      tags:{
+        type: [String],
+        default: []
+      },
+      primaryFile: {
+        type: String,
+        default: null,
+      },
+      additionalFile: {
+        type: String,
+        default: null,
+      },
+      trainingType: {
+        type: String,
+        default: null,
+      },
+      team: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Team",
+        default: null,
+      },
+      category: {
+        type: String,
+        default: null,
+      },
+      badges: {
+        type: String,
+        default: null,
+      },
+      stars: {
+        type: String,
+        default: null,
+      },
+      externalResource: {
+        type: String,
+        default: null,
+      },
+      description: {
+        type: String,
+        default: null,
+      },
+      learning_outcomes:{
+        type: [String],
+        default: []
+      },
+      richText:{
+        type: String,
+        default: null,
+      },
+      pushable_to_orgs: {
+        type: Boolean,
+        default: true,
+      },
+      credits: {
+        type: Number,
+        default: 2,
+      },
+      duration: {
+        type: Number,
+        default: 0,
+      },
+      prerequisites: {
+        type: [String],
+        default: [],
+      },
+      instructions: {
+        type: String,
+        default: null,
+      },
+      submissionEnabled: {
+        type: Boolean,
+        default: false,
+      },
+      feedbackEnabled: {
+        type: Boolean,
+        default: false,
+      },
+      created_by: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "GlobalAdmin",
+        default: null,
+      },
+      thumbnail: {
+        type: String,
+        default: null,
+      },
+      status: {
+        type: String,
+        enum: ["Published", "Saved"],
+        default: "Saved",
+      },
     },
-    organization_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: true,
-      ref: "Organization",
-    },
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-      maxlength: 200,
-    },
-    classification: {
-      type: String,
-      trim: true,
-      maxlength: 100,
-    },
-    team_id: {
-      type:mongoose.Schema.Types.ObjectId,
-      ref: "Team",
-      default: null,
-    },
-    sub_team_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "SubTeam",
-      default: null,
-    },
-    status: {
-      type: String,
-      enum: ["Draft", "Published", "Archived"],
-      default: "Draft",
-    },
-    version: {
-      type: String,
-      default: "1.0",
-    },
-    content: {
-      type: String,
-      default: null,
-    },
-    module_files: {
-      type: [String], 
-      default: [],
-    },
-    created_by: {
-      type:   mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
-    updated_by: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
+    {
+      timestamps: true,
+    }
+  );
 
-const Module = mongoose.model("Module", moduleSchema);
+const Module = mongoose.model("OrganizationModule", moduleSchema);
 
 module.exports = Module;

@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchContent, deleteContent, createContent, updateContent, bulkDeleteContent } from '../../../store/slices/contentSlice';
-import "./GlobalModuleManagement.css"
+import { adminfetchContent, admindeleteContent, admincreateContent, adminupdateContent, adminbulkDeleteContent } from '../../../store/slices/adminModuleSlice';
+import "./ModuleManagement.css"
 import { useNavigate } from 'react-router-dom';
 import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading'
 import { RiDeleteBinFill } from "react-icons/ri";
 import { FiEdit3 } from "react-icons/fi";
-import GlobalModuleModal from './GlobalModuleModal';
+import ModuleModal from './ModuleModal';
 import { GoX } from 'react-icons/go';
 
 
-const GlobalModuleManagement = () => {
+const ModuleManagement = () => {
   const dispatch = useDispatch();
   const { items, loading, error } = useSelector((state) => state.content);
   const [searchTerm, setSearchTerm] = useState("");
@@ -45,12 +45,12 @@ const GlobalModuleManagement = () => {
   const [uploading, setUploading] = useState(false)
   const navigate = useNavigate()
   useEffect(() => {
-    dispatch(fetchContent());
+    dispatch(adminfetchContent());
   }, [dispatch]);
 
   const handleDeleteContent = (contentId) => {
     if (window.confirm("Are you sure you want to delete this content?")) {
-      dispatch(deleteContent(contentId));
+      dispatch(admindeleteContent(contentId));
     }
   };
 
@@ -119,10 +119,7 @@ const GlobalModuleManagement = () => {
         status: "Draft",
         createdDate: new Date().toISOString(),
       };
-
-      // console.log(moduleData)
-      // ✅ Dispatch or API call with formData
-      dispatch(createContent(moduleData))
+      dispatch(admincreateContent(moduleData))
 
     } catch (err) {
       setUploading(false)
@@ -171,7 +168,7 @@ const GlobalModuleManagement = () => {
     }
     if (window.confirm("Are you sure you want to delete these modules?")) {
       try {
-        dispatch(bulkDeleteContent(ids));
+        dispatch(adminbulkDeleteContent(ids));
       } catch (error) {
         console.error(error);
       }
@@ -317,8 +314,8 @@ const GlobalModuleManagement = () => {
         </div>
       </div>
 
-      {showModal && <GlobalModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading} handleRichInputChange={handleRichInputChange} error={error} />}
-      {showEditModal && <GlobalModuleModal showModal={showEditModal} setShowModal={setShowEditModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} showEditModal={showEditModal} setShowEditModal={setShowEditModal} editContentId={editContentId} handleRichInputChange={handleRichInputChange} error={error} />}
+      {showModal && <ModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading} handleRichInputChange={handleRichInputChange} error={error} />}
+      {showEditModal && <ModuleModal showModal={showEditModal} setShowModal={setShowEditModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} showEditModal={showEditModal} setShowEditModal={setShowEditModal} editContentId={editContentId} handleRichInputChange={handleRichInputChange} error={error} />}
       <div className="table-container">
         <table className="data-table">
           <thead>
@@ -389,7 +386,7 @@ const GlobalModuleManagement = () => {
           {currentContent.length === 0 && (
             <tr>
               <td colSpan="6" className="no-results">
-                No Global Modules found.
+                No Modules found.
               </td>
             </tr>
           )}
@@ -548,4 +545,4 @@ const GlobalModuleManagement = () => {
   );
 };
 
-export default GlobalModuleManagement;
+export default ModuleManagement;
