@@ -4,7 +4,7 @@ const cloudinary = require("../config/cloudinary");
 // Middleware: upload file to Cloudinary & attach result to req
 const uploadToCloudinary = (folder) => {
   return async (req, res, next) => {
-    console.log(req.file)
+    // console.log(req.file)
     if (!req.file) return next();
     try {
       const result = await cloudinary.uploader.upload(req.file.path, {

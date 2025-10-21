@@ -3,7 +3,7 @@ import { FileText, Plus, X, Upload, Copy, Eye, Info } from 'lucide-react';
 import api from '../../../services/api';
 import './QuestionsForm-survey.css';
 import '../GlobalAssessments/QuestionsForm.css';
-import RichText from '../GlobalSurveys/RichTextSurvey.jsx';
+import RichText from '../Surveys/RichTextSurvey.jsx';
 // Minimal URL resolver for previews (can be enhanced to handle relative URLs)
 const resolveUrl = (u) => u;
 

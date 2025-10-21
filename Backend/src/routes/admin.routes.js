@@ -1,6 +1,6 @@
 const {createAssessment, uploadAssessmentCSV, getQuestions, getAssessmentById, getAssessments, editAssessment, deleteAssessment, editQuestion, deleteQuestion, searchAssessment, getQuestionsRandom } = require("../controllers/admin.controller/admin_Assessment");
 const {addUser,editUser,deleteUser,getUsers,getUserbyId, bulkDeleteUsers, bulkEditUsers, exportUsers,} = require("../controllers/admin.controller/admin_User");
-const {addModule,editModule,deleteModule,previewModule,searchModules} = require("../controllers/admin.controller/admin_Module");
+const {addModule,editModule,deleteModule,previewModule,searchModules, getModules, bulkDelete} = require("../controllers/admin.controller/admin_Module");
 const { addOrgRole, editOrgRole, deleteOrgRole, getOrgRoles } = require("../controllers/admin.controller/admin_Role");
 const { uploadAssessment, uploadContent } = require("../middleware/multer_middleware");
 const { uploadToCloudinary, uploadMultipleToCloudinary } = require("../utils/uploadOnCloud");
@@ -8,7 +8,7 @@ const Department = require("../models/departments_model");
 const { addGroup, getGroups, editGroup, deleteGroup } = require("../controllers/admin.controller/admin_Groups");
 const { addLearningPath, getLearningPaths, getContentsOfLearningPath, editLearningPath, deleteLearningPath } = require("../controllers/admin.controller/admin_LearningPath");
 const { createSurvey, deleteSurvey, getSurveys, editSurvey } = require("../controllers/admin.controller/admin_Surveys");
-const { setMessage, editMessage, deleteMessage } = require("../controllers/admin.controller/admin_message");
+const { setMessage, editMessage, deleteMessage, getMessage } = require("../controllers/admin.controller/admin_message");
 const { getActivities } = require("../controllers/admin.controller/admin_activity");
 const { addUserId } = require("../middleware/dummyAuth");
 const { getProfile } = require("../controllers/admin.controller/admin_profile");
@@ -52,9 +52,8 @@ router.route('/searchAssessment').get(addUserId,searchAssessment)
 router.route('/createModule').post(uploadContent.fields([{name:'primaryFile',maxCount:1},{name:'additionalFile',maxCount:1},{name:'thumbnail',maxCount:1}]),uploadMultipleToCloudinary,addModule)
 router.route('/editModule/:id').put(uploadContent.fields([{name:'primaryFile',maxCount:1},{name:'additionalFile',maxCount:1},{name:'thumbnail',maxCount:1}]),uploadMultipleToCloudinary,editModule)
 router.route('/deleteModule/:id').delete(deleteModule)
-
-// router.route('/previewModule/:id').get(addUserId,previewModule)
-// router.route('/searchModules').get(addUserId,searchModules)   
+router.route('/getModules').get(getModules)
+router.route('/bulkDeleteModule').delete(bulkDelete)  
 
 //////Groups////////
 
@@ -80,10 +79,10 @@ router.route('/editSurvey/:id').put(addUserId,editSurvey)
 
 
 ////////MessageForUser////
-router.route('/setMessage').post(addUserId,setMessage)
-router.route('/editMessage/:id').put(addUserId,editMessage)
-router.route('/deleteMessage/:id').delete(addUserId,deleteMessage)
-
+router.route('/setMessage').post(setMessage)
+router.route('/editMessage/:id').put(editMessage)
+router.route('/deleteMessage/:id').delete(deleteMessage)
+router.route('/getMessages').get(getMessage)
 //////Assignment////////
 router.route('/createAssignment').post(addUserId,createAssignment)
 router.route('/getAssignments').get(addUserId,getAssignments)

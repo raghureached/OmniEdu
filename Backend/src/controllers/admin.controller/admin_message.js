@@ -72,8 +72,31 @@ const deleteMessage = async(req,res)=>{
         })
     }
 }
+const getMessage = async(req,res)=>{
+    try {
+        const page = req.query.page || 1;
+        const limit = req.query.limit || 10;
+        const skip = (page - 1) * limit;
+        const messages = await ForUserMessage.find().skip(skip).limit(limit)
+        return res.status(200).json({
+            isSuccess:true,
+            message:"Messages fetched successfully",
+            data:messages,
+            page,
+            limit,
+            total:await ForUserMessage.countDocuments()
+        })
+    } catch (error) {
+        return res.status(500).json({
+            isSuccess:false,
+            message:"Failed to fetch messages",
+            error:error.message
+        })
+    }
+}
 module.exports={
     setMessage,
     editMessage,
-    deleteMessage
+    deleteMessage,
+    getMessage
 }

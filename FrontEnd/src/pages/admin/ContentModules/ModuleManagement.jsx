@@ -13,7 +13,7 @@ import { GoX } from 'react-icons/go';
 
 const ModuleManagement = () => {
   const dispatch = useDispatch();
-  const { items, loading, error } = useSelector((state) => state.content);
+  const { items, loading, error } = useSelector((state) => state.adminModule);
   const [searchTerm, setSearchTerm] = useState("");
   const [contentType, setContentType] = useState("all");
   const [showModal, setShowModal] = useState(false);
@@ -238,7 +238,7 @@ const ModuleManagement = () => {
   // const modules = items?.filter(item => item.type === "module") || [];
 
   if (loading) {
-    return <LoadingScreen text={"Loading Global Content..."} />
+    return <LoadingScreen text={"Loading Content..."} />
   }
   return (
     <div className="global-content-management">

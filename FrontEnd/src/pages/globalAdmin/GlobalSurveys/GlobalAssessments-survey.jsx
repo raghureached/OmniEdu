@@ -35,11 +35,11 @@ const GlobalSurveys = () => {
   // });
   
   
-  
+ 
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    status: 'Draft',
+    status: 'Saved',
     duration: '',            // NEW
     tags: [],                // NEW
     team: '',  
@@ -60,13 +60,14 @@ const GlobalSurveys = () => {
     options: ['', '']
   }]);
   // Feedback block state (top instruction, central text, bottom instruction)
-  const [feedback, setFeedback] = useState({ instructionTop: '', instruction_header_top: '', question_text: '', instructionBottom: '', instruction_header_bottom: '' });
+  //const [feedback, setFeedback] = useState({ instructionTop: '', instruction_header_top: '', question_text: '', instructionBottom: '', instruction_header_bottom: '' });
   //const [uploadedFiles, setUploadedFiles] = useState([]);
 
   const sel = useSelector((state) => state.surveys || {});
   const surveys = sel.surveys || [];
   const loading = !!sel.loading;
   const creating = !!sel.creating;
+  const updating = !!sel.updating;
   const pagination = sel.pagination || { total: 0, page: 1, limit: 6, totalPages: 0, hasNextPage: false };
   const assessments = surveys; // keep variable name used throughout component
   const [page, setPage] = useState(pagination.page || 1);
@@ -92,21 +93,21 @@ const GlobalSurveys = () => {
 
   // const { groups } = useSelector(state => state.groups); 
   // console.log("groups in assessments: ",groups)
-  const splitInstructions = (str) => {
-    const raw = String(str || '');
-    if (!raw.trim()) return { instruction_header: '', instruction_text: '' };
-    const parts = raw.split(/\n{2,}/);
-    const header = (parts[0] || '').trim();
-    const text = parts.slice(1).join('\n\n').trim();
-    return { instruction_header: header, instruction_text: text };
-  };
+  // const splitInstructions = (str) => {
+  //   const raw = String(str || '');
+  //   if (!raw.trim()) return { instruction_header: '', instruction_text: '' };
+  //   const parts = raw.split(/\n{2,}/);
+  //   const header = (parts[0] || '').trim();
+  //   const text = parts.slice(1).join('\n\n').trim();
+  //   return { instruction_header: header, instruction_text: text };
+  // };
 
   const handleAddAssessment = () => {
     setCurrentAssessment(null);
     setFormData({
       title: '',
       description: '',
-      status: 'published',
+      status: 'Saved',
       // duration: '',            // NEW
       tags: [],                // NEW
       team: '',                // NEW
@@ -127,7 +128,7 @@ const GlobalSurveys = () => {
       question_text: '',
       options: ['', '']
     }]);
-    setFeedback({ instructionTop: '', instruction_header_top: '', question_text: '', instructionBottom: '', instruction_header_bottom: '' });
+   // setFeedback({ instructionTop: '', instruction_header_top: '', question_text: '', instructionBottom: '', instruction_header_bottom: '' });
     setShowForm(true);
   };
   
@@ -184,6 +185,7 @@ const GlobalSurveys = () => {
   const handleEditAssessment = async (assessment) => {
     // Always fetch the latest populated assessment so questions are available
     const id = assessment?.uuid || assessment?._id || assessment?.id;
+   
     try {
       const full = await dispatch(getSurveyById(id)).unwrap();
       // Fallback if thunk returns nothing (shouldn't)
@@ -197,30 +199,13 @@ const GlobalSurveys = () => {
       setFormData({
         title: full.title || '',
         description: full.description || '',
-        status: full.status || 'published',
+        status: full.status || 'Saved',
         // duration: full.duration || '',
         tags: full.tags || [],
         team: full.team || '',
         subteam: full.subteam || '',
-        // attempts: full.attempts ?? 1,
-        // unlimited_attempts: !!full.unlimited_attempts,
-        // percentage_to_pass: full.percentage_to_pass ?? 0,
-        // display_answers:
-        //   typeof full.display_answers === 'boolean' ? full.display_answers : true,
-        // display_answers_when:
-        //   full.display_answers_when || 'AfterAssessment',
+      
       });
-
-      // Populate feedback from backend if present
-      const f = full.feedback || {};
-      setFeedback({
-        instructionTop: f.instructionTop || '',
-        instruction_header_top: f.instruction_header_top || '',
-        question_text: f.question_text || '',
-        instructionBottom: f.instructionBottom || '',
-        instruction_header_bottom: f.instruction_header_bottom || ''
-      });
-
       // Build formElements from sections if present; fallback to legacy questions
       let mappedFormElements = [];
       if (Array.isArray(full.sections) && full.sections.length > 0) {
@@ -280,13 +265,13 @@ const GlobalSurveys = () => {
       setFormData({
         title: assessment.title || '',
         description: assessment.description || '',
-        status: assessment.status || 'Draft',
+        status: assessment.status || 'Saved',
         duration: assessment.duration || '',
         tags: assessment.tags || [],
         team: assessment.team || '',
         subteam: assessment.subteam || '',
       });
-      setFeedback({ instructionTop: '', instruction_header_top: '', question_text: '', instructionBottom: '', instruction_header_bottom: '' });
+     // setFeedback({ instructionTop: '', instruction_header_top: '', question_text: '', instructionBottom: '', instruction_header_bottom: '' });
       setFormElements([
         {
           type: 'section',
@@ -302,7 +287,7 @@ const GlobalSurveys = () => {
     }
   };
 
-  const handleSaveAssessment = async (e) => {
+  const handleSaveAssessment = async (e, statusOverride) => {
     if (e && typeof e.preventDefault === 'function') {
       e.preventDefault();
     }
@@ -343,7 +328,7 @@ const GlobalSurveys = () => {
         currentSection.questions.push({
           question_text: question_text,
           type: question_type,
-          instruction_text: element.instruction_text || '',
+         // instruction_text: element.instruction_text || '',
           options: options,
           order: currentSection.questions.length + 1
         });
@@ -358,24 +343,12 @@ const GlobalSurveys = () => {
     const payload = {
       title: surveyTitle,
       description: surveyDescription,
-      status: formData.status,
+      status: statusOverride ?? (formData.status || 'Saved'),
       // duration: formData.duration,
       tags: Array.isArray(formData.tags) ? formData.tags : [],
       team: formData.team,
       subteam: formData.subteam,
-      // attempts: formData.attempts,
-      // unlimited_attempts: Boolean(formData.unlimited_attempts),
-      // percentage_to_pass: formData.percentage_to_pass,
-      // display_answers: Boolean(formData.display_answers),
-      // Map UI values to backend-friendly strings if needed; using form as-is
-     // display_answers_when: formData.display_answers ? (formData.display_answers_when || 'AfterAssessment') : 'Never',
       sections: sections,
-      feedback: {
-       
-        question_text: feedback.question_text || '',
-        instructionBottom: feedback.instructionBottom || '',
-      
-      }
     };
 //  console.log(sections )
     try {
@@ -387,7 +360,28 @@ const GlobalSurveys = () => {
     }
   };
 
-  const handleUpdateAssessment = async () => {
+  const handleUpdateAssessment = async (statusOverride) => {
+      // Validate that we have a current assessment to update
+     
+      if (!currentAssessment) {
+        console.error('❌ currentAssessment is null/undefined');
+        alert('Error: No assessment selected for update. Please select an assessment to edit first.');
+        return;
+      }
+
+      if (typeof currentAssessment !== 'object') {
+        console.error('❌ currentAssessment is not an object:', currentAssessment);
+        alert('Error: Invalid assessment data. Please try again.');
+        return;
+      }
+
+      if (!currentAssessment.uuid && !currentAssessment._id && !currentAssessment.id) {
+        console.error('❌ currentAssessment missing ID fields');
+        console.error('Available fields:', Object.keys(currentAssessment));
+        alert('Error: Assessment ID fields missing. Please try editing again.');
+        return;
+      }
+     
       // Group formElements by sections and extract questions for update
       const sections = [];
       let currentSection = null;
@@ -426,7 +420,7 @@ const GlobalSurveys = () => {
             _id: element._id || element.uuid,
             question_text: question_text,
             type: question_type,
-            instruction_text: element.instruction_text || '',
+            //instruction_text: element.instruction_text || '',
             options: options,
             order: currentSection.questions.length + 1
           });
@@ -441,22 +435,24 @@ const GlobalSurveys = () => {
       const data = {
         title: surveyTitle,
         description: surveyDescription,
-        status: formData.status,
+        status: statusOverride ?? formData.status,
         tags: Array.isArray(formData.tags) ? formData.tags : [],
         // duration: formData.duration,
         team: formData.team,
         subteam: formData.subteam,
         // Send questions with identifiers so backend can update GlobalQuestion
         sections: sections,
-        feedback: {
-          instructionTop: feedback.instructionTop || '',
-          instruction_header_top: feedback.instruction_header_top || '',
-          question_text: feedback.question_text || '',
-          instructionBottom: feedback.instructionBottom || '',
-          instruction_header_bottom: feedback.instruction_header_bottom || ''
-        }
+
       };
+     
       const id = currentAssessment?.uuid || currentAssessment?._id || currentAssessment?.id;
+
+
+      if (!id) {
+        console.error('❌ No valid ID found for current assessment:', currentAssessment);
+        alert('Error: Assessment ID not found. Please try again.');
+        return;
+      }
       try {
         await dispatch(updateSurvey({ uuid: id, data })).unwrap();
         setShowForm(false);
@@ -601,19 +597,6 @@ const GlobalSurveys = () => {
     });
   };
 
-  // const handleFileUpload = async (e, qIndex) => {
-  //   const file = e.target.files[0];
-  //   if (!file) return;
-  //   try {
-  //     const url = await dispatch(uploadAssessmentFile(file)).unwrap();
-  //     if (url) {
-  //       setUploadedFiles(prev => [...prev, url]);
-  //       updateQuestionField(qIndex, 'file_url', url);
-  //     }
-  //   } catch (err) {
-  //     console.error('File upload failed', err?.response?.data || err.message);
-  //   }
-  // };
 
   const handleDeleteAssessment = async (id) => {
     try {
@@ -626,9 +609,13 @@ const GlobalSurveys = () => {
   if(creating){
     return <LoadingScreen text="Creating Surveys..." />
   }
+  if(updating){
+    return <LoadingScreen text="Updating Surveys..." />
+  }
   if(loading){
     return <LoadingScreen text="Loading Surveys..."/>
   }
+
   return (
     <div className="assess-container">
       {/* Header Section */}
@@ -852,8 +839,7 @@ const GlobalSurveys = () => {
         // handleFileUpload={handleFileUpload}
         duplicateFormElement={duplicateFormElement}
         groups={groups}
-        feedback={feedback}
-        setFeedback={setFeedback}
+       
       />}
     </div>
   );

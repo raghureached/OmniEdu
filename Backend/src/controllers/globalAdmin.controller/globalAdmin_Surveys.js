@@ -13,8 +13,8 @@ const mongoose = require("mongoose");
 const createSurvey = async (req, res) => {
   let session;
   try {
-    const { title, description, sections, tags = [], team, subteam, status, feedback } = req.body;
-
+    const { title, description, sections, tags = [], team, subteam, status } = req.body;
+   console.log("log in surveys controller:",req.body)
     const created_by = req.user?.id || req.body.created_by; // Ensure created_by is passed or derived
 
     if (!title || !title.trim()) {
@@ -52,7 +52,7 @@ const createSurvey = async (req, res) => {
 
       sectionsIDs.push(createdSection[0]._id);
     }
-    const createdFeedback = await GlobalSurveyFeedback.create(feedback, { session });
+    //const createdFeedback = await GlobalSurveyFeedback.create(feedback, { session });
     // Create the final survey document
     const createdSurvey = await Surveys.create(
       [
@@ -65,7 +65,7 @@ const createSurvey = async (req, res) => {
           team,
           subteam,
           status,
-          feedback: createdFeedback[0]._id,
+         //feedback: createdFeedback[0]._id,
         },
       ],
       { session }
@@ -100,7 +100,7 @@ const createSurvey = async (req, res) => {
 const editSurvey = async (req, res) => {
   let session;
   try {
-    const { title, description, sections, tags = [], team, subteam, status, feedback } = req.body;
+    const { title, description, sections, tags = [], team, subteam, status} = req.body;
     const surveyUUID = req.params.id;
 
     const survey = await Surveys.findOne({ uuid: surveyUUID }).populate("sections");
@@ -155,9 +155,7 @@ const editSurvey = async (req, res) => {
               options: Array.isArray(question.options)
                 ? question.options.map((o) => o.trim()).filter(Boolean)
                 : [],
-              instructions: question.instructions || "",
-              instruction_header: question.instruction_header || "",
-              instruction_text: question.instruction_text || "",
+             
             },
           ],
           { session }
@@ -197,7 +195,7 @@ const editSurvey = async (req, res) => {
         path: "sections",
         populate: { path: "questions" },
       })
-      .populate("feedback");
+     
 
     await logGlobalAdminActivity(req, "Edit Survey", "survey", `Survey updated successfully ${updatedSurvey.title}`);
 
@@ -229,7 +227,7 @@ const deleteSurvey = async (req, res) => {
 
     const survey = await Surveys.findOne({ uuid: req.params.id })
       .populate("sections")
-      .populate("feedback");
+     
 
     if (!survey) {
       return res.status(404).json({
@@ -253,9 +251,9 @@ const deleteSurvey = async (req, res) => {
     }
 
     // --- Step 3: Delete feedback (if any) ---
-    if (survey.feedback) {
-      await GlobalSurveyFeedback.findByIdAndDelete(survey.feedback._id, { session });
-    }
+    // if (survey.feedback) {
+    //   await GlobalSurveyFeedback.findByIdAndDelete(survey.feedback._id, { session });
+    // }
 
     // --- Step 4: Delete the survey itself ---
     const deletedSurvey = await Surveys.findOneAndDelete({ uuid: req.params.id }, { session });
@@ -305,7 +303,7 @@ const getSurveys = async (req, res) => {
           model: "GlobalSurveyQuestion",
         },
       })
-      .populate("feedback")
+      // .populate("feedback")
       .lean(); // lean() for faster response and smaller payload
 
     const total = await Surveys.countDocuments();
@@ -388,7 +386,7 @@ const getSurvey = async (req, res) => {
           model: "GlobalSurveyQuestion",
         },
       })
-      .populate("feedback");
+      // .populate("feedback");
 
     if (!survey) {
       return res.status(404).json({ success: false, message: "Survey not found" });
@@ -406,20 +404,14 @@ const getSurvey = async (req, res) => {
 
       // Add questions within this section
       for (const q of section.questions || []) {
-        if (q.type === "info") {
-          elements.push({
-            type: "info",
-            description: q.instruction_text || "",
-          });
-        } else {
+     
           elements.push({
             type: "question",
             question_type: q.type,
             question_text: q.question_text || "",
             options: Array.isArray(q.options) ? q.options : [],
-            instruction_text: q.instruction_text || "",
           });
-        }
+        
       }
     }
 

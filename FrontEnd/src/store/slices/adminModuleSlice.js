@@ -6,7 +6,7 @@ export const adminfetchContent = createAsyncThunk(
   'adminModule/fetchContent',
   async (filters, { rejectWithValue }) => {
     try {
-      const response = await api.get('api/admin/getContent', { params: filters });
+      const response = await api.get('api/admin/getModules', { params: filters });
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -18,9 +18,7 @@ export const adminfetchContentById = createAsyncThunk(
   'adminModule/fetchContentById',
   async (id, { rejectWithValue }) => {
     try {
-      // console.log(id)
       const response = await api.get(`/api/admin/getContentById/${id}`);
-      console.log(response.data.data);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -32,7 +30,6 @@ export const admincreateContent = createAsyncThunk(
   'adminModule/createContent',
   async (moduleData, { rejectWithValue }) => {
     try {
-      // Do not set Content-Type here!
       const response = await api.post('/api/admin/createModule', moduleData,{headers:{'Content-Type':'multipart/form-data'}});
       return response.data.data;
     } catch (error) {
@@ -46,7 +43,6 @@ export const adminupdateContent = createAsyncThunk(
   async ({ id, updatedData }, { rejectWithValue }) => {
     try {
       const response = await api.put(`/api/admin/editModule/${id}`, updatedData,{headers:{'Content-Type':'multipart/form-data'}});
-      // console.log(response.data.data)
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -70,8 +66,7 @@ export const adminbulkDeleteContent = createAsyncThunk(
   'adminModule/bulkDeleteContent',
   async (ids, { rejectWithValue }) => {
     try {
-      const response = await api.delete(`/api/admin/bulkDeleteModule`, { data: ids });
-      // console.log(response.data.data)
+      const response = await api.delete(`/api/admin/bulkDeleteModule`, { data: ids });  
       return ids;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -89,7 +84,7 @@ export const adminenhanceText = createAsyncThunk(
       }
     }
   );
-// Content slice
+
 const adminModuleSlice = createSlice({
   name: 'adminModule',
   initialState: {
@@ -111,7 +106,6 @@ const adminModuleSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch content
       .addCase(adminfetchContent.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -119,8 +113,6 @@ const adminModuleSlice = createSlice({
       .addCase(adminfetchContent.fulfilled, (state, action) => {
         state.loading = false;
         state.items = action.payload;
-        // console.log(action.payload);
-        
         state.totalCount = action.payload.totalCount;
       })
       .addCase(adminfetchContent.rejected, (state, action) => {
@@ -138,7 +130,6 @@ const adminModuleSlice = createSlice({
         state.loading = false;
         state.error = action.payload?.message || 'Failed to fetch content by id';
       })
-      // Create content
       .addCase(admincreateContent.pending, (state) => {
         state.loading = true;
         state.uploading = true;
@@ -153,8 +144,6 @@ const adminModuleSlice = createSlice({
         state.uploading = false;
         state.error = action.payload?.message || 'Failed to create content';
       })
-      
-      // Update content
       .addCase(adminupdateContent.pending, (state) => {
         state.loading = true;
       })
@@ -169,8 +158,6 @@ const adminModuleSlice = createSlice({
         state.loading = false;
         state.error = action.payload?.message || 'Failed to update content';
       })
-      
-      // Delete content
       .addCase(admindeleteContent.pending, (state) => {
         state.loading = true;
       })

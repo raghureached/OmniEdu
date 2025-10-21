@@ -19,8 +19,7 @@ const surveySchema = new mongoose.Schema({
     type: [mongoose.Schema.Types.ObjectId],
     ref:"GlobalSurveySection"
     },
-  feedback: { type: mongoose.Schema.Types.ObjectId, ref: "GlobalSurveyFeedback", default: null },
-
+  
   // Tagging and configuration (aligns with controllers and frontend)
   tags: { type: [String], default: [] },              // create endpoint requires tags; you can set required: true if you want DB-level enforcement
                      // can set required: true if desired
@@ -31,7 +30,7 @@ const surveySchema = new mongoose.Schema({
   // Status and meta
   status: {
     type: String,
-    enum: ["Published", "Draft", "Archived"],
+    enum: ["Published", "Draft", "Saved"],
     default: "Draft",
   },
 

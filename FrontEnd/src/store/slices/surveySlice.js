@@ -108,7 +108,7 @@ export const fetchSurveys = createAsyncThunk(
     try {
       const response = await api.get("/api/globalAdmin/getSurveys", { params: { page, limit } });
       // backend returns { success, message, data: surveys, pagination }
-      
+     
       return { list: response.data.data, pagination: response.data.pagination };
     } catch (error) {
       return rejectWithValue(error.response?.data || "Failed to fetch surveys");
@@ -121,6 +121,7 @@ export const createSurvey = createAsyncThunk(
   async (surveyData, { rejectWithValue }) => {
     try {
       const response = await api.post("/api/globalAdmin/createSurvey", surveyData);
+     
       return response.data.data; // survey with uuid from backend
     } catch (error) {
       return rejectWithValue(error.response?.data || "Failed to create survey");
@@ -132,10 +133,39 @@ export const updateSurvey = createAsyncThunk(
   "surveys/updateSurvey",
   async ({ uuid, data }, { rejectWithValue }) => {
     try {
+      //console.log('🔄 updateSurvey thunk called with:', { uuid, data });
       const response = await api.put(`/api/globalAdmin/editSurvey/${uuid}`, data);
-      return response.data.data.updatedSurvey; // backend returns { updatedSurvey, questions }
+      //console.log('✅ updateSurvey API response:', response.data);
+
+      if (!response.data) {
+        throw new Error('Empty response from server');
+      }
+
+      if (!response.data.data) {
+        console.error('❌ No data field in response:', response.data);
+        throw new Error('Invalid response structure: missing data field');
+      }
+
+      // Handle both response formats: with and without updatedSurvey wrapper
+      let result;
+      if (response.data.data.updatedSurvey) {
+        result = response.data.data.updatedSurvey;
+       // console.log('✅ Using updatedSurvey field:', result);
+      } else {
+        // Backend returns survey data directly in data field
+        result = response.data.data;
+        //console.log('✅ Using data field directly:', result);
+      }
+
+      if (!result || typeof result !== 'object') {
+        throw new Error('Invalid survey data returned from server');
+      }
+
+     // console.log('✅ updateSurvey returning:', result);
+      return result;
     } catch (error) {
-      return rejectWithValue(error.response?.data || "Failed to update survey");
+      //console.error('❌ updateSurvey thunk error:', error);
+      return rejectWithValue(error.response?.data || error.message || "Failed to update survey");
     }
   }
 );
@@ -208,6 +238,7 @@ const surveySlice = createSlice({
       .addCase(createSurvey.fulfilled, (state, action) => {
         state.creating = false;
         state.surveys.push(action.payload);
+       
       })
       .addCase(createSurvey.rejected,(state) => {
         state.creating = false;

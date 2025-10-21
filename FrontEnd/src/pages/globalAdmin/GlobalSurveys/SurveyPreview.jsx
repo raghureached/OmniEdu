@@ -15,8 +15,8 @@ const SurveyPreview = ({
     const [showSubmissionPopup, setShowSubmissionPopup] = useState(false);
     const [surveyStartTime, setSurveyStartTime] = useState(null);
     const [elapsedTime, setElapsedTime] = useState(0);
-
-    // Build sections from formElements similar to Google Forms: a section header splits pages
+    const [showUnansweredHighlight, setShowUnansweredHighlight] = useState(false);
+    const [highlightedUnansweredQuestions, setHighlightedUnansweredQuestions] = useState(new Set());
     const builtSections = React.useMemo(() => {
         if (!Array.isArray(formElements)) {
             return [{ title: formData?.title || '', description: formData?.description || '', items: [] }];
@@ -121,6 +121,13 @@ const SurveyPreview = ({
             // Navigate to the section containing the first unanswered question
             setSectionPreviewIndex(targetSectionIndex);
 
+            // Highlight ALL unanswered questions across ALL sections
+            const allUnansweredKeys = unansweredQuestions.map(uq => uq.questionKey);
+            setHighlightedUnansweredQuestions(new Set(allUnansweredKeys));
+
+            // Enable highlighting display
+            setShowUnansweredHighlight(true);
+
             // Show concise alert indicating navigation to unanswered question
             const totalUnanswered = unansweredQuestions.length;
             const questionWord = totalUnanswered === 1 ? 'question' : 'questions';
@@ -130,12 +137,18 @@ const SurveyPreview = ({
 
         // All questions answered, show submission popup
         setShowSubmissionPopup(true);
+        // Clear highlighting since all questions are answered
+        setShowUnansweredHighlight(false);
+        setHighlightedUnansweredQuestions(new Set());
     };
 
     // Start timer when survey preview opens
     React.useEffect(() => {
         if (isOpen && !surveyStartTime) {
             setSurveyStartTime(Date.now());
+            // Reset highlighting state when preview opens
+            setShowUnansweredHighlight(false);
+            setHighlightedUnansweredQuestions(new Set());
         }
 
         if (isOpen && surveyStartTime && !showSubmissionPopup) {
@@ -147,14 +160,40 @@ const SurveyPreview = ({
         }
     }, [isOpen, surveyStartTime, showSubmissionPopup]);
 
-    // Reset timer when modal closes
+    // Update highlighting based on current responses (only when showUnansweredHighlight is true)
     React.useEffect(() => {
-        if (!isOpen) {
-            setSurveyStartTime(null);
-            setElapsedTime(0);
-            setShowSubmissionPopup(false);
+        if (!showUnansweredHighlight) {
+            return;
         }
-    }, [isOpen]);
+
+        const unansweredKeys = new Set();
+
+        builtSections.forEach((section, sectionIndex) => {
+            section.items.forEach((el, itemIndex) => {
+                if (el.type === 'question') {
+                    const qKey = el.uuid || el._id || `sec-${sectionIndex}-q-${itemIndex}`;
+                    const response = previewResponses[qKey];
+
+                    // Check if question is unanswered based on type
+                    if (el.question_type === 'Multiple Choice') {
+                        if (response === undefined || response === null) {
+                            unansweredKeys.add(qKey);
+                        }
+                    } else if (el.question_type === 'Multi Select') {
+                        if (!response || (Array.isArray(response) && response.length === 0)) {
+                            unansweredKeys.add(qKey);
+                        }
+                    } else if (el.question_type === 'Short Answer' || el.question_type === 'Paragraph') {
+                        if (!response || response.trim() === '') {
+                            unansweredKeys.add(qKey);
+                        }
+                    }
+                }
+            });
+        });
+
+        setHighlightedUnansweredQuestions(unansweredKeys);
+    }, [previewResponses, builtSections, showUnansweredHighlight]);
 
     if (!isOpen) return null;
 
@@ -237,8 +276,12 @@ const SurveyPreview = ({
                                             }
                                             questionNumber += idx + 1; // Add current question position in this section
 
+                                            // Check if this question is highlighted as unanswered
+                                            const qKey = el.uuid || el._id || `sec-${sectionPreviewIndex}-q-${idx}`;
+                                            const isUnanswered = showUnansweredHighlight && highlightedUnansweredQuestions.has(qKey);
+
                                             return (
-                                            <div className="survey-gforms-card">
+                                            <div className={`survey-gforms-card ${isUnanswered ? 'survey-unanswered-question' : ''}`}>
                                                 <div className="survey-gforms-card-body">
                                                     {/* Instructions (HTML) */}
                                                     {/* { (
@@ -253,12 +296,22 @@ const SurveyPreview = ({
                                                             {el.question_type === 'Multi Select' ? 'Select all that apply' : 'Select one'}
                                                         </p>
                                                     )}
-                                                    <div className="survey-gforms-question-title">
+                                                    <div className={`survey-gforms-question-title ${isUnanswered ? 'survey-unanswered-title' : ''}`}>
                                                         <span style={{  marginRight: '8px', color: 'black' }}>
                                                             Q{questionNumber}.
                                                         </span>
                                                         {el.question_text || '—'}
                                                         <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>
+                                                        {isUnanswered && (
+                                                            <span style={{
+                                                                color: '#ef4444',
+                                                                fontSize: '0.8rem',
+                                                                marginLeft: '8px',
+                                                                fontWeight: 'bold'
+                                                            }}>
+                                                                (Unanswered)
+                                                            </span>
+                                                        )}
                                                     </div>
                                                    
                                                     {(el.question_type === 'Multiple Choice' || el.question_type === 'Multi Select') && Array.isArray(el.options) && el.options.length > 0 && (
@@ -312,6 +365,11 @@ const SurveyPreview = ({
                                                                 onChange={(e) => {
                                                                     const qKey = el.uuid || el._id || `sec-${sectionPreviewIndex}-q-${idx}`;
                                                                     setPreviewResponses(prev => ({ ...prev, [qKey]: e.target.value }));
+
+                                                                    // Handle re-highlighting when question becomes unanswered again (only if highlighting is active)
+                                                                    if (showUnansweredHighlight && !e.target.value.trim()) {
+                                                                        setHighlightedUnansweredQuestions(current => new Set(current).add(qKey));
+                                                                    }
                                                                 }}
                                                                 rows={el.question_type === 'Paragraph' ? 4 : 2}
                                                             />

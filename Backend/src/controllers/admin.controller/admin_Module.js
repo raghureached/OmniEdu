@@ -234,6 +234,34 @@ const deleteModule = async (req, res) => {
     })
   }
 }
+const getModules = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 50;
+    const skip = (page - 1) * limit;
+    const content = await OrganizationModule.find().populate("team").skip(skip).limit(limit)
+    const total = await OrganizationModule.countDocuments()
+    // await logGlobalAdminActivity(req,"Get Content","content", `Content fetched successfully ${content.title}`)
+    return res.status(200).json({
+      success: true,
+      message: 'Modules fetched successfully.',
+      data: content,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page * limit < total
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch modules.',
+      error: error.message
+    });
+  }
+};
 
 module.exports = {
   addModule,
@@ -241,5 +269,6 @@ module.exports = {
   editModule,
   deleteModule,
   getModuleById,
-  bulkDelete
+  bulkDelete,
+  getModules
 }

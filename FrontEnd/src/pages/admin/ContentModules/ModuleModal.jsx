@@ -58,7 +58,7 @@ const ModuleModal = ({
     useEffect(() => {
         const fetchTeams = async () => {
             try {
-                const response = await api.get('/api/globalAdmin/getTeams');
+                const response = await api.get('/api/admin/getGroups');
                 setTeams(response.data.data);
                 // console.log(response.data.data);
             } catch (error) {
@@ -77,7 +77,6 @@ const ModuleModal = ({
         }
     }, [newContent.externalResource]);
 
-    /* Learning Outcomes handlers */
     const addLearningOutcome = () => {
         const newOutcomes = [...learningOutcomes, ''];
         setLearningOutcomes(newOutcomes);
@@ -107,7 +106,6 @@ const ModuleModal = ({
         }
         setAiProcessing(true)
         dispatch(enhanceText({ title, description })).then((res) => {
-            // console.log(res.payload)
             handleInputChange({ target: { name: 'title', value: res.payload.title } });
             handleInputChange({ target: { name: 'description', value: res.payload.description } });
             handleInputChange({ target: { name: 'tags', value: res.payload.tags } });
@@ -129,7 +127,6 @@ const ModuleModal = ({
         }
         setGeneratingImage(true)
         dispatch(generateImage({ title, description })).then((res) => {
-            // console.log(res)
             handleInputChange({ target: { name: 'thumbnail', value: res.payload.thumbnail } });
         }).finally(() => {
             setGeneratingImage(false)
@@ -148,7 +145,6 @@ const ModuleModal = ({
         }
     };
 
-    /* Tag input handlers */
     const handleTagInputChange = (e) => setTagInput(e.target.value);
     const addTag = () => {
         const trimmedTag = tagInput.trim();
@@ -178,15 +174,12 @@ const ModuleModal = ({
 
             const moduleData = {
                 ...newContent,
-                id: Date.now(), // temporary id
+                id: Date.now(),
                 status: "Draft",
                 createdDate: new Date().toISOString(),
             };
-
-            // console.log(moduleData)
-            // ✅ Dispatch or API call with formData
             dispatch(admincreateContent(moduleData)).then(() => {
-                setShowModal(false);
+                // setShowModal(false);
             });
         } catch (err) {
             console.error("Error uploading content:", err);
@@ -198,8 +191,6 @@ const ModuleModal = ({
     const handleEditContent = () => {
         dispatch(adminupdateContent({ id: editContentId, updatedData: newContent }));
         setShowEditModal(false);
-        // setEditContentId(null);
-        // setNewContent({});
     };
     /* File Preview (Modal) */
     const getFileType = (file, url) => {
@@ -242,8 +233,6 @@ const ModuleModal = ({
     };
     const handleSaveDraft = () => {
         const confirm = window.confirm("The files will be removed when you save the draft")
-        //ok or cancel
-
         if (confirm) {
             if (!drafts) {
                 const drafts = [];
@@ -486,8 +475,6 @@ const ModuleModal = ({
                                         <Plus size={16} /> Upload File
                                     </label>
                                 )}
-
-
                             </div>
                         </div>
                     )}

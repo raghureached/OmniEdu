@@ -6,7 +6,7 @@ import { fetchContent } from '../../../store/slices/contentSlice';
 import { createGlobalAssignment } from '../../../store/slices/globalAssignmentSlice';
 import { fetchGlobalAssessments, updateGlobalAssessment } from '../../../store/slices/globalAssessmentSlice';
 import { fetchOrganizations } from '../../../store/slices/organizationSlice';
-import { fetchSurveys } from '../../../store/slices/surveySlice';
+import { fetchSurveys, updateSurvey, getSurveyById } from '../../../store/slices/surveySlice';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 
@@ -73,12 +73,29 @@ const GlobalCreateAssignment = () => {
         try {
             // Create the assignment first
             await dispatch(createGlobalAssignment(formData)).unwrap();
-            // If the content is an Assessment, publish it
-            if (formData.contentType === 'Assessment' && formData.contentId) {
-                const id = formData.contentId; // uuid
-                await dispatch(updateGlobalAssessment({ id, data: { status: 'Published' } })).unwrap();
-                // Optionally refresh assessments list
-                dispatch(fetchGlobalAssessments());
+
+            // Publish the content if it's an Assessment or Survey
+            if (formData.contentId) {
+                if (formData.contentType === 'Assessment') {
+                    const id = formData.contentId; // uuid
+                    await dispatch(updateGlobalAssessment({ id, data: { status: 'Published' } })).unwrap();
+                    // Optionally refresh assessments list
+                    dispatch(fetchGlobalAssessments());
+                } else if (formData.contentType === 'Survey') {
+                    const id = formData.contentId; // uuid
+                    // First fetch the current survey data
+                    const currentSurvey = await dispatch(getSurveyById(id)).unwrap();
+                    // Update with published status while keeping other fields
+                    await dispatch(updateSurvey({
+                        uuid: id,
+                        data: {
+                            ...currentSurvey,
+                            status: 'Published'
+                        }
+                    })).unwrap();
+                    // Optionally refresh surveys list
+                    dispatch(fetchSurveys());
+                }
             }
         } catch (err) {
             // swallow here; existing slice handles error state
