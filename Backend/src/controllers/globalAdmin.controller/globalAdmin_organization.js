@@ -6,6 +6,7 @@ const Role = require("../../models/globalRoles_model");
 const OrganizationRole = require("../../models/organizationRoles_model");
 const mongoose = require("mongoose");
 const User = require("../../models/users_model");
+const UserProfile = require("../../models/userProfiles_model");
 
 const STATUS_ENUM = ["Active", "Inactive", "Suspended"];
 
@@ -119,16 +120,19 @@ const addOrganization = async (req, res) => {
         roles:roles.map(role=>role._id)
       }], { session,ordered:true });
   
-      const org = Array.isArray(newOrg) ? newOrg[0] : newOrg;
-  
-      
+      const org = Array.isArray(newOrg) ? newOrg[0] : newOrg; 
       const password = name.toLowerCase().replace(/\s/g, "").slice(0, 6) + "@123";
-      await User.create([{
+      const user = await User.create([{
         name,
         email,
         password,
         global_role_id: "68c67caae94bfd6484cd0d00",
-      }], { session,ordered:true });
+      }], { session,ordered:true })
+      const userProfile = new UserProfile({
+        user_id: user[0]._id,
+        organization_id: org._id,
+      })
+      await userProfile.save({ session });
   
       await session.commitTransaction();
       await session.endSession();

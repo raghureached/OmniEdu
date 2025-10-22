@@ -15,13 +15,11 @@ const userProfileSchema = new mongoose.Schema(
       required: true,
     },
     designation_id: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Designation",
-      required: true,
     },
     organization_roles_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "OrganizationRole",
     },
     organization_id: {
       type: mongoose.Schema.Types.ObjectId,
@@ -31,12 +29,10 @@ const userProfileSchema = new mongoose.Schema(
     team_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Team",
-      required: true,
     },
     sub_team_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "SubTeam",
-      required: true,
     },
     custom_group_id: {
       type: mongoose.Schema.Types.ObjectId,

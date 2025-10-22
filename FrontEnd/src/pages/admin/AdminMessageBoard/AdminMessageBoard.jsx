@@ -1,31 +1,29 @@
 import React, { useEffect, useState } from "react";
 import "./AdminMessageBoard.css";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchMessages, deleteMessage, sendMessage } from "../../../store/slices/globalMessageSlice";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import CustomLoader from "../../../components/common/Loading/CustomLoader";
+import { deleteAdminMessage, fetchAdminMessage, updateAdminMessage } from "../../../store/slices/adminMessageSlice";
 
 const AdminMessageBoard = () => {
   const [newMessage, setNewMessage] = useState("");
-  const [orgId,setOrgId] = useState(null)
   const dispatch = useDispatch();
 
   const { currentMessages, loading,posting, error } = useSelector(
-    (state) => state.globalMessage
+    (state) => state.adminMessages
   );
-  const {organizations} = useSelector((state) => state.organizations);
 
   useEffect(() => {
-    dispatch(fetchMessages(orgId));
-  }, [dispatch,orgId]);
+    dispatch(fetchAdminMessage());
+  }, [dispatch]);
 
   const handlePostMessage = () => {
-  if (newMessage.trim() === "" || !orgId) {
+  if (newMessage.trim() === "") {
     toast.error("Please select an organization and write a message.");
     return;
   }
-  dispatch(sendMessage({ messageText: newMessage, orgId }));
+  dispatch(updateAdminMessage(newMessage));
   setNewMessage("");
   toast.success("Message posted!");
 };
@@ -33,7 +31,7 @@ const AdminMessageBoard = () => {
 
   const handleDeleteMessage = (id) => {
     // console.log(id)
-    dispatch(deleteMessage(id));
+    dispatch(deleteAdminMessage(id));
     toast.info("Message deleted");
   };
 
@@ -47,9 +45,6 @@ const AdminMessageBoard = () => {
 
   return (
     <div className="message-board">
-      <div className="message-board-form" style={{display: "flex", flexDirection: "row", alignItems: "center",justifyContent:"center",gap:"20px"}}>
-      </div>
-      
       {/* Input Box */}
       <div className="message-input-box">
         <textarea
@@ -60,13 +55,12 @@ const AdminMessageBoard = () => {
         <button
           className="post-btn"
           onClick={handlePostMessage}
-          disabled={posting || loading || orgId === null || newMessage === "" || orgId === ""}
+          disabled={posting || loading  || newMessage === ""}
         >
           {posting ? "Posting..." : "Post"}
         </button>
       </div>
 
-      {error && <div className="error">Error: {error}</div>}
 
       {/* Messages */}
       {loading ? <CustomLoader text="Loading messages..." /> : <div className="messages-list">
@@ -95,7 +89,7 @@ const AdminMessageBoard = () => {
             </div>
           ))
         ) : (
-          <div className="no-messages">{orgId && currentMessages.length === 0 ? "No messages yet" : "Select an organization to see messages"}</div>
+          <div className="no-messages">No messages yet</div>
         )}
       </div>}
 

@@ -13,7 +13,8 @@ import {
 import AdminForm from '../../../components/common/AdminForm/AdminForm';
 import GroupsTable from './components/GroupsTable';
 import GroupsFilter from './components/GroupsFilter';
-import './GroupsManagement.css';
+// Reuse OrganizationManagement styles for consistent look & feel
+import '../../globalAdmin/OrganizationManagement/OrganizationManagement.css';
 
 const GroupsManagement = () => {
   const dispatch = useDispatch();
@@ -265,52 +266,57 @@ const GroupsManagement = () => {
   }
   
   return (
-    <div className="groups-management">
-      
-      <GroupsFilter 
-        groups={filteredGroups}
-        onFilter={handleFilter}
-        handleCreateGroup={handleCreateGroup}
-        handleImportGroups={handleImportGroups}
-        handleExportGroups={handleExportGroups}
-        handleBulkDelete={handleBulkDelete}
-        selectedGroups={selectedGroups}
-        onClearFilter={handleClearFilter}
-      />
-      
-      {showForm && (
-        <div className="groups-management-form-overlay">
-          <AdminForm
-            title={currentGroup ? 'Edit Group' : 'Add New Group'}
-            fields={groupFormFields}
-            initialValues={currentGroup || {}}
-            onSubmit={handleFormSubmit}
-            onCancel={handleFormCancel}
-            isLoading={loading}
+    <div className="app-container">
+      <div className="main-content">
+        <div className="page-content">
+          <GroupsFilter
+            groups={filteredGroups}
+            onFilter={handleFilter}
+            handleCreateGroup={handleCreateGroup}
+            handleImportGroups={handleImportGroups}
+            handleExportGroups={handleExportGroups}
+            handleBulkDelete={handleBulkDelete}
+            selectedGroups={selectedGroups}
+            onClearFilter={handleClearFilter}
           />
+
+          {showForm && (
+            <div className="modal-overlay">
+              <div className="modal-content">
+                <AdminForm
+                  title={currentGroup ? 'Edit Group' : 'Add New Group'}
+                  fields={groupFormFields}
+                  initialValues={currentGroup || {}}
+                  onSubmit={handleFormSubmit}
+                  onCancel={handleFormCancel}
+                  isLoading={loading}
+                />
+              </div>
+            </div>
+          )}
+
+          {loading && !showForm ? (
+            <div className="groups-management-loading">
+              <div className="groups-management-loading-spinner"></div>
+              <p>Loading groups...</p>
+            </div>
+          ) : (
+            <GroupsTable
+              groups={currentItems}
+              selectedGroups={selectedGroups}
+              handleSelectGroup={handleSelectGroup}
+              selectAll={selectAll}
+              handleSelectAll={handleSelectAll}
+              handleEditGroup={handleEditGroup}
+              handleDeleteGroup={handleDeleteGroup}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              handlePageChange={handlePageChange}
+              pageNumbers={pageNumbers}
+            />
+          )}
         </div>
-      )}
-      
-      {loading && !showForm ? (
-        <div className="groups-management-loading">
-          <div className="groups-management-loading-spinner"></div>
-          <p>Loading groups...</p>
-        </div>
-      ) : (
-        <GroupsTable 
-          groups={currentItems}
-          selectedGroups={selectedGroups}
-          handleSelectGroup={handleSelectGroup}
-          selectAll={selectAll}
-          handleSelectAll={handleSelectAll}
-          handleEditGroup={handleEditGroup}
-          handleDeleteGroup={handleDeleteGroup}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          handlePageChange={handlePageChange}
-          pageNumbers={pageNumbers}
-        />
-      )}
+      </div>
     </div>
   );
 };

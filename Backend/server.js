@@ -38,7 +38,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/globalAdmin',authenticate,authorize(['GlobalAdmin']),globalAdminRouter)
 // app.use('/api/globalAdmin',globalAdminRouter)
 app.use('/auth',authRouter)
-app.use('/api/admin',adminRouter)
+app.use('/api/admin',authenticate,authorize(['Administrator']),adminRouter)
 // app.use('/api/admin',adminRouter)
 app.use('/dev',devRouter)
 // app.use('/api/user',authenticate,authorize(['User']),userRouter)

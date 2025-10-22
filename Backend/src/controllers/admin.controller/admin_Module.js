@@ -1,6 +1,7 @@
 const OrganizationModule = require("../../models/moduleOrganization_model");
 const { z } = require("zod");
 const logAdminActivity = require("./admin_activity");
+const UserProfile = require("../../models/userProfiles_model");
 
 const CONTENT_TYPES = ["PDF", "DOCX", "Theory"];
 
@@ -58,7 +59,8 @@ const addModule = async (req, res) => {
       tags,
       duration,
       created_by,
-      richText
+      richText,
+      org_id:req.user.organization_id
     });
 
     await newModule.save();
@@ -83,7 +85,8 @@ const getModule = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = 50;
     const skip = (page - 1) * limit;
-    const content = await OrganizationModule.find().populate("team").skip(skip).limit(limit)
+    const org_id = req.user.organization_id;
+    const content = await OrganizationModule.find({org_id:org_id}).populate("team").skip(skip).limit(limit)
     const total = await OrganizationModule.countDocuments()
 
     return res.status(200).json({
@@ -234,12 +237,14 @@ const deleteModule = async (req, res) => {
     })
   }
 }
+
+
 const getModules = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = 50;
     const skip = (page - 1) * limit;
-    const content = await OrganizationModule.find().populate("team").skip(skip).limit(limit)
+    const content = await OrganizationModule.find({org_id:req.user.organization_id}).populate("team").skip(skip).limit(limit)
     const total = await OrganizationModule.countDocuments()
     // await logGlobalAdminActivity(req,"Get Content","content", `Content fetched successfully ${content.title}`)
     return res.status(200).json({

@@ -3,11 +3,12 @@ const logAdminActivity = require("./admin_activity");
 const setMessage = async(req,res)=>{
     try {
         const {message,status} = req.body;
+        const created_by = req.user?._id || req.body.created_by;
         const messageSet = await ForUserMessage.create({
             message_text:message,
             status,
-            organization_id:"68bc0898fdb4a64d5a727a60",
-            created_by:"68bc1d953f117b638adf49dc"
+            organization_id:req.user.organization_id,
+            created_by
         })
         await logAdminActivity(req, "add", `Message set successfully: ${messageSet.message_text}`);
         return res.status(201).json({
@@ -77,7 +78,7 @@ const getMessage = async(req,res)=>{
         const page = req.query.page || 1;
         const limit = req.query.limit || 10;
         const skip = (page - 1) * limit;
-        const messages = await ForUserMessage.find().skip(skip).limit(limit)
+        const messages = await ForUserMessage.find({organization_id:req.user?.organization_id}).skip(skip).limit(limit)
         return res.status(200).json({
             isSuccess:true,
             message:"Messages fetched successfully",

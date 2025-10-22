@@ -7,7 +7,7 @@ import RichText from './RichTextSurvey.jsx';
 import PreviewCard from '../../../components/common/PreviewCard/PreviewCard.jsx';
 
 import AssessmentPreview from '../../../components/common/Preview/AssessmentPreview.jsx';
-import CsvUpload from '../GlobalAssessments/CsvUpload.jsx';
+import CsvUpload from './CsvUpload.jsx';
 import { useSelector } from 'react-redux';
 const QuestionsForm = ({
     currentAssessment,

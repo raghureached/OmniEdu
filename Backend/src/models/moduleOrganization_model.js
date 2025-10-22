@@ -14,6 +14,11 @@ const moduleSchema = new mongoose.Schema(
         required: true,
         trim: true,
       },
+      org_id:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Organization",
+        default: null,
+      },
       tags:{
         type: [String],
         default: []
@@ -93,7 +98,7 @@ const moduleSchema = new mongoose.Schema(
       },
       created_by: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "GlobalAdmin",
+        ref: "User",
         default: null,
       },
       thumbnail: {

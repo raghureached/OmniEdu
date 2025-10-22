@@ -6,8 +6,8 @@ export const fetchAdminMessage = createAsyncThunk(
   'AdminMessage/fetchMessage',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('api/admin/message');
-      return response.data;
+      const response = await api.get('/api/admin/getMessages');
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -19,7 +19,7 @@ export const updateAdminMessage = createAsyncThunk(
   async (messageText, { rejectWithValue }) => {
     try {
       const response = await api.post('/api/admin/setMessage', { message: messageText });
-      return response.data;
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -31,7 +31,7 @@ export const deleteAdminMessage = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
 
-      await api.delete('/api/admin/deleteMessage', { data: { id } });
+      await api.delete(`/api/admin/deleteMessage/${id}`);
       return id;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -40,9 +40,9 @@ export const deleteAdminMessage = createAsyncThunk(
 );
 
 const messageSlice = createSlice({
-  name: 'message',
+  name: 'adminMessages',
   initialState: {
-    currentMessage: '',
+    currentMessages: [],
     loading: false,
     error: null,
     posting:false
@@ -56,7 +56,7 @@ const messageSlice = createSlice({
       })
       .addCase(fetchAdminMessage.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentMessage = action.payload;
+        state.currentMessages = action.payload;
       })
       .addCase(fetchAdminMessage.rejected, (state, action) => {
         state.loading = false;
@@ -69,7 +69,8 @@ const messageSlice = createSlice({
       })
       .addCase(updateAdminMessage.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentMessage = action.payload;
+        console.log(action.payload)
+        state.currentMessages.push(action.payload);
         state.posting=false
       })
       .addCase(updateAdminMessage.rejected, (state, action) => {
@@ -82,7 +83,7 @@ const messageSlice = createSlice({
       })
       .addCase(deleteAdminMessage.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentMessage = action.payload;
+        state.currentMessages = state.currentMessages.filter((msg) => msg.uuid !== action.payload);
       })
       .addCase(deleteAdminMessage.rejected, (state, action) => {
         state.loading = false;
