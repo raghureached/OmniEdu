@@ -1,5 +1,5 @@
-const GlobalAssessment = require("../../models/globalAssessments_model")
-const GlobalQuestion = require("../../models/globalQuestions_model")
+const AdminAssessment = require("../../models/adminAssessments_model")
+const AdminQuestion = require("../../models/adminQuestions_model")
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -135,7 +135,7 @@ const createAssessment = async (req, res) => {
           return res.status(400).json({ success: false, message: `Question ${index}: correct_option indexes out of range for provided options` });
         }
         // console.log(req.uploadedFiles)
-        const newQuestion = new GlobalQuestion({
+        const newQuestion = new AdminQuestion({
           question_text: q.question_text.trim(),
           type,
           options,
@@ -149,7 +149,7 @@ const createAssessment = async (req, res) => {
       }
 
       // Create assessment using the saved question ids
-      const newAssessment = new GlobalAssessment({
+      const newAssessment = new AdminAssessment({
         title,
         description,
         tags,
@@ -175,7 +175,7 @@ const createAssessment = async (req, res) => {
 
       const savedAssessment = await newAssessment.save();
 
-      const populatedAssessment = await GlobalAssessment.findById(savedAssessment._id)
+      const populatedAssessment = await AdminAssessment.findById(savedAssessment._id)
         .populate('questions');
 
       res.status(201).json({
@@ -232,7 +232,7 @@ const createAssessment = async (req, res) => {
 //         if (normalizedCorrect.some(n => n < 0 || n > maxIndex))
 //           throw new Error(`Question ${index}: correct_option out of range`);
   
-//         const newQuestion = new GlobalQuestion({
+//         const newQuestion = new AdminQuestion({
 //           question_text: q.question_text.trim(),
 //           type,
 //           options,
@@ -245,7 +245,7 @@ const createAssessment = async (req, res) => {
 //         questionIds.push(savedQuestion._id);
 //       }
   
-//       const newAssessment = new GlobalAssessment({
+//       const newAssessment = new AdminAssessment({
 //         title,
 //         description,
 //         tags,
@@ -273,7 +273,7 @@ const createAssessment = async (req, res) => {
 //       await session.commitTransaction();
 //       session.endSession();
   
-//       const populatedAssessment = await GlobalAssessment.findById(savedAssessment._id).populate("questions");
+//       const populatedAssessment = await AdminAssessment.findById(savedAssessment._id).populate("questions");
 //       res.status(201).json({
 //         success: true,
 //         message: "Assessment created successfully",
@@ -291,9 +291,9 @@ const createAssessment = async (req, res) => {
 
 
 
-const csv = require("csv-parser");
-const GlobalAssesmentSection = require("../../models/globalAssesment_section_model");
-const GlobalAssessments = require("../../models/globalAssessments_model");
+// const csv = require("csv-parser");
+// const GlobalAssesmentSection = require("../../models/globalAssesment_section_model");
+// const GlobalAssessments = require("../../models/globalAssessments_model");
 
 
 const uploadAssessmentCSV = async (req, res) => {
@@ -380,7 +380,7 @@ const uploadAssessmentCSV = async (req, res) => {
                     }
 
                     // Save valid questions
-                    const savedQuestions = await GlobalQuestion.insertMany(questions, { ordered: false });
+                    const savedQuestions = await AdminQuestion.insertMany(questions, { ordered: false });
 
                     // Parse tags from body (array or comma-separated string)
                     let tags = [];
@@ -391,7 +391,7 @@ const uploadAssessmentCSV = async (req, res) => {
                     }
 
                     // Create assessment
-                    const assessment = new GlobalAssessment({
+                    const assessment = new AdminAssessment({
                         title: req.body.title || "Untitled Assessment",
                         description: req.body.description || "",
                         questions: savedQuestions.map((q) => q._id),
@@ -441,7 +441,7 @@ const getAssessments = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 50;
-        const assessments = await GlobalAssessment.find().skip((page - 1) * limit).limit(limit).populate("questions")
+        const assessments = await AdminAssessment.find().skip((page - 1) * limit).limit(limit).populate("questions")
         return res.status(200).json({
             isSuccess: true,
             message: "Assessments fetched successfully",
@@ -449,7 +449,7 @@ const getAssessments = async (req, res) => {
             pagination: {
                 page,
                 limit,
-                total: await GlobalAssessment.countDocuments()
+                total: await AdminAssessment.countDocuments()
             }
         })
     } catch (error) {
@@ -464,7 +464,7 @@ const getAssessments = async (req, res) => {
 
 const getQuestions = async (req, res) => {
     try {
-        const questions = await GlobalAssessment.findOne({ uuid: req.params.id }).populate("questions")
+        const questions = await AdminAssessment.findOne({ uuid: req.params.id }).populate("questions")
         const { page = 1, limit = 50 } = req.query
         const paginatedQuestions = questions.questions.slice((page - 1) * limit, page * limit)
         return res.status(200).json({
@@ -488,7 +488,7 @@ const getQuestions = async (req, res) => {
 const getQuestionsRandom = async (req, res) => {
     try {
         const { noOfQuestions } = req.query
-        const questions = await GlobalAssessment.findOne({ uuid: req.params.id }).populate("questions")
+        const questions = await AdminAssessment.findOne({ uuid: req.params.id }).populate("questions")
 
         if (!questions || !questions.questions) {
             return res.status(404).json({
@@ -552,7 +552,7 @@ const getQuestionsRandom = async (req, res) => {
 
 const getAssessmentById = async (req, res) => {
     try {
-        const assessment = await GlobalAssessment.findOne({ uuid: req.params.id }).populate("questions")
+        const assessment = await AdminAssessment.findOne({ uuid: req.params.id }).populate("questions")
         return res.status(200).json({
             isSuccess: true,
             message: "Assessment fetched successfully",
@@ -598,7 +598,7 @@ const editAssessment = async (req, res) => {
             ...(typeof req.body.thumbnail_url === 'string' ? { thumbnail_url: req.body.thumbnail_url } : {}),
         };
 
-        let assessment = await GlobalAssessment.findOneAndUpdate(
+        let assessment = await AdminAssessment.findOneAndUpdate(
             { uuid: req.params.id },
             updateDoc,
             { new: true }
@@ -640,7 +640,7 @@ const editAssessment = async (req, res) => {
 
                             const instructions = typeof q.instructions === 'string' ? q.instructions : '';
 
-                            const newQuestion = new GlobalQuestion({
+                            const newQuestion = new AdminQuestion({
                                 type: q.type.trim(),
                                 question_text: q.question_text.trim(),
                                 file_url: q.file_url?.trim() || null,
@@ -666,7 +666,7 @@ const editAssessment = async (req, res) => {
                     // Fetch options if not provided (so we can validate bounds)
                     let options = Array.isArray(q.options) ? q.options : undefined;
                     if (!options) {
-                        const existing = await GlobalQuestion.findOne({ uuid: id });
+                        const existing = await AdminQuestion.findOne({ uuid: id });
                         options = existing ? existing.options : [];
                     }
 
@@ -676,7 +676,7 @@ const editAssessment = async (req, res) => {
 
                     // Enforce counts (only if correct_option was provided)
                     if (q.correct_option !== undefined) {
-                        const effectiveType = type || (await GlobalQuestion.findOne({ uuid: id }))?.type || 'Multiple Choice';
+                        const effectiveType = type || (await AdminQuestion.findOne({ uuid: id }))?.type || 'Multiple Choice';
                         if (effectiveType === 'Multiple Choice') {
                             if (normalizedCorrect.length !== 1) {
                                 throw new Error('Multiple Choice must have exactly 1 correct option index');
@@ -692,12 +692,12 @@ const editAssessment = async (req, res) => {
                         }
                     }
 
-                    // Update GlobalQuestion by uuid or _id
+                    // Update AdminQuestion by uuid or _id
                     const filter = /^[0-9a-fA-F]{24}$/.test(String(id))
                         ? { _id: id }
                         : { uuid: id };
 
-                    await GlobalQuestion.findOneAndUpdate(
+                    await AdminQuestion.findOneAndUpdate(
                         filter,
                         {
                             ...(typeof q.question_text === 'string' ? { question_text: q.question_text } : {}),
@@ -710,13 +710,13 @@ const editAssessment = async (req, res) => {
                     );
 
                     // Push the ObjectId for this existing question
-                    const existingDoc = await GlobalQuestion.findOne(filter).select('_id');
+                    const existingDoc = await AdminQuestion.findOne(filter).select('_id');
                     if (existingDoc) newQuestionIds.push(existingDoc._id);
                 })
             );
 
             // After processing all questions, set the assessment's questions array to the collected ObjectIds
-            assessment = await GlobalAssessment.findOneAndUpdate(
+            assessment = await AdminAssessment.findOneAndUpdate(
                 { uuid: req.params.id },
                 { $set: { questions: newQuestionIds } },
                 { new: true }
@@ -724,7 +724,7 @@ const editAssessment = async (req, res) => {
         }
 
         // Return populated assessment so frontend can display latest question values
-        const populated = await GlobalAssessment.findOne({ uuid: req.params.id }).populate('questions');
+        const populated = await AdminAssessment.findOne({ uuid: req.params.id }).populate('questions');
 
         return res.status(200).json({
             isSuccess: true,
@@ -748,7 +748,7 @@ const editAssessment = async (req, res) => {
 //       const qPayload = Array.isArray(req.body.questions) ? req.body.questions : [];
   
 //       // Update assessment core details
-//       const assessment = await GlobalAssessment.findOneAndUpdate(
+//       const assessment = await AdminAssessment.findOneAndUpdate(
 //         { uuid: id },
 //         { ...req.body },
 //         { new: true, session }
@@ -760,10 +760,10 @@ const editAssessment = async (req, res) => {
   
 //       for (const q of qPayload) {
 //         if (q._id) {
-//           await GlobalQuestion.findByIdAndUpdate(q._id, q, { new: true, session });
+//           await AdminQuestion.findByIdAndUpdate(q._id, q, { new: true, session });
 //           newQuestionIds.push(q._id);
 //         } else {
-//           const newQ = new GlobalQuestion(q);
+//           const newQ = new AdminQuestion(q);
 //           const savedQ = await newQ.save({ session });
 //           newQuestionIds.push(savedQ._id);
 //         }
@@ -778,7 +778,7 @@ const editAssessment = async (req, res) => {
 //       await session.commitTransaction();
 //       session.endSession();
   
-//       const populated = await GlobalAssessment.findById(assessment._id).populate("questions");
+//       const populated = await AdminAssessment.findById(assessment._id).populate("questions");
 //       res.status(200).json({
 //         success: true,
 //         message: "Assessment updated successfully",
@@ -798,7 +798,7 @@ const editAssessment = async (req, res) => {
 
 // const deleteAssessment = async (req, res) => {
 //     try {
-//         const assessment = await GlobalAssessment.findOneAndDelete({ uuid: req.params.id })
+//         const assessment = await AdminAssessment.findOneAndDelete({ uuid: req.params.id })
 //         return res.status(200).json({
 //             isSuccess: true,
 //             message: "Assessment deleted successfully",
@@ -817,15 +817,15 @@ const deleteAssessment = async (req, res) => {
     session.startTransaction();
     try {
       const { id } = req.params;
-      const assessment = await GlobalAssessment.findOne({ uuid: id }).session(session);
+      const assessment = await AdminAssessment.findOne({ uuid: id }).session(session);
   
       if (!assessment) throw new Error("Assessment not found");
   
       // Delete all related questions
-      await GlobalQuestion.deleteMany({ _id: { $in: assessment.questions } }, { session });
+      await AdminQuestion.deleteMany({ _id: { $in: assessment.questions } }, { session });
   
       // Delete the assessment itself
-      await GlobalAssessment.deleteOne({ uuid: id }, { session });
+      await AdminAssessment.deleteOne({ uuid: id }, { session });
   
       await session.commitTransaction();
       session.endSession();
@@ -865,7 +865,7 @@ const editQuestion = async (req, res) => {
         }
 
         // Fetch current question (to know type/options if not provided)
-        const existing = await GlobalQuestion.findOne({ uuid: req.params.id });
+        const existing = await AdminQuestion.findOne({ uuid: req.params.id });
         if (!existing) {
             return res.status(404).json({ isSuccess: false, message: 'Question not found' });
         }
@@ -892,7 +892,7 @@ const editQuestion = async (req, res) => {
             }
         }
 
-        const question = await GlobalQuestion.findOneAndUpdate(
+        const question = await AdminQuestion.findOneAndUpdate(
             { uuid: req.params.id },
             payload,
             { new: true }
@@ -913,7 +913,7 @@ const editQuestion = async (req, res) => {
 
 const deleteQuestion = async (req, res) => {
     try {
-        const question = await GlobalQuestion.findOneAndDelete({ uuid: req.params.id })
+        const question = await AdminQuestion.findOneAndDelete({ uuid: req.params.id })
         return res.status(200).json({
             isSuccess: true,
             message: "Question deleted successfully",
@@ -941,8 +941,8 @@ const searchAssessment = async (req, res) => {
             ...(status && { status }),
         };
 
-        const total = await GlobalAssessment.countDocuments(filter);
-        const assessments = await GlobalAssessment.find(filter)
+        const total = await AdminAssessment.countDocuments(filter);
+        const assessments = await AdminAssessment.find(filter)
             .skip(skip)
             .limit(limit);
         return res.status(200).json({

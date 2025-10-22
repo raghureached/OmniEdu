@@ -204,7 +204,7 @@ const SubmissionPopup = ({ isOpen, onClose, assessmentData, answers, timeSpent, 
   <div style={{ display: "flex", justifyContent: "space-between",borderBottom:"none" }}>
     <div className="stat-item">
       <div className="stat-label">Attempts Summary</div>
-      <div className="stat-value">{attemptsText}</div>
+      <div className="stat-value">{maxAttempts>9?'Unlimited':attemptsText}</div>
     </div>
     <div className="stat-item">
       <div className="stat-label">Score Obtained</div>

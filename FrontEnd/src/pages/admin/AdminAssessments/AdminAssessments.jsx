@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users } from 'lucide-react';
-import './GlobalAssessments.css'
+import './AdminAssessments.css'
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchGlobalAssessments, createGlobalAssessment, updateGlobalAssessment, deleteGlobalAssessment, getGlobalAssessmentById, uploadAssessmentFile } from '../../../store/slices/globalAssessmentSlice'; 
+import { fetchGlobalAssessments, createGlobalAssessment, updateGlobalAssessment, deleteGlobalAssessment, getGlobalAssessmentById, uploadAssessmentFile } from '../../../store/slices/adminAssessmentSlice'; 
 import { fetchGroups } from '../../../store/slices/groupSlice'; 
 // import api from '../../../services/api';
 import QuestionsForm from './QuestionsForm';
@@ -74,7 +74,7 @@ const GlobalAssessments = () => {
   useEffect(() => {
     const fetchGroups = async () => {
       try {
-        const response = await api.get('/api/globalAdmin/getGroups');
+        const response = await api.get('/api/admin/getGroups');
         setGroups(response.data.data)
       } catch (error) {
         console.error('Error fetching groups:', error);
@@ -378,8 +378,8 @@ const GlobalAssessments = () => {
 
     try {
       await dispatch(createGlobalAssessment(payload)).unwrap();
-      // setShowForm(false);
-      // dispatch(fetchGlobalAssessments({ page, limit }));
+      setShowForm(false);
+      dispatch(fetchGlobalAssessments({ page, limit }));
     } catch (err) {
       console.error('Failed to create assessment:', err?.response?.data || err.message);
     }

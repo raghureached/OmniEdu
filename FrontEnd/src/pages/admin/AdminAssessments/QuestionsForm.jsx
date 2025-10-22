@@ -2,12 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { FileText, Plus, X, Upload, Copy, Eye, ChevronRight, ChevronLeft } from 'lucide-react';
 import api from '../../../services/api.js';
 import './QuestionsForm.css';
-import '../GlobalSurveys/QuestionsForm-survey.css';
+import '../../../pages/globalAdmin/GlobalSurveys/QuestionsForm-survey.css'
 import RichText from './RichTextSurvey.jsx';
 import PreviewCard from '../../../components/common/PreviewCard/PreviewCard.jsx';
-
 import AssessmentPreview from '../../../components/common/Preview/AssessmentPreview.jsx';
-import CsvUpload from '../GlobalAssessments/CsvUpload.jsx';
+import CsvUpload from './CsvUpload.jsx';
 import { useSelector } from 'react-redux';
 const QuestionsForm = ({
     currentAssessment,

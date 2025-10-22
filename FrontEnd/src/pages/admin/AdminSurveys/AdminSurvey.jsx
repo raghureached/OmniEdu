@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users } from 'lucide-react';
-import './GlobalAssessments-survey.css'
+import './AdminSurvey.css'
 import { useDispatch, useSelector } from 'react-redux';
 //import { uploadAssessmentFile } from '../../../store/slices/globalAssessmentSlice'; 
 import { fetchGroups } from '../../../store/slices/groupSlice'; 
@@ -12,7 +12,7 @@ import {
   createSurvey,
   updateSurvey,
   getSurveyById,
-} from "../../../store/slices/surveySlice";
+} from "../../../store/slices/adminSurveySlice";
 
 // import api from '../../../services/api';
 import QuestionsForm from './QuestionsForm-survey';
@@ -82,7 +82,7 @@ const GlobalSurveys = () => {
   useEffect(() => {
     const fetchGroups = async () => {
       try {
-        const response = await api.get('/api/globalAdmin/getGroups');
+        const response = await api.get('/api/admin/getGroups');
         setGroups(response.data.data)
       } catch (error) {
         console.error('Error fetching groups:', error);
@@ -691,7 +691,7 @@ const GlobalSurveys = () => {
               </div>
               <h3>No Survey found</h3>
               <p>Get started by creating your first Survey</p>
-              <button className="assess-btn-primary" style={{marginLeft:"36%"}} onClick={handleAddAssessment} >
+              <button className="assess-btn-primary" style={{marginLeft:"40%"}} onClick={handleAddAssessment} >
                 <Plus size={16} />
                 Create Survey
               </button>

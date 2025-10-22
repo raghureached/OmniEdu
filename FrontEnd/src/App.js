@@ -26,9 +26,9 @@ import AdminHome from './pages/admin/AdminHome/AdminHome';
 import UsersManagement from './pages/admin/UsersManagement/UsersManagement';
 import GroupsManagement from './pages/admin/GroupsManagement/GroupsManagement';
 import ContentModules from './pages/admin/ContentModules/ModuleManagement';
-import ContentAssessments from './pages/admin/ContentAssessments/ContentAssessments';
+//import ContentAssessments from './pages/admin/ContentAssessments/ContentAssessments';
 import LearningPaths from './pages/admin/LearningPaths/LearningPaths';
-import Surveys from './pages/admin/Surveys/Surveys';
+import Surveys from './pages/admin/AdminSurveys/AdminSurvey'
 import AdminProfile from './pages/admin/AdminProfile/AdminProfile';
 import CreateAssignment from './pages/admin/CreateAssignment/CreateAssignment';
 import ManageAssignment from './pages/admin/ManageAssignment/ManageAssignment';
@@ -36,7 +36,7 @@ import AdminHelpCenter from './pages/admin/AdminHelpCenter/AdminHelpCenter';
 import AdminMessageBoard from './pages/admin/AdminMessageBoard/AdminMessageBoard';
 import AdminActivityLog from './pages/admin/AdminActivityLog/AdminActivityLog';
 import AdminPortalActivity from './pages/admin/AdminPortalActivity/AdminPortalActivity';
-
+import AdminAssessments from './pages/admin/AdminAssessments/AdminAssessments';
 // Global Admin Pages 
 import OrganizationManagement from './pages/globalAdmin/OrganizationManagement/OrganizationManagement';
 import GlobalRolesManagement from './pages/globalAdmin/GlobalRolesManagement/GlobalRolesManagement';
@@ -98,7 +98,7 @@ function App() {
             <Route path="users" element={<UsersManagement />} />
             <Route path="groups" element={<GroupsManagement />} />
             <Route path="content-modules" element={<ModuleManagement />} />
-            <Route path="content-assessments" element={<ContentAssessments />} />
+            <Route path="content-assessments" element={<AdminAssessments />} />
             <Route path="learning-paths" element={<LearningPaths />} />
             <Route path="manage-surveys" element={<Surveys />} />
             <Route path="create-assignment" element={<CreateAssignment />} />
