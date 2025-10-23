@@ -13,6 +13,7 @@ import activityLogReducer from './slices/activityLogSlice';
 import surveyReducer from './slices/surveySlice';
 import globalAssignmentReducer from './slices/globalAssignmentSlice'
 import globalAssessmentReducer from './slices/globalAssessmentSlice'
+import adminAssessmentReducer from './slices/adminAssessmentSlice'
 import adminDashboardConfigReducer from './slices/adminDashboardConfigSlice'
 import userDashboardConfigReducer from './slices/userDashboardConfigSlice'
 import adminModuleReducer from './slices/adminModuleSlice'
@@ -33,6 +34,7 @@ const store = configureStore({
     surveys: surveyReducer,
     globalAssignments: globalAssignmentReducer,
     globalAssessments: globalAssessmentReducer,
+    adminAssessments: adminAssessmentReducer,
     adminDashboardConfig: adminDashboardConfigReducer,
     userDashboardConfig: userDashboardConfigReducer,
     adminModule: adminModuleReducer,

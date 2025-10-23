@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users } from 'lucide-react';
 import './AdminAssessments.css'
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchGlobalAssessments, createGlobalAssessment, updateGlobalAssessment, deleteGlobalAssessment, getGlobalAssessmentById, uploadAssessmentFile } from '../../../store/slices/adminAssessmentSlice'; 
+import { getAssessments, createAssessment, editAssessment, deleteAssessment, getAssessmentById, uploadAssessmentFile } from '../../../store/slices/adminAssessmentSlice'; 
 import { fetchGroups } from '../../../store/slices/groupSlice'; 
 // import api from '../../../services/api';
 import QuestionsForm from './QuestionsForm';
@@ -60,7 +60,7 @@ const GlobalAssessments = () => {
   }]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
 
-  const {assessments, loading, pagination} = useSelector((state) => state.globalAssessments)
+  const {assessments, loading, pagination} = useSelector((state) => state.adminAssessments)
   const { user: authUser } = useSelector((state) => state.auth || { user: null });
   const [page, setPage] = useState(pagination?.page || 1);
   const limit = 6;
@@ -69,7 +69,7 @@ const GlobalAssessments = () => {
 
   // Fetch list with pagination
   useEffect(() => {
-    dispatch(fetchGlobalAssessments({ page, limit }))
+    dispatch(getAssessments({ page, limit }))
   }, [dispatch, page, limit])
   useEffect(() => {
     const fetchGroups = async () => {
@@ -152,10 +152,10 @@ const GlobalAssessments = () => {
     if (selectedIds.length === 0) return;
     try {
       await Promise.all(
-        selectedIds.map(id => dispatch(updateGlobalAssessment({ id, data: { status } })).unwrap().catch(() => null))
+        selectedIds.map(id => dispatch(editAssessment({ id, data: { status } })).unwrap().catch(() => null))
       );
       clearSelection();
-      dispatch(fetchGlobalAssessments({ page, limit }));
+      dispatch(getAssessments({ page, limit }));
     } catch (e) {
       console.error('Bulk status update failed', e);
     }
@@ -166,10 +166,10 @@ const GlobalAssessments = () => {
     if (!window.confirm(`Delete ${selectedIds.length} assessment(s)? This cannot be undone.`)) return;
     try {
       await Promise.all(
-        selectedIds.map(id => dispatch(deleteGlobalAssessment(id)).unwrap().catch(() => null))
+        selectedIds.map(id => dispatch(deleteAssessment(id)).unwrap().catch(() => null))
       );
       clearSelection();
-      dispatch(fetchGlobalAssessments({ page, limit }));
+      dispatch(getAssessments({ page, limit }));
     } catch (e) {
       console.error('Bulk delete failed', e);
     }
@@ -179,7 +179,7 @@ const GlobalAssessments = () => {
     // Always fetch the latest populated assessment so questions are available
     const id = assessment?.uuid || assessment?._id || assessment?.id;
     try {
-      const full = await dispatch(getGlobalAssessmentById(id)).unwrap();
+      const full = await dispatch(getAssessmentById(id)).unwrap();
       // Fallback if thunk returns nothing (shouldn't)
       if (!full) {
         setCurrentAssessment(assessment);
@@ -377,9 +377,9 @@ const GlobalAssessments = () => {
     };
 
     try {
-      await dispatch(createGlobalAssessment(payload)).unwrap();
+      await dispatch(createAssessment(payload)).unwrap();
       setShowForm(false);
-      dispatch(fetchGlobalAssessments({ page, limit }));
+      dispatch(getAssessments({ page, limit }));
     } catch (err) {
       console.error('Failed to create assessment:', err?.response?.data || err.message);
     }
@@ -463,9 +463,9 @@ const GlobalAssessments = () => {
 
       const id = currentAssessment?.uuid || currentAssessment?._id || currentAssessment?.id;
       try {
-        await dispatch(updateGlobalAssessment({ id, data })).unwrap();
+        await dispatch(editAssessment({ id, data })).unwrap();
         setShowForm(false);
-        dispatch(fetchGlobalAssessments({ page, limit }));
+        dispatch(getAssessments({ page, limit }));
       } catch (err) {
         console.error('Failed to update assessment:', err?.response?.data || err.message);
       }
@@ -595,8 +595,8 @@ const GlobalAssessments = () => {
 
   const handleDeleteAssessment = async (id) => {
     try {
-      await dispatch(deleteGlobalAssessment(id)).unwrap();
-      dispatch(fetchGlobalAssessments({ page, limit }));
+      await dispatch(deleteAssessment(id)).unwrap();
+      dispatch(getAssessments({ page, limit }));
     } catch (err) {
       console.error('Failed to delete assessment:', err?.response?.data || err.message);
     }

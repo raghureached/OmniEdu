@@ -44,5 +44,5 @@ const adminActivitySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const AdminActivity = mongoose.model("AdminActivity", adminActivitySchema);
-module.exports = AdminActivity;
+const OrganizationActivity = mongoose.model("AdminActivity", adminActivitySchema);
+module.exports = OrganizationActivity;

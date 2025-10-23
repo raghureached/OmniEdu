@@ -475,16 +475,18 @@ const AssessmentPreview = ({ isOpen, onClose, data }) => {
                                                
                                                    
                                                     {instructions ? (
+                                                       <div className="global-preview-card"> 
+                                                       <h3>Instructions</h3>
                                                         <div
                                                             className="global-preview-richtext"
                                                             style={{
                                                                 maxWidth: '100%',
                                                                 overflow: 'hidden',
                                                                 wordWrap: 'break-word',
-                                                                overflowWrap: 'break-word',paddingTop:'0px'
+                                                                overflowWrap: 'break-word',padding:'0px',border:'none',
                                                             }}
                                                             dangerouslySetInnerHTML={{ __html: instructions }}
-                                                        />
+                                                        /> </div>
                                                     ) : (
                                                         <p className="global-preview-prereq">No Instructions provided.</p>
                                                     )}

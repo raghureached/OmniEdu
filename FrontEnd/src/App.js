@@ -62,6 +62,7 @@ import Globalusers from './pages/globalAdmin/Users/Globalusers';
 import GlobalSurveys from './pages/globalAdmin/GlobalSurveys/GlobalAssessments-survey';
 import LearningPath from './components/LearningPath/LearningPath';
 import ModuleManagement from './pages/admin/ContentModules/ModuleManagement';
+import AdminSurveys from './pages/admin/AdminSurveys/AdminSurvey';
 
 function App() {
   const dispatch = useDispatch();
@@ -100,7 +101,7 @@ function App() {
             <Route path="content-modules" element={<ModuleManagement />} />
             <Route path="content-assessments" element={<AdminAssessments />} />
             <Route path="learning-paths" element={<LearningPaths />} />
-            <Route path="manage-surveys" element={<Surveys />} />
+            <Route path="manage-surveys" element={<AdminSurveys />} />
             <Route path="create-assignment" element={<CreateAssignment />} />
             <Route path="manage-assignments" element={<ManageAssignment />} />
             <Route path="help-center" element={<AdminHelpCenter />} />

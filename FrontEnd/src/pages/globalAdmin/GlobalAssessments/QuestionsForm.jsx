@@ -135,19 +135,48 @@ const QuestionsForm = ({
     const validateStep1 = () => {
         return formData.title.trim() !== '' &&
             formData.description.trim() !== '' &&
-            Array.isArray(formData.tags) && formData.tags.length > 0;
+            Array.isArray(formData.tags) && formData.tags.length > 0 &&
+            formData.thumbnail &&
+            formData.instructions && formData.instructions.trim() !== '';
     };
 
     const validateStep2 = () => {
-        return Array.isArray(questions) &&
-            questions.length > 0 
-          
+        if (!Array.isArray(questions) || questions.length === 0) {
+            return false;
+        }
+        // Check each question is properly filled
+        for (const question of questions) {
+            // Question type must be selected
+            if (!question.type || !question.type.trim()) {
+                return false;
+            }
+            // Question text must be filled
+            if (!question.question_text || !question.question_text.trim()) {
+                return false;
+            }
+            // For Multiple Choice and Multi Select questions, need at least 2 options and correct answer
+            if (question.type === 'Multiple Choice' || question.type === 'Multi Select') {
+                // Must have at least 2 options
+                if (!Array.isArray(question.options) || question.options.filter(o => o && o.trim()).length < 2) {
+                    return false;
+                }
+                // Must have correct answer selected
+                if (question.correct_option === undefined || question.correct_option === null || question.correct_option === '') {
+                    return false;
+                }
+            }
+        }
+        return true;
     };
 
     const validateStep3 = () => {
         return formData.team !== '' &&
+            formData.subteam !== '' &&
             formData.duration > 0 &&
+            formData.attempts > 0 &&
             formData.percentage_to_pass !== '' &&
+            formData.display_answers !== '' &&
+            formData.category !== '' &&
             !passError;
     };
 
@@ -421,7 +450,7 @@ const QuestionsForm = ({
                                     </div>
 
                                     <div className="assess-form-group">
-                                        <label className="assess-form-label">Thumbnail</label>
+                                        <label className="assess-form-label">Thumbnail<span className="assess-required">*</span></label>
                                         {formData.thumbnail ? (
                                             <div
                                                 style={{
@@ -486,7 +515,7 @@ const QuestionsForm = ({
                                         )}
                                     </div>
                                     <div className='assess-form-group'>
-                                        <label className="assess-form-label">Instructions</label>
+                                        <label className="assess-form-label">Instructions<span className="assess-required">*</span></label>
                                         <div className="assess-instructions-box">
                                             <RichText value={formData.instructions || ''} onChange={(value) => setFormData({ ...formData, instructions: value })} />
                                         </div>
@@ -774,7 +803,7 @@ const QuestionsForm = ({
                                                                         onChange={e => updateOption(qIndex, optIndex, e.target.value)}
                                                                         required
                                                                     />
-                                                                    {q.options.length > 1 && (
+                                                                    {q.options.length > 2 && (
                                                                         <button
                                                                             type="button"
                                                                             className="assess-remove-option"
@@ -1225,7 +1254,7 @@ const QuestionsForm = ({
                                     </div>
                                 </div>
 
-                                <div className="assess-form-group">
+                                {/* <div className="assess-form-group">
                                     <label className="assess-form-label module-overlay__checkbox">
                                         <input
                                             type="checkbox"
@@ -1235,7 +1264,7 @@ const QuestionsForm = ({
                                         />
                                         Allow learners to submit feedback and reactions
                                     </label>
-                                </div>
+                                </div> */}
 
 
                                 <div className="assess-form-group">

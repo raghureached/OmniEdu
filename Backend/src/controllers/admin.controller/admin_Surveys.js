@@ -1,24 +1,29 @@
-const SurveyResponses = require("../../models/global_surveyResponses_model");
-const Surveys = require("../../models/admin_surveys_model");
-const AdminSurveyQuestion = require("../../models/admin_surveys_Questions_model");
+const OrganizationSurveyResponses = require("../../models/organizationSurveyResponses_model");
+const OrganizationSurveys = require("../../models/organizationSurveys_model");
+const OrganizationSurveyQuestion = require("../../models/organizationSurveysQuestions_model");
 const { v4: uuidv4 } = require("uuid");
-const { logGlobalAdminActivity } = require("../../models/adminActivity_model");
+const logAdminActivity = require("./admin_activity");
 const GlobalSurveyFeedback = require("../../models/global_surveys_feedback");
-const AdminSurveySection = require("../../models/adminSurvey_Section_model");
-
+const OrganizationSurveySection = require("../../models/organizationSurveySection_model");
 
 /// aligned with new question and survey models, with adapter for `elements`
 const mongoose = require("mongoose");
 
 const createSurvey = async (req, res) => {
   let session;
+  let transactionCommitted = false; // Track transaction state
   try {
     const { title, description, sections, tags = [], team, subteam, status } = req.body;
    console.log("log in surveys controller:",req.body)
     const created_by = req.user?.id || req.body.created_by; // Ensure created_by is passed or derived
+    const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
 
     if (!title || !title.trim()) {
       return res.status(400).json({ success: false, message: "Title is required" });
+    }
+
+    if (!organization_id) {
+      return res.status(400).json({ success: false, message: "Organization ID is required" });
     }
 
     if (!Array.isArray(sections) || sections.length === 0) {
@@ -40,12 +45,12 @@ const createSurvey = async (req, res) => {
 
       // Create questions inside the transaction
       for (const question of section.questions) {
-        const createdQuestion = await AdminSurveyQuestion.create([question], { session });
+        const createdQuestion = await OrganizationSurveyQuestion.create([question], { session });
         questionIds.push(createdQuestion[0]._id);
       }
 
       // Create section linked with questions
-      const createdSection = await AdminSurveySection.create(
+      const createdSection = await OrganizationSurveySection.create(
         [{ description: section.description, questions: questionIds }],
         { session }
       );
@@ -54,9 +59,10 @@ const createSurvey = async (req, res) => {
     }
     //const createdFeedback = await GlobalSurveyFeedback.create(feedback, { session });
     // Create the final survey document
-    const createdSurvey = await Surveys.create(
+    const createdSurvey = await OrganizationSurveys.create(
       [
         {
+          organization_id,
           title,
           description,
           sections: sectionsIDs,
@@ -69,18 +75,21 @@ const createSurvey = async (req, res) => {
         },
       ],
       { session }
-    );  
+    );
+
     // Commit transaction
     await session.commitTransaction();
+    transactionCommitted = true; // Mark as committed
 
+    await logAdminActivity(req,"Create Survey","survey",`Survey created successfully ${createdSurvey[0].title}`)
     return res.status(201).json({
       success: true,
       message: "Survey created successfully",
       data: createdSurvey[0],
     });
   } catch (error) {
-    // Rollback if anything fails
-    if (session) {
+    // Only abort if transaction wasn't committed
+    if (session && !transactionCommitted) {
       await session.abortTransaction();
     }
 
@@ -99,11 +108,17 @@ const createSurvey = async (req, res) => {
 };
 const editSurvey = async (req, res) => {
   let session;
+  let transactionCommitted = false; // Track transaction state
   try {
     const { title, description, sections, tags = [], team, subteam, status} = req.body;
     const surveyUUID = req.params.id;
+    const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
 
-    const survey = await Surveys.findOne({ uuid: surveyUUID }).populate("sections");
+    if (!organization_id) {
+      return res.status(400).json({ success: false, message: "Organization ID is required" });
+    }
+
+    const survey = await OrganizationSurveys.findOne({ uuid: surveyUUID, organization_id }).populate("sections");
     if (!survey) {
       return res.status(404).json({ success: false, message: "Survey not found" });
     }
@@ -124,12 +139,12 @@ const editSurvey = async (req, res) => {
     // --- DELETE OLD SECTIONS & QUESTIONS ---
     if (Array.isArray(survey.sections) && survey.sections.length > 0) {
       const sectionIds = survey.sections.map((s) => s._id);
-      const oldSections = await AdminSurveySection.find({ _id: { $in: sectionIds } });
+      const oldSections = await OrganizationSurveySection.find({ _id: { $in: sectionIds } });
       const questionIdsToDelete = oldSections.flatMap((sec) => sec.questions);
       if (questionIdsToDelete.length > 0) {
-        await AdminSurveyQuestion.deleteMany({ _id: { $in: questionIdsToDelete } }, { session });
+        await OrganizationSurveyQuestion.deleteMany({ _id: { $in: questionIdsToDelete } }, { session });
       }
-      await AdminSurveySection.deleteMany({ _id: { $in: sectionIds } }, { session });
+      await OrganizationSurveySection.deleteMany({ _id: { $in: sectionIds } }, { session });
     }
 
     // --- CREATE NEW SECTIONS & QUESTIONS ---
@@ -147,7 +162,7 @@ const editSurvey = async (req, res) => {
           throw new Error("Each question must have question_text");
         }
 
-        const createdQuestion = await AdminSurveyQuestion.create(
+        const createdQuestion = await OrganizationSurveyQuestion.create(
           [
             {
               question_text: question.question_text.trim(),
@@ -155,7 +170,7 @@ const editSurvey = async (req, res) => {
               options: Array.isArray(question.options)
                 ? question.options.map((o) => o.trim()).filter(Boolean)
                 : [],
-             
+
             },
           ],
           { session }
@@ -163,9 +178,9 @@ const editSurvey = async (req, res) => {
 
         questionIds.push(createdQuestion[0]._id);
       }
-      // const createdFeedback = await GlobalSurveyFeedback.create(feedback, { session });  
+      // const createdFeedback = await GlobalSurveyFeedback.create(feedback, { session });
 
-      const createdSection = await AdminSurveySection.create(
+      const createdSection = await OrganizationSurveySection.create(
         [
           {
             description: section.description || "",
@@ -189,15 +204,16 @@ const editSurvey = async (req, res) => {
 
     // Commit transaction
     await session.commitTransaction();
+    transactionCommitted = true; // Mark as committed
 
-    const updatedSurvey = await Surveys.findById(survey._id)
+    const updatedSurvey = await OrganizationSurveys.findById(survey._id)
       .populate({
         path: "sections",
         populate: { path: "questions" },
       })
-     
 
-    await logGlobalAdminActivity(req, "Edit Survey", "survey", `Survey updated successfully ${updatedSurvey.title}`);
+
+    await logAdminActivity(req, "Edit Survey", "survey", `Survey updated successfully ${updatedSurvey.title}`);
 
     return res.status(200).json({
       success: true,
@@ -205,7 +221,10 @@ const editSurvey = async (req, res) => {
       data: updatedSurvey,
     });
   } catch (error) {
-    if (session) await session.abortTransaction();
+    // Only abort if transaction wasn't committed
+    if (session && !transactionCommitted) {
+      await session.abortTransaction();
+    }
     console.error("Error updating survey:", error);
     return res.status(500).json({
       success: false,
@@ -220,14 +239,21 @@ const editSurvey = async (req, res) => {
 
 const deleteSurvey = async (req, res) => {
   let session;
+  let transactionCommitted = false; // Track transaction state
   try {
+    const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
+
+    if (!organization_id) {
+      return res.status(400).json({ success: false, message: "Organization ID is required" });
+    }
+
     // Start MongoDB transaction
     session = await mongoose.startSession();
     session.startTransaction();
 
-    const survey = await Surveys.findOne({ uuid: req.params.id })
+    const survey = await OrganizationSurveys.findOne({ uuid: req.params.id, organization_id })
       .populate("sections")
-     
+
 
     if (!survey) {
       return res.status(404).json({
@@ -239,15 +265,15 @@ const deleteSurvey = async (req, res) => {
     // --- Step 1: Delete questions under each section ---
     if (Array.isArray(survey.sections) && survey.sections.length > 0) {
       const sectionIds = survey.sections.map((s) => s._id);
-      const sections = await AdminSurveySection.find({ _id: { $in: sectionIds } });
+      const sections = await OrganizationSurveySection.find({ _id: { $in: sectionIds } });
       const questionIds = sections.flatMap((section) => section.questions);
 
       if (questionIds.length > 0) {
-        await AdminSurveyQuestion.deleteMany({ _id: { $in: questionIds } }, { session });
+        await OrganizationSurveyQuestion.deleteMany({ _id: { $in: questionIds } }, { session });
       }
 
       // --- Step 2: Delete sections ---
-      await AdminSurveySection.deleteMany({ _id: { $in: sectionIds } }, { session });
+      await OrganizationSurveySection.deleteMany({ _id: { $in: sectionIds } }, { session });
     }
 
     // --- Step 3: Delete feedback (if any) ---
@@ -256,12 +282,13 @@ const deleteSurvey = async (req, res) => {
     // }
 
     // --- Step 4: Delete the survey itself ---
-    const deletedSurvey = await Surveys.findOneAndDelete({ uuid: req.params.id }, { session });
+    const deletedSurvey = await OrganizationSurveys.findOneAndDelete({ uuid: req.params.id, organization_id }, { session });
 
     await session.commitTransaction();
+    transactionCommitted = true; // Mark as committed
 
     // --- Step 5: Log admin activity ---
-    await logGlobalAdminActivity(
+    await logAdminActivity(
       req,
       "Delete Survey",
       "survey",
@@ -274,7 +301,10 @@ const deleteSurvey = async (req, res) => {
       data: deletedSurvey,
     });
   } catch (error) {
-    if (session) await session.abortTransaction();
+    // Only abort if transaction wasn't committed
+    if (session && !transactionCommitted) {
+      await session.abortTransaction();
+    }
     console.error("Error deleting survey:", error);
     return res.status(500).json({
       success: false,
@@ -291,22 +321,27 @@ const getSurveys = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
     const skip = (page - 1) * limit;
+    const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
 
-    // Fetch all surveys with sections → questions → feedback
-    const surveys = await Surveys.find()
+    if (!organization_id) {
+      return res.status(400).json({ success: false, message: "Organization ID is required" });
+    }
+
+    // Fetch only surveys from current organization
+    const surveys = await OrganizationSurveys.find({ organization_id })
       .skip(skip)
       .limit(limit)
       .populate({
         path: "sections",
         populate: {
           path: "questions",
-          model: "AdminSurveyQuestion",
+          model: "OrganizationSurveyQuestion",
         },
       })
       // .populate("feedback")
       .lean(); // lean() for faster response and smaller payload
 
-    const total = await Surveys.countDocuments();
+    const total = await OrganizationSurveys.countDocuments({ organization_id });
 
     // Optional: sort sections or questions by order before sending
     const sortedSurveys = surveys.map((survey) => ({
@@ -344,7 +379,7 @@ const getSurveys = async (req, res) => {
 
 const viewResponse = async(req, res) => {
     try {
-        const response = await SurveyResponses.findById(req.params.id)
+        const response = await OrganizationSurveyResponses.findById(req.params.id)
         // await logGlobalAdminActivity(req,"View Response","survey",`Response fetched successfully ${response.title}`)
         return res.status(200).json({
             success: true,
@@ -361,7 +396,7 @@ const viewResponse = async(req, res) => {
 }
 const viewResponses = async(req, res) => {
     try {
-        const responses = await SurveyResponses.find()
+        const responses = await OrganizationSurveyResponses.find()
         // await logGlobalAdminActivity(req,"View Responses","survey","Responses fetched successfully")
         return res.status(200).json({
             success: true,
@@ -378,12 +413,18 @@ const viewResponses = async(req, res) => {
 }
 const getSurvey = async (req, res) => {
   try {
-    const survey = await Surveys.findOne({ uuid: req.params.id })
+    const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
+
+    if (!organization_id) {
+      return res.status(400).json({ success: false, message: "Organization ID is required" });
+    }
+
+    const survey = await OrganizationSurveys.findOne({ uuid: req.params.id, organization_id })
       .populate({
         path: "sections",
         populate: {
           path: "questions",
-          model: "AdminSurveyQuestion",
+          model: "OrganizationSurveyQuestion",
         },
       })
       // .populate("feedback");

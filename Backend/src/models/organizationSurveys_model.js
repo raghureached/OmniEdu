@@ -1,59 +1,50 @@
+
+
 const mongoose = require("mongoose");
 const { v4: uuidv4 } = require("uuid");
 
-const surveySchema = new mongoose.Schema(
-  {
-    uuid: {
-      type: String,
-      default: uuidv4,
-      unique: true,
-      index:true
-    },
-    organization_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: true,
-      ref: "Organization",
-    },
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-      maxlength: 200,
-    },
-    status: {
-      type: String,
-      enum: ["Draft", "Published", "Archived"],
-      default: "Draft",
-    },
-    version: {
-      type: String,
-      default: "1.0",
-    },
-    description: {
-      type: String,
-      default: null,
-    },
-    questions: {
-      type:[mongoose.Schema.Types.ObjectId],
-      ref:"OrganizationSurveyQuestion",
-      required:true
-    },  
-    created_by: { 
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: null,
-    },
-    updated_by: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: null,
-    },
+const surveySchema = new mongoose.Schema({
+  uuid: {
+    type: String,
+    default: uuidv4,
+    unique: true,
+    index: true,
+  }, organization_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: "Organization",
   },
-  {
-    timestamps: true,
-  }
-);
+  title: {
+    type: String,
+    required: true,
+  },
+  description: { type: String },
+  sections: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: "OrganizationSurveySection"
+  },
 
-const OrganizationSurvey = mongoose.model("OrganizationSurvey", surveySchema);
+  // Tagging and configuration (aligns with controllers and frontend)
+  tags: { type: [String], default: [] },              // create endpoint requires tags; you can set required: true if you want DB-level enforcement
+  // can set required: true if desired
+  team: { type: mongoose.Schema.Types.ObjectId, ref: "Team" },         // can set required: true if desired
+  subteam: { type: mongoose.Schema.Types.ObjectId, ref: "SubTeam" },   // can set required: true if desired
+  thumbnail: { type: String },
 
-module.exports = OrganizationSurvey;
+  // Status and meta
+  status: {
+    type: String,
+    enum: ["Published", "Draft", "Saved"],
+    default: "Draft",
+  },
+
+  created_by: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, updated_by: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null,
+  },
+}, { timestamps: true, versionKey: "version" });
+
+const OrganizationSurveys = mongoose.model("OrganizationSurvey", surveySchema);
+
+module.exports = OrganizationSurveys;

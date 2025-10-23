@@ -378,8 +378,8 @@ const GlobalAssessments = () => {
 
     try {
       await dispatch(createGlobalAssessment(payload)).unwrap();
-      // setShowForm(false);
-      // dispatch(fetchGlobalAssessments({ page, limit }));
+      setShowForm(false);
+      dispatch(fetchGlobalAssessments({ page, limit }));
     } catch (err) {
       console.error('Failed to create assessment:', err?.response?.data || err.message);
     }

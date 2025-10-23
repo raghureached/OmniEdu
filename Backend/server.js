@@ -13,7 +13,6 @@ const devRouter = require("./src/routes/dev.routes");
 const userRouter = require("./src/routes/user.routes");
 const cookieParser = require("cookie-parser");
 const { authenticate, authorize } = require("./src/middleware/auth_middleware");
-const logActivity = require("./src/middleware/adminActivity");
 //MONGODB connection
 connectDB;
 

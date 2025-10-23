@@ -11,7 +11,7 @@ const getProfile = async (req, res) => {
         return res.status(404).json({ isSuccess: false, message: "User not found" });
       }
   
-      const profile = await UserProfile.findOne({ user_id: user.uuid })
+      const profile = await UserProfile.findOne({ user_id: user._id })
         .populate("organization_id", "name logo_url email status planId planName startDate endDate")
         .populate("designation_id", "name")
         .populate("team_id", "name")

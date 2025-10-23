@@ -1,5 +1,5 @@
 
-const AdminActivity = require("../../models/adminActivity_model");
+const AdminActivity = require("../../models/organizationActivity_model");
 
 const logAdminActivity = async (req, action, details, status = "success") => {
   try {

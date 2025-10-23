@@ -269,7 +269,7 @@ const AdminLayout = () => {
               )}
             </Link>
           </li>
-          <li>
+          {/* <li>
             <Link
               to="/admin/manage-assignments"
               className={
@@ -281,7 +281,7 @@ const AdminLayout = () => {
                 <span className="admin_sidebar_names">Manage Assignments</span>
               )}
             </Link>
-          </li>
+          </li> */}
           <li className="admin_menu_section">
             {!sidebarCollapsed && (
               <div className="admin_section_title">Library</div>

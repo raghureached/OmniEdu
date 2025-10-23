@@ -137,11 +137,62 @@ const QuestionsForm = ({
             setAiProcessing(false);
         }
     }
-    const validatePass = () => {
-        const v = formData.percentage_to_pass;
-        const isValid = Number.isInteger(v) && v >= 0 && v <= 100;
-        setPassError(isValid ? '' : 'Pass percentage must be an integer between 0 and 100');
-        return isValid;
+    // Step validation functions
+    const validateStep1 = () => {
+        return formData.title?.trim() !== '' &&
+            formData.description?.trim() !== '' &&
+            Array.isArray(formData.tags) && formData.tags.length > 0;
+    };
+
+    const validateStep2 = () => {
+        if (!Array.isArray(formElements) || formElements.length === 0) {
+            return false;
+        }
+        // Check each element is properly filled
+        for (const element of formElements) {
+            if (element.type === 'question') {
+                // Question must have type, text, and at least 2 options
+                if (!element.question_type || !element.question_text?.trim() ||
+                    !Array.isArray(element.options) || element.options.filter(o => o?.trim()).length < 2) {
+                    return false;
+                }
+            } else if (element.type === 'section') {
+                // Section must have description
+                const raw = String(element.description || '');
+                const plain = raw.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+                if (!plain) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    };
+
+    const validateStep3 = () => {
+        return formData.team !== '' &&
+            formData.subteam !== '' &&
+            formData.duration && formData.duration.trim() !== '';
+    };
+
+    const canProceedToNext = () => {
+        switch (step) {
+            case 1: return validateStep1();
+            case 2: return validateStep2();
+            case 3: return validateStep3();
+            default: return false;
+        }
+    };
+
+    const handleNext = () => {
+        if (canProceedToNext() && step < 3) {
+            setStep(step + 1);
+        }
+    };
+
+    const handlePrev = () => {
+        if (step > 1) {
+            setStep(step - 1);
+        }
     };
 
     // Close modals on ESC key
@@ -517,7 +568,7 @@ const QuestionsForm = ({
                                                                                 onChange={e => updateOption(elementIndex, optIndex, e.target.value)}
                                                                                 required
                                                                             />
-                                                                            {(element.options || []).length > 1 && (
+                                                                            {(element.options || []).length > 2 && (
                                                                                 <button
                                                                                     type="button"
                                                                                     className="survey-assess-remove-option"
@@ -704,7 +755,7 @@ const QuestionsForm = ({
                     <div className="survey-assess-form-actions">
                         {step === 3 ? (
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                <button type="button" className="btn-secondary" onClick={() => setStep(step - 1)} disabled={step === 1}>
+                                <button type="button" className="btn-secondary" onClick={handlePrev}>
                                     <ChevronLeft size={16} />Previous
                                 </button>
                                 <div style={{ display: 'flex', gap: 12 }}>
@@ -712,6 +763,7 @@ const QuestionsForm = ({
                                         type="button"
                                         className="btn-secondary"
                                         onClick={() => setAssessmentPreviewOpen(true)}
+                                        disabled={!canProceedToNext()}
                                         title="Preview the entire assessment as the user sees it"
                                     >
                                         <Eye size={16} />
@@ -733,6 +785,7 @@ const QuestionsForm = ({
                                                         }
                                                     }, 0);
                                                 }}
+                                                disabled={!canProceedToNext()}
                                               
                                             >
                                                 <FileText size={16} />
@@ -752,6 +805,7 @@ const QuestionsForm = ({
                                                 handleSaveAssessment(undefined, 'Saved');
                                             }
                                         }}
+                                        disabled={!canProceedToNext()}
                                     >
                                         <FileText size={16} />
                                         <span>{currentAssessment ? "Update Survey" : "Create Survey"}</span>
@@ -760,14 +814,14 @@ const QuestionsForm = ({
                             </div>
                         ) : (
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                <button type="button" className="btn-secondary" onClick={() => setStep(step - 1)} disabled={step === 1}>
+                                <button type="button" className="btn-secondary" onClick={handlePrev} disabled={step === 1}>
                                     <ChevronLeft size={16} />Previous
                                 </button>
                                 <div style={{ display: 'flex', gap: 12 }}>
                                     <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>
                                         Cancel
                                     </button>
-                                    {step < 3 && <button type="button" className="btn-primary" onClick={() => setStep(step + 1)}>
+                                    {step < 3 && <button type="button" className="btn-primary" onClick={handleNext} disabled={!canProceedToNext()}>
                                         Next <ChevronRight size={16} />
                                     </button>}
                                 </div>

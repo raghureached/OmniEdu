@@ -1,9 +1,11 @@
-const AdminAssessment = require("../../models/adminAssessments_model")
-const AdminQuestion = require("../../models/adminQuestions_model")
+const OrganizationAssessments = require("../../models/organizationAssessments_model")
+const OrganizationAssessmentQuestion = require("../../models/organizationAssessmentQuestions_model")
+const logAdminActivity = require("./admin_activity");
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const mongoose = require("mongoose");
+const csv = require("csv-parser");
 
 const UPLOADS_DIR = path.join(__dirname, '../../../uploads');
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -89,13 +91,22 @@ function normalizeCorrectOption(value) {
 
 // Controller for creating assessment
 const createAssessment = async (req, res) => {
+    //console.log(req.body)
+    let session;
+    let transactionCommitted = false; // Track transaction state
     try {
       const {
         title, description, tags, duration, team, subteam,
         attempts, unlimited_attempts, percentage_to_pass,
          display_answers, status,credits,stars,badges,category,feedbackEnabled,shuffle_questions,shuffle_options,questions=[],instructions
-       
+
       } = req.body;
+
+      const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
+
+      if (!organization_id) {
+        return res.status(400).json({ success: false, message: "Organization ID is required" });
+      }
 
       // Build and save questions
       const questionIds = [];
@@ -104,38 +115,42 @@ const createAssessment = async (req, res) => {
         return res.status(400).json({ success: false, message: "At least one question is required" });
       }
 
+      // Start MongoDB session
+      session = await mongoose.startSession();
+      session.startTransaction();
+
       for (let index = 0; index < inputQuestions.length; index++) {
         const q = inputQuestions[index];
         if (!q || typeof q.question_text !== 'string' || typeof q.type !== 'string') {
-          return res.status(400).json({ success: false, message: `Invalid question at index ${index}: missing type or question_text` });
+          throw new Error(`Invalid question at index ${index}: missing type or question_text`);
         }
 
         const type = String(q.type || '').trim();
         if (!['Multiple Choice', 'Multi Select'].includes(type)) {
-          return res.status(400).json({ success: false, message: `Invalid type for question ${index}. Allowed: Multiple Choice, Multi Select` });
+          throw new Error(`Invalid type for question ${index}. Allowed: Multiple Choice, Multi Select`);
         }
 
         const options = Array.isArray(q.options) ? q.options.filter(o => typeof o === 'string' && o.length > 0) : [];
         if (options.length < 2) {
-          return res.status(400).json({ success: false, message: `Question ${index} must have at least two options` });
+          throw new Error(`Question ${index} must have at least two options`);
         }
 
         const normalizedCorrect = normalizeCorrectOption(q.correct_option);
         if (type === 'Multiple Choice') {
           if (normalizedCorrect.length !== 1) {
-            return res.status(400).json({ success: false, message: `Question ${index}: Multiple Choice must have exactly 1 correct option index` });
+            throw new Error(`Question ${index}: Multiple Choice must have exactly 1 correct option index`);
           }
         } else {
           if (normalizedCorrect.length < 1) {
-            return res.status(400).json({ success: false, message: `Question ${index}: Multi Select must have at least 1 correct option index` });
+            throw new Error(`Question ${index}: Multi Select must have at least 1 correct option index`);
           }
         }
         const maxIndex = options.length - 1;
         if (normalizedCorrect.some(n => n < 0 || n > maxIndex)) {
-          return res.status(400).json({ success: false, message: `Question ${index}: correct_option indexes out of range for provided options` });
+          throw new Error(`Question ${index}: correct_option indexes out of range for provided options`);
         }
         // console.log(req.uploadedFiles)
-        const newQuestion = new AdminQuestion({
+        const newQuestion = new OrganizationAssessmentQuestion({
           question_text: q.question_text.trim(),
           type,
           options,
@@ -144,12 +159,13 @@ const createAssessment = async (req, res) => {
           file_url: typeof q.file_url === 'string' && q.file_url.trim() ? q.file_url.trim() : null,
         });
 
-        const savedQuestion = await newQuestion.save();
+        const savedQuestion = await newQuestion.save({ session });
         questionIds.push(savedQuestion._id);
       }
 
       // Create assessment using the saved question ids
-      const newAssessment = new AdminAssessment({
+      const newAssessment = new OrganizationAssessments({
+        organization_id,
         title,
         description,
         tags,
@@ -168,28 +184,41 @@ const createAssessment = async (req, res) => {
         feedbackEnabled,
         shuffle_questions,
         shuffle_options,
-        // thumbnail_url:req.uploadedFile.url,
         questions: questionIds,
-        instructions:instructions
+        instructions:instructions,
+        created_by: req.user?._id
       });
 
-      const savedAssessment = await newAssessment.save();
+      const savedAssessment = await newAssessment.save({ session });
 
-      const populatedAssessment = await AdminAssessment.findById(savedAssessment._id)
+      // Commit transaction
+      await session.commitTransaction();
+      transactionCommitted = true; // Mark as committed
+
+      const populatedAssessment = await OrganizationAssessments.findById(savedAssessment._id)
         .populate('questions');
+
+      await logAdminActivity(req, "Create Assessment", "assessment", `Assessment created successfully ${newAssessment.title}`);
 
       res.status(201).json({
         success: true,
         message: "Assessment created successfully",
         assessment: populatedAssessment,
       });
-  
+
     } catch (error) {
+      // Only abort if transaction wasn't committed
+      if (session && !transactionCommitted) {
+        await session.abortTransaction();
+      }
       console.error("Error creating assessment:", error);
       res.status(500).json({ success: false, message: "Failed to create assessment", error: error.message });
-    };
-  
-}
+    } finally {
+      if (session) {
+        session.endSession();
+      }
+    }
+  };
 
 // const createAssessment = async (req, res) => {
 //     const session = await mongoose.startSession();
@@ -232,7 +261,7 @@ const createAssessment = async (req, res) => {
 //         if (normalizedCorrect.some(n => n < 0 || n > maxIndex))
 //           throw new Error(`Question ${index}: correct_option out of range`);
   
-//         const newQuestion = new AdminQuestion({
+//         const newQuestion = new OrganizationAssessmentQuestion({
 //           question_text: q.question_text.trim(),
 //           type,
 //           options,
@@ -245,7 +274,7 @@ const createAssessment = async (req, res) => {
 //         questionIds.push(savedQuestion._id);
 //       }
   
-//       const newAssessment = new AdminAssessment({
+//       const newAssessment = new OrganizationAssessments({
 //         title,
 //         description,
 //         tags,
@@ -273,7 +302,7 @@ const createAssessment = async (req, res) => {
 //       await session.commitTransaction();
 //       session.endSession();
   
-//       const populatedAssessment = await AdminAssessment.findById(savedAssessment._id).populate("questions");
+//       const populatedAssessment = await OrganizationAssessments.findById(savedAssessment._id).populate("questions");
 //       res.status(201).json({
 //         success: true,
 //         message: "Assessment created successfully",
@@ -297,7 +326,15 @@ const createAssessment = async (req, res) => {
 
 
 const uploadAssessmentCSV = async (req, res) => {
+    let session;
+    let transactionCommitted = false; // Track transaction state
     try {
+        const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
+
+        if (!organization_id) {
+            return res.status(400).json({ isSuccess: false, message: "Organization ID is required" });
+        }
+
         if (!req.file) {
             return res.status(400).json({ isSuccess: false, message: "No file uploaded" });
         }
@@ -308,6 +345,10 @@ const uploadAssessmentCSV = async (req, res) => {
 
         // Map letter answers to index
         const letterToIndex = { A: 0, B: 1, C: 2, D: 3, E: 4 };
+
+        // Start MongoDB session
+        session = await mongoose.startSession();
+        session.startTransaction();
 
         fs.createReadStream(file.path)
             .pipe(csv())
@@ -380,7 +421,7 @@ const uploadAssessmentCSV = async (req, res) => {
                     }
 
                     // Save valid questions
-                    const savedQuestions = await AdminQuestion.insertMany(questions, { ordered: false });
+                    const savedQuestions = await OrganizationAssessmentQuestion.insertMany(questions, { ordered: false, session });
 
                     // Parse tags from body (array or comma-separated string)
                     let tags = [];
@@ -391,7 +432,8 @@ const uploadAssessmentCSV = async (req, res) => {
                     }
 
                     // Create assessment
-                    const assessment = new AdminAssessment({
+                    const assessment = new OrganizationAssessments({
+                        organization_id,
                         title: req.body.title || "Untitled Assessment",
                         description: req.body.description || "",
                         questions: savedQuestions.map((q) => q._id),
@@ -400,16 +442,27 @@ const uploadAssessmentCSV = async (req, res) => {
                         status: req.body.status,
                         classification: req.body.classification,
                     });
-                    await assessment.save();
+
+                    const savedAssessment = await assessment.save({ session });
+
+                    // Commit transaction
+                    await session.commitTransaction();
+                    transactionCommitted = true; // Mark as committed
+
+                    await logAdminActivity(req, "Create Assessment CSV", "assessment", `Assessment created from CSV successfully: ${savedAssessment.title}`);
 
                     fs.unlinkSync(file.path);
                     return res.status(201).json({
                         isSuccess: true,
                         message: "Assessment created from CSV",
-                        data: assessment,
+                        data: savedAssessment,
                         errors // return any skipped rows for debugging
                     });
                 } catch (dbError) {
+                    // Only abort if transaction wasn't committed
+                    if (session && !transactionCommitted) {
+                        await session.abortTransaction();
+                    }
                     console.error("DB save error:", dbError);
                     fs.unlinkSync(file.path);
                     return res.status(500).json({
@@ -418,6 +471,10 @@ const uploadAssessmentCSV = async (req, res) => {
                         error: dbError.message,
                         errors
                     });
+                } finally {
+                    if (session) {
+                        session.endSession();
+                    }
                 }
             })
             .on("error", (csvError) => {
@@ -433,15 +490,31 @@ const uploadAssessmentCSV = async (req, res) => {
         console.error("CSV upload error:", error);
         if (req.file) fs.unlinkSync(req.file.path);
         return res.status(500).json({ isSuccess: false, message: error.message });
+    } finally {
+        if (session && !transactionCommitted) {
+            await session.abortTransaction();
+        }
+        if (session) {
+            session.endSession();
+        }
     }
 };
 
 
 const getAssessments = async (req, res) => {
     try {
+        const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
+
+        if (!organization_id) {
+            return res.status(400).json({ success: false, message: "Organization ID is required" });
+        }
+
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 50;
-        const assessments = await AdminAssessment.find().skip((page - 1) * limit).limit(limit).populate("questions")
+        const assessments = await OrganizationAssessments.find({ organization_id })
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .populate("questions")
         return res.status(200).json({
             isSuccess: true,
             message: "Assessments fetched successfully",
@@ -449,7 +522,7 @@ const getAssessments = async (req, res) => {
             pagination: {
                 page,
                 limit,
-                total: await AdminAssessment.countDocuments()
+                total: await OrganizationAssessments.countDocuments({ organization_id })
             }
         })
     } catch (error) {
@@ -464,9 +537,15 @@ const getAssessments = async (req, res) => {
 
 const getQuestions = async (req, res) => {
     try {
-        const questions = await AdminAssessment.findOne({ uuid: req.params.id }).populate("questions")
+        const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
+
+        if (!organization_id) {
+            return res.status(400).json({ success: false, message: "Organization ID is required" });
+        }
+
+        const assessment = await OrganizationAssessments.findOne({ uuid: req.params.id, organization_id }).populate("questions")
         const { page = 1, limit = 50 } = req.query
-        const paginatedQuestions = questions.questions.slice((page - 1) * limit, page * limit)
+        const paginatedQuestions = assessment.questions.slice((page - 1) * limit, page * limit)
         return res.status(200).json({
             isSuccess: true,
             message: "Questions fetched successfully",
@@ -474,7 +553,7 @@ const getQuestions = async (req, res) => {
             pagination: {
                 page,
                 limit,
-                total: questions.questions.length
+                total: assessment.questions.length
             }
         })
     } catch (error) {
@@ -487,8 +566,14 @@ const getQuestions = async (req, res) => {
 }
 const getQuestionsRandom = async (req, res) => {
     try {
+        const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
+
+        if (!organization_id) {
+            return res.status(400).json({ success: false, message: "Organization ID is required" });
+        }
+
         const { noOfQuestions } = req.query
-        const questions = await AdminAssessment.findOne({ uuid: req.params.id }).populate("questions")
+        const questions = await OrganizationAssessments.findOne({ uuid: req.params.id, organization_id }).populate("questions")
 
         if (!questions || !questions.questions) {
             return res.status(404).json({
@@ -552,7 +637,13 @@ const getQuestionsRandom = async (req, res) => {
 
 const getAssessmentById = async (req, res) => {
     try {
-        const assessment = await AdminAssessment.findOne({ uuid: req.params.id }).populate("questions")
+        const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
+
+        if (!organization_id) {
+            return res.status(400).json({ success: false, message: "Organization ID is required" });
+        }
+
+        const assessment = await OrganizationAssessments.findOne({ uuid: req.params.id, organization_id }).populate("questions")
         return res.status(200).json({
             isSuccess: true,
             message: "Assessment fetched successfully",
@@ -568,8 +659,20 @@ const getAssessmentById = async (req, res) => {
 }
 
 const editAssessment = async (req, res) => {
+    let session;
+    let transactionCommitted = false; // Track transaction state
     try {
-            // Update assessment-level fields first (normalize types)
+        const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
+
+        if (!organization_id) {
+            return res.status(400).json({ success: false, message: "Organization ID is required" });
+        }
+
+        // Start MongoDB session
+        session = await mongoose.startSession();
+        session.startTransaction();
+
+        // Update assessment-level fields first (normalize types)
         const durationNum = req.body.duration !== undefined && req.body.duration !== '' ? Number(req.body.duration) : undefined;
         const attemptsNum = req.body.attempts !== undefined && req.body.attempts !== '' ? Number(req.body.attempts) : undefined;
         const passNum = req.body.percentage_to_pass !== undefined && req.body.percentage_to_pass !== '' ? Number(req.body.percentage_to_pass) : undefined;
@@ -598,10 +701,10 @@ const editAssessment = async (req, res) => {
             ...(typeof req.body.thumbnail_url === 'string' ? { thumbnail_url: req.body.thumbnail_url } : {}),
         };
 
-        let assessment = await AdminAssessment.findOneAndUpdate(
-            { uuid: req.params.id },
+        let assessment = await OrganizationAssessments.findOneAndUpdate(
+            { uuid: req.params.id, organization_id },
             updateDoc,
-            { new: true }
+            { new: true, session }
         );
 
         // Optionally update related questions if provided
@@ -640,17 +743,17 @@ const editAssessment = async (req, res) => {
 
                             const instructions = typeof q.instructions === 'string' ? q.instructions : '';
 
-                            const newQuestion = new AdminQuestion({
+                            const newQuestion = new OrganizationAssessmentQuestion({
                                 type: q.type.trim(),
                                 question_text: q.question_text.trim(),
                                 file_url: q.file_url?.trim() || null,
                                 options: q.options,
                                 correct_option: normalizedCorrect,
-                               
-                               
+
+
                             });
 
-                            const savedQuestion = await newQuestion.save();
+                            const savedQuestion = await newQuestion.save({ session });
                             newQuestionIds.push(savedQuestion._id);
                         } catch (questionError) {
                             console.error('Failed to create new question:', questionError);
@@ -666,7 +769,7 @@ const editAssessment = async (req, res) => {
                     // Fetch options if not provided (so we can validate bounds)
                     let options = Array.isArray(q.options) ? q.options : undefined;
                     if (!options) {
-                        const existing = await AdminQuestion.findOne({ uuid: id });
+                        const existing = await OrganizationAssessmentQuestion.findOne({ uuid: id });
                         options = existing ? existing.options : [];
                     }
 
@@ -676,7 +779,7 @@ const editAssessment = async (req, res) => {
 
                     // Enforce counts (only if correct_option was provided)
                     if (q.correct_option !== undefined) {
-                        const effectiveType = type || (await AdminQuestion.findOne({ uuid: id }))?.type || 'Multiple Choice';
+                        const effectiveType = type || (await OrganizationAssessmentQuestion.findOne({ uuid: id }))?.type || 'Multiple Choice';
                         if (effectiveType === 'Multiple Choice') {
                             if (normalizedCorrect.length !== 1) {
                                 throw new Error('Multiple Choice must have exactly 1 correct option index');
@@ -692,12 +795,12 @@ const editAssessment = async (req, res) => {
                         }
                     }
 
-                    // Update AdminQuestion by uuid or _id
+                    // Update OrganizationAssessmentQuestion by uuid or _id
                     const filter = /^[0-9a-fA-F]{24}$/.test(String(id))
                         ? { _id: id }
                         : { uuid: id };
 
-                    await AdminQuestion.findOneAndUpdate(
+                    await OrganizationAssessmentQuestion.findOneAndUpdate(
                         filter,
                         {
                             ...(typeof q.question_text === 'string' ? { question_text: q.question_text } : {}),
@@ -706,25 +809,31 @@ const editAssessment = async (req, res) => {
                             ...(typeof q.type === 'string' ? { type } : {}),
                             ...(typeof q.file_url === 'string' ? { file_url: q.file_url } : {}),
                             },
-                        { new: false }
+                        { new: false, session }
                     );
 
                     // Push the ObjectId for this existing question
-                    const existingDoc = await AdminQuestion.findOne(filter).select('_id');
+                    const existingDoc = await OrganizationAssessmentQuestion.findOne(filter).select('_id');
                     if (existingDoc) newQuestionIds.push(existingDoc._id);
                 })
             );
 
             // After processing all questions, set the assessment's questions array to the collected ObjectIds
-            assessment = await AdminAssessment.findOneAndUpdate(
-                { uuid: req.params.id },
+            assessment = await OrganizationAssessments.findOneAndUpdate(
+                { uuid: req.params.id, organization_id },
                 { $set: { questions: newQuestionIds } },
-                { new: true }
+                { new: true, session }
             );
         }
 
+        // Commit transaction
+        await session.commitTransaction();
+        transactionCommitted = true; // Mark as committed
+
         // Return populated assessment so frontend can display latest question values
-        const populated = await AdminAssessment.findOne({ uuid: req.params.id }).populate('questions');
+        const populated = await OrganizationAssessments.findOne({ uuid: req.params.id, organization_id }).populate('questions');
+
+        await logAdminActivity(req, "Edit Assessment", "assessment", `Assessment updated successfully: ${assessment.title}`);
 
         return res.status(200).json({
             isSuccess: true,
@@ -732,11 +841,19 @@ const editAssessment = async (req, res) => {
             data: populated || assessment,
         });
     } catch (error) {
+        // Only abort if transaction wasn't committed
+        if (session && !transactionCommitted) {
+            await session.abortTransaction();
+        }
         return res.status(500).json({
             isSuccess: false,
             message: "Failed to update assessment",
             error: error.message,
         });
+    } finally {
+        if (session) {
+            session.endSession();
+        }
     }
 }
 //with transactions
@@ -748,7 +865,7 @@ const editAssessment = async (req, res) => {
 //       const qPayload = Array.isArray(req.body.questions) ? req.body.questions : [];
   
 //       // Update assessment core details
-//       const assessment = await AdminAssessment.findOneAndUpdate(
+//       const assessment = await OrganizationAssessments.findOneAndUpdate(
 //         { uuid: id },
 //         { ...req.body },
 //         { new: true, session }
@@ -760,10 +877,10 @@ const editAssessment = async (req, res) => {
   
 //       for (const q of qPayload) {
 //         if (q._id) {
-//           await AdminQuestion.findByIdAndUpdate(q._id, q, { new: true, session });
+//           await OrganizationAssessmentQuestion.findByIdAndUpdate(q._id, q, { new: true, session });
 //           newQuestionIds.push(q._id);
 //         } else {
-//           const newQ = new AdminQuestion(q);
+//           const newQ = new OrganizationAssessmentQuestion(q);
 //           const savedQ = await newQ.save({ session });
 //           newQuestionIds.push(savedQ._id);
 //         }
@@ -778,7 +895,7 @@ const editAssessment = async (req, res) => {
 //       await session.commitTransaction();
 //       session.endSession();
   
-//       const populated = await AdminAssessment.findById(assessment._id).populate("questions");
+//       const populated = await OrganizationAssessments.findById(assessment._id).populate("questions");
 //       res.status(200).json({
 //         success: true,
 //         message: "Assessment updated successfully",
@@ -798,7 +915,7 @@ const editAssessment = async (req, res) => {
 
 // const deleteAssessment = async (req, res) => {
 //     try {
-//         const assessment = await AdminAssessment.findOneAndDelete({ uuid: req.params.id })
+//         const assessment = await OrganizationAssessments.findOneAndDelete({ uuid: req.params.id })
 //         return res.status(200).json({
 //             isSuccess: true,
 //             message: "Assessment deleted successfully",
@@ -813,42 +930,71 @@ const editAssessment = async (req, res) => {
 //     }
 // }
 const deleteAssessment = async (req, res) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    let session;
+    let transactionCommitted = false; // Track transaction state
     try {
+      const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
+
+      if (!organization_id) {
+        return res.status(400).json({ success: false, message: "Organization ID is required" });
+      }
+
       const { id } = req.params;
-      const assessment = await AdminAssessment.findOne({ uuid: id }).session(session);
-  
-      if (!assessment) throw new Error("Assessment not found");
-  
+      const assessment = await OrganizationAssessments.findOne({ uuid: id, organization_id });
+
+      if (!assessment) {
+        return res.status(404).json({
+          success: false,
+          message: "Assessment not found"
+        });
+      }
+
+      // Start MongoDB session
+      session = await mongoose.startSession();
+      session.startTransaction();
+
       // Delete all related questions
-      await AdminQuestion.deleteMany({ _id: { $in: assessment.questions } }, { session });
-  
+      await OrganizationAssessmentQuestion.deleteMany({ _id: { $in: assessment.questions } }, { session });
+
       // Delete the assessment itself
-      await AdminAssessment.deleteOne({ uuid: id }, { session });
-  
+      await OrganizationAssessments.deleteOne({ uuid: id, organization_id }, { session });
+
+      // Commit transaction
       await session.commitTransaction();
-      session.endSession();
-  
+      transactionCommitted = true; // Mark as committed
+
+      await logAdminActivity(req, "Delete Assessment", "assessment", `Assessment deleted successfully: ${assessment.title}`);
+
       res.status(200).json({
         success: true,
         message: "Assessment and its questions deleted successfully"
       });
     } catch (error) {
-      await session.abortTransaction();
-      session.endSession();
-      res.status(500).json({
+        // Only abort if transaction wasn't committed
+        if (session && !transactionCommitted) {
+            await session.abortTransaction();
+        }
+        res.status(500).json({
         success: false,
         message: "Failed to delete assessment",
         error: error.message
       });
+    } finally {
+      if (session) {
+        session.endSession();
+      }
     }
   };
   
 
 const editQuestion = async (req, res) => {
     try {
-       
+        const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
+
+        if (!organization_id) {
+            return res.status(400).json({ success: false, message: "Organization ID is required" });
+        }
+
         const payload = {
             ...(typeof req.body.question_text === 'string' ? { question_text: req.body.question_text } : {}),
             ...(Array.isArray(req.body.options) ? { options: req.body.options } : {}),
@@ -865,9 +1011,19 @@ const editQuestion = async (req, res) => {
         }
 
         // Fetch current question (to know type/options if not provided)
-        const existing = await AdminQuestion.findOne({ uuid: req.params.id });
+        const existing = await OrganizationAssessmentQuestion.findOne({ uuid: req.params.id });
         if (!existing) {
             return res.status(404).json({ isSuccess: false, message: 'Question not found' });
+        }
+
+        // Verify that the question belongs to an assessment in the user's organization
+        const assessment = await OrganizationAssessments.findOne({
+            questions: existing._id,
+            organization_id
+        });
+
+        if (!assessment) {
+            return res.status(403).json({ isSuccess: false, message: 'Access denied: Question not found in your organization' });
         }
 
         const effectiveType = payload.type || existing.type;
@@ -892,7 +1048,7 @@ const editQuestion = async (req, res) => {
             }
         }
 
-        const question = await AdminQuestion.findOneAndUpdate(
+        const question = await OrganizationAssessmentQuestion.findOneAndUpdate(
             { uuid: req.params.id },
             payload,
             { new: true }
@@ -913,11 +1069,39 @@ const editQuestion = async (req, res) => {
 
 const deleteQuestion = async (req, res) => {
     try {
-        const question = await AdminQuestion.findOneAndDelete({ uuid: req.params.id })
+        const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
+
+        if (!organization_id) {
+            return res.status(400).json({ success: false, message: "Organization ID is required" });
+        }
+
+        const question = await OrganizationAssessmentQuestion.findOne({ uuid: req.params.id });
+
+        if (!question) {
+            return res.status(404).json({
+                isSuccess: false,
+                message: "Question not found"
+            });
+        }
+
+        // Verify that the question belongs to an assessment in the user's organization
+        const assessment = await OrganizationAssessments.findOne({
+            questions: question._id,
+            organization_id
+        });
+
+        if (!assessment) {
+            return res.status(403).json({ isSuccess: false, message: 'Access denied: Question not found in your organization' });
+        }
+
+        const deletedQuestion = await OrganizationAssessmentQuestion.findOneAndDelete({ uuid: req.params.id });
+
+        await logAdminActivity(req, "Delete Question", "assessment", `Question deleted successfully: ${deletedQuestion.question_text}`);
+
         return res.status(200).json({
             isSuccess: true,
             message: "Question deleted successfully",
-            data: question
+            data: deletedQuestion
         })
     } catch (error) {
         return res.status(500).json({
@@ -931,18 +1115,25 @@ const deleteQuestion = async (req, res) => {
 
 const searchAssessment = async (req, res) => {
     try {
+        const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
+
+        if (!organization_id) {
+            return res.status(400).json({ success: false, message: "Organization ID is required" });
+        }
+
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 50;
         const skip = (page - 1) * limit;
         const { status, search = "" } = req.query;
 
         const filter = {
+            organization_id,
             title: { $regex: search, $options: "i" },
             ...(status && { status }),
         };
 
-        const total = await AdminAssessment.countDocuments(filter);
-        const assessments = await AdminAssessment.find(filter)
+        const total = await OrganizationAssessments.countDocuments(filter);
+        const assessments = await OrganizationAssessments.find(filter)
             .skip(skip)
             .limit(limit);
         return res.status(200).json({

@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const ActivityLog = require("../models/adminActivity_model");
+const ActivityLog = require("../models/organizationActivity_model");
 
 const logActivity = async (req,res,next)=>{
     res.on("finish",async ()=>{

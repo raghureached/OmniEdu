@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, X, FileText } from 'lucide-react';
-import './CsvUpload.css';
+import { Upload, X, FileText, Download } from 'lucide-react';
 
 const CsvUpload = ({ onQuestionsUpload, disabled = false }) => {
     const [dragActive, setDragActive] = useState(false);
@@ -8,6 +7,30 @@ const CsvUpload = ({ onQuestionsUpload, disabled = false }) => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const fileInputRef = useRef(null);
+
+    const downloadSampleCSV = () => {
+        const sampleData = [
+            ['question_text', 'type', 'option1', 'option2', 'option3', 'option4', 'option5', 'correct_option'],
+            ['What is 2 + 2?', 'Multiple Choice', '2', '3', '4', '5', '', 'A'],
+            ['Select all even numbers', 'Multi Select', '1', '2', '3', '4', '5', 'B,D'],
+            ['What is the capital of France?', 'Multiple Choice', 'London', 'Berlin', 'Paris', 'Madrid', '', 'C'],
+            ['Which are primary colors?', 'Multi Select', 'Red', 'Green', 'Blue', 'Yellow', 'Purple', 'A,C,D']
+        ];
+
+        const csvContent = sampleData.map(row =>
+            row.map(field => `"${field}"`).join(',')
+        ).join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'assessment_questions_format.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     const parseCSV = (csvText) => {
         const lines = csvText.split('\n').filter(line => line.trim());
@@ -201,24 +224,42 @@ const CsvUpload = ({ onQuestionsUpload, disabled = false }) => {
                     <FileText size={20} />
                     <h3>Upload Questions from CSV</h3>
                 </div>
-                <button
-                    type="button"
-                    className="csv-upload-info"
-                    onClick={() => setShowHelp(!showHelp)}
-                    title={showHelp ? "Hide CSV format help" : "Show CSV format help"}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        minWidth: '80px',
-                        justifyContent: 'center'
-                    }}
-                >
-                    {showHelp ? "✕" : "?"}
-                    <span style={{ fontSize: '14px' }}>
-                        {showHelp ? "Close" : "Help"}
-                    </span>
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={downloadSampleCSV}
+                        title="Download sample CSV format"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '8px 12px',
+                            fontSize: '14px'
+                        }}
+                    >
+                        <Download size={16} />
+                        Format
+                    </button>
+                    <button
+                        type="button"
+                        className="csv-upload-info"
+                        onClick={() => setShowHelp(!showHelp)}
+                        title={showHelp ? "Hide CSV format help" : "Show CSV format help"}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            minWidth: '80px',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        {showHelp ? "✕" : "?"}
+                        <span style={{ fontSize: '14px' }}>
+                            {showHelp ? "Close" : "Help"}
+                        </span>
+                    </button>
+                </div>
             </div>
 
             <div
@@ -275,6 +316,11 @@ const CsvUpload = ({ onQuestionsUpload, disabled = false }) => {
             )}
 
             <div className="csv-upload-help" style={{ display: showHelp ? 'block' : 'none' }}>
+                <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#f0f9ff', borderRadius: '8px', border: '1px solid #0ea5e9' }}>
+                    <p style={{ margin: 0, fontSize: '14px', color: '#0c4a6e' }}>
+                        <strong>💡 Quick Start:</strong> Click the "Format" button above to download a sample CSV file with the correct format and examples!
+                    </p>
+                </div>
                 <h4>CSV Format Requirements:</h4>
                 <div className="csv-upload-example">
                     <code>

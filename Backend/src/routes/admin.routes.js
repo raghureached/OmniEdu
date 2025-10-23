@@ -31,22 +31,22 @@ const {
   
 const router = require("express").Router();
 
-router.route('/addUser').post(addUserId,addUser)
-router.route('/editUser/:id').put(addUserId,editUser)
-router.route('/deleteUser/:id').delete(addUserId,deleteUser)
-router.route('/getUsers').get(addUserId,getUsers)
-router.route('/getUser/:id').get(addUserId,getUserbyId)
-router.route('/bulkDeleteUsers').delete(addUserId,bulkDeleteUsers)
-router.route('/bulkEditUsers').put(addUserId,bulkEditUsers)
-router.route('/exportUsers').get(addUserId,exportUsers)
+router.route('/addUser').post(addUser)
+router.route('/editUser/:id').put(editUser)
+router.route('/deleteUser/:id').delete(deleteUser)
+router.route('/getUsers').get(getUsers)
+router.route('/getUser/:id').get(getUserbyId)
+router.route('/bulkDeleteUsers').delete(bulkDeleteUsers)
+router.route('/bulkEditUsers').put(bulkEditUsers)
+router.route('/exportUsers').get(exportUsers)
 
 
 /////ROLES////////
 
-router.route('/addOrgRole').post(addUserId,addOrgRole)
-router.route('/editOrgRole/:id').put(addUserId,editOrgRole)
-router.route('/deleteOrgRole/:id').delete(addUserId,deleteOrgRole)
-router.route('/getOrgRoles').get(addUserId,getOrgRoles)
+router.route('/addOrgRole').post(addOrgRole)
+router.route('/editOrgRole/:id').put(editOrgRole)
+router.route('/deleteOrgRole/:id').delete(deleteOrgRole)
+router.route('/getOrgRoles').get(getOrgRoles)
 
 //////Assessment////////
 
@@ -89,10 +89,10 @@ router.route('/deleteGroup/:id').delete(deleteGroup)
 //////Learning Path////////
 
 router.route('/addLearningPath').post(addLearningPath)
-router.route('/getLearningPaths').get(addUserId,getLearningPaths)
-router.route('/getLearningPathContents/:id').get(addUserId,getContentsOfLearningPath)
-router.route('/editLearningPath/:id').put(addUserId,editLearningPath)
-router.route('/deleteLearningPath/:id').delete(addUserId,deleteLearningPath)
+router.route('/getLearningPaths').get(getLearningPaths)
+router.route('/getLearningPathContents/:id').get(getContentsOfLearningPath)
+router.route('/editLearningPath/:id').put(editLearningPath)
+router.route('/deleteLearningPath/:id').delete(deleteLearningPath)
 
 
 
@@ -103,11 +103,11 @@ router.route('/editMessage/:id').put(editMessage)
 router.route('/deleteMessage/:id').delete(deleteMessage)
 router.route('/getMessages').get(getMessage)
 //////Assignment////////
-router.route('/createAssignment').post(addUserId,createAssignment)
-router.route('/getAssignments').get(addUserId,getAssignments)
-router.route('/getAssignment/:id').get(addUserId,getAssignment)
-router.route('/editAssignment/:id').put(addUserId,editAssignment)
-router.route('/deleteAssignment/:id').delete(addUserId,deleteAssignment)
+router.route('/createAssignment').post(createAssignment)
+router.route('/getAssignments').get(getAssignments)
+router.route('/getAssignment/:id').get(getAssignment)
+router.route('/editAssignment/:id').put(editAssignment)
+router.route('/deleteAssignment/:id').delete(deleteAssignment)
 
 /////Activity Log /////
 
@@ -115,7 +115,7 @@ router.route('/deleteAssignment/:id').delete(addUserId,deleteAssignment)
 
 
 //////Profile//////
-router.route('/getProfile').get(addUserId,getProfile)
+router.route('/getProfile').get(getProfile)
 
 
 module.exports = router;

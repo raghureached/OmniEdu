@@ -220,7 +220,7 @@ const SubmissionPopup = ({ isOpen, onClose, assessmentData, answers, timeSpent, 
 </div>
           {/* For feedback */}
           <div className="global-preview-resources-content">
-            {assessmentData.feedbackEnabled ? (
+            { 
               <div className="global-preview-card" style={{ border: "none",background:"#f8fafc" }} >
                 <div className="feedback-header-row" style={{ marginBottom: "20px" }}>
                   <h4 className="feedback-title">Feedback (Optional)</h4>
@@ -270,7 +270,7 @@ const SubmissionPopup = ({ isOpen, onClose, assessmentData, answers, timeSpent, 
                   </div>
                 )}
               </div>
-            ) : null}
+            }
           </div>
           {/* Actions */}
           {status === 'Failed' && onRetake ? (
