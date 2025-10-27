@@ -32,7 +32,7 @@ const LearningPathSchema = new mongoose.Schema(
       lessons: [
         {
           id: { type: mongoose.Schema.Types.ObjectId, refPath: 'lessons.model', required: true },
-          model: { type: String, enum: ["OrganizationModule", "Assessment", "OrganizationSurvey"], required: true },
+          model: { type: String, enum: ["OrganizationModule", "OrganizationAssessments", "OrganizationSurvey"], required: true },
           type: { type: String, enum: ["module", "assessment", "survey"], required: true },
           title: { type: String },
           order: { type: Number },

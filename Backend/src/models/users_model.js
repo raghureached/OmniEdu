@@ -31,6 +31,11 @@ const userSchema = new mongoose.Schema(
       ref: "GlobalRoles", // Make sure your global roles model uses this name
       required: true,
     },
+    organization_id: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Organization",
+          required: true,
+        },
     last_login: {
       type: Date,
     },

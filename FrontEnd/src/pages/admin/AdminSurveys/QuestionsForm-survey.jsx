@@ -568,7 +568,7 @@ const QuestionsForm = ({
                                                                                 onChange={e => updateOption(elementIndex, optIndex, e.target.value)}
                                                                                 required
                                                                             />
-                                                                            {(element.options || []).length > 2 && (
+                                                                            {(element.options || []).length >= 2 && (
                                                                                 <button
                                                                                     type="button"
                                                                                     className="survey-assess-remove-option"
@@ -579,14 +579,16 @@ const QuestionsForm = ({
                                                                             )}
                                                                         </div>
                                                                     ))}
-                                                                    <button
-                                                                        type="button"
-                                                                        className="survey-assess-add-option"
-                                                                        onClick={() => addOption(elementIndex)}
-                                                                    >
-                                                                        <Plus size={14} />
-                                                                        Add Option
-                                                                    </button>
+                                                                    {element.options.length < 5 && (
+                                                                        <button
+                                                                            type="button"
+                                                                            className="survey-assess-add-option"
+                                                                            onClick={() => addOption(elementIndex)}
+                                                                        >
+                                                                            <Plus size={14} />
+                                                                            Add Option
+                                                                        </button>
+                                                                    )}
                                                                 </div>
                                                             )}
                                                         </div>

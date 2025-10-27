@@ -4,18 +4,20 @@ import { fetchContent, deleteContent } from '../../../store/slices/contentSlice'
 import LearningPathModal from './LearningPathModal';
 import './LearningPaths.css';
 import { Edit3, FileText, Search, Trash2, Users } from 'lucide-react';
+import { getLearningPaths } from '../../../store/slices/learningPathSlice';
+import { deleteLearningPath } from '../../../store/slices/learningPathSlice';
 
 const LearningPaths = () => {
   const dispatch = useDispatch();
-  const { items, loading, error } = useSelector((state) => state.content);
+  const { items } = useSelector((state) => state.content);
+  const {assessments} = useSelector((state) => state.adminAssessments)
+  const {learningPaths} = useSelector((state) => state.learningPaths)
 
   // State for filters
   const [nameSearch, setNameSearch] = useState('');
   const [classificationFilter, setClassificationFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Local state for list and modal
-  const [paths, setPaths] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPath, setEditingPath] = useState(null);
 
@@ -74,18 +76,14 @@ const LearningPaths = () => {
       tags: ['Support', 'Product', 'CX']
     }
   ];
-
   useEffect(() => {
-    dispatch(fetchContent({ type: 'learning_path' }));
-    // initialize local list from dummy for now
-    setPaths(dummyPaths);
+    dispatch(getLearningPaths());
   }, [dispatch]);
 
   const handleDeletePath = (pathId) => {
     if (window.confirm('Are you sure you want to delete this learning path?')) {
-      setPaths(prev => prev.filter(p => p.id !== pathId));
       // Optional backend sync
-      dispatch(deleteContent(pathId));
+      dispatch(deleteLearningPath(pathId));
     }
   };
 
@@ -103,11 +101,11 @@ const LearningPaths = () => {
     const { tagsText, ...payload } = data || {};
     if (editingPath) {
       // update
-      setPaths(prev => prev.map(p => p.id === editingPath.id ? { ...editingPath, ...payload, updatedAt: new Date().toISOString() } : p));
+      // dispatch((editingPath.id, payload));
     } else {
       // create
       const newItem = {
-        id: Math.max(0, ...paths.map(p => p.id)) + 1,
+        id: Math.max(0, ...learningPaths.map(p => p.id)) + 1,
         title: payload.title,
         classification: payload.classification,
         status: payload.status,
@@ -119,14 +117,16 @@ const LearningPaths = () => {
         description: payload.description || '',
         tags: Array.isArray(payload.tags) ? payload.tags : []
       };
-      setPaths(prev => [newItem, ...prev]);
     }
     setIsModalOpen(false);
     setEditingPath(null);
   };
-
+  const handleEditPath = (path)=>{
+    setIsModalOpen(true)
+    setEditingPath(path)
+  }
   // Apply filters to paths
-  const filteredPaths = paths.filter(path => {
+  const filteredPaths = learningPaths.filter(path => {
     const matchesName = path.title.toLowerCase().includes(nameSearch.toLowerCase());
     const matchesClassification = classificationFilter === 'all' || path.classification === classificationFilter;
     const matchesStatus = statusFilter === 'all' || path.status === statusFilter;
@@ -155,7 +155,7 @@ const LearningPaths = () => {
                 <FileText size={20} />
               </div>
               <div className="global-content-stat-info">
-                <span className="global-content-stat-number">{paths.length}</span>
+                <span className="global-content-stat-number">{learningPaths.length}</span>
                 <span className="global-content-stat-label"> Learning Paths</span>
               </div>
             </div>
@@ -255,10 +255,11 @@ const LearningPaths = () => {
                   <td className="learnpath-actions">
                     <div style={{ display: "flex", gap: "10px" }}>
                       <button
-                        className="global-action-btn delete">
+                        className="global-action-btn delete"
+                        onClick={()=>handleDeletePath(path.uuid)}>
                         <Trash2 size={16} />
                       </button>
-                      <button className="global-action-btn edit">
+                      <button className="global-action-btn edit" onClick={()=>handleEditPath(path)}>
                         <Edit3 size={16} />
                       </button>
                     </div>

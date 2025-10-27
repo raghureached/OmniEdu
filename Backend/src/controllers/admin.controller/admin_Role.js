@@ -1,6 +1,7 @@
 const OrganizationRole = require("../../models/organizationRoles_model");
-const logAdminActivity = require("./admin_activity");
-
+const logAdminActivity = require("./admin_activity")
+const Organization = require("../../models/organization_model");
+const Role = require("../../models/globalRoles_model");
 const addOrgRole = async(req,res)=>{
     try {
         const {name,description,permissions} = req.body;
@@ -9,7 +10,7 @@ const addOrgRole = async(req,res)=>{
             description,
             permissions,
             //change this when authentication is added
-            organization_id:"68b5a94c5991270bf14b9d13"
+            organization_id:req.user.organization_id
         })
         await logAdminActivity(req, "add", `Organization role added successfully: ${orgRole.name}`);
         return res.status(201).json({
@@ -69,24 +70,17 @@ const deleteOrgRole = async(req,res)=>{
 
 const getOrgRoles = async(req,res)=>{
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 50;
-        const orgRoles = await OrganizationRole.find({}).skip((page - 1) * limit).limit(limit)
-        await logAdminActivity(req, "view", `Organization roles fetched successfully: ${orgRoles.length}`);
-        return res.status(200).json({
+        const roleIds = await Organization.findById({_id:req.user.organization_id}).select("roles").exec()
+        const roles = await Role.find({_id:{$in:roleIds.roles}})
+        return res.status(200).json({   
             isSuccess:true,
-            message:"Organization roles fetched successfully",
-            data:orgRoles,
-            pagination:{
-                page,
-                limit,
-                total:await OrganizationRole.countDocuments()
-            }
+            message:"Roles fetched successfully",
+            data:roles
         })
     } catch (error) {
         return res.status(500).json({
             isSuccess:false,
-            message:"Failed to fetch organization roles",
+            message:"Failed to fetch roles",
             error:error.message
         })
     }

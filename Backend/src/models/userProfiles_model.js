@@ -10,21 +10,17 @@ const userProfileSchema = new mongoose.Schema(
       index: true,
     },
     user_id: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    designation_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Designation",
-    },
-    organization_roles_id: {
-      type: mongoose.Schema.Types.ObjectId,
-    },
-    organization_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Organization",
-      required: true,
+    // designation_id: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "Designation",
+    // },
+    designation:{
+      type:String,
+      default:null
     },
     team_id: {
       type: mongoose.Schema.Types.ObjectId,

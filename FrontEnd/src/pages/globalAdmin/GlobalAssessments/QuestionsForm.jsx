@@ -64,7 +64,7 @@ const QuestionsForm = ({
     // Derive sub-teams for the selected team
     const selectedTeam = groups.find(t => String(t._id) === String(formData.team));
     const subTeams = selectedTeam?.subTeams || [];
-
+    const [Viacsv,setViacsv] = useState(false)
     // Duration will be stored as a plain number of minutes (integer)
     const enhanceTexthelper = async (title) => {
         try {
@@ -146,21 +146,13 @@ const QuestionsForm = ({
         }
         // Check each question is properly filled
         for (const question of questions) {
-            // Question type must be selected
-            if (!question.type || !question.type.trim()) {
+            // Question must have type, text, and at least 2 options
+            if (!question.type || !question.question_text?.trim() ||
+                !Array.isArray(question.options) || question.options.filter(o => o?.trim()).length < 2) {
                 return false;
             }
-            // Question text must be filled
-            if (!question.question_text || !question.question_text.trim()) {
-                return false;
-            }
-            // For Multiple Choice and Multi Select questions, need at least 2 options and correct answer
+            // For Multiple Choice and Multi Select questions, must have correct answer
             if (question.type === 'Multiple Choice' || question.type === 'Multi Select') {
-                // Must have at least 2 options
-                if (!Array.isArray(question.options) || question.options.filter(o => o && o.trim()).length < 2) {
-                    return false;
-                }
-                // Must have correct answer selected
                 if (question.correct_option === undefined || question.correct_option === null || question.correct_option === '') {
                     return false;
                 }
@@ -275,7 +267,7 @@ const QuestionsForm = ({
     const handleCsvQuestionsUpload = (csvQuestions) => {
         // Debug: Log the incoming CSV questions to see if type is present
         console.log('CSV Questions received:', csvQuestions);
-
+         setViacsv(true)
         // Normalize CSV questions to match the expected format
         const normalizedQuestions = csvQuestions.map(q => ({
             type: q.type || 'Multiple Choice',
@@ -792,36 +784,71 @@ const QuestionsForm = ({
                                                     <div className="assess-form-group" style={{ marginTop: '20px' }}>
                                                         <label className="assess-form-label">Answer Options</label>
                                                         {(q.type === 'Multiple Choice' || q.type === 'Multi Select') && <div className="assess-options-container">
-                                                            {q.options.map((opt, optIndex) => (
-                                                                <div key={optIndex} className="assess-option-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', width: 'fit-content' }}>
-                                                                    <div className="assess-option-index">{getLetterFromIndex(optIndex)}</div>
-                                                                    <input
-                                                                        type="text"
-                                                                        className="assess-form-input"
-                                                                        placeholder={`Option ${getLetterFromIndex(optIndex)}`}
-                                                                        value={opt}
-                                                                        onChange={e => updateOption(qIndex, optIndex, e.target.value)}
-                                                                        required
-                                                                    />
-                                                                    {q.options.length > 2 && (
-                                                                        <button
-                                                                            type="button"
-                                                                            className="assess-remove-option"
-                                                                            onClick={() => removeOption(qIndex, optIndex)}
-                                                                        >
-                                                                            <X size={16} />
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                            <button
-                                                                type="button"
-                                                                className="assess-add-option"
-                                                                onClick={() => addOption(qIndex)}
-                                                            >
-                                                                <Plus size={14} />
-                                                                Add Option
-                                                            </button>
+                                                            {Viacsv ? (
+                                                                // For CSV uploaded questions - only show non-empty options
+                                                                q.options.map((opt, originalIndex) => {
+                                                                    // Only display non-empty options
+                                                                    if (!opt || opt.trim() === '') {
+                                                                        return null;
+                                                                    }
+                                                                    return (
+                                                                        <div key={originalIndex} className="assess-option-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', width: 'fit-content' }}>
+                                                                            <div className="assess-option-index">{getLetterFromIndex(originalIndex)}</div>
+                                                                            <input
+                                                                                type="text"
+                                                                                className="assess-form-input"
+                                                                                placeholder={`Option ${getLetterFromIndex(originalIndex)}`}
+                                                                                value={opt}
+                                                                                onChange={e => updateOption(qIndex, originalIndex, e.target.value)}
+                                                                                required
+                                                                            />
+                                                                            {q.options.length >=2 && (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    className="assess-remove-option"
+                                                                                    onClick={() => removeOption(qIndex, originalIndex)}
+                                                                                >
+                                                                                    <X size={16} />
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                }).filter(Boolean)
+                                                            ) : (
+                                                                // For manually created questions - show all options
+                                                                q.options.map((opt, optIndex) => (
+                                                                    <div key={optIndex} className="assess-option-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', width: 'fit-content' }}>
+                                                                        <div className="assess-option-index">{getLetterFromIndex(optIndex)}</div>
+                                                                        <input
+                                                                            type="text"
+                                                                            className="assess-form-input"
+                                                                            placeholder={`Option ${getLetterFromIndex(optIndex)}`}
+                                                                            value={opt}
+                                                                            onChange={e => updateOption(qIndex, optIndex, e.target.value)}
+                                                                            required
+                                                                        />
+                                                                        {q.options.length >= 2 && (
+                                                                            <button
+                                                                                type="button"
+                                                                                className="assess-remove-option"
+                                                                                onClick={() => removeOption(qIndex, optIndex)}
+                                                                            >
+                                                                                <X size={16} />
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                ))
+                                                            )}  
+                                                            {q.options.length < 5 && (
+                                                                <button
+                                                                    type="button"
+                                                                    className="assess-add-option"
+                                                                    onClick={() => addOption(qIndex)}
+                                                                >
+                                                                    <Plus size={14} />
+                                                                    Add Option
+                                                                </button>
+                                                            )}
                                                             {/* Correct Answer Index(es) + Save aligned right */}
                                                             <div className="assess-correct-row">
                                                                 <div className="assess-form-group assess-correct-group">
@@ -1462,8 +1489,10 @@ const QuestionsForm = ({
                                             </div>
                                             <div className="assess-qpreview-options">
                                                 {(() => {
-                                                    // Always show shuffled options in preview
-                                                    const displayOptions = [...q.options].sort(() => 0.5 - Math.random());
+                                                    // Filter out empty options and show shuffled non-empty options only
+                                                    const nonEmptyOptions = q.options.filter(opt => opt && opt.trim() !== '');
+                                                    const displayOptions = [...nonEmptyOptions].sort(() => 0.5 - Math.random());
+                                                    // const displayOptions = [...q.options].sort(() => 0.5 - Math.random());
                                                     return displayOptions.map((opt, idx) => (
                                                         <label key={idx} className="assess-qpreview-option">
                                                             <input type={q.type === 'Multi Select' ? 'checkbox' : 'radio'} disabled name={`preview-q-${questionPreviewIndex}`} />
@@ -1562,7 +1591,9 @@ const QuestionsForm = ({
                                                 {/* Options (selectable, shuffled) */}
                                                 {(q.type === 'Multiple Choice' || q.type === 'Multi Select') && displayOptions.length > 0 && (
                                                     <div className="survey-assess-qpreview-options" style={{ marginTop: 8 }}>
-                                                        {displayOptions.map(({ opt, originalIndex }, displayIndex) => {
+                                                        {displayOptions
+                                                            .filter(({ opt }) => opt && opt.trim() !== '') // Filter out empty options
+                                                            .map(({ opt, originalIndex }, displayIndex) => {
 
                                                             const checked = isMulti
                                                                 ? Array.isArray(selected) && selected.includes(originalIndex)

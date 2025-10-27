@@ -6,7 +6,7 @@ const {upload,uploadContent, uploadAssessment, uploadQuestionFile } = require(".
 const { uploadToCloudinary, uploadMultipleToCloudinary } = require("../utils/uploadOnCloud");
 const Department = require("../models/departments_model");
 const { addGroup, getGroups, editGroup, deleteGroup } = require("../controllers/admin.controller/admin_Groups");
-const { addLearningPath, getLearningPaths, getContentsOfLearningPath, editLearningPath, deleteLearningPath } = require("../controllers/admin.controller/admin_LearningPath");
+const { addLearningPath, getLearningPaths, getContentsOfLearningPath, editLearningPath, deleteLearningPath, getLearningPathById } = require("../controllers/admin.controller/admin_LearningPath");
 //const { createSurvey, deleteSurvey, getSurveys, editSurvey } = require("../controllers/admin.controller/admin_Surveys");
 const { setMessage, editMessage, deleteMessage, getMessage } = require("../controllers/admin.controller/admin_message");
 const { getActivities } = require("../controllers/admin.controller/admin_activity");
@@ -93,6 +93,7 @@ router.route('/getLearningPaths').get(getLearningPaths)
 router.route('/getLearningPathContents/:id').get(getContentsOfLearningPath)
 router.route('/editLearningPath/:id').put(editLearningPath)
 router.route('/deleteLearningPath/:id').delete(deleteLearningPath)
+router.route('/getLearningPathById/:id').get(getLearningPathById)
 
 
 

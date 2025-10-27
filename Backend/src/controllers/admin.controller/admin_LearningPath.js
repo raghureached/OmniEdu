@@ -21,24 +21,23 @@ const addLearningPath = async (req, res) => {
       bypassRewards,
       enableFeedback,
       lessons = [],
-      organization_id,
       status,
     } = req.body;
 
     const typeToModel = {
       module: 'OrganizationModule',
-      assessment: 'Assessment',
+      assessment: 'OrganizationAssessments',
       survey: 'OrganizationSurvey',
     };
 
     const normalizedLessons = Array.isArray(lessons)
       ? lessons.map((l) => ({
-          id: l.id,
-          type: (l.type || '').toLowerCase(),
-          model: typeToModel[(l.type || '').toLowerCase()],
-          title: l.title || null,
-          order: typeof l.order === 'number' ? l.order : undefined,
-        }))
+        id: l.id,
+        type: (l.type || '').toLowerCase(),
+        model: typeToModel[(l.type || '').toLowerCase()],
+        title: l.title || null,
+        order: typeof l.order === 'number' ? l.order : undefined,
+      }))
       : [];
 
     const learningPath = new LearningPath({
@@ -59,7 +58,7 @@ const addLearningPath = async (req, res) => {
       bypassRewards,
       enableFeedback,
       lessons: normalizedLessons,
-      organization_id,
+      organization_id: req.user.organization_id,
       status,
       created_by: req.user?._id,
     });
@@ -81,22 +80,22 @@ const addLearningPath = async (req, res) => {
 };
 
 const getLearningPaths = async (req, res) => {
-    try {
-        // const orgId = req.user.orgId || "68bc0898fdb4a64d5a727a60";
-        const learningPath = await LearningPath.find({organization_id: "68bc0898fdb4a64d5a727a60"}).populate('lessons.id').lean();
-        await logAdminActivity(req, "view", `Learning paths fetched successfully: ${learningPath.length}`);
-        return res.status(200).json({
-            isSuccess: true,
-            message: 'Learning paths fetched successfully.',
-            data: learningPath
-        })
-    } catch (error) {
-        return res.status(500).json({
-            isSuccess: false,
-            message: 'Failed to fetch learning paths.',
-            error: error.message
-        })
-    }
+  try {
+    // const orgId = req.user.orgId || "68bc0898fdb4a64d5a727a60";
+    const learningPath = await LearningPath.find({ organization_id: req.user.organization_id }).populate('lessons.id').lean();
+    await logAdminActivity(req, "view", `Learning paths fetched successfully: ${learningPath.length}`);
+    return res.status(200).json({
+      isSuccess: true,
+      message: 'Learning paths fetched successfully.',
+      data: learningPath
+    })
+  } catch (error) {
+    return res.status(500).json({
+      isSuccess: false,
+      message: 'Failed to fetch learning paths.',
+      error: error.message
+    })
+  }
 }
 
 const getContentsOfLearningPath = async (req, res) => {
@@ -158,12 +157,12 @@ const editLearningPath = async (req, res) => {
 
     const normalizedLessons = Array.isArray(lessons)
       ? lessons.map((l) => ({
-          id: l.id,
-          type: (l.type || '').toLowerCase(),
-          model: typeToModel[(l.type || '').toLowerCase()],
-          title: l.title || null,
-          order: typeof l.order === 'number' ? l.order : undefined,
-        }))
+        id: l.id,
+        type: (l.type || '').toLowerCase(),
+        model: typeToModel[(l.type || '').toLowerCase()],
+        title: l.title || null,
+        order: typeof l.order === 'number' ? l.order : undefined,
+      }))
       : undefined;
 
     const updateDoc = {
@@ -215,26 +214,54 @@ const editLearningPath = async (req, res) => {
   }
 }
 
-const deleteLearningPath = async(req,res)=>{
-  const deletedLearningPath = await LearningPath.findOneAndDelete({uuid:req.params.id}) 
-  if(!deletedLearningPath){
+const getLearningPathById = async (req, res) => {
+  try {
+    const learningPath = await LearningPath.findOne({ uuid: req.params.id }).populate('lessons.id').lean()
+    if (!learningPath) {
+      await logAdminActivity(req, "view", `Learning path not found: ${req.params.id}`);
+      return res.status(404).json({
+        isSuccess: false,
+        message: "Learning path not found"
+      })
+    }
+    await logAdminActivity(req, "view", `Learning path fetched successfully: ${learningPath.title}`);
+    return res.status(200).json({
+      isSuccess: true,
+      message: "Learning path fetched successfully",
+      data: learningPath
+    })
+  } catch (error) {
+    return res.status(500).json({
+      isSuccess: false,
+      message: "Failed to fetch learning path",
+      error: error.message
+    })
+  }
+}
+
+const deleteLearningPath = async (req, res) => {
+  const deletedLearningPath = await LearningPath.findOneAndDelete({ uuid: req.params.id })
+  if (!deletedLearningPath) {
     await logAdminActivity(req, "delete", `Learning path not found: ${req.params.id}`);
     return res.status(404).json({
-      isSuccess:false,
-      message:"Learning path not found"
+      isSuccess: false,
+      message: "Learning path not found"
     })
   }
   await logAdminActivity(req, "delete", `Learning path deleted successfully: ${deletedLearningPath.title}`);
   return res.status(200).json({
-    isSuccess:true,
-    message:"Learning path deleted successfully",
-    data:deletedLearningPath
+    isSuccess: true,
+    message: "Learning path deleted successfully",
+    data: deletedLearningPath
   })
 }
+
+
 module.exports = {
-    addLearningPath,
-    getLearningPaths,
-    getContentsOfLearningPath,
-    editLearningPath,
-    deleteLearningPath
+  addLearningPath,
+  getLearningPaths,
+  getContentsOfLearningPath,
+  editLearningPath,
+  deleteLearningPath,
+  getLearningPathById
 }

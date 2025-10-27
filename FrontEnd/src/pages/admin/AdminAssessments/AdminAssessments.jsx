@@ -540,11 +540,14 @@ const GlobalAssessments = () => {
 
   const addOption = (qIndex) => {
     const updated = [...questions];
-    updated[qIndex] = {
-      ...updated[qIndex],
-      options: [...updated[qIndex].options, '']
-    };
-    setQuestions(updated);
+    // Limit to maximum 5 options
+    if (updated[qIndex].options.length < 5) {
+      updated[qIndex] = {
+        ...updated[qIndex],
+        options: [...updated[qIndex].options, '']
+      };
+      setQuestions(updated);
+    }
   };
 
   const updateOption = (qIndex, optIndex, value) => {
@@ -559,6 +562,7 @@ const GlobalAssessments = () => {
 
   const removeOption = (qIndex, optIndex) => {
     const updated = [...questions];
+    // Keep minimum 2 options
     if (updated[qIndex].options.length > 2) {
       updated[qIndex] = {
         ...updated[qIndex],

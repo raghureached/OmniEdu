@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CheckCircle, ChevronDown, ChevronLeft, ChevronUp, Star, Play, Pause, Volume2, VolumeX, Maximize, Minimize, FileText, ClipboardCheck, EyeIcon, Plus, ThumbsUp, ThumbsDown, Send } from 'lucide-react';
 import { RiDeleteBin2Fill } from 'react-icons/ri';
 import '../common/Preview/Preview.css';
+import { useParams } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 
 const LearningPath = ({ courseData: propCourseData }) => {
+    const {id} = useParams()
     const [expandedSections, setExpandedSections] = useState([0]);
     const [activeLesson, setActiveLesson] = useState(null);
     const [contentData, setContentData] = useState(null);
@@ -16,6 +19,12 @@ const LearningPath = ({ courseData: propCourseData }) => {
     const [feedbackReaction, setFeedbackReaction] = useState(null); // 'like' | 'dislike' | null
     const [feedbackComment, setFeedbackComment] = useState('');
 
+    const [selectedPath, setSelectedPath] = useState(null);
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+        // dispatch(getLearningPathById(id))
+    }, [id])
     const handleSectionClick = (section) => {
         setActiveLesson(section);
         if (section?.data) {

@@ -552,7 +552,8 @@ const GlobalSurveys = () => {
 
   const addOption = (elementIndex) => {
     const updated = [...formElements];
-    if (updated[elementIndex].options) {
+    // Limit to maximum 5 options
+    if (updated[elementIndex].options && updated[elementIndex].options.length < 5) {
       updated[elementIndex].options.push('');
       setFormElements(updated);
     }
@@ -568,6 +569,7 @@ const GlobalSurveys = () => {
 
   const removeOption = (elementIndex, optIndex) => {
     const updated = [...formElements];
+    // Keep minimum 2 options
     if (updated[elementIndex].options && updated[elementIndex].options.length > 2) {
       updated[elementIndex].options.splice(optIndex, 1);
       setFormElements(updated);

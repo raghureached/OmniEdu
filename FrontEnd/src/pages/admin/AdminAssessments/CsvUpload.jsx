@@ -1,155 +1,71 @@
 import React, { useState, useRef } from 'react';
-import { Upload, X, FileText, Download } from 'lucide-react';
+import { Upload, X, FileText, Download, ChevronDown, ChevronUp } from 'lucide-react';
 import './CsvUpload.css';
+import { parseEnhancedCSVWithValidation, downloadEnhancedSampleCSV } from '../../../utils/enhancedCsvValidation';
 
 const CsvUpload = ({ onQuestionsUpload, disabled = false }) => {
     const [dragActive, setDragActive] = useState(false);
     const [showHelp, setShowHelp] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [uploadedFileName, setUploadedFileName] = useState('');
+    const [showFullErrors, setShowFullErrors] = useState(false);
     const fileInputRef = useRef(null);
 
     const downloadSampleCSV = () => {
-        const sampleData = [
-            ['question_text', 'type', 'option1', 'option2', 'option3', 'option4', 'option5', 'correct_option'],
-            ['What is 2 + 2?', 'Multiple Choice', '2', '3', '4', '5', '', 'A'],
-            ['Select all even numbers', 'Multi Select', '1', '2', '3', '4', '5', 'B,D'],
-            ['What is the capital of France?', 'Multiple Choice', 'London', 'Berlin', 'Paris', 'Madrid', '', 'C'],
-            ['Which are primary colors?', 'Multi Select', 'Red', 'Green', 'Blue', 'Yellow', 'Purple', 'A,C,D']
-        ];
+        // Use the enhanced sample CSV format
+        downloadEnhancedSampleCSV();
+    };
 
-        const csvContent = sampleData.map(row =>
-            row.map(field => `"${field}"`).join(',')
-        ).join('\n');
+    // Helper functions for error display
+    const getErrorDetails = (errorText) => {
+        if (!errorText.includes('\n\n')) return { title: errorText, details: '', errorLines: [] };
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', 'assessment_questions_format.csv');
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const parts = errorText.split('\n\n');
+        const title = parts[0];
+        const details = parts[1];
+        const errorLines = details.split('\n').filter(line => line.trim() !== '');
+
+        return { title, details, errorLines };
+    };
+
+    const formatErrorsForDisplay = (errorLines, showAll = false) => {
+        if (!errorLines.length) return '';
+
+        const maxInitialErrors = 3;
+        const errorsToShow = showAll ? errorLines : errorLines.slice(0, maxInitialErrors);
+        const remainingCount = errorLines.length - maxInitialErrors;
+
+        let formattedErrors = errorsToShow.join('\n');
+
+        if (!showAll && remainingCount > 0) {
+            formattedErrors += `\n\n... and ${remainingCount} more error${remainingCount > 1 ? 's' : ''}`;
+        }
+
+        return formattedErrors;
     };
 
     const parseCSV = (csvText) => {
-        const lines = csvText.split('\n').filter(line => line.trim());
-        if (lines.length === 0) {
-            throw new Error('CSV file is empty');
+        // Use the enhanced CSV validation
+        const result = parseEnhancedCSVWithValidation(csvText);
+
+
+        if (result.hasErrors) {
+            throw new Error(`CSV validation errors: ${result.errors.join('\n')}`);
         }
 
-        // Expected headers
-        const expectedHeaders = ['question_text', 'type', 'option1', 'option2', 'option3', 'option4', 'option5', 'correct_option'];
-        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-
-        // Check if required headers are present
-        const requiredHeaders = ['question_text', 'type'];
-        const missingHeaders = requiredHeaders.filter(req => !headers.includes(req));
-
-        if (missingHeaders.length > 0) {
-            throw new Error(`Missing required columns: ${missingHeaders.join(', ')}`);
-        }
-
-        const questions = [];
-
-        for (let i = 1; i < lines.length; i++) {
-            const values = lines[i].split(',').map(v => v.trim());
-            if (values.length < headers.length) {
-                // Pad with empty strings if needed
-                while (values.length < headers.length) {
-                    values.push('');
-                }
-            }
-
-            const question = {};
-
-            // Debug: Log each row being parsed
-            console.log(`Parsing row ${i}:`, { headers, values });
-
-            headers.forEach((header, index) => {
-                if (expectedHeaders.includes(header)) {
-                    const value = values[index] || '';
-
-                    if (header === 'question_text') {
-                        question.question_text = value;
-                    } else if (header === 'type') {
-                        question.type = value || 'Multiple Choice';
-                        console.log(`Setting type to: ${question.type}`);
-                    } else if (header.startsWith('option')) {
-                        const optionIndex = parseInt(header.replace('option', '')) - 1;
-                        if (!question.options) question.options = [];
-                        question.options[optionIndex] = value;
-                    } else if (header === 'correct_option') {
-                        // Parse correct option - could be letter (A,B,C) or number (1,2,3)
-                        const correctValue = value.toUpperCase().trim();
-
-                        // Handle comma-separated values for multi-select (e.g., "A,B" or "1,2")
-                        if (correctValue.includes(',')) {
-                            const parts = correctValue.split(',').map(s => s.trim());
-                            const indices = [];
-
-                            for (const part of parts) {
-                                if (/^[A-Z]$/.test(part)) {
-                                    // Convert letter to number (A=0, B=1, etc.)
-                                    indices.push(part.charCodeAt(0) - 65);
-                                } else if (/^\d+$/.test(part)) {
-                                    // Use number directly (0-based)
-                                    indices.push(parseInt(part) - 1);
-                                }
-                            }
-
-                            question.correct_option = indices.length > 0 ? indices : [];
-                        } else if (/^[A-Z]$/.test(correctValue)) {
-                            // Single letter (A=0, B=1, etc.)
-                            question.correct_option = correctValue.charCodeAt(0) - 65;
-                        } else if (/^\d+$/.test(correctValue)) {
-                            // Single number (0-based)
-                            question.correct_option = parseInt(correctValue) - 1;
-                        } else {
-                            question.correct_option = '';
-                        }
-                    }
-                }
-            });
-
-            // Debug: Log the parsed question object
-            console.log(`Parsed question ${i}:`, question);
-
-            // Validate question
-            if (question.question_text && question.question_text.trim()) {
-                // Ensure we have at least 2 options
-                if (!question.options || question.options.filter(opt => opt && opt.trim()).length < 2) {
-                    question.options = question.options || [];
-                    while (question.options.filter(opt => opt && opt.trim()).length < 2) {
-                        question.options.push('');
-                    }
-                }
-
-                // Default type if not specified
-                if (!question.type) {
-                    question.type = 'Multiple Choice';
-                }
-
-                questions.push(question);
-            }
-        }
-
-        if (questions.length === 0) {
-            throw new Error('No valid questions found in CSV');
-        }
-
-        console.log('Final parsed questions:', questions);
-        return questions;
+        return result.questions;
     };
 
     const handleFileUpload = (file) => {
         if (!file) return;
 
         if (!file.name.endsWith('.csv') && !file.name.endsWith('.txt')) {
-            setError('Please upload a CSV file');
+            setError(`❌ Upload Failed: ${file.name}\n\nError: Please upload a CSV file`);
             return;
         }
+
+        setUploadedFileName(file.name);
 
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -157,24 +73,39 @@ const CsvUpload = ({ onQuestionsUpload, disabled = false }) => {
                 const csvText = e.target.result;
                 const questions = parseCSV(csvText);
 
-                setSuccess(`Successfully parsed ${questions.length} questions from CSV`);
+                setSuccess(`✅ Successfully parsed ${questions.length} questions from ${file.name}`);
                 setError('');
 
                 if (onQuestionsUpload) {
                     onQuestionsUpload(questions);
                 }
 
-                // Clear success message after 3 seconds
-                setTimeout(() => setSuccess(''), 3000);
+                // Removed auto-clear timeout - success message stays until user clicks X
 
             } catch (err) {
-                setError(err.message);
+                // Enhanced error handling for CSV validation errors
+                const errorMessage = err.message;
+
+                // Clear uploaded file name on validation error
+                setUploadedFileName('');
+
+                // Check if it's a CSV validation error
+                if (errorMessage.includes('CSV validation errors:')) {
+                    const validationErrors = errorMessage.replace('CSV validation errors: ', '');
+                    setError(`❌ Upload Failed: ${file.name}\n\nValidation Errors:\n${validationErrors}`);
+                } else {
+                    setError(`❌ Upload Failed: ${file.name}\n\nError: ${errorMessage}`);
+                }
+
                 setSuccess('');
+                // Don't call onQuestionsUpload for failed uploads
             }
         };
 
         reader.onerror = () => {
-            setError('Error reading file');
+            setError(`❌ Upload Failed: ${file.name}\n\nError: Error reading file`);
+            // Clear uploaded file name on read error
+            setUploadedFileName('');
             setSuccess('');
         };
 
@@ -201,21 +132,40 @@ const CsvUpload = ({ onQuestionsUpload, disabled = false }) => {
         const files = e.dataTransfer.files;
         if (files && files[0]) {
             handleFileUpload(files[0]);
+            // Reset the file input after handling dropped file
+            // This allows selecting the same file again
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
         }
     };
 
     const handleFileInputChange = (e) => {
         if (e.target.files && e.target.files[0]) {
             handleFileUpload(e.target.files[0]);
+            // Reset the file input immediately after handling the file
+            // This allows selecting the same file again
+            e.target.value = '';
         }
     };
 
     const resetUpload = () => {
         setError('');
         setSuccess('');
+        setUploadedFileName('');
+        setShowFullErrors(false); // Reset to collapsed state for next upload
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
+    };
+
+    const dismissSuccess = () => {
+        setSuccess('');
+    };
+
+    const dismissError = () => {
+        setError('');
+        setShowFullErrors(false); // Reset to collapsed state for next error
     };
 
     return (
@@ -244,15 +194,15 @@ const CsvUpload = ({ onQuestionsUpload, disabled = false }) => {
                     </button>
                     <button
                         type="button"
-                        className="csv-upload-info"
+                        className="btn-secondary"
                         onClick={() => setShowHelp(!showHelp)}
                         title={showHelp ? "Hide CSV format help" : "Show CSV format help"}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
                             gap: '6px',
-                            minWidth: '80px',
-                            justifyContent: 'center'
+                            padding: '8px 12px',
+                            fontSize: '14px'
                         }}
                     >
                         {showHelp ? "✕" : "?"}
@@ -284,35 +234,189 @@ const CsvUpload = ({ onQuestionsUpload, disabled = false }) => {
                     <Upload size={32} className="csv-upload-icon" />
                     <div className="csv-upload-text">
                         <p>Drag and drop your CSV file here, or click to browse</p>
-                        {/* <p style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                            Supported format: question_text, type, option1, option2, ..., correct_option
-                        </p> */}
                     </div>
                     <label htmlFor="csv-file-input" className="btn-primary" style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}>
                         Browse Files
                     </label>
+
+                    {/* Display uploaded file name inside dropzone */}
+                    { uploadedFileName && (
+                        <div style={{
+                            marginTop: '12px',
+                            padding: '8px 12px',
+                            backgroundColor: '#f0f9ff',
+                            border: '1px solid #0ea5e9',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px'
+                        }}>
+                            <FileText size={14} style={{ color: '#0ea5e9' }} />
+                            <span style={{ fontSize: '13px', color: '#0c4a6e', fontWeight: '500' }}>
+                                Uploaded: {uploadedFileName}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {error && (
-                <div className="csv-upload-error">
-                    <X size={16} />
-                    <span>{error}</span>
-                    <button type="button" onClick={resetUpload} className="csv-upload-error-close">
-                        <X size={14} />
-                    </button>
-                </div>
-            )}
+            {error && (() => {
+                const { title, errorLines } = getErrorDetails(error);
+                const shouldShowMoreButton = errorLines.length > 3;
+                const displayErrors = formatErrorsForDisplay(errorLines, showFullErrors);
+
+                return (
+                    <div className="csv-upload-error" style={{
+                        backgroundColor: '#fef2f2',
+                        border: '1px solid #f87171',
+                        borderRadius: '8px',
+                        padding: '16px',
+                        marginBottom: '16px',
+                        position: 'relative'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                            <div style={{ flex: 1 }}>
+                                <div style={{
+                                    fontSize: '16px',
+                                    fontWeight: '600',
+                                    color: '#dc2626',
+                                    marginBottom: '8px',
+                                    whiteSpace: 'pre-line'
+                                }}>
+                                    {title}
+                                </div>
+                                {displayErrors && (
+                                    <div style={{
+                                        fontSize: '14px',
+                                        color: '#7f1d1d',
+                                        backgroundColor: '#fef2f2',
+                                        padding: '12px',
+                                        whiteSpace: 'pre-line',
+                                        fontFamily: 'monospace',
+                                        // borderRadius: '4px',
+                                        // border: '1px solid #fecaca'
+                                    }}>
+                                        {displayErrors}
+                                    </div>
+                                )}
+                                {shouldShowMoreButton && (
+                                    <div >
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowFullErrors(!showFullErrors)}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: '#dc2626',
+                                                cursor: 'pointer',
+                                                fontSize: '13px',
+                                                fontWeight: '600',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '4px',
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                transition: 'background-color 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => e.target.style.backgroundColor = '#fee2e2'}
+                                            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                        >
+                                            {showFullErrors ? (
+                                                <>
+                                                    <ChevronUp size={14} />
+                                                    Show Less
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <ChevronDown size={14} />
+                                                    Show More 
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={dismissError}
+                                className="csv-upload-error-close"
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#ef4444',
+                                    cursor: 'pointer',
+                                    padding: '4px',
+                                    borderRadius: '4px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    position: 'absolute',
+                                    top: '12px',
+                                    right: '12px',
+                                    zIndex: 10
+                                }}
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+                    </div>
+                );
+            })()}
 
             {success && (
-                <div className="csv-upload-success">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="20,6 9,17 4,12"/>
-                    </svg>
-                    <span>{success}</span>
-                    <button type="button" onClick={resetUpload} className="csv-upload-success-close">
-                        <X size={14} />
-                    </button>
+                <div className="csv-upload-success" style={{
+                    backgroundColor: '#f0fdf4',
+                    border: '1px solid #4ade80',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    marginBottom: '16px',
+                    position: 'relative'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#22c55e"
+                            strokeWidth="2"
+                            style={{ marginTop: '2px', flexShrink: 0 }}
+                        >
+                            <polyline points="20,6 9,17 4,12"/>
+                        </svg>
+                        <div style={{
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            color: '#15803d',
+                            whiteSpace: 'pre-line',
+                            flex: 1
+                        }}>
+                            {success}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={dismissSuccess}
+                            className="csv-upload-success-close"
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#22c55e',
+                                cursor: 'pointer',
+                                padding: '4px',
+                                borderRadius: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                position: 'absolute',
+                                top: '12px',
+                                right: '12px',
+                                zIndex: 10
+                            }}
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
                 </div>
             )}
 
@@ -322,12 +426,12 @@ const CsvUpload = ({ onQuestionsUpload, disabled = false }) => {
                         <strong>💡 Quick Start:</strong> Click the "Format" button above to download a sample CSV file with the correct format and examples!
                     </p>
                 </div>
-                <h4>CSV Format Requirements:</h4>
+                <h4>Enhanced CSV Format Requirements:</h4>
                 <div className="csv-upload-example">
                     <code>
-                        question_text,type,option1,option2,option3,option4,correct_option<br/>
-                        What is 2+2?,Multiple Choice,2,3,4,5,A<br/>
-                        Select all even numbers,Multi Select,1,2,3,4,A,B
+                        question_text,type,option1,option2,option3,option4,option5,correct_option1,correct_option2,correct_option3,correct_option4,correct_option5<br/>
+                        What is 2+2?,Multiple Choice,2,3,4,5,,,,C,,<br/>
+                        Select all even numbers,Multi Select,1,2,3,4,5,,B,,D,,
                     </code>
                 </div>
                 <p><strong>Required Columns:</strong></p>
@@ -335,13 +439,16 @@ const CsvUpload = ({ onQuestionsUpload, disabled = false }) => {
                     <li><strong>question_text:</strong> The question text (required)</li>
                     <li><strong>type:</strong> "Multiple Choice" or "Multi Select" (required)</li>
                     <li><strong>option1-option5:</strong> Answer choices (minimum 2, maximum 5)</li>
-                    <li><strong>correct_option:</strong> Correct answer(s) using letters A-E or comma-separated (e.g., A or A,B,C)</li>
+                    <li><strong>correct_option1-correct_option5:</strong> Correct answer(s) using letters A-E only (e.g., A, B, C, D, E)</li>
                 </ul>
                 <p><strong>Format Rules:</strong></p>
                 <ul>
                     <li><strong>Minimum:</strong> 2 options per question (option1, option2)</li>
                     <li><strong>Maximum:</strong> 5 options per question (option1-option5)</li>
-                    <li><strong>Correct Options:</strong> Use A-E for single answers, A-E comma-separated for multiple answers</li>
+                    <li><strong>Correct Options:</strong> Use A-E for single answers, A-E for multiple answers (one letter per correct_option column)</li>
+                    <li><strong>Numbers not allowed:</strong> Only letters A-E are accepted in correct_option columns</li>
+                    <li><strong>Empty cells:</strong> Leave correct_option columns empty for incorrect options</li>
+                    <li><strong>No gaps in options:</strong> Empty options are only allowed at the end (e.g., Berlin,Paris,Madrid,,, ✅ but Berlin,,Madrid,,, ❌)</li>
                     <li><strong>No quotes needed:</strong> Plain text format works best</li>
                 </ul>
             </div>

@@ -63,7 +63,7 @@ const organizationSchema = new mongoose.Schema(
     },
     roles:{
       type : [mongoose.Schema.Types.ObjectId],
-      ref:"Role"
+      ref:"GlobalRoles"
     },
     adminDashboardConfig:{
       type : [mongoose.Schema.Types.ObjectId],

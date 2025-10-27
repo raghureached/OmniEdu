@@ -1,0 +1,11 @@
+question_text,type,option1,option2,option3,option4,option5,correct_option1,correct_option2,correct_option3,correct_option4,correct_option5
+What is 2 + 2?,Multiple Choice,2,3,4,5,,,,C,,
+Select all even numbers,Multi Select,1,2,3,4,5,,B,,D,,
+What is the capital of France?,Multiple Choice,London,Berlin,Paris,Madrid,,,,C,,
+Which are primary colors?,Multi Select,Red,Green,Blue,Yellow,Purple,A,,C,D,,
+What year was the first computer invented?,Multiple Choice,1822,1943,1957,1975,,,B,,,
+Select all programming languages,Multi Select,Java,HTML,Python,CSS,JavaScript,A,,C,,E
+What is the largest planet?,Multiple Choice,Mars,Jupiter,Earth,Venus,,B,,,
+Choose all mammals,Multi Select,Dog,Cat,Fish,Bird,Elephant,A,,,,E
+What is 10 × 5?,Multiple Choice,50,15,25,100,A,,,
+Select prime numbers,Multi Select,2,3,4,5,6,,B,,D,,

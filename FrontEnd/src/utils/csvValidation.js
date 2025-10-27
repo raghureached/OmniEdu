@@ -24,7 +24,9 @@ export const parseCSVWithValidation = (csvText) => {
         throw new Error('CSV file is empty');
     }
 
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    // Parse headers with proper CSV parsing
+    const headerValues = parseCSVRow(lines[0], 10); // Max 10 columns expected
+    const headers = headerValues.map(h => h.toLowerCase());
     const missingHeaders = CSV_VALIDATION.REQUIRED_HEADERS.filter(req => !headers.includes(req));
 
     if (missingHeaders.length > 0) {
@@ -37,7 +39,7 @@ export const parseCSVWithValidation = (csvText) => {
 
     for (let i = 1; i < lines.length; i++) {
         const rowNumber = i + 1;
-        const values = lines[i].split(',').map(v => v.trim());
+        const values = parseCSVRow(lines[i], headers.length);
         const question = {};
         let hasErrors = false;
 
@@ -106,7 +108,7 @@ export const parseCSVWithValidation = (csvText) => {
 };
 
 /**
- * Parse correct option from CSV value
+ * Parse correct option from CSV value - ONLY LETTERS A-E allowed
  */
 const parseCorrectOption = (value, options) => {
     if (!value || !value.trim()) return '';
@@ -114,34 +116,27 @@ const parseCorrectOption = (value, options) => {
     const correctValue = value.toUpperCase().trim();
     const validOptions = options.filter(opt => opt && opt.trim()).length;
 
-    // Handle comma-separated values for multi-select
+    // Handle comma-separated values for multi-select (ONLY LETTERS A-E)
     if (correctValue.includes(',')) {
         const parts = correctValue.split(',').map(s => s.trim());
         const indices = [];
 
         for (const part of parts) {
-            if (/^[A-Z]$/.test(part)) {
+            if (/^[A-E]$/.test(part)) {
                 const index = part.charCodeAt(0) - 65;
                 if (index >= 0 && index < validOptions) {
                     indices.push(index);
                 }
-            } else if (/^\d+$/.test(part)) {
-                const index = parseInt(part) - 1;
-                if (index >= 0 && index < validOptions) {
-                    indices.push(index);
-                }
             }
+            // Numbers are NOT allowed - ignore them
         }
 
         return indices.length > 0 ? indices : '';
-    } else if (/^[A-Z]$/.test(correctValue)) {
+    } else if (/^[A-E]$/.test(correctValue)) {
         const index = correctValue.charCodeAt(0) - 65;
         return index >= 0 && index < validOptions ? index : '';
-    } else if (/^\d+$/.test(correctValue)) {
-        const index = parseInt(correctValue) - 1;
-        return index >= 0 && index < validOptions ? index : '';
     }
-
+    // Numbers are NOT allowed - return empty
     return '';
 };
 

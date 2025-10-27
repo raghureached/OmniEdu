@@ -7,6 +7,7 @@ export const fetchUsers = createAsyncThunk(
   async (filters, { rejectWithValue }) => {
     try {
       const response = await api.get('/api/admin/getUsers', { params: filters })
+      // console.log(response.data)
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -18,8 +19,8 @@ export const createUser = createAsyncThunk(
   'users/createUser',
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await api.post('/users', userData);
-      return response.data;
+      const response = await api.post('/api/admin/addUser', userData);
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -30,8 +31,8 @@ export const updateUser = createAsyncThunk(
   'users/updateUser',
   async ({ id, userData }, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/users/${id}`, userData);
-      return response.data;
+      const response = await api.put(`/api/admin/editUser/${id}`, userData);
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -42,7 +43,7 @@ export const deleteUser = createAsyncThunk(
   'users/deleteUser',
   async (id, { rejectWithValue }) => {
     try {
-      await api.delete(`/users/${id}`);
+      await api.delete(`/api/admin/deleteUser/${id}`);
       return id;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -54,7 +55,7 @@ export const bulkDeleteUsers = createAsyncThunk(
   'users/bulkDeleteUsers',
   async (ids, { rejectWithValue }) => {
     try {
-      await api.post('/users/bulk-delete', { ids });
+      await api.post('/api/admin/bulkDeleteUsers', { ids });
       return ids;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -66,8 +67,8 @@ export const bulkUpdateUserGroup = createAsyncThunk(
   'users/bulkUpdateUserGroup',
   async ({ ids, groupData }, { rejectWithValue }) => {
     try {
-      const response = await api.post('/users/bulk-update-group', { ids, groupData });
-      return response.data;
+      const response = await api.post('/api/admin/bulkUpdateUserGroup', { ids, groupData });
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -81,12 +82,12 @@ export const importUsers = createAsyncThunk(
       const formData = new FormData();
       formData.append('file', fileData);
       
-      const response = await api.post('/users/import', formData, {
+      const response = await api.post('/api/admin/importUsers', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      return response.data;
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -97,7 +98,7 @@ export const exportUsers = createAsyncThunk(
   'users/exportUsers',
   async (filters, { rejectWithValue }) => {
     try {
-      const response = await api.get('/users/export', { 
+      const response = await api.get('/api/admin/exportUsers', { 
         params: filters,
         responseType: 'blob'
       });
@@ -189,6 +190,7 @@ const userSlice = createSlice({
       })
       .addCase(createUser.fulfilled, (state, action) => {
         state.loading = false;
+        console.log(action.payload)
         state.users.push(action.payload);
         state.totalCount += 1;
       })
@@ -221,7 +223,7 @@ const userSlice = createSlice({
       })
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.loading = false;
-        state.users = state.users.filter(user => user.id !== action.payload);
+        state.users = state.users.filter(user => user.uuid !== action.payload);
         state.totalCount -= 1;
         state.selectedUsers = state.selectedUsers.filter(id => id !== action.payload);
       })
@@ -237,7 +239,7 @@ const userSlice = createSlice({
       })
       .addCase(bulkDeleteUsers.fulfilled, (state, action) => {
         state.loading = false;
-        state.users = state.users.filter(user => !action.payload.includes(user.id));
+        state.users = state.users.filter(user => !action.payload.includes(user.uuid));
         state.totalCount -= action.payload.length;
         state.selectedUsers = [];
       })
@@ -255,7 +257,7 @@ const userSlice = createSlice({
         state.loading = false;
         // Update users with new group data
         action.payload.forEach(updatedUser => {
-          const index = state.users.findIndex(user => user.id === updatedUser.id);
+          const index = state.users.findIndex(user => user.uuid === updatedUser.uuid);
           if (index !== -1) {
             state.users[index] = updatedUser;
           }

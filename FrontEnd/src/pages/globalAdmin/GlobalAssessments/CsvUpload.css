@@ -1,6 +1,6 @@
 /* CSV Upload Component Styles */
 .csv-upload-container {
-    margin-bottom: 24px;
+    /* margin-bottom: 24px; */
 }
 
 .csv-upload-header {
@@ -83,7 +83,7 @@
 }
 
 .csv-upload-error {
-    display: flex;
+    /* display: flex; */
     align-items: center;
     gap: 8px;
     background: #fef2f2;

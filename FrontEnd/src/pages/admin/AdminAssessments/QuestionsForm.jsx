@@ -33,7 +33,7 @@ const QuestionsForm = ({
     setQuestions
 }) => {
     // console.log(formData)
-    const {fileupload} = useSelector((state) => state.globalAssessments);
+    const { fileupload } = useSelector((state) => state.globalAssessments);
     const [step, setStep] = useState(1);
     const [aiProcessing, setAiProcessing] = useState(false);
     const [creating, setCreating] = useState(false)
@@ -63,6 +63,7 @@ const QuestionsForm = ({
     // Derive sub-teams for the selected team
     const selectedTeam = groups.find(t => String(t._id) === String(formData.team));
     const subTeams = selectedTeam?.subTeams || [];
+    const [Viacsv,setViacsv] = useState(false)
 
     // Duration will be stored as a plain number of minutes (integer)
     const enhanceTexthelper = async (title) => {
@@ -145,21 +146,13 @@ const QuestionsForm = ({
         }
         // Check each question is properly filled
         for (const question of questions) {
-            // Question type must be selected
-            if (!question.type || !question.type.trim()) {
+            // Question must have type, text, and at least 2 options
+            if (!question.type || !question.question_text?.trim() ||
+                !Array.isArray(question.options) || question.options.filter(o => o?.trim()).length < 2) {
                 return false;
             }
-            // Question text must be filled
-            if (!question.question_text || !question.question_text.trim()) {
-                return false;
-            }
-            // For Multiple Choice and Multi Select questions, need at least 2 options and correct answer
+            // For Multiple Choice and Multi Select questions, must have correct answer
             if (question.type === 'Multiple Choice' || question.type === 'Multi Select') {
-                // Must have at least 2 options
-                if (!Array.isArray(question.options) || question.options.filter(o => o && o.trim()).length < 2) {
-                    return false;
-                }
-                // Must have correct answer selected
                 if (question.correct_option === undefined || question.correct_option === null || question.correct_option === '') {
                     return false;
                 }
@@ -274,15 +267,15 @@ const QuestionsForm = ({
     const handleCsvQuestionsUpload = (csvQuestions) => {
         // Debug: Log the incoming CSV questions to see if type is present
         console.log('CSV Questions received:', csvQuestions);
-
+        setViacsv(true)
         // Normalize CSV questions to match the expected format
         const normalizedQuestions = csvQuestions.map(q => ({
             type: q.type || 'Multiple Choice',
             question_text: q.question_text || '',
             options: Array.isArray(q.options) && q.options.length ? q.options : ['', ''],
-            correct_option: q.correct_option !== undefined ? q.correct_option : '',      
+            correct_option: q.correct_option !== undefined ? q.correct_option : '',
             total_points: 1,
-           
+
         }));
 
         // Debug: Log the normalized questions
@@ -644,87 +637,87 @@ const QuestionsForm = ({
                                                     </div>
 
 
-                                                    {fileupload ?  
-                                                    <div className="assess-form-group" style={{ marginTop: '20px' }}>
-                                                        <div style={{width:'100%',backgroundColor:'#f5f5f5',height:'100px'}}>
-                                                            <p>Please Wait..</p>
+                                                    {fileupload ?
+                                                        <div className="assess-form-group" style={{ marginTop: '20px' }}>
+                                                            <div style={{ width: '100%', backgroundColor: '#f5f5f5', height: '100px' }}>
+                                                                <p>Please Wait..</p>
 
+                                                            </div>
                                                         </div>
-                                                        </div> 
-                                                    :<div className="assess-form-group" style={{ marginTop: '20px' }}>
-                                                        <label className="assess-form-label">Attach File (Optional)</label>
-                                                        <div
-                                                            className="assess-file-upload-container"
-                                                            style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
-                                                        >
-                                                            <select
-                                                                className="assess-form-select"
-                                                                value={q.file_url || ''}
-                                                                onChange={e => updateQuestionField(qIndex, 'file_url', e.target.value)}
-                                                            >
-                                                                <option value="">No file selected</option>
-                                                                {/* Show existing file option if it's not part of uploadedFiles list */}
-                                                                {q.file_url && !uploadedFiles.includes(q.file_url) && (
-                                                                    <option value={q.file_url}>
-                                                                        {q.file_url.split('/').pop() || 'Current File'}
-                                                                    </option>
-                                                                )}
-                                                                {uploadedFiles.map((fUrl, i) => (
-                                                                    <option key={i} value={fUrl}>
-                                                                        {`Uploaded File ${i + 1}`}
-                                                                    </option>
-                                                                ))}
-                                                            </select>
+                                                        : <div className="assess-form-group" style={{ marginTop: '20px' }}>
+                                                            <label className="assess-form-label">Attach File (Optional)</label>
                                                             <div
-                                                                className="assess-file-upload"
-                                                                style={{ position: 'relative' }}
+                                                                className="assess-file-upload-container"
+                                                                style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
                                                             >
-                                                                <input
-                                                                    type="file"
-                                                                    id={`file-${qIndex}`}
-                                                                    className="assess-file-input"
-                                                                    name="files"
-                                                                    onChange={(e)=>handleAddFile(qIndex, e)}
-                                                                />
-                                                                <label
-                                                                    htmlFor={`file-${qIndex}`}
-                                                                    className="assess-file-label"
+                                                                <select
+                                                                    className="assess-form-select"
+                                                                    value={q.file_url || ''}
+                                                                    onChange={e => updateQuestionField(qIndex, 'file_url', e.target.value)}
+                                                                >
+                                                                    <option value="">No file selected</option>
+                                                                    {/* Show existing file option if it's not part of uploadedFiles list */}
+                                                                    {q.file_url && !uploadedFiles.includes(q.file_url) && (
+                                                                        <option value={q.file_url}>
+                                                                            {q.file_url.split('/').pop() || 'Current File'}
+                                                                        </option>
+                                                                    )}
+                                                                    {uploadedFiles.map((fUrl, i) => (
+                                                                        <option key={i} value={fUrl}>
+                                                                            {`Uploaded File ${i + 1}`}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                                <div
+                                                                    className="assess-file-upload"
+                                                                    style={{ position: 'relative' }}
+                                                                >
+                                                                    <input
+                                                                        type="file"
+                                                                        id={`file-${qIndex}`}
+                                                                        className="assess-file-input"
+                                                                        name="files"
+                                                                        onChange={(e) => handleAddFile(qIndex, e)}
+                                                                    />
+                                                                    <label
+                                                                        htmlFor={`file-${qIndex}`}
+                                                                        className="assess-file-label"
+                                                                        style={{
+                                                                            cursor: 'pointer',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            gap: '8px',
+                                                                        }}
+                                                                    >
+                                                                        <Upload size={16} />
+                                                                        Upload File
+                                                                    </label>
+                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    className="assess-preview-toggle"
+                                                                    title="Preview File"
+                                                                    onClick={() => setPreviewOpen(prev => ({ ...prev, [qIndex]: !prev[qIndex] }))}
+                                                                    disabled={!q.file_url}
+                                                                    style={{ whiteSpace: 'nowrap' }}
+                                                                >
+                                                                    <Eye size={16} /> {previewOpen[qIndex] ? 'Hide Preview' : 'Preview'}
+                                                                </button>
+                                                            </div>
+
+                                                            {/* File name display */}
+                                                            {q.file_url && (
+                                                                <div
                                                                     style={{
-                                                                        cursor: 'pointer',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        gap: '8px',
+                                                                        marginTop: '6px',
+                                                                        fontSize: '0.9rem',
+                                                                        color: '#64748b',
                                                                     }}
                                                                 >
-                                                                    <Upload size={16} />
-                                                                    Upload File
-                                                                </label>
-                                                            </div>
-                                                            <button
-                                                                type="button"
-                                                                className="assess-preview-toggle"
-                                                                title="Preview File"
-                                                                onClick={() => setPreviewOpen(prev => ({ ...prev, [qIndex]: !prev[qIndex] }))}
-                                                                disabled={!q.file_url}
-                                                                style={{ whiteSpace: 'nowrap' }}
-                                                            >
-                                                                <Eye size={16} /> {previewOpen[qIndex] ? 'Hide Preview' : 'Preview'}
-                                                            </button>
-                                                        </div>
-
-                                                        {/* File name display */}
-                                                        {q.file_url && (
-                                                            <div
-                                                                style={{
-                                                                    marginTop: '6px',
-                                                                    fontSize: '0.9rem',
-                                                                    color: '#64748b',
-                                                                }}
-                                                            >
-                                                                File: {q.file_url.split('/').pop()}
-                                                            </div>
-                                                        )}
-                                                    </div>}
+                                                                    File: {q.file_url.split('/').pop()}
+                                                                </div>
+                                                            )}
+                                                        </div>}
 
 
                                                     {/* Preview overlay (opens on clicking Preview; closes with X) */}
@@ -791,36 +784,72 @@ const QuestionsForm = ({
                                                     <div className="assess-form-group" style={{ marginTop: '20px' }}>
                                                         <label className="assess-form-label">Answer Options</label>
                                                         {(q.type === 'Multiple Choice' || q.type === 'Multi Select') && <div className="assess-options-container">
-                                                            {q.options.map((opt, optIndex) => (
-                                                                <div key={optIndex} className="assess-option-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', width: 'fit-content' }}>
-                                                                    <div className="assess-option-index">{getLetterFromIndex(optIndex)}</div>
-                                                                    <input
-                                                                        type="text"
-                                                                        className="assess-form-input"
-                                                                        placeholder={`Option ${getLetterFromIndex(optIndex)}`}
-                                                                        value={opt}
-                                                                        onChange={e => updateOption(qIndex, optIndex, e.target.value)}
-                                                                        required
-                                                                    />
-                                                                    {q.options.length > 2 && (
-                                                                        <button
-                                                                            type="button"
-                                                                            className="assess-remove-option"
-                                                                            onClick={() => removeOption(qIndex, optIndex)}
-                                                                        >
-                                                                            <X size={16} />
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                            <button
-                                                                type="button"
-                                                                className="assess-add-option"
-                                                                onClick={() => addOption(qIndex)}
-                                                            >
-                                                                <Plus size={14} />
-                                                                Add Option
-                                                            </button>
+                                                            {Viacsv ? (
+                                                                // For CSV uploaded questions - only show non-empty options
+                                                                q.options.map((opt, originalIndex) => {
+                                                                    // Only display non-empty options
+                                                                    if (!opt || opt.trim() === '') {
+                                                                        return null;
+                                                                    }
+                                                                    return (
+                                                                        <div key={originalIndex} className="assess-option-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', width: 'fit-content' }}>
+                                                                            <div className="assess-option-index">{getLetterFromIndex(originalIndex)}</div>
+                                                                            <input
+                                                                                type="text"
+                                                                                className="assess-form-input"
+                                                                                placeholder={`Option ${getLetterFromIndex(originalIndex)}`}
+                                                                                value={opt}
+                                                                                onChange={e => updateOption(qIndex, originalIndex, e.target.value)}
+                                                                                required
+                                                                            />
+                                                                            {q.options.length >= 2 && (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    className="assess-remove-option"
+                                                                                    onClick={() => removeOption(qIndex, originalIndex)}
+                                                                                >
+                                                                                    <X size={16} />
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                }).filter(Boolean)
+                                                            ) : (
+                                                                // For manually created questions - show all options
+                                                                q.options.map((opt, optIndex) => (
+                                                                    <div key={optIndex} className="assess-option-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', width: 'fit-content' }}>
+                                                                        <div className="assess-option-index">{getLetterFromIndex(optIndex)}</div>
+                                                                        <input
+                                                                            type="text"
+                                                                            className="assess-form-input"
+                                                                            placeholder={`Option ${getLetterFromIndex(optIndex)}`}
+                                                                            value={opt}
+                                                                            onChange={e => updateOption(qIndex, optIndex, e.target.value)}
+                                                                            required
+                                                                        />
+                                                                        {q.options.length >= 2 && (
+                                                                            <button
+                                                                                type="button"
+                                                                                className="assess-remove-option"
+                                                                                onClick={() => removeOption(qIndex, optIndex)}
+                                                                            >
+                                                                                <X size={16} />
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                ))
+                                                            )}
+
+                                                            {q.options.length < 5 && (
+                                                                <button
+                                                                    type="button"
+                                                                    className="assess-add-option"
+                                                                    onClick={() => addOption(qIndex)}
+                                                                >
+                                                                    <Plus size={14} />
+                                                                    Add Option
+                                                                </button>
+                                                            )}
                                                             {/* Correct Answer Index(es) + Save aligned right */}
                                                             <div className="assess-correct-row">
                                                                 <div className="assess-form-group assess-correct-group">
@@ -952,7 +981,7 @@ const QuestionsForm = ({
 
                                                                             // Show popup if any index is out of range
                                                                             if (hasInvalidIndex) {
-                                                                                const optionLetters = Array.from({length: validOptions}, (_, i) => getLetterFromIndex(i)).join(', ');
+                                                                                const optionLetters = Array.from({ length: validOptions }, (_, i) => getLetterFromIndex(i)).join(', ');
                                                                                 alert(`Invalid correct answer index. Please select from options: ${optionLetters}`);
                                                                             }
                                                                         }}
@@ -1295,104 +1324,104 @@ const QuestionsForm = ({
 
                             </div>}
 
-                            
+
                         </div>
                     </div>
                     {/* Form Actions */}
                     <div className="assess-form-actions">
-                                {step === 3 ? (
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                        {step > 1 && <button type="button" className="btn-secondary" onClick={() => setStep(step - 1)}>
-                                            <ChevronLeft size={16} />Previous
-                                        </button>}
-                                        <div style={{ display: 'flex', gap: 12 }}>
-                                            <button
-                                                type="button"
-                                                className="btn-secondary"
-                                                onClick={() => setAssessmentPreviewOpen(true)}
-                                                disabled={!canProceedToNext()}
-                                                title="Preview the entire assessment as the user sees it"
-                                            >
-                                                <Eye size={16} />
-                                                <span>Preview Assessment</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn-secondary"
-                                                onClick={() => {
-                                                    if (!validatePass()) {
-                                                        if (step !== 1) setStep(1);
-                                                        return;
-                                                    }
-                                                    // Save/Update explicitly as Draft
-                                                    if (currentAssessment) {
-                                                        handleUpdateAssessment('Draft');
-                                                    } else {
-                                                        handleSaveAssessment(undefined, 'Draft');
-                                                    }
-                                                }}
-                                                disabled={!canProceedToNext()}
-                                                title="Save this assessment as Draft"
-                                            >
-                                                <FileText size={16} />
-                                                <span>Save as Draft</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn-primary"
-                                                onClick={() => {
-                                                    if (!validatePass()) {
-                                                        if (step !== 1) setStep(1);
-                                                        return;
-                                                    }
-                                                    // Create/Update explicitly as Saved
-                                                    if (currentAssessment) {
-                                                        handleUpdateAssessment('Saved');
-                                                    } else {
-                                                        handleSaveAssessment(undefined, 'Saved');
-                                                    }
-                                                }}
-                                                disabled={!canProceedToNext()}
-                                            >
-                                                <FileText size={16} />
-                                                <span>{currentAssessment ? "Update Assessment" : "Create Assessment"}</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                            {/* {step > 1 && <button type="button" className="btn-secondary" onClick={() => setStep(step - 1)}>
+                        {step === 3 ? (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                {step > 1 && <button type="button" className="btn-secondary" onClick={() => setStep(step - 1)}>
+                                    <ChevronLeft size={16} />Previous
+                                </button>}
+                                <div style={{ display: 'flex', gap: 12 }}>
+                                    <button
+                                        type="button"
+                                        className="btn-secondary"
+                                        onClick={() => setAssessmentPreviewOpen(true)}
+                                        disabled={!canProceedToNext()}
+                                        title="Preview the entire assessment as the user sees it"
+                                    >
+                                        <Eye size={16} />
+                                        <span>Preview Assessment</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn-secondary"
+                                        onClick={() => {
+                                            if (!validatePass()) {
+                                                if (step !== 1) setStep(1);
+                                                return;
+                                            }
+                                            // Save/Update explicitly as Draft
+                                            if (currentAssessment) {
+                                                handleUpdateAssessment('Draft');
+                                            } else {
+                                                handleSaveAssessment(undefined, 'Draft');
+                                            }
+                                        }}
+                                        disabled={!canProceedToNext()}
+                                        title="Save this assessment as Draft"
+                                    >
+                                        <FileText size={16} />
+                                        <span>Save as Draft</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn-primary"
+                                        onClick={() => {
+                                            if (!validatePass()) {
+                                                if (step !== 1) setStep(1);
+                                                return;
+                                            }
+                                            // Create/Update explicitly as Saved
+                                            if (currentAssessment) {
+                                                handleUpdateAssessment('Saved');
+                                            } else {
+                                                handleSaveAssessment(undefined, 'Saved');
+                                            }
+                                        }}
+                                        disabled={!canProceedToNext()}
+                                    >
+                                        <FileText size={16} />
+                                        <span>{currentAssessment ? "Update Assessment" : "Create Assessment"}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                    {/* {step > 1 && <button type="button" className="btn-secondary" onClick={() => setStep(step - 1)}>
                                                 <ChevronLeft size={16} />Previous
                                             </button>} */}
-                                            {step > 1 && <button
-                                                type="button"
-                                                className="btn-secondary"
-                                                onClick={handlePrev}
-                                                disabled={step === 1}
-                                            >
-                                                <ChevronLeft size={16} />Previous
-                                            </button>}
-                                            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', width: '100%', gap: "10px   " }}>
-                                                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>
-                                                    Cancel
-                                                </button>
-                                                {/* {step < 3 && <button type="button" className="btn-primary" onClick={() => setStep(step + 1)}>
+                                    {step > 1 && <button
+                                        type="button"
+                                        className="btn-secondary"
+                                        onClick={handlePrev}
+                                        disabled={step === 1}
+                                    >
+                                        <ChevronLeft size={16} />Previous
+                                    </button>}
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', width: '100%', gap: "10px   " }}>
+                                        <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>
+                                            Cancel
+                                        </button>
+                                        {/* {step < 3 && <button type="button" className="btn-primary" onClick={() => setStep(step + 1)}>
                                                     Next <ChevronRight size={16} />
                                                 </button>} */}
-                                                {step < 3 && <button
-                                                    type="button"
-                                                    className="btn-primary"
-                                                    onClick={handleNext}
-                                                    disabled={!canProceedToNext()}
-                                                >
-                                                    Next <ChevronRight size={16} />
-                                                </button>}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
+                                        {step < 3 && <button
+                                            type="button"
+                                            className="btn-primary"
+                                            onClick={handleNext}
+                                            disabled={!canProceedToNext()}
+                                        >
+                                            Next <ChevronRight size={16} />
+                                        </button>}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
             {/* Question Preview Modal (end-user view) */}
@@ -1461,8 +1490,9 @@ const QuestionsForm = ({
                                             </div>
                                             <div className="assess-qpreview-options">
                                                 {(() => {
-                                                    // Always show shuffled options in preview
-                                                    const displayOptions = [...q.options].sort(() => 0.5 - Math.random());
+                                                    // Filter out empty options and show shuffled non-empty options only
+                                                    const nonEmptyOptions = q.options.filter(opt => opt && opt.trim() !== '');
+                                                    const displayOptions = [...nonEmptyOptions].sort(() => 0.5 - Math.random());
                                                     return displayOptions.map((opt, idx) => (
                                                         <label key={idx} className="assess-qpreview-option">
                                                             <input type={q.type === 'Multi Select' ? 'checkbox' : 'radio'} disabled name={`preview-q-${questionPreviewIndex}`} />
@@ -1485,7 +1515,7 @@ const QuestionsForm = ({
                 </div>
             )}
             {/* Assessment Preview Modal (single page, no sections) */}
-           
+
             {assessmentPreviewOpen && (<AssessmentPreview data={{ ...formData, questions }} onClose={() => setAssessmentPreviewOpen(false)} />)}
 
             {/* Single Question Preview Modal (Survey UI) */}
@@ -1561,28 +1591,31 @@ const QuestionsForm = ({
                                                 {/* Options (selectable, shuffled) */}
                                                 {(q.type === 'Multiple Choice' || q.type === 'Multi Select') && displayOptions.length > 0 && (
                                                     <div className="survey-assess-qpreview-options" style={{ marginTop: 8 }}>
-                                                        {displayOptions.map(({ opt, originalIndex }, displayIndex) => {
+                                                        {/* {displayOptions.map(({ opt, originalIndex }, displayIndex) => { */}
+                                                        {displayOptions
+                                                            .filter(({ opt }) => opt && opt.trim() !== '') // Filter out empty options
+                                                            .map(({ opt, originalIndex }, displayIndex) => {
 
-                                                            const checked = isMulti
-                                                                ? Array.isArray(selected) && selected.includes(originalIndex)
-                                                                : selected === originalIndex;
-                                                            return (
-                                                                <label key={`single-prev-q-${questionPreviewIndex}-opt-${originalIndex}`} className="survey-assess-qpreview-option">
-                                                                    <input
-                                                                        type={isMulti ? 'checkbox' : 'radio'}
-                                                                        name={`single-prev-q-${questionPreviewIndex}`}
-                                                                        checked={!!checked}
-                                                                        onChange={(e) => handleChange(originalIndex, e.target.checked)}
-                                                                    />
-                                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                        <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '20px' }}>
-                                                                            {getLetterFromIndex(displayIndex)}.
+                                                                const checked = isMulti
+                                                                    ? Array.isArray(selected) && selected.includes(originalIndex)
+                                                                    : selected === originalIndex;
+                                                                return (
+                                                                    <label key={`single-prev-q-${questionPreviewIndex}-opt-${originalIndex}`} className="survey-assess-qpreview-option">
+                                                                        <input
+                                                                            type={isMulti ? 'checkbox' : 'radio'}
+                                                                            name={`single-prev-q-${questionPreviewIndex}`}
+                                                                            checked={!!checked}
+                                                                            onChange={(e) => handleChange(originalIndex, e.target.checked)}
+                                                                        />
+                                                                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                            <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '20px' }}>
+                                                                                {getLetterFromIndex(displayIndex)}.
+                                                                            </span>
+                                                                            <span className="opt-text">{opt || `Option ${displayIndex + 1}`}</span>
                                                                         </span>
-                                                                        <span className="opt-text">{opt || `Option ${displayIndex + 1}`}</span>
-                                                                    </span>
-                                                                </label>
-                                                            );
-                                                        })}
+                                                                    </label>
+                                                                );
+                                                            })}
                                                     </div>
                                                 )}
                                             </div>
@@ -1628,7 +1661,7 @@ const QuestionsForm = ({
                         attempts: formData.attempts || 1,
                         passPercentage: formData.passPercentage || 50,
                         isPublished: formData.isPublished || false,
-                        
+
                     }}
                 />
             )}

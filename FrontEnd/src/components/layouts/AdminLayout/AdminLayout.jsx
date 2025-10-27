@@ -16,12 +16,21 @@ const AdminLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState(location.pathname);
   
   // Fetch notifications on component mount
   useEffect(() => {
     dispatch(fetchNotifications());
   }, [dispatch]);
-  
+  useEffect(() => {
+    setCurrentLocation(location.pathname);
+    if(location.pathname === "admin/learning-paths/:i"){
+      setSidebarCollapsed(true);
+    }
+    else{
+      setSidebarCollapsed(false);
+    }
+  }, [location.pathname]);
   // Close mobile menu when location changes
   useEffect(() => {
     setMobileMenuOpen(false);

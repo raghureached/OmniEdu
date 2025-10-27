@@ -94,6 +94,8 @@ function App() {
             <Route path="additional" element={<Additional />} />
             <Route path="mandatory" element={<Mandatory />} />
           </Route>
+          // above or below the /admin/* block
+{/* <Route path="/admin/learning-paths/:id" element={<LearningPath />} /> */}
           <Route path="/admin/*" element={<AdminLayout />}>
             <Route index element={<AdminHome />} />
             <Route path="users" element={<UsersManagement />} />
@@ -101,6 +103,8 @@ function App() {
             <Route path="content-modules" element={<ModuleManagement />} />
             <Route path="content-assessments" element={<AdminAssessments />} />
             <Route path="learning-paths" element={<LearningPaths />} />
+            <Route path='learning-paths/:id' element={<LearningPath/>}/>
+
             <Route path="manage-surveys" element={<AdminSurveys />} />
             <Route path="create-assignment" element={<CreateAssignment />} />
             <Route path="manage-assignments" element={<ManageAssignment />} />
@@ -134,7 +138,6 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<div>Page Not Found</div>} />
           <Route path='test' element={<LearningPath/>}/>
-          <Route path='preview' element={<LearningPaths/>}/>
         </Routes>
       </div>
     </Router>

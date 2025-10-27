@@ -207,8 +207,8 @@
 assess-table th {
   padding: 16px 20px;
   text-align: left;
-  font-weight: 700;
-  font-size: 1.05rem;
+  font-weight: 600;
+  font-size: 0.9rem;
   color: #374151;
   border-bottom: 1px solid #e2e8f0;
   white-space: nowrap;
