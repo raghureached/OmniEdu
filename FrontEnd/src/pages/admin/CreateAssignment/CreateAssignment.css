@@ -130,6 +130,8 @@
     margin-top: 20px;
     display: flex;
     flex-wrap: wrap;
+    height: 300px;
+    overflow-y: auto;
     gap: 10px;
   }
   .global-assign-content-item {
@@ -383,9 +385,9 @@
   
   /* Users list */
   .global-assign-users-list {
-    max-height: 220px;
+    max-height: 180px;
     overflow-y: auto;
-    height:220px;
+    height:180px;
     padding-right: 4px;
     display: flex;
     flex-direction: column;

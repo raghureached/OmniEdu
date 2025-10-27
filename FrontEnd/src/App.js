@@ -103,7 +103,7 @@ function App() {
             <Route path="content-modules" element={<ModuleManagement />} />
             <Route path="content-assessments" element={<AdminAssessments />} />
             <Route path="learning-paths" element={<LearningPaths />} />
-            <Route path='learning-paths/:id' element={<LearningPath/>}/>
+            <Route path='learning-paths/preview' element={<LearningPath/>}/>
 
             <Route path="manage-surveys" element={<AdminSurveys />} />
             <Route path="create-assignment" element={<CreateAssignment />} />

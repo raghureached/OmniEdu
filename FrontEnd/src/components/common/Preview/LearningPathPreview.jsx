@@ -9,6 +9,7 @@ import { useDispatch } from 'react-redux';
 import { setSelectedPath } from '../../../store/slices/learningPathSlice';
 
 const LearningPathPreview = ({ isOpen, onClose, data }) => {
+    console.log(data)
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const [activeTab, setActiveTab] = useState('preview');
@@ -16,7 +17,6 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
     const [modalContent, setModalContent] = useState(null);
     const objectUrlRef = useRef(null);
     useEffect(() => () => {
-        // cleanup any created object URLs
         if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
     }, []);
 
@@ -47,7 +47,7 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
     };
     const handlePreview = () => {
         dispatch(setSelectedPath(data));
-        navigate('learning-paths/preview');
+        navigate('/admin/learning-paths/preview');
     }
 
     if (!open) return null;
@@ -65,6 +65,7 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
                     </div>
                     <div className="module-preview-tabs" role="tablist" aria-label="Module sections">
                         <button
+                            type="button"
                             className={` ${activeTab === 'preview' ? 'btn-primary' : 'btn-secondary'}`}
                             onClick={() => handleTabChange('preview')}
                             role="tab"
@@ -74,7 +75,7 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
                             Preview
                         </button>
                     </div>
-                    <button className="module-preview-close-btn" onClick={handleClose} aria-label="Close preview">✕</button>
+                    <button type="button" className="module-preview-close-btn" onClick={handleClose} aria-label="Close preview">✕</button>
                 </div>
                 <div className="global-preview-wrap">
                     <div className="global-preview-panel">
@@ -185,7 +186,7 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
                                             {/* <button className="global-preview-btn global-preview-btn-ghost" onClick={handleSaveDraft}>
                                                 Save Draft
                                             </button> */}
-                                            <button className="btn-primary" onClick={()=>handlePreview()}>
+                                            <button type="button" className="btn-primary" onClick={()=>handlePreview()}>
                                                 Next (Learning Path) <ChevronRight size={16} /> 
                                             </button>
                                         </div>

@@ -1,56 +1,66 @@
 const ForUserAssignment = require("../../models/forUserAssigments_model");
+const Team = require("../../models/teams_model");
 // If you also track user progress
 // const Progress = require("../models/progress.model");
 
 const createAssignment = async (req, res) => {
   try {
     const {
-      organization_id,
+      assignDate,
+      dueDate,
       assign_type,
-      assign_id,
-      name,
-      assign_on,
-      due_date,
-      notify_users,
-      recursive,
-      assigned_users
+      notifyUsers,
+      isRecurring,
+      assignedUsers,
+      contentId,
+      contentName,
+      contentType,
+      assignTime,
+      dueTime,
+      groups
     } = req.body;
 
-    // ✅ Validation
-    if (!organization_id || !assign_type || !assign_id || !name || !due_date) {
+    if (!contentId ) {
       return res.status(400).json({
         isSuccess: false,
         message: "Missing required fields",
       });
     }
-
-    // ✅ Create assignment
-    const assignment = await ForUserAssignment.create({
-      organization_id,
-      assign_type,
-      assign_id,
-      name,
-      assign_on: assign_on || Date.now(), // default: now
-      due_date,
-      notify_users: notify_users ?? true, // default true
-      recursive: recursive ?? false, // default false
-      assigned_users,
+    const content_type = contentType === "Module" ? "OrganizationModule" : contentType === "Assessment" ? "OrganizationAssessments" : contentType === "Survey" ? "OrganizationSurvey" : contentType === "LearningPath" ? "LearningPath" : null;
+    let assignment;
+    if(assign_type === "individual"){
+     assignment = await ForUserAssignment.create({
+        organization_id:req.user.organization_id,
+        assign_type:content_type,
+        assign_on: assignDate || Date.now(),
+        due_date:dueDate,
+        recursive: isRecurring ?? false,
+        assigned_users:assignedUsers,
+        created_by: req.user._id,
+        dueTime:dueTime,
+        assignTime:assignTime,
+        contentId:contentId,
+        contentType:contentType,
+        contentName:contentName
+      });
+    }else{
+      
+     assignment = await ForUserAssignment.create({
+      organization_id:req.user.organization_id,
+      assign_type:content_type,
+      assign_on: assignDate || Date.now(),
+      due_date:dueDate,
+      recursive: isRecurring ?? false,
+      assigned_users:null,
       created_by: req.user._id,
+      dueTime:dueTime,
+      assignTime:assignTime,
+      contentId:contentId,
+      contentType:contentType,
+      contentName:contentName,
+      groups:groups
     });
-
-    // ✅ (Optional) Track progress for assigned users
-    if (assigned_users && assigned_users.length > 0) {
-      // Uncomment if you have Progress model
-      // const progressDocs = assigned_users.map((userId) => ({
-      //   user_id: userId,
-      //   assignment_id: assignment._id,
-      //   assign_type,
-      //   assign_ref: assign_id,
-      //   status: "assigned",
-      // }));
-      // await Progress.insertMany(progressDocs);
-    }
-
+  }
     return res.status(201).json({
       isSuccess: true,
       message: "Assignment created successfully",
@@ -68,12 +78,11 @@ const createAssignment = async (req, res) => {
 const editAssignment = async(req,res)=>{
     try {
         const {id} = req.params
-        const {organization_id, assign_type, assign_id, name, assign_on, due_date, notify_users, recursive, assigned_users} = req.body
+        const {assign_type, assign_id, assign_on, due_date, notify_users, recursive, assigned_users} = req.body
         const assignment = await ForUserAssignment.findOneAndUpdate({uuid:id},{
-            organization_id,
+            organization_id:req.user.organization_id,
             assign_type,
             assign_id,
-            name,
             assign_on,
             due_date,
             notify_users,

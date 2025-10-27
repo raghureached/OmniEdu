@@ -269,14 +269,46 @@ const QuestionsForm = ({
         console.log('CSV Questions received:', csvQuestions);
          setViacsv(true)
         // Normalize CSV questions to match the expected format
-        const normalizedQuestions = csvQuestions.map(q => ({
-            type: q.type || 'Multiple Choice',
-            question_text: q.question_text || '',
-            options: Array.isArray(q.options) && q.options.length ? q.options : ['', ''],
-            correct_option: q.correct_option !== undefined ? q.correct_option : '',      
-            total_points: 1,
-           
-        }));
+        const normalizedQuestions = csvQuestions.map(q => {
+            // Filter out empty options and create a clean options array
+            const filteredOptions = Array.isArray(q.options)
+                ? q.options.filter(opt => opt && opt.trim() !== '')
+                : [];
+
+            // Ensure at least 2 options for choice questions
+            while (filteredOptions.length < 2) {
+                filteredOptions.push('');
+            }
+
+            // Adjust correct_option indices to match the filtered options array
+            let adjustedCorrectOption = q.correct_option;
+            if (q.correct_option !== undefined && q.correct_option !== null && q.correct_option !== '') {
+                if (Array.isArray(q.correct_option)) {
+                    // For Multi Select - adjust each index in the array
+                    adjustedCorrectOption = q.correct_option
+                        .map(originalIndex => {
+                            // Find the actual position in the filtered array
+                            const optionValue = q.options[originalIndex];
+                            const newIndex = filteredOptions.findIndex(opt => opt === optionValue);
+                            return newIndex !== -1 ? newIndex : -1;
+                        })
+                        .filter(index => index !== -1);
+                } else if (typeof q.correct_option === 'number') {
+                    // For Multiple Choice - adjust single index
+                    const optionValue = q.options[q.correct_option];
+                    const newIndex = filteredOptions.findIndex(opt => opt === optionValue);
+                    adjustedCorrectOption = newIndex !== -1 ? newIndex : '';
+                }
+            }
+
+            return {
+                type: q.type || 'Multiple Choice',
+                question_text: q.question_text || '',
+                options: filteredOptions,
+                correct_option: adjustedCorrectOption,
+                total_points: 1,
+            };
+        });
 
         // Debug: Log the normalized questions
         console.log('Normalized questions:', normalizedQuestions);
@@ -785,35 +817,29 @@ const QuestionsForm = ({
                                                         <label className="assess-form-label">Answer Options</label>
                                                         {(q.type === 'Multiple Choice' || q.type === 'Multi Select') && <div className="assess-options-container">
                                                             {Viacsv ? (
-                                                                // For CSV uploaded questions - only show non-empty options
-                                                                q.options.map((opt, originalIndex) => {
-                                                                    // Only display non-empty options
-                                                                    if (!opt || opt.trim() === '') {
-                                                                        return null;
-                                                                    }
-                                                                    return (
-                                                                        <div key={originalIndex} className="assess-option-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', width: 'fit-content' }}>
-                                                                            <div className="assess-option-index">{getLetterFromIndex(originalIndex)}</div>
-                                                                            <input
-                                                                                type="text"
-                                                                                className="assess-form-input"
-                                                                                placeholder={`Option ${getLetterFromIndex(originalIndex)}`}
-                                                                                value={opt}
-                                                                                onChange={e => updateOption(qIndex, originalIndex, e.target.value)}
-                                                                                required
-                                                                            />
-                                                                            {q.options.length >=2 && (
-                                                                                <button
-                                                                                    type="button"
-                                                                                    className="assess-remove-option"
-                                                                                    onClick={() => removeOption(qIndex, originalIndex)}
-                                                                                >
-                                                                                    <X size={16} />
-                                                                                </button>
-                                                                            )}
-                                                                        </div>
-                                                                    );
-                                                                }).filter(Boolean)
+                                                                // For CSV uploaded questions - show all options (empty options already filtered out)
+                                                                q.options.map((opt, optIndex) => (
+                                                                    <div key={optIndex} className="assess-option-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', width: 'fit-content' }}>
+                                                                        <div className="assess-option-index">{getLetterFromIndex(optIndex)}</div>
+                                                                        <input
+                                                                            type="text"
+                                                                            className="assess-form-input"
+                                                                            placeholder={`Option ${getLetterFromIndex(optIndex)}`}
+                                                                            value={opt}
+                                                                            onChange={e => updateOption(qIndex, optIndex, e.target.value)}
+                                                                            required
+                                                                        />
+                                                                        {q.options.length > 2 && (
+                                                                            <button
+                                                                                type="button"
+                                                                                className="assess-remove-option"
+                                                                                onClick={() => removeOption(qIndex, optIndex)}
+                                                                            >
+                                                                                <X size={16} />
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                ))
                                                             ) : (
                                                                 // For manually created questions - show all options
                                                                 q.options.map((opt, optIndex) => (
@@ -827,7 +853,7 @@ const QuestionsForm = ({
                                                                             onChange={e => updateOption(qIndex, optIndex, e.target.value)}
                                                                             required
                                                                         />
-                                                                        {q.options.length >= 2 && (
+                                                                        {q.options.length > 2 && (
                                                                             <button
                                                                                 type="button"
                                                                                 className="assess-remove-option"
@@ -839,16 +865,47 @@ const QuestionsForm = ({
                                                                     </div>
                                                                 ))
                                                             )}  
-                                                            {q.options.length < 5 && (
-                                                                <button
-                                                                    type="button"
-                                                                    className="assess-add-option"
-                                                                    onClick={() => addOption(qIndex)}
-                                                                >
-                                                                    <Plus size={14} />
-                                                                    Add Option
-                                                                </button>
-                                                            )}
+                                                            {(() => {
+                                                                // Count total options (including empty ones)
+                                                                const totalOptions = q.options.length;
+
+                                                                // Only show button if less than 5 total options
+                                                                if (totalOptions >= 5) {
+                                                                    return null;
+                                                                }
+
+                                                                // Check if first 2 options are filled
+                                                                const firstTwoOptionsFilled = q.options.length >= 2 &&
+                                                                    q.options[0] && q.options[0].trim() !== '' &&
+                                                                    q.options[1] && q.options[1].trim() !== '';
+
+                                                                // Check if all options are filled (no empty options)
+                                                                const allOptionsFilled = q.options.every(opt => opt && opt.trim() !== '');
+
+                                                                // Determine if button should be enabled
+                                                                const isEnabled = firstTwoOptionsFilled && allOptionsFilled;
+
+                                                                // Create appropriate title message
+                                                                let titleMessage = '';
+                                                                if (!firstTwoOptionsFilled) {
+                                                                    titleMessage = 'Please fill the first two options to enable Add Option';
+                                                                } else if (!allOptionsFilled) {
+                                                                    titleMessage = 'Please fill all existing options to enable Add Option';
+                                                                }
+
+                                                                return (
+                                                                    <button
+                                                                        type="button"
+                                                                        className="assess-add-option"
+                                                                        onClick={() => addOption(qIndex)}
+                                                                        disabled={!isEnabled}
+                                                                        title={titleMessage}
+                                                                    >
+                                                                        <Plus size={14} />
+                                                                        Add Option
+                                                                    </button>
+                                                                );
+                                                            })()}
                                                             {/* Correct Answer Index(es) + Save aligned right */}
                                                             <div className="assess-correct-row">
                                                                 <div className="assess-form-group assess-correct-group">
@@ -883,6 +940,11 @@ const QuestionsForm = ({
                                                                                 if (singleLetter && singleLetter.charCodeAt(0) - 65 >= validOptions) {
                                                                                     return 'assess-correct-error'; // Letter out of range
                                                                                 }
+                                                                                // Check if the selected option is actually filled (not empty)
+                                                                                const selectedIndex = singleLetter.charCodeAt(0) - 65;
+                                                                                if (singleLetter && (!q.options[selectedIndex] || q.options[selectedIndex].trim() === '')) {
+                                                                                    return 'assess-correct-error'; // Selected option is empty
+                                                                                }
                                                                                 return singleLetter ? 'assess-correct-valid' : '';
                                                                             }
 
@@ -891,7 +953,14 @@ const QuestionsForm = ({
                                                                             const invalidParts = parts.filter(part => {
                                                                                 if (/^[A-Z]$/.test(part)) {
                                                                                     const index = part.charCodeAt(0) - 65;
-                                                                                    return index >= validOptions;
+                                                                                    if (index >= validOptions) {
+                                                                                        return true; // Index out of range
+                                                                                    }
+                                                                                    // Check if the selected option is actually filled (not empty)
+                                                                                    if (!q.options[index] || q.options[index].trim() === '') {
+                                                                                        return true; // Selected option is empty
+                                                                                    }
+                                                                                    return false;
                                                                                 }
                                                                                 return true;
                                                                             });
@@ -949,6 +1018,8 @@ const QuestionsForm = ({
                                                                             const maxValidIndex = validOptions - 1; // 0-based index
 
                                                                             let hasInvalidIndex = false;
+                                                                            let hasEmptyOptionIndex = false;
+
                                                                             if (parts.length > 1) {
                                                                                 // Multi-select: check each index
                                                                                 const arr = parts
@@ -957,6 +1028,12 @@ const QuestionsForm = ({
                                                                                             const index = s.charCodeAt(0) - 65;
                                                                                             if (index > maxValidIndex) {
                                                                                                 hasInvalidIndex = true;
+                                                                                                return -1; // Invalid index
+                                                                                            }
+                                                                                            // Check if the option at this index is actually filled
+                                                                                            if (!q.options[index] || q.options[index].trim() === '') {
+                                                                                                hasEmptyOptionIndex = true;
+                                                                                                return -1; // Empty option
                                                                                             }
                                                                                             return index;
                                                                                         }
@@ -964,7 +1041,12 @@ const QuestionsForm = ({
                                                                                     })
                                                                                     .filter(n => n >= 0 && n <= maxValidIndex);
                                                                                 const uniqueSorted = Array.from(new Set(arr)).sort((a, b) => a - b);
-                                                                                updateQuestionField(qIndex, 'correct_option', uniqueSorted);
+
+                                                                                if (hasInvalidIndex || hasEmptyOptionIndex) {
+                                                                                    updateQuestionField(qIndex, 'correct_option', uniqueSorted.length > 0 ? uniqueSorted : '');
+                                                                                } else {
+                                                                                    updateQuestionField(qIndex, 'correct_option', uniqueSorted);
+                                                                                }
                                                                             } else {
                                                                                 // Single choice: check single index
                                                                                 if (/^[A-Z]$/.test(parts[0])) {
@@ -972,16 +1054,27 @@ const QuestionsForm = ({
                                                                                     if (letterIndex > maxValidIndex) {
                                                                                         hasInvalidIndex = true;
                                                                                     }
-                                                                                    updateQuestionField(qIndex, 'correct_option', letterIndex);
+                                                                                    // Check if the option at this index is actually filled
+                                                                                    if (!q.options[letterIndex] || q.options[letterIndex].trim() === '') {
+                                                                                        hasEmptyOptionIndex = true;
+                                                                                    }
+                                                                                    if (!hasInvalidIndex && !hasEmptyOptionIndex) {
+                                                                                        updateQuestionField(qIndex, 'correct_option', letterIndex);
+                                                                                    } else {
+                                                                                        updateQuestionField(qIndex, 'correct_option', '');
+                                                                                    }
                                                                                 } else {
                                                                                     updateQuestionField(qIndex, 'correct_option', '');
                                                                                 }
                                                                             }
 
-                                                                            // Show popup if any index is out of range
+                                                                            // Show popup if any index is out of range or points to empty option
                                                                             if (hasInvalidIndex) {
                                                                                 const optionLetters = Array.from({length: validOptions}, (_, i) => getLetterFromIndex(i)).join(', ');
-                                                                                alert(`Invalid correct answer index. Please select from options: ${optionLetters}`);
+                                                                                // alert(`Invalid correct answer index. Please select from options: ${optionLetters}`);
+                                                                            } else if (hasEmptyOptionIndex) {
+                                                                                const optionLetters = Array.from({length: validOptions}, (_, i) => getLetterFromIndex(i)).join(', ');
+                                                                                // alert(`Selected option is empty. Please select from available options: ${optionLetters}`);
                                                                             }
                                                                         }}
                                                                         required
@@ -997,9 +1090,13 @@ const QuestionsForm = ({
                                                         <div className="assess-correct-row" style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }}>
                                                             {(() => {
                                                                 const textOk = !!(q.question_text || '').trim();
-                                                                const optsOk = Array.isArray(q.options) && q.options.filter(o => (o || '').trim()).length >= 2;
-                                                                const qReady = textOk && optsOk;
-                                                                const hint = qReady ? undefined : 'Enter question text and at least two options to enable';
+                                                                // Check that ALL options are filled (no empty options)
+                                                                const allOptionsFilled = Array.isArray(q.options) && q.options.length >= 2 &&
+                                                                    q.options.every(opt => opt && opt.trim() !== '');
+                                                                const qReady = textOk && allOptionsFilled;
+                                                                const hint = qReady ? undefined : allOptionsFilled ?
+                                                                    'Enter question text to enable' :
+                                                                    'Enter question text and fill all options to enable';
                                                                 return (
                                                                     <>
                                                                         <button

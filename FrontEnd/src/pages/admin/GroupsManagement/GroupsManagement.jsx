@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { GoOrganization, GoX } from 'react-icons/go';
 import { useDispatch, useSelector } from 'react-redux';
-import { 
-  fetchGroups, 
-  createGroup, 
-  updateGroup, 
-  deleteGroup, 
+import {
+  fetchGroups,
+  createGroup,
+  updateGroup,
+  deleteGroup,
   importGroups,
   setGroupFilters,
   setGroupCurrentPage,
@@ -25,62 +26,34 @@ const GroupsManagement = () => {
   const [selectAll, setSelectAll] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [filterParams, setFilterParams] = useState({});
-  
-  // Add local groups state to handle dummy data and immediate updates
-  const [localGroups, setLocalGroups] = useState([
-    {
-      id: 'dummy1',
-      name: 'Administrators',
-      description: 'Full system access and control',
-      status: 'active',
-      membersCount: 5,
-      permissions: 'admin'
-    },
-    {
-      id: 'dummy2',
-      name: 'Content Editors',
-      description: 'Can create and edit content',
-      status: 'active',
-      membersCount: 12,
-      permissions: 'write'
-    },
-    {
-      id: 'dummy3',
-      name: 'Viewers',
-      description: 'Read-only access to content',
-      status: 'active',
-      membersCount: 28,
-      permissions: 'read'
-    },
-    {
-      id: 'dummy4',
-      name: 'Guest Users',
-      description: 'Limited access to public content',
-      status: 'inactive',
-      membersCount: 7,
-      permissions: 'read'
-    },
-    {
-      id: 'dummy5',
-      name: 'Moderators',
-      description: 'Can moderate user content',
-      status: 'active',
-      membersCount: 3,
-      permissions: 'write'
-    }
-  ]);
-  
+  const [formData, setFormData] = useState({});
+  const editMode = !!currentGroup;
+
   useEffect(() => {
     fetchGroupData();
   }, [dispatch, currentPage, pageSize]);
-  
-  // Update localGroups when groups from Redux store changes
+
+  // Prefill form data when editing, or reset when creating
   useEffect(() => {
-    if (groups && groups.length > 0) {
-      setLocalGroups(groups);
+    if (showForm) {
+      if (currentGroup) {
+        setFormData({
+          teamName: currentGroup.teamName || currentGroup.name || '',
+          teamDescription: currentGroup.teamDescription || currentGroup.description || '',
+          subTeamName: currentGroup.subTeamName || '',
+          subTeamDescription: currentGroup.subTeamDescription || ''
+        });
+      } else {
+        setFormData({
+          teamName: '',
+          teamDescription: '',
+          subTeamName: '',
+          subTeamDescription: ''
+        });
+      }
     }
-  }, [groups]);
-  
+  }, [showForm, currentGroup]);
+
   const fetchGroupData = () => {
     dispatch(fetchGroups({
       ...filterParams,
@@ -90,58 +63,56 @@ const GroupsManagement = () => {
       console.error('Error fetching groups:', error);
     });
   };
-  
+
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);
     fetchGroupData();
   };
-  
+
   const handleCreateGroup = () => {
     setCurrentGroup(null);
     setShowForm(true);
   };
-  
+
   const handleEditGroup = (group) => {
     setCurrentGroup(group);
     setShowForm(true);
   };
-  
+
   const handleDeleteGroup = (groupId) => {
     if (window.confirm('Are you sure you want to delete this group?')) {
       dispatch(deleteGroup(groupId));
-      // Also remove from local state for immediate UI update
-      setLocalGroups(localGroups.filter(group => group.id !== groupId));
     }
   };
-  
+
   const handleBulkDelete = () => {
     if (selectedGroups.length === 0) {
       alert('Please select at least one group to delete');
       return;
     }
-    
+
     if (window.confirm(`Are you sure you want to delete ${selectedGroups.length} groups?`)) {
-      // Implement bulk delete functionality
       selectedGroups.forEach(groupId => {
         dispatch(deleteGroup(groupId));
       });
-      // Also remove from local state for immediate UI update
-      setLocalGroups(localGroups.filter(group => !selectedGroups.includes(group.id)));
       setSelectedGroups([]);
       setSelectAll(false);
     }
   };
-  
+
   const handleImportGroups = (event) => {
     const file = event.target.files[0];
     if (file) {
       dispatch(importGroups(file));
     }
   };
-  
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleExportGroups = () => {
-    // Implement export functionality
-    const jsonData = JSON.stringify(localGroups);
+    const jsonData = JSON.stringify(groups);
     const blob = new Blob([jsonData], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -151,36 +122,23 @@ const GroupsManagement = () => {
     a.click();
     document.body.removeChild(a);
   };
-  
-  const handleFormSubmit = (formData) => {
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    const payload = { ...formData };
     if (currentGroup) {
-      dispatch(updateGroup({ id: currentGroup.id, groupData: formData }));
-      // Update in local state for immediate UI update
-      setLocalGroups(localGroups.map(group => 
-        group.id === currentGroup.id ? { ...group, ...formData } : group
-      ));
+      const id = currentGroup.id || currentGroup._id;
+      dispatch(updateGroup({ id, groupData: payload }));
     } else {
-      // Generate a temporary ID for immediate display
-      const tempId = 'temp_' + Date.now();
-      const newGroup = {
-        id: tempId,
-        ...formData,
-        membersCount: 0 // New groups start with 0 members
-      };
-      
-      // Add to local state for immediate UI update
-      setLocalGroups([...localGroups, newGroup]);
-      
-      // Dispatch to Redux/API
-      dispatch(createGroup(formData));
+      dispatch(createGroup(payload));
     }
     setShowForm(false);
   };
-  
+
   const handleFormCancel = () => {
     setShowForm(false);
   };
-  
+
   const handleSelectAll = (e) => {
     setSelectAll(e.target.checked);
     if (e.target.checked) {
@@ -190,7 +148,7 @@ const GroupsManagement = () => {
       setSelectedGroups([]);
     }
   };
-  
+
   const handleSelectGroup = (e, groupId) => {
     if (e.target.checked) {
       setSelectedGroups([...selectedGroups, groupId]);
@@ -199,72 +157,53 @@ const GroupsManagement = () => {
       setSelectAll(false);
     }
   };
-  
+
   const handleFilter = (filters) => {
     setFilterParams(filters);
-    dispatch(setGroupCurrentPage(1)); // Reset to first page when filtering
-    
-    // Apply filters
+    dispatch(setGroupCurrentPage(1));
+
     dispatch(fetchGroups({
       ...filters,
       page: 1,
       limit: pageSize
     }));
   };
-  
+
   const handleClearFilter = () => {
-    // Reset filter parameters
     setFilterParams({});
     dispatch(setGroupCurrentPage(1));
-    
-    // Fetch all groups without filters
+
     dispatch(fetchGroups({
       page: 1,
       limit: pageSize
     }));
   };
-  
+
   const handlePageChange = (newPage) => {
     dispatch(setGroupCurrentPage(newPage));
-  };
-  
-  // Define form fields
-  const groupFormFields = [
-    { name: 'name', label: 'Group Name', type: 'text', required: true },
-    { name: 'description', label: 'Description', type: 'textarea', required: false },
-    { name: 'status', label: 'Status', type: 'select', required: true, options: [
-      { value: 'active', label: 'Active' },
-      { value: 'inactive', label: 'Inactive' }
-    ]},
-    { name: 'permissions', label: 'Permissions', type: 'select', required: true, options: [
-      { value: 'read', label: 'Read Only' },
-      { value: 'write', label: 'Read & Write' },
-      { value: 'admin', label: 'Admin' }
-    ]}
-  ];
-  
-  // Filter groups based on search criteria
-  const filteredGroups = localGroups.filter(group => {
+  }
+
+  const filteredGroups = groups.filter(group => {
     const nameMatch = filterParams.name ? group.name?.toLowerCase().includes(filterParams.name.toLowerCase()) : true;
     const descriptionMatch = filterParams.description ? group.description?.toLowerCase().includes(filterParams.description.toLowerCase()) : true;
     const statusMatch = filterParams.status ? group.status === filterParams.status : true;
-    
+
     return nameMatch && descriptionMatch && statusMatch;
   });
-  
+
   // Calculate pagination
   const totalItems = filteredGroups.length;
   const totalPages = Math.ceil(totalItems / pageSize);
   const indexOfLastItem = currentPage * pageSize;
   const indexOfFirstItem = indexOfLastItem - pageSize;
   const currentItems = filteredGroups.slice(indexOfFirstItem, indexOfLastItem);
-  
+
   // Generate page numbers
   const pageNumbers = [];
   for (let i = 1; i <= totalPages; i++) {
     pageNumbers.push(i);
   }
-  
+
   return (
     <div className="app-container">
       <div className="main-content">
@@ -281,16 +220,111 @@ const GroupsManagement = () => {
           />
 
           {showForm && (
-            <div className="modal-overlay">
-              <div className="modal-content">
-                <AdminForm
-                  title={currentGroup ? 'Edit Group' : 'Add New Group'}
-                  fields={groupFormFields}
-                  initialValues={currentGroup || {}}
-                  onSubmit={handleFormSubmit}
-                  onCancel={handleFormCancel}
-                  isLoading={loading}
-                />
+
+            <div className='addOrg-modal-overlay'>
+              
+              <div className='addOrg-modal-content'>
+                <div className="addOrg-modal-header">
+                <div className="addOrg-header-content">
+                  <div className="addOrg-header-icon">
+                    <GoOrganization size={24} color="#5570f1" />
+                  </div>
+                  <div>
+                    <h2>{editMode ? "Edit Group" : "Add New Group"}</h2>
+                    <p className="addOrg-header-subtitle">
+                      {editMode ? "Update group details" : "Create a new group profile"}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="addOrg-close-btn"
+                  onClick={() => setShowForm(false)}
+                  aria-label="Close modal"
+                >
+                  <GoX size={20} />
+                </button>
+              </div>
+                <form onSubmit={handleFormSubmit} className="addOrg-org-form">
+                  {/* Basic Information Section */}
+                  <div className="addOrg-form-section">
+                    <h3 className="addOrg-section-title" style={{ marginTop: "10px" }}>Basic Information</h3>
+                    <div className="addOrg-form-grid">
+                      <div className="addOrg-form-group">
+                        <label className="addOrg-form-label">
+                          Team Name<span className="addOrg-required">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          name="teamName"
+                          placeholder="Enter team name"
+                          value={formData.teamName}
+                          onChange={handleInputChange}
+                          className="addOrg-form-input"
+                          required
+                        />
+                      </div>
+                       <div className="addOrg-form-group">
+                        <label className="addOrg-form-label">
+                          SubTeam Name<span className="addOrg-required">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          name="subTeamName"
+                          placeholder="Enter subteam name"
+                          value={formData.subTeamName}
+                          onChange={handleInputChange}
+                          className="addOrg-form-input"
+                          required
+                        />
+                      </div>
+                      <div className="addOrg-form-group">
+                        <label className="addOrg-form-label">
+                          Team Description<span className="addOrg-required">*</span>
+                        </label>
+                        <textarea
+                          name="teamDescription"
+                          placeholder="Enter team description"
+                          value={formData.teamDescription}
+                          onChange={handleInputChange}
+                          className="addOrg-form-input"
+                          required
+                        />
+                      </div>
+
+                     
+                      <div className="addOrg-form-group">
+                        <label className="addOrg-form-label">
+                          SubTeam Description<span className="addOrg-required">*</span>
+                        </label>
+                        <textarea
+                          name="subTeamDescription"
+                          placeholder="Enter subteam description"
+                          value={formData.subTeamDescription}
+                          onChange={handleInputChange}
+                          className="addOrg-form-input"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Form Actions */}
+                  <div className="addOrg-form-actions">
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={handleFormCancel}
+                      disabled={loading}
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn-primary" disabled={loading}>
+                      <GoOrganization size={16} />
+                      <span>{editMode ? 'Update Team' : 'Create Team'}</span>
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           )}

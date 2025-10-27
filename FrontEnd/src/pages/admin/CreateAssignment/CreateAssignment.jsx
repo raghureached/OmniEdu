@@ -4,20 +4,22 @@ import AddOrgDateRangePickerSingle from '../../../components/common/CustomDatePi
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchContent } from '../../../store/slices/contentSlice';
 import { createGlobalAssignment } from '../../../store/slices/globalAssignmentSlice';
-import { fetchGlobalAssessments, updateGlobalAssessment } from '../../../store/slices/globalAssessmentSlice';
+import { fetchGlobalAssessments } from '../../../store/slices/adminAssessmentSlice';
 import { fetchOrganizations } from '../../../store/slices/organizationSlice';
-import { fetchSurveys } from '../../../store/slices/surveySlice';
+import { fetchSurveys } from '../../../store/slices/adminSurveySlice';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import { adminfetchContent } from '../../../store/slices/adminModuleSlice';
 import { fetchUsers } from '../../../store/slices/userSlice';
 import api from '../../../services/api';
+import { admincreateAssignment } from '../../../store/slices/adminAssignmnetSlice';
+import { getLearningPaths } from '../../../store/slices/learningPathSlice';
 const GlobalCreateAssignment = () => {
   const dispatch = useDispatch();
   const fetchGroups = async()=>{
     try {
       const response = await api.get('/api/admin/getGroups');
-      console.log(response.data.data)
+      // console.log(response.data.data)
       setGroups(response.data.data);
     } catch (error) {
       console.log(error)
@@ -28,6 +30,7 @@ const GlobalCreateAssignment = () => {
     dispatch(fetchGlobalAssessments());
     dispatch(fetchUsers());
     dispatch(fetchSurveys());
+    dispatch(getLearningPaths());
     fetchGroups();
   }, [dispatch]);
 
@@ -35,15 +38,17 @@ const GlobalCreateAssignment = () => {
   const [showAssignDatePicker, setShowAssignDatePicker] = useState(false);
   const [showDueDatePicker, setShowDueDatePicker] = useState(false);
   const [contentType, setContentType] = useState('');
-  const { organizations, loading } = useSelector(state => state.organizations);
+  
   const { surveys } = useSelector(state => state.surveys);
   const { items } = useSelector(state => state.adminModule);
   const { assessments } = useSelector(state => state.globalAssessments);
-  const { users } = useSelector(state => state.users);
-  const [orgSearchTerm, setOrgSearchTerm] = useState('');
-  const [selectedOrgs, setSelectedOrgs] = useState([]);
+  const {learningPaths} = useSelector((state) => state.learningPaths)
+  
+  const { users,loading } = useSelector(state => state.users);
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [groups,setGroups] = useState([])
+  const [groupSearchTerm, setGroupSearchTerm] = useState('');
+  const [selectedUsers, setSelectedUsers] = useState([]);
 
   // Filters and derived content lists
   // console.log(users)
@@ -55,53 +60,33 @@ const GlobalCreateAssignment = () => {
     allContentItems = assessments;
   } else if (contentType === 'Survey') {
     allContentItems = surveys;
+  } else if (contentType === 'Learning Path') {
+    allContentItems = learningPaths;
   } else {
-    allContentItems = [...items, ...assessments, ...surveys];
+    allContentItems = [...items, ...assessments, ...surveys, ...learningPaths];
   }
   const filteredContentItems = allContentItems.filter(item =>
     item.title.toLowerCase().includes(contentSearchTerm.toLowerCase())
   );
-  const handleAddOrg = (orgId) => {
-    if (selectedOrgs.includes(orgId)) {
-      setSelectedOrgs(selectedOrgs.filter(org => org !== orgId));
-    } else {
-      setSelectedOrgs([...selectedOrgs, orgId]);
-    }
-  };
   const stepTitles = [
     'Choose Target Audience',
     'Choose Content',
     'Dates & Configuration'
   ];
-  const filteredOrganizations = organizations
-    .filter(org => org.email.toLowerCase().includes(orgSearchTerm.toLowerCase()))
-    .slice(0, 5);
-  const handleSelectAll = () => {
-    if (selectedOrgs.length === filteredOrganizations.length) {
-      setSelectedOrgs([]);
-    } else {
-      setSelectedOrgs(filteredOrganizations.map(org => org.uuid));
-    }
-  };
-  const dummyGroups = [
-    { id: 'g1', name: 'Onboarding' },
-    { id: 'g2', name: 'Leadership' }
-  ];
   const filteredUsers = users.filter(u =>
     u.email.toLowerCase().includes(userSearchTerm.toLowerCase())
   );
-  const handleUserSelection = (userId) => {
-    // console.log(userId)
+  const filteredGroups = groups.filter(g =>
+    (g.name || '').toLowerCase().includes(groupSearchTerm.toLowerCase())
+  );
+  const handleUserSelection = (userUuid) => {
     setFormData(prev => {
-      const exists = prev.selectedUsers.includes(userId);
-      return {
-        ...prev,
-        selectedUsers: exists
-          ? prev.selectedUsers.filter(id => id !== userId)
-          : [...prev.selectedUsers, userId]
-      };
+      const exists = prev.users.includes(userUuid);
+      const nextUsers = exists
+        ? prev.users.filter(id => id !== userUuid)
+        : [...prev.users, userUuid];
+      return { ...prev, users: nextUsers };
     });
-    // console.log(formData)
   };
   const handleFilterChange = (e) => {
     setContentType(e.target.value);
@@ -120,10 +105,12 @@ const GlobalCreateAssignment = () => {
     dueTime: '',
     notifyUsers: false,
     isRecurring: false,
-    orgIds: [],
+    users: [],
+    groups: [],
     assignType: 'individual',
     selectedUsers: [],
-    selectedGroup: ''
+    selectedGroup: '',
+    selectedGroups: []
   });
 
   const handleInputChange = (e) => {
@@ -133,14 +120,24 @@ const GlobalCreateAssignment = () => {
       [name]: type === 'checkbox' ? checked : value
     });
   };
+  const handleGroupToggle = (groupId) => {
+    setFormData(prev => {
+      const exists = prev.selectedGroups.includes(groupId);
+      const next = exists ? prev.selectedGroups.filter(id => id !== groupId) : [...prev.selectedGroups, groupId];
+      return { ...prev, selectedGroups: next };
+    });
+  };
   const getDuration = (item) => {
-    const contentItem = allContentItems.find((contentItem) => contentItem.uuid === item)
-    return contentItem?.duration + " minutes"
+    const contentItem = allContentItems.find((contentItem) => contentItem._id === item)
+    if (contentItem.duration) {
+      return contentItem.duration + " minutes"
+    }
+    return ""
   }
   const handleContentSelection = (item) => {
     setFormData({
       ...formData,
-      contentId: item.uuid,
+      contentId: item._id,
       contentName: item.title,
       contentType: assessments.includes(item)
         ? 'Assessment'
@@ -152,19 +149,11 @@ const GlobalCreateAssignment = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const payload = { ...formData };
-    payload.orgIds = selectedOrgs;
+    payload.assignedUsers = formData.users;
+    payload.groups = formData.selectedGroups;
     try {
-      // Create the assignment first
-      await dispatch(createGlobalAssignment(payload)).unwrap();
-      // If the content is an Assessment, publish it
-      if (payload.contentType === 'Assessment' && payload.contentId) {
-        const id = payload.contentId; // uuid
-        await dispatch(updateGlobalAssessment({ id, data: { status: 'Published' } })).unwrap();
-        // Optionally refresh assessments list
-        dispatch(fetchGlobalAssessments());
-      }
+      await dispatch(admincreateAssignment(payload)).unwrap();
     } catch (err) {
-      // swallow here; existing slice handles error state
       console.error('Create assignment or publish failed', err);
     }
     setFormData({
@@ -177,13 +166,13 @@ const GlobalCreateAssignment = () => {
       dueTime: '',
       notifyUsers: false,
       isRecurring: false,
-      orgIds: []
+      users: [],
+      groups: []
     });
-    setSelectedOrgs([]);
     setCurrentStep(1);
   };
   if (loading) {
-    return <LoadingScreen text="Loading Content..." />
+    return <LoadingScreen text="Fetching Users..." />
   }
   return (
     <div className="global-assign-create-assignment-container">
@@ -233,7 +222,7 @@ const GlobalCreateAssignment = () => {
                     checked={formData.assignType === 'group'}
                     onChange={handleInputChange}
                   />
-                  Assign to a Group
+                  Assign to a Team
                 </label>
               </div>
               {formData.assignType === 'individual' ? (
@@ -241,7 +230,7 @@ const GlobalCreateAssignment = () => {
                   <label>Select Users (by Email):</label>
                   <input
                     type="text"
-                    placeholder="Search users by email..."
+                    placeholder="Search users by email"
                     value={userSearchTerm}
                     onChange={(e) => setUserSearchTerm(e.target.value)}
                     className="global-assign-user-search-input"
@@ -249,12 +238,12 @@ const GlobalCreateAssignment = () => {
                   <div className="global-assign-users-list">
                     {filteredUsers.map(user => (
                       <div
-                        key={user.id}
+                        key={user.uuid}
                         className={[
                           'global-assign-user-item',
-                          formData.selectedUsers.includes(user.uuid) ? 'global-assign-selected' : ''
+                          formData.users.includes(user._id) ? 'global-assign-selected' : ''
                         ].filter(Boolean).join(' ')}
-                        onClick={() => handleUserSelection(user.uuid)}
+                        onClick={() => handleUserSelection(user._id)}
                       >
                         <div className="global-assign-user-email">{user.email}</div>
                         <div className="global-assign-user-name">{user.name}</div>
@@ -264,22 +253,34 @@ const GlobalCreateAssignment = () => {
                 </div>
               ) : (
                 <div className="global-assign-group-selection">
-                  <label htmlFor="selectedGroup">Select Group:</label>
-                  <select
-                    id="selectedGroup"
-                    name="selectedGroup"
-                    value={formData.selectedGroup}
-                    onChange={handleInputChange}
-                    className="global-assign-group-select"
-                  >
-                    <option value="">Select a group...</option>
-                    {groups.map(group => (
-                      <option key={group.id} value={group.id}>{group.name}</option>
+                  <label>Select Team (by name):</label>
+                  <input
+                    type="text"
+                    placeholder="Search teams by name"
+                    value={groupSearchTerm}
+                    onChange={(e) => setGroupSearchTerm(e.target.value)}
+                    className="global-assign-user-search-input"
+                  />
+                  <div className="global-assign-users-list">
+                    {filteredGroups.map(group => (
+                      <div
+                        key={group._id}
+                        className={[
+                          'global-assign-user-item',
+                          formData.selectedGroups.includes(group._id) ? 'global-assign-selected' : ''
+                        ].filter(Boolean).join(' ')}
+                        onClick={() => handleGroupToggle(group._id)}
+                      >
+                        <div className="global-assign-user-email">{group.name}</div>
+                      </div>
                     ))}
-                  </select>
+                    {filteredGroups.length === 0 && (
+                      <div className="global-assign-no-content-found">No groups found.</div>
+                    )}
+                  </div>
                 </div>
               )}
-              <div className="global-assign-step-actions" style={{ marginTop: '20px', justifyContent: 'space-between' }}>
+              <div className="global-assign-step-actions" style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <button className='btn-secondary' disabled={currentStep === 1}>
                   <ChevronLeft size={20} /> Previous
                 </button>
@@ -288,10 +289,10 @@ const GlobalCreateAssignment = () => {
                   className="btn-primary"
                   onClick={handleNextStep}
                   disabled={
-                    (formData.assignType === 'individual' && formData.selectedUsers.length === 0) ||
-                    (formData.assignType === 'group' && !formData.selectedGroup)
+                    (formData.assignType === 'individual' && formData.users.length === 0) ||
+                    (formData.assignType === 'group' && formData.selectedGroups.length === 0)
                   }
-                  >
+                >
                   Next <ChevronRight size={20} />
                 </button>
               </div>
@@ -320,6 +321,7 @@ const GlobalCreateAssignment = () => {
                   <option value="Module">Module</option>
                   <option value="Assessment">Assessment</option>
                   <option value="Survey">Survey</option>
+                  <option value="Learning Path">Learning Path</option>
                 </select>
               </div>
               <div className="global-assign-content-items-list">
@@ -329,7 +331,7 @@ const GlobalCreateAssignment = () => {
                       key={item.uuid}
                       className={[
                         'global-assign-content-item',
-                        formData.contentId === item.uuid ? 'global-assign-selected' : ''
+                        formData.contentId === item._id ? 'global-assign-selected' : ''
                       ].filter(Boolean).join(' ')}
                       onClick={() => handleContentSelection(item)}
                     >
@@ -340,7 +342,9 @@ const GlobalCreateAssignment = () => {
                               ? 'Assessment'
                               : surveys.includes(item)
                                 ? 'Survey'
-                                : 'Module'}
+                                : items.includes(item)
+                                  ? 'Module'
+                                  : 'Learning Path'}
                           </div>
                           <div className="global-assign-content-item-name">{item.title.toUpperCase()}</div>
                         </div>
@@ -378,7 +382,7 @@ const GlobalCreateAssignment = () => {
             <div className="global-assign-assignment-step-content">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <h2 className="global-assign-step-title">Step 3: Dates & Configuration</h2>
-                <p style={{ color: "#666", fontSize: "14px", fontWeight: "bold" }}>Selected content duration: {getDuration(formData.contentId)}</p>
+                {getDuration(formData.contentId) && <p style={{ color: "#666", fontSize: "14px", fontWeight: "bold" }}>Selected content duration: {getDuration(formData.contentId) ? getDuration(formData.contentId) : ""}</p>}
               </div>
               <div className="global-assign-dates-container" style={{ marginTop: "20px" }}>
                 <div style={{ display: "flex", gap: "30px", alignItems: "center" }}>

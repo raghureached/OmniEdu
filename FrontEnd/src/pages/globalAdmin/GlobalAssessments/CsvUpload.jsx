@@ -79,7 +79,7 @@ const CsvUpload = ({ onQuestionsUpload, disabled = false }) => {
 
                 // Store the uploaded file name only on success
                 // setUploadedFileName(file.name); // Already set when file was selected
-                setSuccess(`✅ Successfully parsed ${questions.length} questions from ${file.name}`);
+                setSuccess(`Successfully parsed ${questions.length} questions from ${file.name}`);
                 setError('');
 
                 if (onQuestionsUpload) {

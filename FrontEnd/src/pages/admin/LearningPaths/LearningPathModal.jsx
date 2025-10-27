@@ -20,6 +20,7 @@ const defaultForm = {
   category: '',
   duration: '',
   trainingType: '',
+  lessons: [],
   credits: 0,
   badges: 0,
   stars: 0,
@@ -735,7 +736,18 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                 </button>
               ) : (
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button type='button' className="btn-secondary" onClick={() => {setPreview(true); setPreviewData(form)}}><Eye size={20} />Preview</button>
+                  <button type='button' className="btn-secondary" onClick={() => {
+                    const lessons = pathItems.map((it, index) => ({
+                      id: it.id,
+                      type: it.type,
+                      title: it.title,
+                      order: index,
+                      ...(it.type === 'assessment' ? { questions: Number(it.questions) || undefined } : {})
+                    }));
+                    const payload = { ...form, tags, lessons };
+                    setPreviewData(payload);
+                    setPreview(true);
+                  }}><Eye size={20} />Preview</button>
                   <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
                   <button type="submit" className="btn-primary" onClick={(e) => initialData ? handleEdit(e) : handleSubmit(e)}>{initialData ? 'Save Changes' : 'Create'}</button>
                 </div>

@@ -350,22 +350,22 @@ const AssessmentQuiz = ({ isOpen = true, onClose = () => { }, previewMode = true
     return allIdx;
   }, [questions, selectedAnswers, unsureFlags, navFilter]);
 
-  // Close handling - shows confirmation, then submission popup if confirmed
+  // Close handling
   const handleClose = () => {
-   
+    // In preview mode, close immediately without confirmation or submission popup
+    if (previewMode) {
+      onClose();
+      return;
+    }
+    // Otherwise, confirm and proceed to submission popup
     if (window.confirm("Closing Assessment will result in submission of assessment. Are you sure you want to close?")) {
-      // User clicked OK - freeze timer immediately and proceed with submission
       setIsTimerActive(false); // Freeze timer immediately
-
-      // Calculate time spent (initial time minus time left) - same as submit function
       const initialSeconds = (initialTime.hours * 3600) + (initialTime.minutes * 60) + initialTime.seconds;
       const remainingSeconds = (timeLeft.hours * 3600) + (timeLeft.minutes * 60) + timeLeft.seconds;
       const timeSpent = initialSeconds - remainingSeconds;
-
       setSubmissionTimeSpent(timeSpent);
       setShowSubmissionPopup(true);
     } else {
-      // User clicked Cancel - continue with assessment, do nothing
       return;
     }
   };

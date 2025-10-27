@@ -568,7 +568,7 @@ const QuestionsForm = ({
                                                                                 onChange={e => updateOption(elementIndex, optIndex, e.target.value)}
                                                                                 required
                                                                             />
-                                                                            {(element.options || []).length >= 2 && (
+                                                                            {(element.options || []).length > 2 && (
                                                                                 <button
                                                                                     type="button"
                                                                                     className="survey-assess-remove-option"
@@ -579,16 +579,38 @@ const QuestionsForm = ({
                                                                             )}
                                                                         </div>
                                                                     ))}
-                                                                    {element.options.length < 5 && (
-                                                                        <button
-                                                                            type="button"
-                                                                            className="survey-assess-add-option"
-                                                                            onClick={() => addOption(elementIndex)}
-                                                                        >
-                                                                            <Plus size={14} />
-                                                                            Add Option
-                                                                        </button>
-                                                                    )}
+                                                                    {(() => {
+                                                                        // Check if all current options are filled (no empty options)
+                                                                        const allOptionsFilled = Array.isArray(element.options) &&
+                                                                            element.options.every(opt => opt && opt.trim() !== '');
+
+                                                                        // Check if first 2 options are filled (for initial requirement)
+                                                                        const firstTwoOptionsFilled = element.options.length >= 2 &&
+                                                                            element.options[0] && element.options[0].trim() !== '' &&
+                                                                            element.options[1] && element.options[1].trim() !== '';
+
+                                                                        // Only show Add Option if less than 5 options
+                                                                        if (element.options.length >= 5) {
+                                                                            return null;
+                                                                        }
+
+                                                                        // Show button but disabled if validation fails, enabled if validation passes
+                                                                        const canAddOption = allOptionsFilled &&
+                                                                            (element.options.length <= 2 || firstTwoOptionsFilled);
+
+                                                                        return (
+                                                                            <button
+                                                                                type="button"
+                                                                                className="survey-assess-add-option"
+                                                                                onClick={() => addOption(elementIndex)}
+                                                                                disabled={!canAddOption}
+                                                                                title={!canAddOption ? 'Fill all current options to enable' : undefined}
+                                                                            >
+                                                                                <Plus size={14} />
+                                                                                Add Option
+                                                                            </button>
+                                                                        );
+                                                                    })()}
                                                                 </div>
                                                             )}
                                                         </div>
@@ -596,9 +618,13 @@ const QuestionsForm = ({
                                                         <div className="survey-assess-correct-row" style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }}>
                                                             {(() => {
                                                                 const textOk = !!(element.question_text || '').trim();
-                                                                const optsOk = Array.isArray(element.options) && element.options.filter(o => (o || '').trim()).length >= 2;
-                                                                const qReady = textOk && optsOk;
-                                                                const hint = qReady ? undefined : 'Enter question text and at least two options to enable';
+                                                                // Check that ALL options are filled (no empty options)
+                                                                const allOptionsFilled = Array.isArray(element.options) && element.options.length >= 2 &&
+                                                                    element.options.every(opt => opt && opt.trim() !== '');
+                                                                const qReady = textOk && allOptionsFilled;
+                                                                const hint = qReady ? undefined : allOptionsFilled ?
+                                                                    'Enter question text to enable' :
+                                                                    'Enter question text and fill all options to enable';
                                                                 return (
                                                                     <>
                                                                         <button type="button" className="btn-secondary" onClick={() => addFormElement('question', {}, elementIndex + 1)} disabled={!qReady} title={hint}>

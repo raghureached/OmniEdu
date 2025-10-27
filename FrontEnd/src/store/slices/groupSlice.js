@@ -214,7 +214,7 @@ export const fetchGroups = createAsyncThunk(
     try {
       const response = await api.get("/api/admin/getGroups", { params: filters });
       // return just the data (array of groups)
-      console.log(response.data.data)
+      // console.log(response.data.data)
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
@@ -227,8 +227,10 @@ export const createGroup = createAsyncThunk(
   'groups/createGroup',
   async (groupData, { rejectWithValue }) => {
     try {
-      const response = await api.post('/groups', groupData);
-      return response.data;
+      console.log(groupData)
+      const response = await api.post('/api/admin/addGroup', groupData);
+      
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -239,7 +241,7 @@ export const updateGroup = createAsyncThunk(
   'groups/updateGroup',
   async ({ id, groupData }, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/groups/${id}`, groupData);
+      const response = await api.put(`/api/admin/updateGroup/${id}`, groupData);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -251,7 +253,7 @@ export const deleteGroup = createAsyncThunk(
   'groups/deleteGroup',
   async (id, { rejectWithValue }) => {
     try {
-      await api.delete(`/groups/${id}`);
+      await api.delete(`/api/admin/deleteGroup/${id}`);
       return id;
     } catch (error) {
       return rejectWithValue(error.response.data);

@@ -113,6 +113,7 @@ const getModule = async (req, res) => {
 const getModuleById = async (req, res) => {
   try {
     const content = await OrganizationModule.findOne({ uuid: req.params.id }).populate("team").populate("created_by");
+    console.log(content)
     return res.status(200).json({ success: true, message: 'Module fetched successfully.', data: content });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to fetch module.', error: error.message });

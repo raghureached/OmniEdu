@@ -1,6 +1,6 @@
 //const {createAssessment, uploadAssessmentCSV, getQuestions, getAssessmentById, getAssessments, editAssessment, deleteAssessment, editQuestion, deleteQuestion, searchAssessment, getQuestionsRandom } = require("../controllers/admin.controller/admin_Assessment");
 const {addUser,editUser,deleteUser,getUsers,getUserbyId, bulkDeleteUsers, bulkEditUsers, exportUsers,} = require("../controllers/admin.controller/admin_User");
-const {addModule,editModule,deleteModule,previewModule,searchModules, getModules, bulkDelete} = require("../controllers/admin.controller/admin_Module");
+const {addModule,editModule,deleteModule,previewModule,searchModules, getModules, bulkDelete, getModuleById} = require("../controllers/admin.controller/admin_Module");
 const { addOrgRole, editOrgRole, deleteOrgRole, getOrgRoles } = require("../controllers/admin.controller/admin_Role");
 const {upload,uploadContent, uploadAssessment, uploadQuestionFile } = require("../middleware/multer_middleware");
 const { uploadToCloudinary, uploadMultipleToCloudinary } = require("../utils/uploadOnCloud");
@@ -69,7 +69,8 @@ router.route('/createModule').post(uploadContent.fields([{name:'primaryFile',max
 router.route('/editModule/:id').put(uploadContent.fields([{name:'primaryFile',maxCount:1},{name:'additionalFile',maxCount:1},{name:'thumbnail',maxCount:1}]),uploadMultipleToCloudinary,editModule)
 router.route('/deleteModule/:id').delete(deleteModule)
 router.route('/getModules').get(getModules)
-router.route('/bulkDeleteModule').delete(bulkDelete)  
+router.route('/bulkDeleteModule').delete(bulkDelete) 
+router.route('/getModuleById/:id').get(getModuleById) 
 
 //////////////Global Surveys////////////
 

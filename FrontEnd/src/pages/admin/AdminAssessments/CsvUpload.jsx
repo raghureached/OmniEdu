@@ -73,7 +73,7 @@ const CsvUpload = ({ onQuestionsUpload, disabled = false }) => {
                 const csvText = e.target.result;
                 const questions = parseCSV(csvText);
 
-                setSuccess(`✅ Successfully parsed ${questions.length} questions from ${file.name}`);
+                setSuccess(`Successfully parsed ${questions.length} questions from ${file.name}`);
                 setError('');
 
                 if (onQuestionsUpload) {

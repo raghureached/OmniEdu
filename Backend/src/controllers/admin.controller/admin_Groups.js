@@ -127,8 +127,8 @@ const SubTeam = require("../../models/subTeams_model");
 
 const addGroup = async (req, res) => {
     try {
-        const { teamName, subTeamName, description, subTeamDescription } = req.body;
-        if (!teamName || !subTeamName || !description || !subTeamDescription) {
+        const { teamName, subTeamName, teamDescription, subTeamDescription } = req.body;
+        if (!teamName || !subTeamName || !teamDescription || !subTeamDescription) {
             return res.status(400).json({
                 isSuccess: false,
                 message: "All fields are required"
@@ -136,18 +136,18 @@ const addGroup = async (req, res) => {
         }
         const team = await Team.create({
             name: teamName,
-            description,
+            description: teamDescription,
             ///Change when authentication is added
-            organization_id: "68d0f3dcd75629a79eb805fa",
-            created_by: "68b84267efd625b8496763f8"
+            organization_id: req.user.organization_id,
+            created_by: req.user._id
         })
         const subTeam = await SubTeam.create({
             name: subTeamName,
             description: subTeamDescription,
             team_id: team._id,
             ///Change when authentication is added
-            organization_id: "68d0f3dcd75629a79eb805fa",
-            created_by: "68b84267efd625b8496763f8"
+            organization_id: req.user.organization_id,
+            created_by: req.user._id
         })
         return res.status(201).json({
             isSuccess: true,
@@ -195,12 +195,8 @@ const addGroup = async (req, res) => {
 //   };
   const getGroups = async (req, res) => {
   try {
-    // TODO: Replace with organization_id from auth/session when available
-    const organization_id = "68d0f3dcd75629a79eb805fa";
-
-    // Populate subTeams automatically
+    const organization_id = req.user.organization_id;
     const teams = await Team.find({ organization_id }).populate("subTeams");
-
     return res.status(200).json({
       isSuccess: true,
       message: "Groups fetched successfully",

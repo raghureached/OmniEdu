@@ -140,6 +140,11 @@ const LearningPaths = () => {
     setClassificationFilter('all');
     setStatusFilter('all');
   };
+  const normalizeDuration = (duration) =>{
+    const hours = Math.floor(duration / 60);
+    const minutes = duration % 60;
+    return `${hours}h ${minutes}m`;
+  }
 
   return (
     <div className="learnpath-container">
@@ -250,7 +255,7 @@ const LearningPaths = () => {
                     <span className={`learnpath-badge learnpath-${path.status.toLowerCase()}`}>{path.status}</span>
                   </td>
                   {/* <td>{path.version}</td> */}
-                  <td>(Auto Calc)</td>
+                  <td>{normalizeDuration(path.duration)}</td>
                   <td>{new Date(path.updatedAt).toLocaleDateString()}</td>
                   <td className="learnpath-actions">
                     <div style={{ display: "flex", gap: "10px" }}>

@@ -15,6 +15,11 @@ const GroupsTable = ({
 }) => {
   return (
     <>
+    {groups.length === 0 ? (
+      <div style={{ justifyContent: 'center', alignItems: 'center', display: 'flex' }}>
+        No groups found.
+      </div>
+    ) : (
       <div className="table-container">
         <div className="table-header">
           {/* 1: Select All */}
@@ -24,18 +29,14 @@ const GroupsTable = ({
             onChange={handleSelectAll}
           />
           {/* 2: Placeholder for Plan ID column to match 8-col grid */}
-          <div>ID</div>
+          <div>Team Name</div>
           {/* 3: Group (Name) */}
-          <div>Group</div>
+          <div>Sub Team Name</div>
           {/* 4: Members */}
           <div>Members</div>
           {/* 5: Status */}
           <div>Status</div>
-          {/* 6: Description */}
-          <div>Description</div>
-          {/* 7: Placeholder for Plan Name column */}
-          <div></div>
-          {/* 8: Actions */}
+          {/* 6: Actions */}
           <div>Actions</div>
         </div>
 
@@ -48,11 +49,11 @@ const GroupsTable = ({
               onChange={(e) => handleSelectGroup(e, group.id)}
             />
 
-            {/* 2: ID placeholder (show short id) */}
-            <div className="planId">{String(group.id).toString().slice(0, 6)}</div>
+            {/* 2: Group name */}
+            <div>{group.teamName}</div>
 
-            {/* 3: Group name */}
-            <div>{group.name}</div>
+            {/* 3: Members */}
+            <div>{group.subTeamName || 0}</div>
 
             {/* 4: Members */}
             <div>{group.membersCount || 0}</div>
@@ -66,15 +67,7 @@ const GroupsTable = ({
               </span>
             </div>
 
-            {/* 6: Description */}
-            <div className="purchase-cell">
-              {group.description || '-'}
-            </div>
-
-            {/* 7: Empty col to match grid */}
-            <div></div>
-
-            {/* 8: Actions */}
+            {/* 6: Actions */}
             <div style={{ display: "flex", gap: "10px" }}>
                     <button
                       className="global-action-btn delete"
@@ -91,13 +84,9 @@ const GroupsTable = ({
           </div>
         ))}
 
-        {groups.length === 0 && (
-          <div className="table-row" style={{ justifyContent: 'center' }}>
-            No groups found.
-          </div>
-        )}
+        
       </div>
-
+    )}
       {/* Pagination aligned with OrganizationManagement */}
       <div className="pagination" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

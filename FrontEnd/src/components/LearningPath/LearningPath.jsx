@@ -2,8 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { CheckCircle, ChevronDown, ChevronLeft, ChevronUp, Star, Play, Pause, Volume2, VolumeX, Maximize, Minimize, FileText, ClipboardCheck, EyeIcon, Plus, ThumbsUp, ThumbsDown, Send } from 'lucide-react';
 import { RiDeleteBin2Fill } from 'react-icons/ri';
 import '../common/Preview/Preview.css';
+import AssessmentQuiz from '../Assessments/Assessment';
+import SurveyMainPreview from '../common/Preview/SurveyMainPreview';
 import { useParams } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchContentById } from '../../store/slices/contentSlice';
+import { getGlobalAssessmentById } from '../../store/slices/adminAssessmentSlice';
+import { getSurveyById } from '../../store/slices/adminSurveySlice';
+import { adminfetchContentById } from '../../store/slices/adminModuleSlice';
 
 const LearningPath = ({ courseData: propCourseData }) => {
     const {id} = useParams()
@@ -18,17 +24,50 @@ const LearningPath = ({ courseData: propCourseData }) => {
     const objectUrlRef = React.useRef(null);
     const [feedbackReaction, setFeedbackReaction] = useState(null); // 'like' | 'dislike' | null
     const [feedbackComment, setFeedbackComment] = useState('');
-
-    const [selectedPath, setSelectedPath] = useState(null);
+    const [loadingContent, setLoadingContent] = useState(false);
+    const [loadError, setLoadError] = useState(null);
+    const [assessOpen, setAssessOpen] = useState(false);
     const dispatch = useDispatch();
-
+    const {selectedPath} = useSelector((state) => state.learningPaths);
+    // console.log(selectedPath)
     useEffect(() => {
         // dispatch(getLearningPathById(id))
     }, [id])
-    const handleSectionClick = (section) => {
+    const handleSectionClick = async (section) => {
         setActiveLesson(section);
-        if (section?.data) {
-            setContentData(section.data);
+        setLoadError(null)
+        // Control assessment modal visibility based on selection
+        setAssessOpen((section?.type || '').toLowerCase() === 'assessment');
+        // Otherwise attempt fetch by ID/UUID depending on type
+        const type = (section?.type || '').toLowerCase();
+        const ref = section?.ref ?? null; // may be id string or object
+        let idOrUuid = null;
+        if (typeof ref === 'string') idOrUuid = ref;
+        if (!idOrUuid && ref && typeof ref === 'object') {
+            idOrUuid = ref.uuid || ref.id || null;
+        }
+        if (!idOrUuid) {
+            setContentData(null);   
+            return;
+        }
+        try {
+            setLoadingContent(true);
+            let payload = null;
+            if (type === 'module') {
+                console.log(idOrUuid)
+                payload = await dispatch(adminfetchContentById(idOrUuid)).unwrap();
+            } else if (type === 'assessment') {
+                payload = await dispatch(getGlobalAssessmentById(idOrUuid)).unwrap();
+            } else if (type === 'survey') {
+                payload = await dispatch(getSurveyById(idOrUuid)).unwrap();
+            }
+            console.log(payload)
+            setContentData(payload || null);
+        } catch (e) {
+            setLoadError(e?.message || 'Failed to load content');
+            setContentData(null);
+        } finally {
+            setLoadingContent(false);
         }
     };
 
@@ -90,136 +129,75 @@ const LearningPath = ({ courseData: propCourseData }) => {
         setFeedbackComment('');
     };
 
-    const defaultCourseData = {
-        title: "Advanced Data Analysis Techniques",
-        description: "Advanced Data Analysis Techniques: Unraveling Insights from Complex Data",
-        progress: 47,
-        completedLessons: 15,
-        totalLessons: 32,
-        feedbackEnabled:true,
-        thumbnail: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=150&h=150&fit=crop",
-        sections: [
-            {
-                id: 1, title: 'Physics: Unveiling the Universe\'s Fundamental Laws', type: 'Module', completed: true,
-                data: {
-                    "_id": {
-                        "$oid": "68e337f54ac3b4df9cc71c15"
-                    },
-                    "title": "Physics: Unveiling the Universe's Fundamental Laws",
-                    "tags": [
-                        "Physics",
-                        "Science",
-                        "Fundamentals",
-                        "Mechanics",
-                        "Thermodynamics",
-                        "Electromagnetism",
-                        "Waves",
-                        "Scientific Inquiry",
-                        "Problem Solving",
-                        "STEM"
-                    ],
-                    "primaryFile": null,
-                    "additionalFile": null,
-                    "trainingType": "Continuous Learning",
-                    "team": {
-                        "$oid": "68bd2fc86fe7e9076565e766"
-                    },
-                    "category": "Product Knowledge",
-                    "badges": "1",
-                    "stars": "1",
-                    "enableFeedback": false,
-                    "externalResource": "https://www.youtube.com/embed/ohIAiuHMKMI?si=MivGl4sZwXS7lIzJ",
-                    "description": "Embark on an illuminating journey into the core principles that govern our physical world. This comprehensive module systematically explores the fundamental laws of mechanics, thermodynamics, electricity, magnetism, waves, and an introduction to modern physics. Through engaging concepts, practical applications, and problem-solving exercises, you will develop a deep understanding of phenomena ranging from everyday observations to the grand scale of the cosmos. Cultivate critical thinking, analytical reasoning, and scientific inquiry skills essential for academic success and real-world innovation.",
-                    "learning_outcomes": [
-                        "Explain and apply fundamental principles of classical mechanics, including motion, forces, and energy.",
-                        "Describe and analyze concepts related to heat, temperature, and the laws of thermodynamics.",
-                        "Understand the principles of electricity, magnetism, and their interrelationship (electromagnetism).",
-                        "Solve quantitative problems using appropriate physical laws, equations, and mathematical reasoning.",
-                        "Develop critical thinking skills to analyze and interpret various physical phenomena and scientific data."
-                    ],
-                    "richText": "<h1>Physics</h1>\n<h3>Exploring the Laws of the Universe</h3>\n<p>\nPhysics is the branch of science that deals with the fundamental principles governing the behavior of matter and energy.\nIt explores everything from the tiniest particles to the largest galaxies, helping us understand how the universe works.\n</p>\n\n<h3>Major Areas of Physics</h3>\n<ul>\n  <li><strong>Mechanics:</strong> The study of motion, forces, and energy.</li>\n  <li><strong>Thermodynamics:</strong> The study of heat, temperature, and the laws of energy transfer.</li>\n  <li><strong>Electromagnetism:</strong> The study of electric and magnetic fields, light, and radiation.</li>\n  <li><strong>Quantum Mechanics:</strong> Explores the behavior of atoms and subatomic particles.</li>\n  <li><strong>Relativity:</strong> Deals with motion at high speeds and the nature of space and time.</li>\n</ul>\n\n<h3>Why Physics Matters</h3>\n<p>\nPhysics forms the foundation for engineering, technology, and modern innovation. From smartphones to satellites, from\nMRI scanners to nuclear reactors — every breakthrough in technology traces its roots back to physical principles.\n</p>\n\n<blockquote>\n\"Physics is the study of how the universe behaves — the ultimate quest to understand nature itself.\"\n</blockquote>\n\n<h3>Core Equations You’ll Learn</h3>\n<ul>\n  <li><strong>Newton’s Second Law:</strong> F = m × a</li>\n  <li><strong>Law of Conservation of Energy:</strong> Energy cannot be created or destroyed.</li>\n  <li><strong>Ohm’s Law:</strong> V = I × R</li>\n  <li><strong>Einstein’s Mass–Energy Equivalence:</strong> E = m × c²</li>\n</ul>\n\n<h3>Real-World Applications</h3>\n<p>\nUnderstanding physics enables the development of technologies like renewable energy systems, space exploration,\nmedical imaging, and artificial intelligence. It’s not just theoretical — it powers the modern world.\n</p>",
-                    "pushable_to_orgs": true,
-                    "credits": 2,
-                    "duration": 7,
-                    "prerequisites": [
-                        "Basic Physcis"
-                    ],
-                    "instructions": "After completing the module , Please complete the assignment and submit the file.",
-                    "submissionEnabled": true,
-                    "feedbackEnabled": true,
-                    "created_by": {
-                        "$oid": "68ca50ef7a748d88229e7dd5"
-                    },
-                    "thumbnail": "https://res.cloudinary.com/dwcuayp2u/image/upload/v1759721460/thumbnail/wjxvwjaif2l4qobuixws.png",
-                    "status": "Saved",
-                    "uuid": "941328f5-67ff-4f3e-82ed-57f5bcffc5e6",
-                    "createdAt": {
-                        "$date": "2025-10-06T03:31:01.292Z"
-                    },
-                    "updatedAt": {
-                        "$date": "2025-10-10T14:06:12.111Z"
-                    },
-                    "__v": 0
-                },
-            },
-            {
-                id: 2, title: 'Node.js Essentials: Building Dynamic and Scalable Web Applications', type: 'Module', completed: true,
-                data: {
-                    "_id": {
-                        "$oid": "68e2a314e6fee16dd2ca9ec7"
-                    },
-                    "title": "Node.js Essentials: Building Dynamic and Scalable Web Applications",
-                    "primaryFile": "https://res.cloudinary.com/dwcuayp2u/video/upload/v1759683347/primaryFiles/ekpvw168r15jnjhpl920.mp4",
-                    "additionalFile": null,
-                    "trainingType": "Mandatory Training",
-                    "category": "Technical Skills",
-                    "badges": "0",
-                    "stars": "0",
-                    "enableFeedback": false,
-                    "externalResource": "",
-                    "description": "Dive into the world of server-side JavaScript with this comprehensive Node.js module. Designed for aspiring backend and full-stack developers, this module equips you with the fundamental skills to build high-performance, scalable web applications and robust APIs. You'll explore core Node.js concepts, master asynchronous programming, work with popular frameworks like Express.js, integrate with databases, and understand how to deploy your applications. Transform your web development capabilities and create powerful, real-world backend solutions.",
-                    "richText": "",
-                    "pushable_to_orgs": true,
-                    "credits": 2,
-                    "duration": 140,
-                    "prerequisites": [
-                        "None"
-                    ],
-                    "instructions": "",
-                    "submissionEnabled": false,
-                    "feedbackEnabled": false,
-                    "created_by": {
-                        "$oid": "68ca50ef7a748d88229e7dd5"
-                    },
-                    "thumbnail": "https://res.cloudinary.com/dwcuayp2u/image/upload/v1760333554/thumbnail/lzmowohd1ihz1ekzejft.png",
-                    "status": "Saved",
-                    "uuid": "05bdb9e5-b384-40a7-ab9e-40b72fe92bdf",
-                    "createdAt": {
-                        "$date": "2025-10-05T16:55:48.267Z"
-                    },
-                    "updatedAt": {
-                        "$date": "2025-10-13T06:22:17.135Z"
-                    },
-                    "__v": 0
-                }
-            },
-            // { id: 3, title: 'Leadership Effectiveness Self-Assessment', type: 'Assessment', completed: false },
-            // { id: 4, title: 'Developing Emotional Intelligence as a Leader', type: 'Module', completed: false, active: true },
-            // { id: 5, title: 'Leadership - Building Your Image', type: 'Module', completed: true },
-            // { id: 6, title: 'Assessing Personal Effectiveness (Capstone Project)', type: 'Assessment', completed: true },
-            // { id: 7, title: 'Leadership vs. Management - What it Takes', type: 'Module', completed: true },
-            // { id: 8, title: 'Leadership Survey', type: 'Survey', completed: true }
-        ]
-    };
+    // Build from provided data (Redux selectedPath preferred over prop)
+    const sourceData = selectedPath || propCourseData || null;
+    const sections = React.useMemo(() => {
+        if (!sourceData || !Array.isArray(sourceData.lessons)) return [];
+        const ordered = [...sourceData.lessons].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        return ordered.map((l, idx) => {
+            const type = (l.type || '').toLowerCase();
+            const itemTitle = l.title || (typeof l.id === 'object' && l.id?.title) || `Item ${idx + 1}`;
+            return {
+                id: idx + 1,
+                title: itemTitle,
+                type: type === 'assessment' ? 'Assessment' : type === 'survey' ? 'Survey' : 'Module',
+                completed: false,
+                // Always force fetch for right panel; do not pass embedded objects into contentData
+                data: null,
+                // Keep original reference (string id/uuid or object) for fetching
+                ref: l.id ?? null,
+            };
+        });
+    }, [sourceData]);
 
-    const courseData = propCourseData || defaultCourseData;
-    const activeSection = activeLesson || courseData.sections.find(s => s.active) || courseData.sections[0];
-    // Initialize contentData from the initially active section if available
+    const courseData = React.useMemo(() => {
+        const firstThumb = sections.find(s => s.type === 'Module' && s?.data?.thumbnail)?.data?.thumbnail;
+        return {
+            title: sourceData?.title || 'Learning Path',
+            description: sourceData?.description || '',
+            progress: 0,
+            completedLessons: 0,
+            totalLessons: sections.length,
+            feedbackEnabled: !!sourceData?.enableFeedback,
+            thumbnail: sourceData?.coverImage || sourceData?.thumbnail || firstThumb || '',
+            sections,
+        };
+    }, [sourceData, sections]);
+
+    const activeSection = activeLesson || courseData.sections[0];
+    // Always fetch payload for active section; do not use embedded props data
     React.useEffect(() => {
-        if (!contentData && activeSection?.type?.toLowerCase() === 'module' && activeSection?.data) {
-            console.log(activeSection.data);
-            setContentData(activeSection.data);
-        }
+        (async () => {
+            if (!activeSection || contentData) return;
+            try {
+                setLoadingContent(true);
+                setLoadError(null);
+                const type = (activeSection?.type || '').toLowerCase();
+                const ref = activeSection?.ref ?? null;
+                let idOrUuid = null;
+                if (typeof ref === 'string') idOrUuid = ref;
+                if (!idOrUuid && ref && typeof ref === 'object') {
+                    idOrUuid = ref.uuid || ref.id || null;
+                }
+                if (!idOrUuid) { setLoadingContent(false); return; }
+                let payload = null;
+                if (type === 'module') {
+                    payload = await dispatch(adminfetchContentById(idOrUuid)).unwrap();
+                } else if (type === 'assessment') {
+                    payload = await dispatch(getGlobalAssessmentById(idOrUuid)).unwrap();
+                    setAssessOpen(true);
+                } else if (type === 'survey') {
+                    payload = await dispatch(getSurveyById(idOrUuid)).unwrap();
+                }
+                // console.log(payload)
+                setContentData(payload || null);
+            } catch (e) {
+                setLoadError(e?.message || 'Failed to load content');
+                setContentData(null);
+            } finally {
+                setLoadingContent(false);
+            }
+        })();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeSection]);
 
@@ -451,6 +429,15 @@ const LearningPath = ({ courseData: propCourseData }) => {
                         </button>
                     </div>
 
+                    {activeSection?.type === 'Assessment' && assessOpen ? (
+                        <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: 0, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
+                            <AssessmentQuiz isOpen={true} onClose={() => setAssessOpen(false)} previewMode={true} assessmentData={contentData} />
+                        </div>
+                    ) : activeSection?.type === 'Survey' ? (
+                        <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: 0, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
+                            <SurveyMainPreview isOpen={true} onClose={() => {}} data={contentData} />
+                        </div>
+                    ) : (
                     <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '32px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
                         {/* Meta row (only for module data) */}
                         {contentData && (
@@ -543,6 +530,7 @@ const LearningPath = ({ courseData: propCourseData }) => {
                             </div>
                         )}
                     </div>
+                    )}
                 </div>
             </div>
         </div>

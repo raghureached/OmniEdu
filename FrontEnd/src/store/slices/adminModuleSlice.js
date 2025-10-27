@@ -18,7 +18,7 @@ export const adminfetchContentById = createAsyncThunk(
   'adminModule/fetchContentById',
   async (id, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/api/admin/getContentById/${id}`);
+      const response = await api.get(`/api/admin/getModuleById/${id}`);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);

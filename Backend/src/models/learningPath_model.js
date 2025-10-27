@@ -18,7 +18,7 @@ const LearningPathSchema = new mongoose.Schema(
       team:{type:String},
       subteam:{type:String},
       category:{type:String},
-      duration:{type:String},
+      duration:{type:Number},
       trainingType:{type:String},
       credits:{type:String},
       badges:{type:String},
