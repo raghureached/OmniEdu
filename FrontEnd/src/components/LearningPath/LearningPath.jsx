@@ -10,6 +10,7 @@ import { fetchContentById } from '../../store/slices/contentSlice';
 import { getGlobalAssessmentById } from '../../store/slices/adminAssessmentSlice';
 import { getSurveyById } from '../../store/slices/adminSurveySlice';
 import { adminfetchContentById } from '../../store/slices/adminModuleSlice';
+import LoadingScreen from '../common/Loading/Loading';
 
 const LearningPath = ({ courseData: propCourseData }) => {
     const { id } = useParams()
@@ -28,6 +29,7 @@ const LearningPath = ({ courseData: propCourseData }) => {
     const [loadError, setLoadError] = useState(null);
     const [assessOpen, setAssessOpen] = useState(false);
     const [surveyOpen, setSurveyOpen] = useState(false);
+    const [completedSet, setCompletedSet] = React.useState(new Set());
     const dispatch = useDispatch();
     const { selectedPath } = useSelector((state) => state.learningPaths);
     // console.log(selectedPath)
@@ -56,16 +58,16 @@ const LearningPath = ({ courseData: propCourseData }) => {
             setLoadingContent(true);
             let payload = null;
             if (type === 'module') {
-                console.log(idOrUuid)
+                // console.log(idOrUuid)
                 payload = await dispatch(adminfetchContentById(idOrUuid)).unwrap();
             } else if (type === 'assessment') {
                 payload = await dispatch(getGlobalAssessmentById(idOrUuid)).unwrap();
             } else if (type === 'survey') {
                 payload = await dispatch(getSurveyById(idOrUuid)).unwrap();
             }
-            console.log('Survey data loaded:', payload)
-            console.log('Survey formElements:', payload?.formElements)
-            console.log('Survey formElements structure:', payload?.formElements?.map(el => ({ type: el?.type, question_type: el?.question_type, question_text: el?.question_text, options: el?.options })))
+            // console.log('Survey data loaded:', payload)
+            // console.log('Survey formElements:', payload?.formElements)
+            // console.log('Survey formElements structure:', payload?.formElements?.map(el => ({ type: el?.type, question_type: el?.question_type, question_text: el?.question_text, options: el?.options })))
             setContentData(payload || null);
         } catch (e) {
             setLoadError(e?.message || 'Failed to load content');
@@ -76,9 +78,12 @@ const LearningPath = ({ courseData: propCourseData }) => {
     };
 
     const markAsComplete = () => {
-        if (activeLesson) {
-            alert(`Marked "${activeLesson.title}" as complete!`);
-        }
+        if (!activeLesson || !activeLesson.id) return;
+        setCompletedSet((prev) => {
+            const next = new Set(prev);
+            next.add(activeLesson.id);
+            return next;
+        });
     };
 
     // File upload helpers
@@ -271,19 +276,78 @@ const LearningPath = ({ courseData: propCourseData }) => {
             setSpeed(next);
             const v = videoRef.current; if (v) v.playbackRate = next;
         };
+        // Keep fs state in sync with browser fullscreen
+        React.useEffect(() => {
+            const handleFsChange = () => {
+                const isFs = !!(
+                    document.fullscreenElement ||
+                    document.webkitFullscreenElement ||
+                    document.msFullscreenElement
+                );
+                setFs(isFs);
+            };
+            document.addEventListener('fullscreenchange', handleFsChange);
+            document.addEventListener('webkitfullscreenchange', handleFsChange);
+            document.addEventListener('msfullscreenchange', handleFsChange);
+            return () => {
+                document.removeEventListener('fullscreenchange', handleFsChange);
+                document.removeEventListener('webkitfullscreenchange', handleFsChange);
+                document.removeEventListener('msfullscreenchange', handleFsChange);
+            };
+        }, []);
+
         const toggleFs = async () => {
             const el = containerRef.current;
+            const vid = videoRef.current;
             try {
-                if (!document.fullscreenElement && el?.requestFullscreen) {
-                    await el.requestFullscreen(); setFs(true);
-                } else if (document.exitFullscreen) {
-                    await document.exitFullscreen(); setFs(false);
+                const isFsNow = !!(
+                    document.fullscreenElement ||
+                    document.webkitFullscreenElement ||
+                    document.msFullscreenElement
+                );
+                if (!isFsNow) {
+                    if (el?.requestFullscreen) {
+                        await el.requestFullscreen();
+                    } else if (el?.webkitRequestFullscreen) {
+                        el.webkitRequestFullscreen();
+                    } else if (el?.msRequestFullscreen) {
+                        el.msRequestFullscreen();
+                    } else if (vid?.webkitEnterFullscreen) {
+                        // iOS Safari fallback: use the native video fullscreen
+                        vid.webkitEnterFullscreen();
+                        setFs(true);
+                        return;
+                    }
+                    setFs(true);
+                } else {
+                    if (document.exitFullscreen) {
+                        await document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    } else if (document.msExitFullscreen) {
+                        document.msExitFullscreen();
+                    }
+                    setFs(false);
                 }
-            } catch { }
+            } catch {}
         };
 
+
         return (
-            <div className="video-player" ref={containerRef} style={{ width: '100%', maxWidth: 960, margin: '0 auto' }}>
+            <div
+                className="video-player"
+                ref={containerRef}
+                style={{
+                    width: fs ? '100vw' : '100%',
+                    maxWidth: fs ? '100vw' : 960,
+                    margin: fs ? 0 : '0 auto',
+                    height: fs ? '100vh' : 'auto',
+                    backgroundColor: '#000',
+                    position: 'relative',
+                    display: fs ? 'block' : 'flex',
+                    flexDirection: fs ? 'unset' : 'column',
+                }}
+            >
                 <video
                     ref={videoRef}
                     src={src}
@@ -292,9 +356,27 @@ const LearningPath = ({ courseData: propCourseData }) => {
                     onTimeUpdate={onTime}
                     preload="metadata"
                     playsInline
-                    style={{ width: '100%', height: 540, display: 'block', borderRadius: 8, objectFit: 'cover' }}
+                    style={{
+                        width: fs ? '100vw' : '100%',
+                        height: fs ? '100vh' : 540,
+                        display: 'block',
+                        borderRadius: fs ? 0 : 8,
+                        objectFit: fs ? 'cover' : 'contain',
+                        backgroundColor: '#000',
+                    }}
                 />
-                <div className="video-controls">
+                <div
+                    className="video-controls"
+                    style={fs ? {
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        padding: '8px 12px',
+                        background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.45) 80%)',
+                        color: '#fff'
+                    } : undefined}
+                >
                     <div className="vc-left">
                         <button className="vc-btn" onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}>
                             {isPlaying ? <Pause size={16} /> : <Play size={16} />}
@@ -338,6 +420,7 @@ const LearningPath = ({ courseData: propCourseData }) => {
             </div>
         );
     };
+    if(loadingContent) return <LoadingScreen text="Loading content..." />
 
     return (
         <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', backgroundColor: '#f8f9fa' }}>
@@ -350,16 +433,16 @@ const LearningPath = ({ courseData: propCourseData }) => {
                     <span>Go to Dashboard</span>
                 </button>
 
-                <button
+                {/* <button
                     onClick={() => setShowRating(!showRating)}
                     style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#f59e0b', padding: '8px 0', marginBottom: '24px', transition: 'color 0.2s' }}
                     onMouseEnter={(e) => e.target.style.color = '#d97706'}
                     onMouseLeave={(e) => e.target.style.color = '#f59e0b'}>
                     <Star size={16} style={{ marginRight: '8px' }} />
                     <span>Rate this course</span>
-                </button>
+                </button> */}
 
-                {showRating && (
+                {/* {showRating && (
                     <div style={{ marginBottom: '24px', padding: '16px', backgroundColor: '#fffbeb', borderRadius: '8px', border: '1px solid #fef3c7' }}>
                         <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                             {[1, 2, 3, 4, 5].map((star) => (
@@ -381,7 +464,7 @@ const LearningPath = ({ courseData: propCourseData }) => {
                             </button>
                         )}
                     </div>
-                )}
+                )} */}
 
                 <div style={{ marginBottom: '24px' }}>
                     <div style={{ width: '80px', height: '80px', borderRadius: '12px', overflow: 'hidden', marginBottom: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
@@ -392,11 +475,17 @@ const LearningPath = ({ courseData: propCourseData }) => {
 
                 <div style={{ marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid #e5e7eb' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                        <span style={{ fontSize: '20px', fontWeight: '700', color: '#5570f1' }}>{courseData.progress}%</span>
-                        <span style={{ fontSize: '13px', color: '#6b7280', fontWeight: '500' }}>{courseData.completedLessons}/{courseData.totalLessons} Lessons</span>
+                        <span style={{ fontSize: '20px', fontWeight: '700', color: '#5570f1' }}>
+                            {(() => { const total = sections.length; const done = completedSet.size; return total ? Math.round((done/total)*100) : 0; })()}%
+                        </span>
+                        <span style={{ fontSize: '13px', color: '#6b7280', fontWeight: '500' }}>
+                            {completedSet.size}/{sections.length} Lessons
+                        </span>
                     </div>
                     <div style={{ width: '100%', height: '10px', backgroundColor: '#e5e7eb', borderRadius: '10px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', background: 'linear-gradient(90deg, #5570f1 0%, #4338ca 100%)', width: `${courseData.progress}%`, borderRadius: '10px', transition: 'width 0.5s ease' }}></div>
+                        {(() => { const total = sections.length; const done = completedSet.size; const pct = total ? Math.round((done/total)*100) : 0; return (
+                            <div style={{ height: '100%', background: 'linear-gradient(90deg, #5570f1 0%, #4338ca 100%)', width: `${pct}%`, borderRadius: '10px', transition: 'width 0.5s ease' }}></div>
+                        ); })()}
                     </div>
                 </div>
 
@@ -411,7 +500,7 @@ const LearningPath = ({ courseData: propCourseData }) => {
                                 <div style={{ fontSize: '14px', fontWeight: '600', color: '#111827', marginBottom: '6px' }}>{section.title}</div>
                                 <div style={{ fontSize: '12px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <span>{section.type}</span>
-                                    {section.completed && <CheckCircle size={14} color="#10b981" />}
+                                    {completedSet.has(section.id) && <CheckCircle size={14} color="#10b981" />}
                                 </div>
                             </div>
                         </div>

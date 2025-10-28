@@ -4,8 +4,8 @@ import api from '../../../services/api.js';
 import './QuestionsForm-survey.css';
 import '../AdminAssessments/QuestionsForm.css';
 import RichText from './RichTextSurvey.jsx';
-import PreviewCard from '../../../components/common/PreviewCard/PreviewCard.jsx';
 import SurveyMainPreview from '../../../components/common/Preview/SurveyMainPreview.jsx';
+import FilePreviewModal from '../../../components/common/FilePreviewModal/FilePreviewModal.jsx';
 
 
 const QuestionsForm = ({
@@ -42,8 +42,7 @@ const QuestionsForm = ({
     const [sectionPreviewIndex, setSectionPreviewIndex] = useState(0);
     // Local responses for preview interaction (radio/checkbox selections)
     const [previewResponses, setPreviewResponses] = useState({});
-    // Thumbnail preview modal for Step 1
-    const [thumbPreviewOpen, setThumbPreviewOpen] = useState(false);
+    const [filePreview, setFilePreview] = useState({ open: false, url: null, name: '', type: '', isBlob: false });
     // Wizard step (1: Basic, 2: Elements, 3: Settings/Review)
     const [step, setStep] = useState(1);
     // Input state for tag entry
@@ -137,6 +136,48 @@ const QuestionsForm = ({
             setAiProcessing(false);
         }
     }
+    const getFileType = (file, url) => {
+        if (file && typeof file !== 'string' && file.type) return file.type;
+        const href = typeof file === 'string' ? file : url || '';
+        const lower = href?.toLowerCase?.() || '';
+        if (lower.endsWith('.pdf')) return 'application/pdf';
+        if (/(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(lower)) return 'image/*';
+        if (/(mp4|webm|ogg)$/i.test(lower)) return 'video/*';
+        if (/(mp3|wav|aac|m4a|ogg)$/i.test(lower)) return 'audio/*';
+        return 'application/octet-stream';
+    };
+
+    const handlePreviewFile = (file, previewUrl) => {
+        if (!file && !previewUrl) return;
+        let url = '';
+        let isBlob = false;
+        let name = 'Preview';
+
+        if (typeof file === 'string') {
+            url = file;
+            name = file.split('/').pop() || name;
+        } else if (file) {
+            url = previewUrl || URL.createObjectURL(file);
+            isBlob = !previewUrl;
+            name = file.name || name;
+        } else if (previewUrl) {
+            url = previewUrl;
+            name = previewUrl.split('/').pop() || name;
+        }
+
+        const type = getFileType(file, url);
+
+        setFilePreview({ open: true, url, name, type, isBlob });
+    };
+
+    const closeFilePreview = () => {
+        setFilePreview((prev) => {
+            if (prev.isBlob && prev.url) {
+                try { URL.revokeObjectURL(prev.url); } catch (_) { }
+            }
+            return { open: false, url: null, name: '', type: '', isBlob: false };
+        });
+    };
     // Step validation functions
     const validateStep1 = () => {
         return formData.title?.trim() !== '' &&
@@ -360,7 +401,7 @@ const QuestionsForm = ({
                                                     <button
                                                         type="button"
                                                         className="survey-assess-btn-link"
-                                                        onClick={() => setThumbPreviewOpen(true)}
+                                                        onClick={() => handlePreviewFile(formData.thumbnail_file || formData.thumbnail_url, formData.thumbnail_url)}
                                                         style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4f46e5', background: 'transparent' }}
                                                     >
                                                         <Eye size={16} /> Preview
@@ -406,17 +447,6 @@ const QuestionsForm = ({
 
 
                                     </div>
-
-                                    {/* Thumbnail preview card */}
-                                    {thumbPreviewOpen && formData.thumbnail_url && (
-                                        <PreviewCard
-                                            imageUrl={formData.thumbnail_url}
-                                            title={formData.title}
-                                            description={formData.description}
-                                            onClose={() => setThumbPreviewOpen(false)}
-                                        />
-                                    )}
-
 
                                 </div>}
 
@@ -878,8 +908,9 @@ const QuestionsForm = ({
                     }}
                 />
             )}
+            <FilePreviewModal open={filePreview.open} filePreview={filePreview} onClose={closeFilePreview} />
         </>
     );
-};
-
+}
+;
 export default QuestionsForm;

@@ -23,7 +23,7 @@ const LearningPathSchema = new mongoose.Schema(
       credits:{type:String},
       badges:{type:String},
       stars:{type:String},
-      coverImage:{type:String},
+      thumbnail:{type:String},
       enforceOrder:{type:Boolean},
       bypassRewards:{type:Boolean},
       enableFeedback:{type:Boolean},

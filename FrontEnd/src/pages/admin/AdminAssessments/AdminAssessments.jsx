@@ -16,13 +16,6 @@ const GlobalAssessments = () => {
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState([]);
  const [groups,setGroups] = useState([])
-  // const [formData, setFormData] = useState({
-  //   title: '',
-  //   description: '',
-  //   classification: '',
-  //   status: 'Draft',
-  //   date: ''
-  // });
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -36,13 +29,11 @@ const GlobalAssessments = () => {
     percentage_to_pass: 0,   // NEW
     instructions: '',
     display_answers: 'AfterAssessment',
-    // Newly added fields for assessments
     credits: 0,
     stars: 0,
     badges: 0,
     category: '',
     feedbackEnabled: false,
-   
     // Shuffle controls
     shuffle_questions: false,
     shuffle_options: false,
@@ -286,8 +277,7 @@ const GlobalAssessments = () => {
         shuffle_questions: !!assessment.shuffle_questions,
         shuffle_options: !!assessment.shuffle_options,
         // Thumbnail (fallback)
-        thumbnail: assessment.thumbnail_url || assessment.thumbnail || '',
-        thumbnail_file: null,
+        thumbnail:assessment.thumbnail || '',
       });
       setQuestions([{ type: '', question_text: '', options: ['', ''], correct_option: '', file_url: '', shuffle_options: false }]);
       setShowForm(true);
@@ -388,17 +378,7 @@ const GlobalAssessments = () => {
   const handleUpdateAssessment = async (statusOverride) => {
       // Build data for update (questions are not updated by edit endpoint)
       // Resolve thumbnail URL (upload if local file)
-      let resolvedThumbUrl = formData.thumbnail_url || '';
-      try {
-        if (formData.thumbnail_file && typeof formData.thumbnail_url === 'string' && formData.thumbnail_url.startsWith('blob:')) {
-          const uploaded = await dispatch(uploadAssessmentFile(formData.thumbnail_file)).unwrap();
-          if (uploaded) {
-            resolvedThumbUrl = uploaded;
-          }
-        }
-      } catch (thumbErr) {
-        console.error('Thumbnail upload failed', thumbErr?.response?.data || thumbErr.message);
-      }
+      let resolvedThumbUrl = formData.thumbnail || ''
 
       const data = {
         title: formData.title,

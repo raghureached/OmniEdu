@@ -43,7 +43,7 @@ const OrgAssessmentsSchema = new mongoose.Schema({
     enum: ["AfterAssessment", "AfterPassing",  "Never"],
     default: "AfterPassing",
   },
-  thumbnail_url:{
+  thumbnail:{
     type:String,
     default:null
   },

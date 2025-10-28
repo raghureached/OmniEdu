@@ -443,7 +443,7 @@ const SurveyMainPreview = ({ isOpen, onClose, data }) => {
                                         <div className="global-preview-right-col-content">
                                             <div className="global-preview-image-card">
                                                 {thumbnail ? (
-                                                    <img src={thumbnail} alt="Module thumbnail" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'cover', borderRadius: '10px' }} />
+                                                    <img src={thumbnail} alt="Survey thumbnail" style={{ width: '100%',height: '100%', borderRadius: '10px' }} />
                                                 ) : (
                                                     <span>Survey Thumbnail</span>
                                                 )}

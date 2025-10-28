@@ -162,7 +162,8 @@ const createAssessment = async (req, res) => {
         const savedQuestion = await newQuestion.save({ session });
         questionIds.push(savedQuestion._id);
       }
-
+      console.log(req.uploadedFile)
+      const thumbnail_url = req.uploadedFile?.url;
       // Create assessment using the saved question ids
       const newAssessment = new OrganizationAssessments({
         organization_id,
@@ -186,7 +187,8 @@ const createAssessment = async (req, res) => {
         shuffle_options,
         questions: questionIds,
         instructions:instructions,
-        created_by: req.user?._id
+        created_by: req.user?._id,
+        thumbnail:thumbnail_url
       });
 
       const savedAssessment = await newAssessment.save({ session });
@@ -678,7 +680,8 @@ const editAssessment = async (req, res) => {
         const passNum = req.body.percentage_to_pass !== undefined && req.body.percentage_to_pass !== '' ? Number(req.body.percentage_to_pass) : undefined;
         const unlimited = req.body.unlimited_attempts === true || req.body.unlimited_attempts === 'true';
         const tagsArr = Array.isArray(req.body.tags) ? req.body.tags : (typeof req.body.tags === 'string' ? req.body.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined);
-
+        const thumbnail = req.uploadedFile?.url;
+        console.log(thumbnail)
         const updateDoc = {
             ...(typeof req.body.title === 'string' ? { title: req.body.title } : {}),
             ...(typeof req.body.description === 'string' ? { description: req.body.description } : {}),
@@ -698,7 +701,7 @@ const editAssessment = async (req, res) => {
             ...(req.body.feedbackEnabled !== undefined ? { feedbackEnabled: req.body.feedbackEnabled === true || req.body.feedbackEnabled === 'true' } : {}),
             ...(req.body.shuffle_questions !== undefined ? { shuffle_questions: req.body.shuffle_questions === true || req.body.shuffle_questions === 'true' } : {}),
             ...(req.body.shuffle_options !== undefined ? { shuffle_options: req.body.shuffle_options === true || req.body.shuffle_options === 'true' } : {}),
-            ...(typeof req.body.thumbnail_url === 'string' ? { thumbnail_url: req.body.thumbnail_url } : {}),
+            ...(typeof thumbnail === 'string' ? { thumbnail: thumbnail } : {}),
         };
 
         let assessment = await OrganizationAssessments.findOneAndUpdate(
@@ -749,8 +752,6 @@ const editAssessment = async (req, res) => {
                                 file_url: q.file_url?.trim() || null,
                                 options: q.options,
                                 correct_option: normalizedCorrect,
-
-
                             });
 
                             const savedQuestion = await newQuestion.save({ session });
@@ -825,12 +826,9 @@ const editAssessment = async (req, res) => {
                 { new: true, session }
             );
         }
-
-        // Commit transaction
         await session.commitTransaction();
         transactionCommitted = true; // Mark as committed
 
-        // Return populated assessment so frontend can display latest question values
         const populated = await OrganizationAssessments.findOne({ uuid: req.params.id, organization_id }).populate('questions');
 
         await logAdminActivity(req, "Edit Assessment", "assessment", `Assessment updated successfully: ${assessment.title}`);

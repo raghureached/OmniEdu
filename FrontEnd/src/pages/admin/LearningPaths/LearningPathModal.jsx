@@ -24,7 +24,7 @@ const defaultForm = {
   credits: 0,
   badges: 0,
   stars: 0,
-  coverImage: null,
+  thumbnail: null,
   enforceOrder: true,
   bypassRewards: false,
   enableFeedback: false,
@@ -141,7 +141,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
         credits: initialData.credits ?? 0,
         badges: initialData.badges ?? 0,
         stars: initialData.stars ?? 0,
-        coverImage: initialData.coverImage ?? null,
+        thumbnail: initialData.thumbnail ?? null,
         enforceOrder: initialData.enforceOrder ?? true,
         bypassRewards: initialData.bypassRewards ?? false,
         enableFeedback: initialData.enableFeedback ?? false,
@@ -287,11 +287,12 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
       tags,
       lessons,
     };
+    console.log(payload);
     dispatch(editLearningPath({uuid: initialData.uuid, ...payload}));
     // onSave(payload);
   };
 
-  const removeCover = () => setForm((p) => ({ ...p, coverImage: null }));
+  const removeCover = () => setForm((p) => ({ ...p, thumbnail: null }));
 
   return (
     <div className="addOrg-modal-overlay lp-fixed" role="dialog" aria-modal="true" aria-labelledby="lpModalTitle">
@@ -362,11 +363,11 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
 
                 <div className="module-overlay__form-group">
                   <label className="module-overlay__form-label">Thumbnail<span className="module-overlay__required">*</span></label>
-                  <input id="lpCoverImage" type="file" name="coverImage" onChange={handleChange} accept="image/*" style={{ display: 'none' }} />
-                  {form.coverImage ? (
+                  <input id="lpCoverImage" type="file" name="thumbnail" onChange={handleChange} accept="image/*" style={{ display: 'none' }} />
+                  {form.thumbnail ? (
                     <div className="module-overlay__uploaded-file-container">
-                      <span className="module-overlay__uploaded-file-name" title={typeof form.coverImage === 'string' ? form.coverImage.split('/').pop() : form.coverImage.name}>
-                        {typeof form.coverImage === 'string' ? form.coverImage.split('/').pop() : form.coverImage.name}
+                      <span className="module-overlay__uploaded-file-name" title={typeof form.thumbnail === 'string' ? form.thumbnail.split('/').pop() : form.thumbnail.name}>
+                        {typeof form.thumbnail === 'string' ? form.thumbnail.split('/').pop() : form.thumbnail.name}
                       </span>
                       <div className="module-overlay__file-actions">
                         <button type="button" className="module-overlay__btn-delete" onClick={removeCover}>Remove</button>

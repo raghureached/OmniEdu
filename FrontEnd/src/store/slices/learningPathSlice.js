@@ -15,7 +15,7 @@ export const addLearningPath = createAsyncThunk("learningPath/addLearningPath", 
 export const editLearningPath = createAsyncThunk("learningPath/editLearningPath", async (learningPath) => {
     try {
         console.log(learningPath);
-        const response = await api.put(`/api/admin/editLearningPath/${learningPath.uuid}`, learningPath);
+        const response = await api.put(`/api/admin/editLearningPath/${learningPath.uuid}`, learningPath,{headers:{"Content-Type":"multipart/form-data"}});
         console.log(response.data)
         return response.data.data;
     } catch (error) {

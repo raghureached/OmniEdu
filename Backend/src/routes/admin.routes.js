@@ -53,7 +53,7 @@ router.route('/getOrgRoles').get(getOrgRoles)
 
 router.route('/createAssessment').post(upload.single('thumbnail'),uploadToCloudinary('assessments'),createAssessment)
 router.route('/uploadAssessmentCSV').post(uploadAssessmentCSV)
-router.route('/editAssessment/:id').put(editAssessment)
+router.route('/editAssessment/:id').put(upload.single('thumbnail'), uploadToCloudinary('assessments'), editAssessment)
 router.route('/deleteAssessment/:id').delete(deleteAssessment)
 router.route('/getAssessments').get(getAssessments)
 router.route('/getAssessmentById/:id').get(getAssessmentById)
@@ -89,10 +89,10 @@ router.route('/deleteGroup/:id').delete(deleteGroup)
 
 //////Learning Path////////
 
-router.route('/addLearningPath').post(addLearningPath)
+router.route('/addLearningPath').post(upload.single('thumbnail'),uploadToCloudinary('learningPaths'),addLearningPath)
 router.route('/getLearningPaths').get(getLearningPaths)
 router.route('/getLearningPathContents/:id').get(getContentsOfLearningPath)
-router.route('/editLearningPath/:id').put(editLearningPath)
+router.route('/editLearningPath/:id').put(upload.single('thumbnail'),uploadToCloudinary('learningPaths'),editLearningPath)
 router.route('/deleteLearningPath/:id').delete(deleteLearningPath)
 router.route('/getLearningPathById/:id').get(getLearningPathById)
 

@@ -6,6 +6,7 @@ import { RiDeleteBin2Fill } from 'react-icons/ri';
 import { EyeIcon, Plus, ThumbsUp, ThumbsDown, Send, Play, Pause, Volume2, VolumeX, Maximize, Minimize, ChevronLast, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const ModulePreview = ({ isOpen, onClose, data }) => {
+    console.log(data)
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('preview');
     const [showModal, setShowModal] = useState(false);
@@ -113,6 +114,7 @@ const ModulePreview = ({ isOpen, onClose, data }) => {
     const trainingType = data?.trainingType || '—';
     const teamName = data?.team?.name || '—';
     const durationMins = Number.isFinite(data?.duration) ? data.duration : null;
+    console.log(durationMins)
     const credits = data?.credits ?? 0;
     const badges = data?.badges ?? 0;
     const stars = data?.stars ?? 0;

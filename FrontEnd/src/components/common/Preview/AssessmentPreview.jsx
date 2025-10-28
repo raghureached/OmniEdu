@@ -6,7 +6,7 @@ import { RiDeleteBin2Fill } from 'react-icons/ri';
 import { EyeIcon, Plus, ThumbsUp, ThumbsDown, Send, Play, Pause, Volume2, VolumeX, Maximize, Minimize, ChevronLast, ChevronLeft, ChevronRight ,FileText} from 'lucide-react';
 import AssessmentQuiz from '../../Assessments/Assessment';
 const AssessmentPreview = ({ isOpen, onClose, data }) => {
-   
+    console.log("data in Assessment in main preview",data)
     const navigate = useNavigate();
     const [showQuiz, setShowQuiz] = useState(false);
     const [activeTab, setActiveTab] = useState('preview');
@@ -125,7 +125,7 @@ const AssessmentPreview = ({ isOpen, onClose, data }) => {
     const description = data?.description || 'No overview provided.';
     const outcomes = Array.isArray(data?.learningOutcomes) ? data.learningOutcomes : [];
     const videoSrc = data?.primaryFile || null;
-    const thumbnail = data?.thumbnail_url
+    const thumbnail = data?.thumbnail
     || '';
     const resource = data?.externalResource || null;
     const resourceKind = resource ? guessKind(getFileExt(resource)) : null;
@@ -460,7 +460,7 @@ const AssessmentPreview = ({ isOpen, onClose, data }) => {
                                         <div className="global-preview-right-col-content">
                                             <div className="global-preview-image-card">
                                                 {thumbnail ? (
-                                                    <img src={thumbnail} alt="Module thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '10px' }} />
+                                                    <img src={thumbnail} alt="Assessment thumbnail" style={{ width: '100%', height: '100%', borderRadius: '10px' }} />
                                                 ) : (
                                                     <span>Assessment Thumbnail</span>
                                                 )}

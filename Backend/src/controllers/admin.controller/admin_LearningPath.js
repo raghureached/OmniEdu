@@ -16,7 +16,6 @@ const addLearningPath = async (req, res) => {
       credits,
       badges,
       stars,
-      coverImage,
       enforceOrder,
       bypassRewards,
       enableFeedback,
@@ -39,6 +38,7 @@ const addLearningPath = async (req, res) => {
         order: typeof l.order === 'number' ? l.order : undefined,
       }))
       : [];
+      const thumbnail = req?.uploadedFile?.url;
 
     const learningPath = new LearningPath({
       title,
@@ -53,10 +53,10 @@ const addLearningPath = async (req, res) => {
       credits,
       badges,
       stars,
-      coverImage,
       enforceOrder,
       bypassRewards,
       enableFeedback,
+      thumbnail,
       lessons: normalizedLessons,
       organization_id: req.user.organization_id,
       status,
@@ -140,7 +140,6 @@ const editLearningPath = async (req, res) => {
       credits,
       badges,
       stars,
-      coverImage,
       enforceOrder,
       bypassRewards,
       enableFeedback,
@@ -151,7 +150,7 @@ const editLearningPath = async (req, res) => {
 
     const typeToModel = {
       module: 'OrganizationModule',
-      assessment: 'Assessment',
+      assessment: 'OrganizationAssessments',
       survey: 'OrganizationSurvey',
     };
 
@@ -165,6 +164,7 @@ const editLearningPath = async (req, res) => {
       }))
       : undefined;
 
+      const thumbnail_url= req?.uploadedFile?.url;
     const updateDoc = {
       title,
       description,
@@ -178,7 +178,7 @@ const editLearningPath = async (req, res) => {
       credits,
       badges,
       stars,
-      coverImage,
+      thumbnail:thumbnail_url?thumbnail_url:learningPath.thumbnail,
       enforceOrder,
       bypassRewards,
       enableFeedback,
