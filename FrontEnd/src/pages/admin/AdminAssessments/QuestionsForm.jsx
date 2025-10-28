@@ -69,7 +69,7 @@ const QuestionsForm = ({
     const enhanceTexthelper = async (title) => {
         try {
             setAiProcessing(true);
-            const response = await api.post('/api/globalAdmin/enhanceAssessment', { title });
+            const response = await api.post('/api/admin/enhanceAssessment', { title });
             setFormData({ ...formData, title: response.data.data.title, description: response.data.data.description, tags: response.data.data.tags });
         } catch (error) {
             console.error('Error enhancing text:', error);

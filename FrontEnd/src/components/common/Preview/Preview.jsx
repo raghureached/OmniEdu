@@ -13,6 +13,7 @@ const ModulePreview = ({ isOpen, onClose, data }) => {
     const [modalContent, setModalContent] = useState({ title: '', body: '' });
     const [submission,setSubmission] = useState(null);
     const objectUrlRef = useRef(null);
+    const primaryUrlRef = useRef(null);
     const [feedbackReaction, setFeedbackReaction] = useState(null); // 'like' | 'dislike' | null
     const [feedbackComment, setFeedbackComment] = useState('');
     // Initialize from incoming data
@@ -100,12 +101,35 @@ const ModulePreview = ({ isOpen, onClose, data }) => {
         }
         const name = res.name || fileNameFromUrl(res.url || '');
         const ext = getFileExt(res.url || res.name || '');
-        return { name, url: res.url, kind: guessKind(ext) };
+        const url = res.url || '';
+        return url ? { name, url, kind: guessKind(ext) } : null;
+    };
+
+    // Dedicated normalizer for primaryFile using its own URL ref so we don't revoke submission preview URLs
+    const normalizePrimaryResource = (res) => {
+        if (!res) return null;
+        if (typeof res === 'string') {
+            const name = fileNameFromUrl(res);
+            const ext = getFileExt(res);
+            return { name, url: res, kind: guessKind(ext) };
+        }
+        if (res instanceof File) {
+            if (primaryUrlRef.current) URL.revokeObjectURL(primaryUrlRef.current);
+            const url = URL.createObjectURL(res);
+            primaryUrlRef.current = url;
+            const ext = getFileExt(res.name);
+            return { name: res.name, url, kind: guessKind(ext) };
+        }
+        const name = res.name || fileNameFromUrl(res.url || '');
+        const ext = getFileExt(res.url || res.name || '');
+        const url = res.url || '';
+        return url ? { name, url, kind: guessKind(ext) } : null;
     };
 
     useEffect(() => () => {
         // cleanup any created object URLs
         if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+        if (primaryUrlRef.current) URL.revokeObjectURL(primaryUrlRef.current);
     }, []);
 
     // Derived display values with safe fallbacks
@@ -113,8 +137,7 @@ const ModulePreview = ({ isOpen, onClose, data }) => {
     const category = data?.category || 'Uncategorized';
     const trainingType = data?.trainingType || '—';
     const teamName = data?.team?.name || '—';
-    const durationMins = Number.isFinite(data?.duration) ? data.duration : null;
-    console.log(durationMins)
+    const durationMins = data?.duration || null;
     const credits = data?.credits ?? 0;
     const badges = data?.badges ?? 0;
     const stars = data?.stars ?? 0;
@@ -123,6 +146,7 @@ const ModulePreview = ({ isOpen, onClose, data }) => {
     const description = data?.description || 'No overview provided.';
     const outcomes = Array.isArray(data?.learningOutcomes) ? data.learningOutcomes : [];
     const videoSrc = data?.primaryFile || null;
+    const primaryRes = normalizePrimaryResource(videoSrc);
     const thumbnail = data?.thumbnail || '';
     const resource = data?.externalResource || null;
     const resourceKind = resource ? guessKind(getFileExt(resource)) : null;
@@ -367,7 +391,6 @@ const ModulePreview = ({ isOpen, onClose, data }) => {
                 </div>
                 <div className="global-preview-wrap">
                     <div className="global-preview-panel">
-                        {/* compact header; removed step/progress and moved tabs up */}
 
                         <div className="global-preview-content">
 
@@ -498,11 +521,26 @@ const ModulePreview = ({ isOpen, onClose, data }) => {
                                         <div className="global-preview-card global-preview-primary-card">
                                             <h3 className="global-preview-card-title">Primary Material</h3>
                                             {/* <p className="global-preview-resource-meta">Content</p> */}
-                                            {videoSrc === null ?
+                                            {!primaryRes ? (
                                                 <div className="global-preview-richtext" dangerouslySetInnerHTML={{ __html: data.richText }} />
-                                                :
-                                                <VideoPlayer src={videoSrc} poster={thumbnail} theme="light" />
-                                            }
+                                            ) : primaryRes.kind === 'video' ? (
+                                                <VideoPlayer src={primaryRes.url} poster={thumbnail} theme="light" />
+                                            ) : primaryRes.kind === 'image' ? (
+                                                <div style={{ display:'flex',justifyContent:'center' }}>
+                                                    <img src={primaryRes.url} alt={primaryRes.name} style={{ maxWidth:'100%', maxHeight:'70vh', borderRadius: 8 }} />
+                                                </div>
+                                            ) : primaryRes.kind === 'pdf' ? (
+                                                <div className="global-preview-iframe-container">
+                                                    <iframe src={primaryRes.url} title={primaryRes.name} />
+                                                </div>
+                                            ) : (
+                                                <div>
+                                                    <p className="global-preview-no-preview">Preview not available for this file type.</p>
+                                                    <p>
+                                                        <a href={primaryRes.url} target="_blank" rel="noopener noreferrer" className="global-preview-open-link">Open file</a>
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                         {resource && (
                                             <div className="global-preview-card">
@@ -532,7 +570,7 @@ const ModulePreview = ({ isOpen, onClose, data }) => {
                                         )}
 
                                     </div>
-                                    {data.submissionEnabled && <div className="global-preview-actions">
+                                    {(data.submissionEnabled || data.submissionsEnabled) && <div className="global-preview-actions">
                                         <div>
                                             <h3 style={{margin:"10px"}}>Submission <span className='module-overlay__required'>*</span></h3>
 
@@ -540,7 +578,7 @@ const ModulePreview = ({ isOpen, onClose, data }) => {
                                                 type="file"
                                                 name="primaryFile"
                                                 style={{ display: 'none' }}
-                                                accept=".pdf,.doc,.docx,.mp4,.mp3,.scorm"
+                                                accept=".pdf,.doc,.docx,.mp4,.mp3,.scorm,.png,.jpg,.jpeg,.gif,.webp"
                                                 id="uploadFiles"
                                                 onChange={handleFileChange}
                                             />

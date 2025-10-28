@@ -16,6 +16,7 @@ import GroupsTable from './components/GroupsTable';
 import GroupsFilter from './components/GroupsFilter';
 // Reuse OrganizationManagement styles for consistent look & feel
 import '../../globalAdmin/OrganizationManagement/OrganizationManagement.css';
+import LoadingScreen from '../../../components/common/Loading/Loading';
 
 const GroupsManagement = () => {
   const dispatch = useDispatch();
@@ -253,7 +254,9 @@ const GroupsManagement = () => {
   for (let i = 1; i <= totalPages; i++) {
     pageNumbers.push(i);
   }
-
+  if(loading){
+    return <LoadingScreen text={"Loading Groups..."}/>
+  }
   return (
     <div className="app-container">
       <div className="main-content">

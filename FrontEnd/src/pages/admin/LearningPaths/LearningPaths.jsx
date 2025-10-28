@@ -6,12 +6,13 @@ import './LearningPaths.css';
 import { Edit3, FileText, Search, Trash2, Users } from 'lucide-react';
 import { getLearningPaths } from '../../../store/slices/learningPathSlice';
 import { deleteLearningPath } from '../../../store/slices/learningPathSlice';
+import LoadingScreen from '../../../components/common/Loading/Loading';
 
 const LearningPaths = () => {
   const dispatch = useDispatch();
   const { items } = useSelector((state) => state.content);
   const {assessments} = useSelector((state) => state.adminAssessments)
-  const {learningPaths} = useSelector((state) => state.learningPaths)
+  const {learningPaths,loading} = useSelector((state) => state.learningPaths)
 
   // State for filters
   const [nameSearch, setNameSearch] = useState('');
@@ -21,61 +22,6 @@ const LearningPaths = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPath, setEditingPath] = useState(null);
 
-  // Dummy data for demonstration
-  const dummyPaths = [
-    {
-      id: 1,
-      title: 'Frontend Onboarding',
-      classification: 'Role-Specific Training',
-      status: 'Published',
-      version: '1.0',
-      updatedAt: '2025-04-20',
-      moduleCount: 5,
-      enrolledCount: 24,
-      completionRate: '78%',
-      description: 'A comprehensive onboarding path covering React, tooling, code standards, and deployments.',
-      tags: ['React', 'Tooling', 'Onboarding']
-    },
-    {
-      id: 2,
-      title: 'Backend Fundamentals',
-      classification: 'Role-Specific Training',
-      status: 'Published',
-      version: '1.2',
-      updatedAt: '2025-03-15',
-      moduleCount: 6,
-      enrolledCount: 18,
-      completionRate: '65%',
-      description: 'Core backend concepts including Node.js, APIs, databases, and authentication best practices.',
-      tags: ['Node.js', 'API', 'Database']
-    },
-    {
-      id: 3,
-      title: 'Leadership Development',
-      classification: 'Leadership',
-      status: 'Draft',
-      version: '0.9',
-      updatedAt: '2025-05-01',
-      moduleCount: 4,
-      enrolledCount: 0,
-      completionRate: '0%',
-      description: 'Develop soft skills: communication, mentorship, stakeholder management, and conflict resolution.',
-      tags: ['Leadership', 'Communication']
-    },
-    {
-      id: 4,
-      title: 'Customer Support Training',
-      classification: 'Role-Specific Training',
-      status: 'Archived',
-      version: '2.1',
-      updatedAt: '2024-12-10',
-      moduleCount: 7,
-      enrolledCount: 42,
-      completionRate: '92%',
-      description: 'Training for support workflows, product knowledge, ticket handling, and customer empathy.',
-      tags: ['Support', 'Product', 'CX']
-    }
-  ];
   useEffect(() => {
     dispatch(getLearningPaths());
   }, [dispatch]);
@@ -144,6 +90,9 @@ const LearningPaths = () => {
     const hours = Math.floor(duration / 60);
     const minutes = duration % 60;
     return `${hours}h ${minutes}m`;
+  }
+  if(loading){
+    return <LoadingScreen text="Loading Learning Paths" />
   }
 
   return (
@@ -239,7 +188,7 @@ const LearningPaths = () => {
                     <div className="learnpath-name">
                       <div className="learnpath-title-wrap">
                         <h4 className="learnpath-name-title">{path.title}</h4>
-                        <p className="learnpath-name-desc">{path.description || 'No description provided'}</p>
+                        <p className="learnpath-name-desc">{path.description.slice(0, 50) + '...' || 'No description provided'}</p>
                         {Array.isArray(path.tags) && path.tags.length > 0 && (
                           <div className="learnpath-tags">
                             {path.tags.map((t, idx) => (

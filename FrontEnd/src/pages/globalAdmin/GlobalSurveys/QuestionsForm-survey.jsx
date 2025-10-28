@@ -5,7 +5,6 @@ import './QuestionsForm-survey.css';
 import '../GlobalAssessments/QuestionsForm.css';
 import RichText from './RichTextSurvey.jsx';
 import SurveyMainPreview from '../../../components/common/Preview/SurveyMainPreview.jsx';
-import { GoX } from 'react-icons/go';
 import FilePreviewModal from '../../../components/common/FilePreviewModal/FilePreviewModal.jsx';
 
 const QuestionsForm = ({

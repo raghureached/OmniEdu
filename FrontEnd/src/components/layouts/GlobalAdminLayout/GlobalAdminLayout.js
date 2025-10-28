@@ -62,9 +62,8 @@ const GlobalAdminLayout = () => {
     }, [profileDropdownOpen, notificationsOpen]);
 
     const handleLogout = () => {
-        dispatch(logout()).then(() => {
-            navigate("/");
-        });
+        dispatch(logout())
+        navigate("/");
     };
 
     // Function to check if a link is active

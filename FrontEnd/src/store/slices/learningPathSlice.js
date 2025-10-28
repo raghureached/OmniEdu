@@ -72,17 +72,47 @@ const learningPathSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
+        builder.addCase(addLearningPath.pending, (state) => {
+            state.loading = true;
+        });
         builder.addCase(addLearningPath.fulfilled, (state, action) => {
+            
             state.learningPaths.push(action.payload);
+            state.loading =false
+        });
+        builder.addCase(addLearningPath.rejected, (state) => {
+            state.loading = false;
+        });
+        builder.addCase(getLearningPaths.pending, (state) => {
+            state.loading = true;
         });
         builder.addCase(getLearningPaths.fulfilled, (state, action) => {
+
             state.learningPaths = action.payload;
+            state.loading =false
+        });
+        builder.addCase(getLearningPaths.rejected, (state) => {
+            state.loading = false;
+        });
+        builder.addCase(editLearningPath.pending, (state) => {
+            state.loading = true;
         });
         builder.addCase(editLearningPath.fulfilled, (state, action) => {
             state.learningPaths = state.learningPaths.map((lp) => (lp.uuid === action.payload.uuid ? action.payload : lp));
+            state.loading =false
+        });
+        builder.addCase(editLearningPath.rejected, (state) => {
+            state.loading = false;
+        });
+        builder.addCase(deleteLearningPath.pending, (state) => {
+            state.loading = true;
         });
         builder.addCase(deleteLearningPath.fulfilled, (state, action) => {
             state.learningPaths = state.learningPaths.filter((lp) => lp.uuid !== action.payload.uuid);
+            state.loading =false
+        });
+        builder.addCase(deleteLearningPath.rejected, (state) => {
+            state.loading = false;
         });
     },
 });

@@ -859,7 +859,7 @@
 .btn-secondary:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-    background-color: #9ca3af;
+    /* background-color: #9ca3af; */
 }
 
 .btn-primary:disabled:hover,

@@ -3,14 +3,14 @@ import { ChevronLeft, ChevronRight, EyeIcon, Loader, Plus, X } from 'lucide-reac
 import './ModuleModal.css';
 import { RiDeleteBin2Fill } from 'react-icons/ri';
 import { useDispatch, useSelector } from 'react-redux';
-import { createContent, enhanceText, updateContent } from '../../../store/slices/contentSlice';
+// import { createContent, enhanceText, updateContent } from '../../../store/slices/contentSlice';
 import CustomLoader2 from '../../../components/common/Loading/CustomLoader2';
 import ModulePreview from '../../../components/common/Preview/Preview';
 import api from '../../../services/api';
 import FullRichTextEditor from './RichText';
 import CustomError from '../../../components/common/Error/Error';
 import { GoBook, GoX } from 'react-icons/go';
-import { admincreateContent, adminupdateContent } from '../../../store/slices/adminModuleSlice';
+import { admincreateContent, adminupdateContent,enhanceText } from '../../../store/slices/adminModuleSlice';
 const categories = [
     "Cyber Security",
     // "POSH (Prevention of Sexual Harassment)",
@@ -348,7 +348,7 @@ const ModuleModal = ({
                                     {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}</span>
                                 </label>
                                 <div className="module-overlay__learning-outcomes">
-                                    {learningOutcomes.map((outcome, index) => (
+                                    {learningOutcomes?.map((outcome, index) => (
                                         <div key={index} className="module-overlay__learning-outcome-item">
                                             <input
                                                 type="text"
@@ -401,7 +401,7 @@ const ModuleModal = ({
                                     style={{ width: '100%' }}
                                 />
                                 <div className="module-overlay__tags-container">
-                                    {tags.map((tag, index) => (
+                                    {tags?.map((tag, index) => (
                                         <span key={index} className="module-overlay__tag">
                                             {tag}
                                             <button

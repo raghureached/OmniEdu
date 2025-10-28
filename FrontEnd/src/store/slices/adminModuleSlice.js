@@ -37,6 +37,17 @@ export const admincreateContent = createAsyncThunk(
     }
   }
 );
+export const enhanceText = createAsyncThunk(
+    'adminModule/enhanceText',
+    async ({title,description}, { rejectWithValue }) => {
+      try {
+        const response = await api.post('/api/admin/enhanceText', {title,description});
+        return response.data.data;
+      } catch (error) {
+        return rejectWithValue(error.response.data);
+      }
+    }
+  );
 
 export const adminupdateContent = createAsyncThunk(
   'adminModule/updateContent',
@@ -180,6 +191,7 @@ const adminModuleSlice = createSlice({
         state.loading = false;
         state.error = action.payload?.message || 'Failed to bulk delete content';
       });
+      
       
   }
 });

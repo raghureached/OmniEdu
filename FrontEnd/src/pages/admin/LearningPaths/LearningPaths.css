@@ -368,7 +368,7 @@ button:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 .learnpath-table { width: 100%; border-collapse: collapse; }
-.learnpath-table thead th { background: #f8fafc; color: #0f172a; text-align: left; font-weight: 600; padding: 12px 14px; border-bottom: 1px solid #e5e7eb; font-size: 0.95rem; }
+.learnpath-table thead th { background: #f8fafc; color: #374151; text-align: left; font-weight: 600; padding: 12px 14px; border-bottom: 1px solid #e5e7eb; font-size: 0.95rem; }
 .learnpath-table tbody td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; }
 .learnpath-table tbody tr:hover { background: #f9fafb; }
 

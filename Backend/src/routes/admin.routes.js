@@ -28,6 +28,7 @@ const {
     fileUploadHandler,
   } = require("../controllers/admin.controller/admin_Assessments");
   const {createSurvey, editSurvey, deleteSurvey, getSurveys, getSurvey} = require("../controllers/admin.controller/admin_Surveys");
+const { enhanceText, enhanceSurvey, enhanceAssessment, createQuestions } = require("../controllers/admin.controller/admin_AI");
   
 const router = require("express").Router();
 
@@ -119,5 +120,11 @@ router.route('/deleteAssignment/:id').delete(deleteAssignment)
 //////Profile//////
 router.route('/getProfile').get(getProfile)
 
+
+router.route('/enhanceText').post(enhanceText)
+// router.route('/generateImage').post(generateImage)
+router.route('/enhanceSurvey').post(enhanceSurvey)
+router.route('/enhanceAssessment').post(enhanceAssessment)
+router.route('/createQuestions').post(createQuestions)
 
 module.exports = router;

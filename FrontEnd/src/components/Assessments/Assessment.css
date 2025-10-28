@@ -558,10 +558,10 @@ body {
   border: none;
 }
 
-.assesspreview-btn:disabled {
+/* .assesspreview-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
+} */
 
 .assesspreview-btn-secondary {
   background: white;

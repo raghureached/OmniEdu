@@ -9,6 +9,7 @@ import { fetchSurveys } from '../../../store/slices/adminSurveySlice';
 import { fetchGlobalAssessments } from '../../../store/slices/adminAssessmentSlice';
 import { addLearningPath, editLearningPath } from '../../../store/slices/learningPathSlice';
 import LearningPathPreview from '../../../components/common/Preview/LearningPathPreview';
+import api from '../../../services/api';
 
 const defaultForm = {
   title: '',
@@ -34,6 +35,7 @@ const defaultForm = {
 
 const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
   const dispatch = useDispatch();
+  // console.log(initialData)
   useEffect(() => {
     dispatch(adminfetchContent());
     dispatch(fetchGlobalAssessments());
@@ -47,6 +49,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
   const assessmentsRaw = Array.isArray(contentItems) ? contentItems.filter((i) => (i.type || '').toLowerCase() === 'assessment') : [];
   const surveysRaw = Array.isArray(contentItems) ? contentItems.filter((i) => (i.type || '').toLowerCase() === 'survey') : [];
   const [preview,setPreview] = useState(false);
+  const [aiProcessing,setAiProcessing] = useState(false);
   // Fallback dummy data if store is empty
   // const modules = modulesRaw.length ? modulesRaw : [
   //   { uuid: 'm-101', type: 'module', title: 'Intro to Programming', },
@@ -229,10 +232,21 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
     //     return true;
     //   default:
     //     return true;
-    // }
+    // }  
     return true;
   };
-
+const enhanceTexthelper = async (title) => {
+        try {
+            setAiProcessing(true);
+            const response = await api.post('/api/admin/enhanceSurvey', { title });
+            setTags(response.data.data.tags);
+            setForm({ ...form, title: response.data.data.title, description: response.data.data.description, tagsText: response.data.data.tags.join(', ') });
+        } catch (error) {
+            console.error('Error enhancing text:', error);
+        } finally {
+            setAiProcessing(false);
+        }
+    }
   /* Tag handlers */
   const handleTagInputChange = (e) => setTagInput(e.target.value);
   const addTag = () => {
@@ -287,7 +301,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
       tags,
       lessons,
     };
-    console.log(payload);
+    // console.log(payload);
     dispatch(editLearningPath({uuid: initialData.uuid, ...payload}));
     // onSave(payload);
   };
@@ -360,7 +374,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                     ))}
                   </div>
                 </div>
-
+                    <button type='button' className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(form.title)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
                 <div className="module-overlay__form-group">
                   <label className="module-overlay__form-label">Thumbnail<span className="module-overlay__required">*</span></label>
                   <input id="lpCoverImage" type="file" name="thumbnail" onChange={handleChange} accept="image/*" style={{ display: 'none' }} />
@@ -543,7 +557,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                   {(() => {
                     const moduleCount = pathItems.filter((it) => it.type === 'module').length;
                     const assessmentCount = pathItems.filter((it) => it.type === 'assessment').length;
-                    const totalDuration = Number(form.duration || 0);
+                    const totalDuration = Number(initialData?.duration || form.duration || 0);
                     return (
                       <div className="lp-summary">
                         <div className="lp-summary__title">Live Summary</div>
@@ -554,7 +568,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                         </div>
                         <div className="lp-summary__section">
                           <div className="lp-summary__section-title">Total Duration</div>
-                          <div className="lp-summary__section-body">{totalDuration} minutes</div>
+                          <div className="lp-summary__section-body">{totalDuration || form.duration} minutes</div>
                         </div>
                       </div>
                     );
@@ -571,18 +585,59 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                     <label className="module-overlay__form-label">Duration (in minutes)</label>
                     <input className="addOrg-form-input" type="number" min={0} name="duration" value={form.duration} onChange={handleChange} placeholder={form.duration || 'Auto computed'} disabled />
                   </div>
-                  <div className="module-overlay__form-group">
-                    <label className="module-overlay__form-label">Credits</label>
-                    <input className="addOrg-form-input" type="number" min={0} name="credits" value={form.credits} onChange={handleChange} placeholder="0" />
-                  </div>
-                  <div className="module-overlay__form-group">
-                    <label className="module-overlay__form-label">Stars</label>
-                    <input className="addOrg-form-input" type="number" min={0} name="stars" value={form.stars} onChange={handleChange} placeholder="0" />
-                  </div>
-                  <div className="module-overlay__form-group">
-                    <label className="module-overlay__form-label">Badges</label>
-                    <input className="addOrg-form-input" type="number" min={0} name="badges" value={form.badges} onChange={handleChange} placeholder="0" />
-                  </div>
+                  <div className='module-overlay__form-group'>
+                                    <label className="module-overlay__form-label">
+                                        Credits
+                                    </label>
+                                    <select name="credits" id="" value={form.credits || 0} onChange={handleChange} className='addOrg-form-input' style={{ width: '180px' }}>
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                    </select>
+                                </div>
+                  <div className='module-overlay__form-group'>
+                                    <label className="module-overlay__form-label slider-label">
+                                        Stars
+                                    </label>
+
+                                    <select name="stars" id="" value={form.stars || 0} onChange={handleChange} className='addOrg-form-input' style={{ width: '180px' }}>
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                    </select>
+                                </div>
+                  <div className='module-overlay__form-group'>
+                                    <label className="module-overlay__form-label slider-label">
+                                        Badges
+                                    </label>
+                                    {/* <span className="slider-value">{newContent.badges || 0}</span> */}
+                                    <select name="badges" id="" value={form.badges || 0} onChange={handleChange} className='addOrg-form-input' style={{ width: '180px' }}>
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                    </select>
+                                </div>
                 </div>
 
                 {/* Row 2: Category, Training Type, Target Team/Sub Team */}
