@@ -28,7 +28,7 @@ const fileUploadMiddleware = upload.single('file');
 
 const fileUploadHandler = async (req, res) => {
     try {
-        console.log(req.uploadedFile)
+        // console.log(req.uploadedFile)
         const absoluteUrl = req.uploadedFile.url;
         return res.status(200).json({ isSuccess: true, url: absoluteUrl });
     } catch (error) {
@@ -168,6 +168,7 @@ const createAssessment = async (req, res) => {
         feedbackEnabled,
         shuffle_questions,
         shuffle_options,
+        thumbnail:req?.uploadedFile?.url,
         // thumbnail_url:req.uploadedFile.url,
         questions: questionIds,
         instructions:instructions

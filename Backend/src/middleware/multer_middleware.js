@@ -63,7 +63,7 @@ const upload = multer({ storage: diskStorageUploads,
  
  const diskStorageContent = multer.diskStorage({
    destination: function (req, file, cb) {
-    //  console.log("file",file)
+     console.log("file",file)
      ensureFolder(contentDir);
      cb(null, contentDir);
    },

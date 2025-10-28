@@ -1757,7 +1757,7 @@ const QuestionsForm = ({
                             return teamWithSubteam?.subTeams?.find(st => String(st._id) === String(formData.subteam)) || { name: formData.subteam || '—' };
                         })(),
                         duration: parseInt(formData.duration) || 10,
-                        thumbnail_url: formData.thumbnail_url || '',
+                        thumbnail_url: formData.thumbnail || '',
                         credits: formData.credits || 0,
                         badges: formData.badges || 0,
                         stars: formData.stars || 0,

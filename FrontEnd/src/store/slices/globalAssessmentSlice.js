@@ -46,7 +46,11 @@ export const createGlobalAssessment = createAsyncThunk(
   async (payload, { rejectWithValue }) => {
     try {
       console.log(payload);
-      const response = await api.post('/api/globalAdmin/createAssessment', payload);
+      const response = await api.post('/api/globalAdmin/createAssessment', payload,{
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       // Controller returns { isSuccess, message, data: assessment, errors }
       return response.data.data;
     } catch (error) {
@@ -61,7 +65,11 @@ export const updateGlobalAssessment = createAsyncThunk(
   async ({ id, data }, { rejectWithValue }) => {
     try {
       // Backend expects req.params.id to be the uuid
-      const response = await api.put(`/api/globalAdmin/editAssessment/${id}`, data);
+      const response = await api.put(`/api/globalAdmin/editAssessment/${id}`, data,{
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       return response.data.data; // updated assessment
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
