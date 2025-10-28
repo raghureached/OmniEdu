@@ -53,7 +53,7 @@ const GroupsTable = ({
             <div>{group.teamName}</div>
 
             {/* 3: Members */}
-            <div>{group.subTeamName || 0}</div>
+            <div>{group.subTeamName }</div>
 
             {/* 4: Members */}
             <div>{group.membersCount || 0}</div>

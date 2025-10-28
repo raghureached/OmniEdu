@@ -116,7 +116,9 @@ const handleLogin = async (entity, password, role, res) => {
     let userProfile;
     if (canonRole !== "GlobalAdmin") {
         userProfile = await UserProfile.findOne({ user_id: entity._id });
-        const { accessToken, refreshToken } = await generateTokens(entity._id, canonRole, userProfile.organization_id);
+        // const { accessToken, refreshToken } = await generateTokens(entity._id, canonRole, userProfile.organization_id);
+        const { accessToken, refreshToken } = await generateTokens(entity._id, canonRole, entity.organization_id);
+
         res.cookie("refreshToken", refreshToken, options);
         res.cookie("accessToken", accessToken, options);
     } else {

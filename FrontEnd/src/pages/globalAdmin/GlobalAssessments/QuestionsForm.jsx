@@ -40,6 +40,7 @@ const QuestionsForm = ({
     const [creating, setCreating] = useState(false)
     const [passError, setPassError] = useState('');
     const [noOfQuestions, setNoOfQuestions] = useState(0);
+    const [level,setLevel] = useState("Beginner");
     const [tagInput, setTagInput] = useState('');
     // Local UI state to toggle optional instructions per question index
     const [instructionsOpen, setInstructionsOpen] = useState({});
@@ -197,12 +198,17 @@ const QuestionsForm = ({
         try {
             setCreating(true);
             const noOfQuestions = prompt("Enter no of questions");
+            const level = prompt("Enter level of questions");
             if (!noOfQuestions) {
                 setCreating(false);
                 return;
             }
+            if (!level) {
+                setCreating(false);
+                return;
+            }
 
-            const resp = await api.post('/api/globalAdmin/createQuestions', { title, noOfQuestions });
+            const resp = await api.post('/api/globalAdmin/createQuestions', { title, noOfQuestions,level });
             const aiQs = resp?.data?.data?.questions;
 
             // Validate
@@ -551,7 +557,15 @@ const QuestionsForm = ({
                                         </div>
                                         <div style={{ width: "50%" }}>
                                             <label className='assess-form-label' style={{ margin: "10px" }}>Level</label>
-                                            <input type="number" value={noOfQuestions} className='assess-form-input' onChange={(e) => setNoOfQuestions(e.target.value)} />
+                                            <select
+                                                value={level}
+                                                className='assess-form-input'
+                                                onChange={(e) => setLevel(e.target.value)}
+                                            >
+                                                <option value="Beginner">Beginner</option>
+                                                <option value="Intermediate">Intermediate</option>
+                                                <option value="Advanced">Advanced</option>
+                                            </select>
                                         </div>
                                     </div>
                                     <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(formData.title, formData.description)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
@@ -858,6 +872,7 @@ const QuestionsForm = ({
                                                                                 type="button"
                                                                                 className="assess-remove-option"
                                                                                 onClick={() => removeOption(qIndex, optIndex)}
+                                                                               
                                                                             >
                                                                                 <X size={16} />
                                                                             </button>

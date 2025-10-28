@@ -17,6 +17,9 @@ const SurveyPreview = ({
     const [elapsedTime, setElapsedTime] = useState(0);
     const [showUnansweredHighlight, setShowUnansweredHighlight] = useState(false);
     const [highlightedUnansweredQuestions, setHighlightedUnansweredQuestions] = useState(new Set());
+
+    console.log('SurveyPreview props:', { formData, formElements, groups, feedback });
+    console.log('SurveyPreview formElements details:', formElements?.map(el => ({ type: el?.type, question_type: el?.question_type, question_text: el?.question_text, options: el?.options })));
     const builtSections = React.useMemo(() => {
         if (!Array.isArray(formElements)) {
             return [{ title: formData?.title || '', description: formData?.description || '', items: [] }];
@@ -47,6 +50,9 @@ const SurveyPreview = ({
         }
         return sections;
     }, [formElements, formData?.title, formData?.description]);
+
+    console.log('Built sections:', builtSections);
+    console.log('Built sections details:', builtSections.map(s => ({ title: s.title, description: s.description, items: s.items.map(item => ({ type: item.type, question_type: item.question_type, question_text: item.question_text, options: item.options })) })));
 
     // Helper function to convert number to letter (0 -> A, 1 -> B, etc.)
     const getLetterFromIndex = (index) => {

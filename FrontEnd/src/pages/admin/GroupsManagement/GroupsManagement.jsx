@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { GoOrganization, GoX } from 'react-icons/go';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -123,16 +123,42 @@ const GroupsManagement = () => {
     document.body.removeChild(a);
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
-    const payload = { ...formData };
-    if (currentGroup) {
-      const id = currentGroup.id || currentGroup._id;
-      dispatch(updateGroup({ id, groupData: payload }));
-    } else {
-      dispatch(createGroup(payload));
+
+    const mappedPayload = {
+      teamName: formData.teamName?.trim() || '',
+      subTeamName: formData.subTeamName?.trim() || '',
+      teamDescription: formData.teamDescription?.trim() || '',
+      subTeamDescription: formData.subTeamDescription?.trim() || '',
+      description: formData.teamDescription?.trim() || '',
+    };
+
+    try {
+      if (currentGroup) {
+        const id = currentGroup.id || currentGroup._id;
+        if (!id) {
+          throw new Error('Unable to determine group identifier for update.');
+        }
+        await dispatch(updateGroup({ id, groupData: mappedPayload })).unwrap();
+      } else {
+        await dispatch(createGroup(mappedPayload)).unwrap();
+      }
+
+      setShowForm(false);
+      setCurrentGroup(null);
+      setFormData({
+        teamName: '',
+        teamDescription: '',
+        subTeamName: '',
+        subTeamDescription: '',
+      });
+      setSelectedGroups([]);
+      setSelectAll(false);
+      fetchGroupData();
+    } catch (submitError) {
+      console.error('Failed to submit group form:', submitError);
     }
-    setShowForm(false);
   };
 
   const handleFormCancel = () => {
@@ -183,12 +209,36 @@ const GroupsManagement = () => {
     dispatch(setGroupCurrentPage(newPage));
   }
 
-  const filteredGroups = groups.filter(group => {
-    const nameMatch = filterParams.name ? group.name?.toLowerCase().includes(filterParams.name.toLowerCase()) : true;
-    const descriptionMatch = filterParams.description ? group.description?.toLowerCase().includes(filterParams.description.toLowerCase()) : true;
+  const normalizedGroups = useMemo(() => {
+    if (!Array.isArray(groups)) {
+      return [];
+    }
+
+    return groups.map((team) => {
+      const subTeamsArray = Array.isArray(team.subTeams) ? team.subTeams : [];
+      const primarySubTeam = subTeamsArray[0] || {};
+
+      return {
+        id: team.id || team._id,
+        teamName: team.teamName || team.name || '',
+        teamDescription: team.teamDescription || team.description || '',
+        subTeamName: team.subTeamName || primarySubTeam.name || '—',
+        subTeamDescription: team.subTeamDescription || primarySubTeam.description || '',
+        membersCount: typeof team.membersCount === 'number'
+          ? team.membersCount
+          : subTeamsArray.length,
+        status: team.status || primarySubTeam.status || 'inactive',
+      };
+    });
+  }, [groups]);
+
+  const filteredGroups = normalizedGroups.filter(group => {
+    const nameMatch = filterParams.name
+      ? group.teamName?.toLowerCase().includes(filterParams.name.toLowerCase())
+      : true;
     const statusMatch = filterParams.status ? group.status === filterParams.status : true;
 
-    return nameMatch && descriptionMatch && statusMatch;
+    return nameMatch && statusMatch;
   });
 
   // Calculate pagination

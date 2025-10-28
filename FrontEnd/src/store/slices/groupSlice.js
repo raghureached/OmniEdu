@@ -241,8 +241,8 @@ export const updateGroup = createAsyncThunk(
   'groups/updateGroup',
   async ({ id, groupData }, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/api/admin/updateGroup/${id}`, groupData);
-      return response.data;
+      const response = await api.put(`/api/admin/editGroup/${id}`, groupData);
+      return response.data?.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -341,7 +341,21 @@ const groupSlice = createSlice({
       })
       .addCase(createGroup.fulfilled, (state, action) => {
         state.loading = false;
-        state.groups.push(action.payload);
+        const payload = action.payload || {};
+        const team = payload.team || payload;
+        if (!team) {
+          return;
+        }
+
+        const subTeam = payload.subTeam;
+        const normalizedTeam = {
+          ...team,
+          subTeams: Array.isArray(team.subTeams)
+            ? team.subTeams
+            : (subTeam ? [subTeam] : []),
+        };
+
+        state.groups.push(normalizedTeam);
         state.totalCount += 1;
       })
       .addCase(createGroup.rejected, (state, action) => {
@@ -356,10 +370,37 @@ const groupSlice = createSlice({
       })
       .addCase(updateGroup.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.groups.findIndex(group => group.id === action.payload.id);
-        if (index !== -1) {
-          state.groups[index] = action.payload;
+        const payload = action.payload || {};
+        const team = payload.team || payload;
+        if (!team || !team._id) {
+          return;
         }
+
+        const subTeam = payload.subTeam;
+        const index = state.groups.findIndex(group => (group.id || group._id) === team._id);
+        if (index === -1) {
+          state.groups.push({
+            ...team,
+            subTeams: subTeam ? [subTeam] : Array.isArray(team.subTeams) ? team.subTeams : [],
+          });
+          return;
+        }
+
+        const existing = state.groups[index];
+        const existingSubTeams = Array.isArray(existing.subTeams) ? existing.subTeams : [];
+        let updatedSubTeams = existingSubTeams;
+        if (subTeam) {
+          const filtered = existingSubTeams.filter(st => (st.id || st._id) !== subTeam._id);
+          updatedSubTeams = [...filtered, subTeam];
+        } else if (Array.isArray(team.subTeams)) {
+          updatedSubTeams = team.subTeams;
+        }
+
+        state.groups[index] = {
+          ...existing,
+          ...team,
+          subTeams: updatedSubTeams,
+        };
       })
       .addCase(updateGroup.rejected, (state, action) => {
         state.loading = false;
@@ -373,7 +414,7 @@ const groupSlice = createSlice({
       })
       .addCase(deleteGroup.fulfilled, (state, action) => {
         state.loading = false;
-        state.groups = state.groups.filter(group => group.id !== action.payload);
+        state.groups = state.groups.filter(group => (group.id || group._id) !== action.payload);
         state.totalCount -= 1;
       })
       .addCase(deleteGroup.rejected, (state, action) => {

@@ -568,7 +568,7 @@ const QuestionsForm = ({
                                                                                 onChange={e => updateOption(elementIndex, optIndex, e.target.value)}
                                                                                 required
                                                                             />
-                                                                            {(element.options || []).length > 2 && (
+                                                                            {element.options.length > 2 && (
                                                                                 <button
                                                                                     type="button"
                                                                                     className="survey-assess-remove-option"
