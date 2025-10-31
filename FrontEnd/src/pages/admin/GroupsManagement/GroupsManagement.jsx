@@ -234,7 +234,7 @@ const GroupsManagement = () => {
       return {
         id: team.id || team._id,
         teamName: team.teamName || team.name || '',
-        subTeamName: team.subTeamName || primarySubTeam.name || '—',
+        subTeams: team.subTeams || [],
         membersCount: typeof team.membersCount === 'number'
           ? team.membersCount
           : subTeamsArray.length,

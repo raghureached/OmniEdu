@@ -45,8 +45,8 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
   const { items: contentItems = [] } = useSelector((state) => state.content || {});
-  const [preview,setPreview] = useState(false);
-  const [aiProcessing,setAiProcessing] = useState(false);
+  const [preview, setPreview] = useState(false);
+  const [aiProcessing, setAiProcessing] = useState(false);
   const { items: modules } = useSelector((state) => state.adminModule);
   const { assessments } = useSelector((state) => state.adminAssessments)
   const { surveys } = useSelector((state) => state.surveys || {});
@@ -54,19 +54,19 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
   const [selectedAssessments, setSelectedAssessments] = useState([]); // ids
   const [selectedSurveys, setSelectedSurveys] = useState([]); // ids
   const [search, setSearch] = useState({ module: '', assessment: '', survey: '' });
-  const [teams,setTeams] = useState([]);
-useEffect(() => {
-        const fetchTeams = async () => {
-            try {
-                const response = await api.get('/api/admin/getGroups');
-                setTeams(response.data.data);
-                console.log(response.data.data);
-            } catch (error) {
-                console.error('Error fetching teams:', error);
-            }
-        };
-        fetchTeams();
-    }, []);
+  const [teams, setTeams] = useState([]);
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const response = await api.get('/api/admin/getGroups');
+        setTeams(response.data.data);
+        // console.log(response.data.data);
+      } catch (error) {
+        console.error('Error fetching teams:', error);
+      }
+    };
+    fetchTeams();
+  }, []);
   // Ordered builder items for Step 2, each item: {type: 'module'|'assessment'|'survey', id, title}
   const [pathItems, setPathItems] = useState([]);
   const [adding, setAdding] = useState(false); // deprecated inline panel flag (kept for safety)
@@ -143,7 +143,7 @@ useEffect(() => {
         team: initialData.team ?? '',
         subteam: initialData.subteam ?? '',
         category: initialData.category ?? '',
-        duration: initialData.duration ?? '',
+        duration: initialData.duration,
         trainingType: initialData.trainingType ?? '',
         credits: initialData.credits ?? 0,
         badges: initialData.badges ?? 0,
@@ -239,18 +239,18 @@ useEffect(() => {
     // }  
     return true;
   };
-const enhanceTexthelper = async (title) => {
-        try {
-            setAiProcessing(true);
-            const response = await api.post('/api/admin/enhanceSurvey', { title });
-            setTags(response.data.data.tags);
-            setForm({ ...form, title: response.data.data.title, description: response.data.data.description, tagsText: response.data.data.tags.join(', ') });
-        } catch (error) {
-            console.error('Error enhancing text:', error);
-        } finally {
-            setAiProcessing(false);
-        }
+  const enhanceTexthelper = async (title) => {
+    try {
+      setAiProcessing(true);
+      const response = await api.post('/api/admin/enhanceSurvey', { title });
+      setTags(response.data.data.tags);
+      setForm({ ...form, title: response.data.data.title, description: response.data.data.description, tagsText: response.data.data.tags.join(', ') });
+    } catch (error) {
+      console.error('Error enhancing text:', error);
+    } finally {
+      setAiProcessing(false);
     }
+  }
   /* Tag handlers */
   const handleTagInputChange = (e) => setTagInput(e.target.value);
   const addTag = () => {
@@ -286,7 +286,7 @@ const enhanceTexthelper = async (title) => {
       tags,
       lessons,
     };
-    
+
     dispatch(addLearningPath(payload));
     // onSave(payload);
   };
@@ -306,7 +306,7 @@ const enhanceTexthelper = async (title) => {
       lessons,
     };
     // console.log(payload);
-    dispatch(editLearningPath({uuid: initialData.uuid, ...payload}));
+    dispatch(editLearningPath({ uuid: initialData.uuid, ...payload }));
     // onSave(payload);
   };
 
@@ -339,13 +339,13 @@ const enhanceTexthelper = async (title) => {
                   <label className="module-overlay__form-label">Title <span className="module-overlay__required">*</span></label>
                   <input className="addOrg-form-input" type="text" name="title" value={form.title} onChange={handleChange} placeholder="Enter learning path name" autoComplete="off" required style={{ width: '100%' }} />
                 </div>
-                    <button type='button' className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(form.title)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
+                <button type='button' className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(form.title)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
                 <div className="module-overlay__form-group">
                   <label className="module-overlay__form-label">Description <span className="module-overlay__required">*</span></label>
                   <textarea className="addOrg-form-input" name="description" value={form.description} onChange={handleChange} placeholder="Enter detailed description" rows={4} style={{ width: '100%' }} />
                 </div>
 
-                
+
 
                 <div className="module-overlay__form-group">
                   <label className="module-overlay__form-label">Tags<span className="module-overlay__required">*</span></label>
@@ -576,7 +576,7 @@ const enhanceTexthelper = async (title) => {
                         </div>
                         <div className="lp-summary__section">
                           <div className="lp-summary__section-title">Total Duration</div>
-                          <div className="lp-summary__section-body">{totalDuration || form.duration} minutes</div>
+                          <div className="lp-summary__section-body">{totalDuration} minutes</div>
                         </div>
                       </div>
                     );
@@ -591,61 +591,61 @@ const enhanceTexthelper = async (title) => {
                 <div className="lp-grid-4">
                   <div className="module-overlay__form-group">
                     <label className="module-overlay__form-label">Duration (in minutes)</label>
-                    <input className="addOrg-form-input" type="number" min={0} name="duration" value={form.duration} onChange={handleChange} placeholder={form.duration || 'Auto computed'} disabled />
+                    <input className="addOrg-form-input" type="number" min={0} name="duration" value={initialData?.duration || form.duration || 0} onChange={handleChange} placeholder={form.duration || 'Auto computed'} disabled />
                   </div>
                   <div className='module-overlay__form-group'>
-                                    <label className="module-overlay__form-label">
-                                        Credits
-                                    </label>
-                                    <select name="credits" id="" value={form.credits || 0} onChange={handleChange} className='addOrg-form-input' style={{ width: '180px' }}>
-                                        <option value="0">0</option>
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                        <option value="4">4</option>
-                                        <option value="5">5</option>
-                                        <option value="6">6</option>
-                                        <option value="7">7</option>
-                                        <option value="8">8</option>
-                                        <option value="9">9</option>
-                                    </select>
-                                </div>
+                    <label className="module-overlay__form-label">
+                      Credits
+                    </label>
+                    <select name="credits" id="" value={form.credits || 0} onChange={handleChange} className='addOrg-form-input' style={{ width: '180px' }}>
+                      <option value="0">0</option>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
+                      <option value="6">6</option>
+                      <option value="7">7</option>
+                      <option value="8">8</option>
+                      <option value="9">9</option>
+                    </select>
+                  </div>
                   <div className='module-overlay__form-group'>
-                                    <label className="module-overlay__form-label slider-label">
-                                        Stars
-                                    </label>
+                    <label className="module-overlay__form-label slider-label">
+                      Stars
+                    </label>
 
-                                    <select name="stars" id="" value={form.stars || 0} onChange={handleChange} className='addOrg-form-input' style={{ width: '180px' }}>
-                                        <option value="0">0</option>
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                        <option value="4">4</option>
-                                        <option value="5">5</option>
-                                        <option value="6">6</option>
-                                        <option value="7">7</option>
-                                        <option value="8">8</option>
-                                        <option value="9">9</option>
-                                    </select>
-                                </div>
+                    <select name="stars" id="" value={form.stars || 0} onChange={handleChange} className='addOrg-form-input' style={{ width: '180px' }}>
+                      <option value="0">0</option>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
+                      <option value="6">6</option>
+                      <option value="7">7</option>
+                      <option value="8">8</option>
+                      <option value="9">9</option>
+                    </select>
+                  </div>
                   <div className='module-overlay__form-group'>
-                                    <label className="module-overlay__form-label slider-label">
-                                        Badges
-                                    </label>
-                                    {/* <span className="slider-value">{newContent.badges || 0}</span> */}
-                                    <select name="badges" id="" value={form.badges || 0} onChange={handleChange} className='addOrg-form-input' style={{ width: '180px' }}>
-                                        <option value="0">0</option>
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                        <option value="4">4</option>
-                                        <option value="5">5</option>
-                                        <option value="6">6</option>
-                                        <option value="7">7</option>
-                                        <option value="8">8</option>
-                                        <option value="9">9</option>
-                                    </select>
-                                </div>
+                    <label className="module-overlay__form-label slider-label">
+                      Badges
+                    </label>
+                    {/* <span className="slider-value">{newContent.badges || 0}</span> */}
+                    <select name="badges" id="" value={form.badges || 0} onChange={handleChange} className='addOrg-form-input' style={{ width: '180px' }}>
+                      <option value="0">0</option>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
+                      <option value="6">6</option>
+                      <option value="7">7</option>
+                      <option value="8">8</option>
+                      <option value="9">9</option>
+                    </select>
+                  </div>
                 </div>
 
                 {/* Row 2: Category, Training Type, Target Team/Sub Team */}
@@ -674,7 +674,7 @@ const enhanceTexthelper = async (title) => {
                     <div>
                       <label className="module-overlay__form-label">Target Team/Sub Team <span className="module-overlay__required">*</span></label>
                       <div className="lp-grid-2">
-                        <select className="addOrg-form-input" name="team" value={form.team} onChange={handleChange} style={{ width: '100%' }}>
+                        <select className="addOrg-form-input" name="team" value={form.team || initialData?.team} onChange={handleChange} style={{ width: '100%' }}>
                           <option value="">Select a Team</option>
                           {teams.map((team) => (
                             <option key={team.id} value={team.id}>
@@ -682,14 +682,14 @@ const enhanceTexthelper = async (title) => {
                             </option>
                           ))}
                         </select>
-                        <select className="addOrg-form-input" name="subteam" value={form.subteam} onChange={handleChange} style={{ width: '100%' }}>
+                        <select className="addOrg-form-input" name="subteam" value={form.subteam || initialData?.subteam} onChange={handleChange} style={{ width: '100%' }}>
                           <option value="">Select a Sub-team</option>
-                          {teams.filter((team) => team.id === form.team).map((subteam) => (
+                          {teams.filter((team) => team.id === form.team || team._id === initialData?.team).map((subteam) => (
                             subteam.subTeams.map((subteam) => (
                               <option key={subteam.id} value={subteam.id}>
                                 {subteam.name}
                               </option>
-                            ))  
+                            ))
                           ))}
                         </select>
                       </div>
@@ -814,7 +814,8 @@ const enhanceTexthelper = async (title) => {
                       order: index,
                       ...(it.type === 'assessment' ? { questions: Number(it.questions) || undefined } : {})
                     }));
-                    const payload = { ...form, tags, lessons };
+                    const payload = { ...form,duration: form.duration || initialData?.duration || 0, tags, lessons };
+                    // console.log(payload);
                     setPreviewData(payload);
                     setPreview(true);
                   }}><Eye size={20} />Preview</button>

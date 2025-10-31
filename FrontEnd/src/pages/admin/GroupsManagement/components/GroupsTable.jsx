@@ -33,6 +33,7 @@ const GroupsTable = ({
           />
           {/* 2: Team Name */}
           <div className="col-team">Team Name</div>
+          <div className="col-subteam">Sub Teams</div>
           {/* 3: Members */}
           <div className="col-members">Members</div>
           {/* 4: Status */}
@@ -55,6 +56,7 @@ const GroupsTable = ({
 
             {/* 2: Team name */}
             <div className="col-team">{group.teamName}</div>
+            <div className="col-subteam">{group.subTeams.length}</div>
 
             {/* 3: Members */}
             {/* <div>{group.subTeamName }</div> */}

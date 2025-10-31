@@ -133,33 +133,6 @@ const LearningPaths = () => {
 
             <input type="text" placeholder="Search Learning Paths" value={nameSearch} onChange={(e) => setNameSearch(e.target.value)} />
           </div>
-          {/* <div className="learnpath-filter-group">
-            <label>Classification</label>
-            <select value={classificationFilter} onChange={(e) => setClassificationFilter(e.target.value)}>
-              <option value="all">All</option>
-              <option value="Role-Specific Training">Role-Specific Training</option>
-              <option value="Leadership">Leadership</option>
-              <option value="Compliance">Compliance</option>
-              <option value="Onboarding">Onboarding</option>
-            </select>
-          </div> */}
-          {/* <div className="learnpath-filter-group">
-            <label>Status</label>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-              <option value="all">All</option>
-              <option value="Published">Published</option>
-              <option value="Draft">Draft</option>
-              <option value="Archived">Archived</option>
-            </select>
-          </div> */}
-          {/* <div className="learnpath-filter-actions">
-            <button className="learnpath-btn-secondary" onClick={() => {}}>
-              Filter
-            </button>
-            <button className="learnpath-btn-tertiary" onClick={handleFilterReset}>
-              Reset
-            </button>
-          </div> */}
         </div>
         <button className="btn-primary" onClick={openCreateModal}>+ Add Learning Path</button>
       </div>
