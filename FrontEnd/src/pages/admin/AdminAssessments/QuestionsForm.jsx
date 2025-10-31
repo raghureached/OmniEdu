@@ -4,7 +4,9 @@ import api from '../../../services/api.js';
 import './QuestionsForm.css';
 import '../../../pages/globalAdmin/GlobalSurveys/QuestionsForm-survey.css'
 import RichText from './RichTextSurvey.jsx';
-import PreviewCard from '../../../components/common/PreviewCard/PreviewCard.jsx';
+// import PreviewCard from '../../../components/common/PreviewCard/PreviewCard.jsx';
+import FilePreviewModal from '../../../components/common/FilePreviewModal/FilePreviewModal.jsx';
+import CustomLoader2 from '../../../components/common/Loading/CustomLoader2';
 import AssessmentPreview from '../../../components/common/Preview/AssessmentPreview.jsx';
 import CsvUpload from './CsvUpload.jsx';
 import { useSelector } from 'react-redux';
@@ -39,9 +41,13 @@ const QuestionsForm = ({
     const [creating, setCreating] = useState(false)
     const [passError, setPassError] = useState('');
     const [noOfQuestions, setNoOfQuestions] = useState(0);
+    const [Level, setLevel] = useState("Beginner");
     const [tagInput, setTagInput] = useState('');
     // Local UI state to toggle optional instructions per question index
     const [instructionsOpen, setInstructionsOpen] = useState({});
+    const [questionFilePreview, setQuestionFilePreview] = useState({ open: false, url: null, name: '', type: '', index: null });
+    const [filePreview, setFilePreview] = useState({ open: false, url: null, name: '', type: '', isBlob: false });
+
     // Local UI state to toggle file preview per question index
     const [previewOpen, setPreviewOpen] = useState({});
     // Local UI state for question preview modal; holds the qIndex or null
@@ -50,7 +56,7 @@ const QuestionsForm = ({
     const [assessmentPreviewOpen, setAssessmentPreviewOpen] = useState(false);
     const [previewResponses, setPreviewResponses] = useState({});
     // Thumbnail preview modal for Step 1
-    const [thumbPreviewOpen, setThumbPreviewOpen] = useState(false);
+    // const [thumbPreviewOpen, setThumbPreviewOpen] = useState(false);
     // Cache shuffled option orders by a stable key so options don't reshuffle on each selection
     const previewShuffleRef = useRef({});
     // Sections removed: assessments are now flat (questions only)
@@ -63,14 +69,14 @@ const QuestionsForm = ({
     // Derive sub-teams for the selected team
     const selectedTeam = groups.find(t => String(t._id) === String(formData.team));
     const subTeams = selectedTeam?.subTeams || [];
-    const [Viacsv,setViacsv] = useState(false)
+    const [Viacsv, setViacsv] = useState(false)
 
     // Duration will be stored as a plain number of minutes (integer)
-    const enhanceTexthelper = async (title) => {
+    const enhanceTexthelper = async (title,description) => {
         try {
             setAiProcessing(true);
-            const response = await api.post('/api/admin/enhanceAssessment', { title });
-            setFormData({ ...formData, title: response.data.data.title, description: response.data.data.description, tags: response.data.data.tags });
+            const response = await api.post('/api/admin/enhanceAssessment', { title,description });
+            setFormData({ ...formData, title: response.data.data.title, description: response.data.data.description, tags: response.data.data.tags});
         } catch (error) {
             console.error('Error enhancing text:', error);
         } finally {
@@ -123,6 +129,68 @@ const QuestionsForm = ({
     // Helper function to convert number to letter (0 -> A, 1 -> B, etc.)
     const getLetterFromIndex = (index) => {
         return String.fromCharCode(65 + index); // 65 is ASCII code for 'A'
+    };
+    const getFileType = (file, url) => {
+        if (file && typeof file !== 'string' && file.type) return file.type;
+        const href = typeof file === 'string' ? file : url || '';
+        const lower = href?.toLowerCase?.() || '';
+        if (lower.endsWith('.pdf')) return 'application/pdf';
+        if (/(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(lower)) return 'image/*';
+        if (/(mp4|webm|ogg)$/i.test(lower)) return 'video/*';
+        if (/(mp3|wav|aac|m4a|ogg)$/i.test(lower)) return 'audio/*';
+        return 'application/octet-stream';
+    };
+
+    const handlePreviewFile = (file, previewUrl) => {
+        if (!file) return;
+        const isString = typeof file === 'string';
+        let url = '';
+        let isBlob = false;
+
+        if (isString) {
+            url = resolveUrl(file);
+        } else if (previewUrl) {
+            url = previewUrl;
+        } else {
+            url = URL.createObjectURL(file);
+            isBlob = true;
+        }
+
+        const name = isString
+            ? (file.split('/').pop() || 'Preview')
+            : (file.name || 'Preview');
+
+        const type = getFileType(file, url);
+
+        setFilePreview({ open: true, url, name, type, isBlob });
+    };
+
+    const closeFilePreview = () => {
+        setFilePreview((prev) => {
+            if (prev.isBlob && prev.url) {
+                try { URL.revokeObjectURL(prev.url); } catch (_) { }
+            }
+            return { open: false, url: null, name: '', type: '', isBlob: false };
+        });
+    };
+
+    const handlePreviewQuestionFile = (q, index) => {
+        if (!q?.file_url) return;
+        const resolvedUrl = resolveUrl(q.file_url);
+        const fileName = q.file_url.split('/').pop() || 'Preview';
+        const type = getFileType(q.file_url, resolvedUrl);
+
+        setQuestionFilePreview(prev => {
+            const isSame = prev.open && prev.index === index;
+            if (isSame) {
+                return { open: false, url: null, name: '', type: '', index: null };
+            }
+            return { open: true, url: resolvedUrl, name: fileName, type, index };
+        });
+    };
+
+    const closeQuestionFilePreview = () => {
+        setQuestionFilePreview({ open: false, url: null, name: '', type: '', index: null });
     };
 
     const validatePass = () => {
@@ -193,16 +261,19 @@ const QuestionsForm = ({
         }
     };
 
-    const createAIQuestions = async (title) => {
+    const createAIQuestions = async (title,noOfQuestions,Level) => {
         try {
             setCreating(true);
-            const noOfQuestions = prompt("Enter no of questions");
             if (!noOfQuestions) {
                 setCreating(false);
                 return;
             }
+                if (!Level) {
+                setCreating(false);
+                return;
+            }
 
-            const resp = await api.post('/api/globalAdmin/createQuestions', { title, noOfQuestions });
+            const resp = await api.post('/api/admin/createQuestions', { title, noOfQuestions, Level });
             const aiQs = resp?.data?.data?.questions;
 
             // Validate
@@ -221,9 +292,9 @@ const QuestionsForm = ({
                     ? q.correct_option.filter((n) => Number.isInteger(n))
                     : (Number.isInteger(q?.correct_option) ? [q.correct_option] : []),
                 file_url: typeof q?.file_url === 'string' ? q.file_url : '',
-                instructions: typeof q?.instructions === 'string' ? q.instructions : '',
+               
                 total_points: Number.isFinite(q?.total_points) ? q.total_points : 1,
-                shuffle_options: Boolean(q?.shuffle_options),
+                
             }));
 
             // Update both parent state (source of truth) and formData
@@ -389,39 +460,65 @@ const QuestionsForm = ({
                             />
                         </div>
                     </div>
-
+                     {/* BODY */}
                     {/* Form + Preview Panel */}
                     <div className="assess-modal-form-container">
                         {/* Left Side - Form */}
                         <div className="assess-modal-form">
                             {/* Basic Information */}
                             {step === 1 &&
-                                <div className="assess-form-section">
-                                    <h3 className="assess-section-title">Basic Information</h3>
+                                <div className="module-overlay__step">
+                                    {/* <h3 className="assess-section-title">Basic Information</h3> */}
 
-                                    <div className="assess-form-grid">
-                                        <div className="assess-form-group">
-                                            <label className="assess-form-label">
-                                                Assessment Title<span className="assess-required">*</span>
-                                            </label>
+                                   
+                                        <div className="module-overlay__form-group" style={{ marginBottom: '20px' }}>
+                                        <label className="module-overlay__form-label">
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Assessment Title <span className="module-overlay__required">*</span>
+                                            {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}</span>
+                                       </label>
                                             <input
                                                 type="text"
-                                                className="assess-form-input"
+                                                name="title"
+                                                className="addOrg-form-input"
                                                 placeholder="Enter assessment title"
                                                 value={formData.title}
                                                 onChange={e => setFormData({ ...formData, title: e.target.value })}
                                                 required
+                                                autoComplete="off"
+                                                style={{ width: '100%' }}
                                             />
                                         </div>
-                                        <div className="assess-form-group">
-                                            <label className="assess-form-label">Tags<span className="assess-required">*</span></label>
+                                        <div className="module-overlay__form-group" >
+                                    <label className="module-overlay__form-label">
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Assessment Description<span className="module-overlay__required">*</span>
+                                        {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}
+                                            </span>
+                                    </label>
+                                        <textarea
+                                            name="description"
+                                            className="addOrg-form-input"
+                                            placeholder="Provide a detailed description of this assessment"
+                                            rows="3"
+                                            value={formData.description}
+                                            onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                            style={{ width: '100%' }}
+                                        />
+                                    </div>
+                                        <div className="module-overlay__form-group">
+                                        <label className="module-overlay__form-label">
+                                    <span style={{display:'flex',alignItems:'center',gap:'5px'}}>Tags<span className='module-overlay__required'>*</span>
+                                    {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}
+                                   </span>
+                                </label>
                                             <div className="assess-tag-picker">
                                                 <div className="assess-tag-controls">
                                                     <input
                                                         type="text"
-                                                        className="assess-form-input"
+                                                        className="addOrg-form-input"
                                                         placeholder="Type a tag and press Enter or comma"
+                                                        style={{ width: '100%' }}
                                                         value={tagInput}
+                                                        autoComplete="off"
                                                         onChange={(e) => setTagInput(e.target.value)}
                                                         onKeyDown={(e) => {
                                                             if (e.key === 'Enter' || e.key === ',') {
@@ -460,21 +557,64 @@ const QuestionsForm = ({
 
                                             </div>
                                         </div>
+                                        <p style={{ color: '#1a73e8', fontSize: '14px', marginBottom: '10px' }}>
+                                        Provide title,Description,Number of Questions and Level to generate tags and questions with AI
+                                    </p>
+                                    <div style={{ display: "flex", gap: "12px",marginBottom: "20px" }}>
+                                        <div style={{ width: "50%" }} >
+                                            <label className='assess-form-label' style={{ margin: "10px" }}>Number of Questions</label>
+                                            <input type="number" placeholder="Enter the Number of Questions"  value={formData.noOfQuestions} className='assess-form-input' onChange={(e) => setNoOfQuestions(e.target.value)} />
+                                        </div>
+                                        <div style={{ width: "50%" }}>
+                                            <label className='assess-form-label' style={{ margin: "10px" }}>Level</label>
+                                            <select 
+                                                value={formData.Level} 
+                                                className='assess-form-input' 
+                                                onChange={(e) => setLevel(e.target.value)}
+                                            >
+                                                <option value="Beginner">Beginner</option>
+                                                <option value="Intermediate">Intermediate</option>
+                                                <option value="Advanced">Advanced</option>
+                                            </select>
+                                            
+                                        </div>
                                     </div>
-
-                                    <div className="assess-form-group" style={{ marginBottom: "15px" }}>
-                                        <label className="assess-form-label">Description<span className="assess-required">*</span></label>
-                                        <textarea
-                                            className="assess-form-textarea"
-                                            placeholder="Provide a detailed description of this assessment"
-                                            rows="3"
-                                            value={formData.description}
-                                            onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                        />
+                                    <button 
+                                       className='btn-primary' 
+                                       style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' ,marginBottom: "15px"}} 
+                                       onClick={async () => {
+                                           try {
+                                               await enhanceTexthelper(formData.title, formData.description);
+                                               console.log('Enhancement complete, creating questions...');
+                                               console.log('Values:', { 
+                                                   title: formData.title, 
+                                                   noOfQuestions: noOfQuestions, 
+                                                   Level: Level 
+                                               });
+                                               await createAIQuestions(formData.title, noOfQuestions, Level);
+                                           } catch (error) {
+                                               console.error('Error in AI generation:', error);
+                                           }
+                                       }}
+                                       disabled={aiProcessing || creating}
+                                   >
+                                       {aiProcessing || creating ? "Please Wait.." : "Create with AI ✨"}
+                                   </button>
+                                    <div className='module-overlay__form-group'>
+                                    <label className="module-overlay__form-label">
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Instructions<span className="module-overlay__required">*</span>
+                                      </span>
+                                    </label>
+                                    
+                                        <div className="assess-instructions-box">
+                                            <RichText value={formData.instructions || ''}  name="instructions" onChange={(value) => setFormData({ ...formData, instructions: value })} />
+                                        </div>
                                     </div>
-
-                                    <div className="assess-form-group">
-                                        <label className="assess-form-label">Thumbnail<span className="assess-required">*</span></label>
+                                    <div className="module-overlay__form-group">
+                                    <label className="module-overlay__form-label">
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Thumbnail <span className="module-overlay__required">*</span>
+                                           </span>
+                                    </label>
                                         {formData.thumbnail ? (
                                             <div
                                                 style={{
@@ -500,7 +640,7 @@ const QuestionsForm = ({
                                                     <button
                                                         type="button"
                                                         className="survey-assess-btn-link"
-                                                        onClick={() => setThumbPreviewOpen(true)}
+                                                        onClick={() => handlePreviewFile(formData.thumbnail, formData.thumbnail_preview)}
                                                         style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4f46e5', background: 'transparent' }}
                                                     >
                                                         <Eye size={16} /> Preview
@@ -537,40 +677,9 @@ const QuestionsForm = ({
                                                 </label>
                                             </div>
                                         )}
-                                    </div>
-                                    <div className='assess-form-group'>
-                                        <label className="assess-form-label">Instructions<span className="assess-required">*</span> </label>
-                                        <div className="assess-instructions-box">
-                                            <RichText value={formData.instructions || ''} onChange={(value) => setFormData({ ...formData, instructions: value })} />
-                                        </div>
-                                    </div>
-                                    <div style={{ display: "flex", gap: 12 }}>
-                                        <div style={{ width: "50%" }} >
-                                            <label className='assess-form-label' style={{ margin: "10px" }}>Number of Questions</label>
-                                            <input type="number" value={noOfQuestions} className='assess-form-input' onChange={(e) => setNoOfQuestions(e.target.value)} />
-                                        </div>
-                                        <div style={{ width: "50%" }}>
-                                            <label className='assess-form-label' style={{ margin: "10px" }}>Level</label>
-                                            <input type="number" value={noOfQuestions} className='assess-form-input' onChange={(e) => setNoOfQuestions(e.target.value)} />
-                                        </div>
-                                    </div>
-                                    <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(formData.title, formData.description)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
-
-
-                                    {thumbPreviewOpen && formData.thumbnail && (
-                                        <PreviewCard
-                                            imageUrl={(() => {
-                                                // Prefer created preview URL for File; fallback to string URL
-                                                if (formData.thumbnail && typeof formData.thumbnail !== 'string') {
-                                                    return formData.thumbnail_preview;
-                                                }
-                                                return resolveUrl(formData.thumbnail);
-                                            })()}
-                                            title={formData.title}
-                                            description={formData.description}
-                                            onClose={() => setThumbPreviewOpen(false)}
-                                        />
-                                    )}
+                                    </div>  
+                                   
+                                    {/* <button className='btn-primary' style={{  width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => createAIQuestions(formData.title,noOfQuestions,Level)}>{aiProcessing ? "Please Wait.." : "Generate Questions with AI ✨"}</button> */}
                                 </div>}
 
                             {step === 2 && <div className="assess-form-section">
@@ -729,11 +838,13 @@ const QuestionsForm = ({
                                                                     type="button"
                                                                     className="assess-preview-toggle"
                                                                     title="Preview File"
-                                                                    onClick={() => setPreviewOpen(prev => ({ ...prev, [qIndex]: !prev[qIndex] }))}
+                                                                    onClick={() => handlePreviewQuestionFile(q, qIndex)}
                                                                     disabled={!q.file_url}
                                                                     style={{ whiteSpace: 'nowrap' }}
                                                                 >
-                                                                    <Eye size={16} /> {previewOpen[qIndex] ? 'Hide Preview' : 'Preview'}
+                                                                    <Eye size={16} />
+                                                                    {questionFilePreview.open && questionFilePreview.index === qIndex ? ' Hide Preview' : ' Preview'}
+
                                                                 </button>
                                                             </div>
 
@@ -751,9 +862,13 @@ const QuestionsForm = ({
                                                             )}
                                                         </div>}
 
-
+                                                    <FilePreviewModal
+                                                        open={questionFilePreview.open && questionFilePreview.index === qIndex}
+                                                        filePreview={questionFilePreview}
+                                                        onClose={closeQuestionFilePreview}
+                                                    />
                                                     {/* Preview overlay (opens on clicking Preview; closes with X) */}
-                                                    {previewOpen[qIndex] && (
+                                                    {/* {previewOpen[qIndex] && (
                                                         <div className="assess-file-preview-overlay" onClick={(e) => { if (e.target === e.currentTarget) setPreviewOpen(prev => ({ ...prev, [qIndex]: false })); }}>
                                                             <div className="assess-file-preview-modal">
 
@@ -795,8 +910,7 @@ const QuestionsForm = ({
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    )}
-
+                                                    )} */}
 
                                                     {/* Question Text */}
                                                     <div className="assess-form-group" style={{ marginTop: '20px' }}>
@@ -1072,10 +1186,10 @@ const QuestionsForm = ({
 
                                                                             // Show popup if any index is out of range or points to empty option
                                                                             if (hasInvalidIndex) {
-                                                                                const optionLetters = Array.from({length: validOptions}, (_, i) => getLetterFromIndex(i)).join(', ');
+                                                                                const optionLetters = Array.from({ length: validOptions }, (_, i) => getLetterFromIndex(i)).join(', ');
                                                                                 alert(`Invalid correct answer index. Please select from options: ${optionLetters}`);
                                                                             } else if (hasEmptyOptionIndex) {
-                                                                                const optionLetters = Array.from({length: validOptions}, (_, i) => getLetterFromIndex(i)).join(', ');
+                                                                                const optionLetters = Array.from({ length: validOptions }, (_, i) => getLetterFromIndex(i)).join(', ');
                                                                                 alert(`Selected option is empty. Please select from available options: ${optionLetters}`);
                                                                             }
                                                                         }}
@@ -1744,7 +1858,7 @@ const QuestionsForm = ({
                             return teamWithSubteam?.subTeams?.find(st => String(st._id) === String(formData.subteam)) || { name: formData.subteam || '—' };
                         })(),
                         duration: parseInt(formData.duration) || 10,
-                        thumbnail_url: formData.thumbnail_url || '',
+                        thumbnail: formData.thumbnail || '',
                         credits: formData.credits || 0,
                         badges: formData.badges || 0,
                         stars: formData.stars || 0,
@@ -1763,6 +1877,7 @@ const QuestionsForm = ({
                     }}
                 />
             )}
+            <FilePreviewModal open={filePreview.open} filePreview={filePreview} onClose={closeFilePreview} />
 
         </>
     );

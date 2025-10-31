@@ -15,7 +15,7 @@ const FilePreviewModal = ({ open, filePreview, onClose }) => {
 
   return (
     <div className="addOrg-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="filePreviewTitle">
-      <div className="addOrg-modal-content" style={{ maxWidth: '960px', width: '95%', height: '80vh', display: 'flex', flexDirection: 'column' }}>
+      <div className="addOrg-modal-content" style={{  width: '100%', height: '100vh', display: 'flex', flexDirection: 'column' }}>
         <div className="addOrg-modal-header">
           <div className="addOrg-header-content">
             <div className="addOrg-header-icon">
@@ -30,12 +30,17 @@ const FilePreviewModal = ({ open, filePreview, onClose }) => {
           </button>
         </div>
         <div className="module-overlay__body" style={{ flex: 1, overflow: 'hidden' }}>
-          {isPdfOrUrl ? (
-            <iframe title="File Preview" src={url} width="100%" height="100%" style={{ border: 'none', height: '100%' }} />
-          ) : isImage ? (
+          {isImage ? (
             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f7f7f7' }}>
-              <img src={url} alt={name || 'Preview'} style={{ width: '100%', height: '100%', objectFit: 'auto' }} />
+              <img
+                src={url}
+                alt={name || 'Preview'}
+                style={{ width: '100%', height: '100%',border: "1px solid #9E9E9E",
+                  borderRadius: "10px" }}
+              />
             </div>
+          ) : isPdfOrUrl ? (
+            <iframe title="File Preview" src={url} width="100%" height="100%" style={{ border: 'none', height: '100%' }} />
           ) : isVideo ? (
             <video src={url} controls style={{ width: '100%', height: '100%' }} />
           ) : isAudio ? (

@@ -151,9 +151,9 @@ Assessment Title: ${title}
 }
 
 const createQuestions = async(req,res)=>{
-  const { title,noOfQuestions } = req.body;
+  const { title,noOfQuestions ,Level} = req.body;
   const prompt = `
-You are a helpful assistant for an LMS app. Given the assessment title below, create ${noOfQuestions} questions for it.The type can Multiple Choice or Multi Select
+You are a helpful assistant for an LMS app. Given the assessment title below, create ${noOfQuestions} questions based on given ${Level} for it.The type can Multiple Choice or Multi Select
 Return the questions in JSON format as:
 {
 "questions": [
@@ -166,7 +166,6 @@ Return the questions in JSON format as:
         "fdsf"
       ],
       "correct_option": [0],
-      "instructions": "<h3><strong>Instructions:</strong></h3><ul><li><p>Each question carries equal marks.</p></li><li><p>Choose the most appropriate answer.</p></li><li><p>No negative marking.</p></li></ul><p></p>",
       "total_points": 1
     }
 ]
@@ -198,5 +197,142 @@ Assessment Title: ${title}
         data: enhanced,
     });
 }
+const generateSurveyWithSections = async (req, res) => {
+  try {
+      const { title, noOfQuestions = 2, level = 'Beginner' } = req.body;
 
-module.exports = { enhanceText, generateImage, enhanceSurvey,enhanceAssessment,createQuestions };
+      if (!title) {
+          return res.status(400).json({
+              isSuccess: false,
+              message: "Title is required"
+          });
+      }
+
+      const prompt = `
+You are an expert survey designer. Create a survey with 2 sections, each containing ${noOfQuestions} questions, based on the following details:
+
+Survey Title: ${title}
+Difficulty Level: ${level}
+Questions per Section: ${noOfQuestions}
+
+Section 1: Course Rating
+Section 2: Mentor Rating
+
+For each question, follow these guidelines:
+1. Create clear, focused questions about the course and mentor
+2. Include appropriate options (e.g., rating scales, multiple choice)
+3. Make questions appropriate for ${level} level participants
+4. For rating questions, use consistent scales (e.g., 1-5)
+
+Return the survey in the following JSON format:
+{
+  "sections": [
+      {
+          "description": "<h1>Course Rating</h1><p>Your feedback about the course content and structure</p>",
+          "questions": [
+              {
+                  "question_text": "How would you rate the course content?",
+                  "type": "Multiple Choice",
+                  "options": ["5 - Excellent", "4 - Very Good", "3 - Good", "2 - Fair", "1 - Poor"],
+                  "order": 1
+              },
+              {
+                  "question_text": "How well did the course meet your expectations?",
+                  "type": "Multiple Choice",
+                  "options": ["Exceeded", "Met", "Partially Met", "Did Not Meet"],
+                  "order": 2
+              }
+          ]
+      },
+      {
+          "description": "<h1>Mentor Rating</h1><p>Your feedback about the mentor's performance</p>",
+          "questions": [
+              {
+                  "question_text": "How would you rate the mentor's knowledge of the subject?",
+                  "type": "Multiple Choice",
+                  "options": ["5 - Excellent", "4 - Very Good", "3 - Good", "2 - Fair", "1 - Poor"],
+                  "order": 3
+              },
+              {
+                  "question_text": "How effective was the mentor in explaining concepts?",
+                  "type": "Multiple Choice",
+                  "options": ["5 - Excellent", "4 - Very Good", "3 - Good", "2 - Fair", "1 - Poor"],
+                  "order": 4
+              }
+          ]
+      }
+  ]
+}
+      `;
+
+      const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: prompt,
+      });
+
+      let result = response.text || response.content || response;
+      result = result.replace(/```json|```/g, "").trim();
+
+      try {
+          const surveyData = JSON.parse(result);
+          
+          // Validate the response structure
+          if (!surveyData.sections || !Array.isArray(surveyData.sections) || 
+              surveyData.sections.length !== 2) {
+              throw new Error("Invalid survey structure received from AI");
+          }
+
+          // Process and validate each section and its questions
+          let questionOrder = 1;
+          const processedSections = surveyData.sections.map((section, sectionIndex) => {
+              if (!section.questions || !Array.isArray(section.questions)) {
+                  throw new Error(`Section ${sectionIndex + 1} is missing questions`);
+              }
+
+              // Update question orders
+              const processedQuestions = section.questions.map(question => {
+                  if (!question.options || !Array.isArray(question.options)) {
+                      throw new Error(`Question is missing options: ${question.question_text}`);
+                  }
+
+                  return {
+                      ...question,
+                      order: questionOrder++
+                  };
+              });
+
+              return {
+                  ...section,
+                  questions: processedQuestions
+              };
+          });
+
+          return res.status(200).json({
+              isSuccess: true,
+              message: `Survey generated successfully with 2 sections and ${noOfQuestions} questions each`,
+              data: {
+                  sections: processedSections
+              }
+          });
+
+      } catch (e) {
+          console.error("Error processing survey:", e);
+          return res.status(500).json({
+              isSuccess: false,
+              message: "Error generating survey",
+              error: e.message,
+              rawResponse: result
+          });
+      }
+
+  } catch (error) {
+      console.error("Error in generateSurveyWithSections:", error);
+      return res.status(500).json({
+          isSuccess: false,
+          message: "Internal server error",
+          error: error.message
+      });
+  }
+};
+
+module.exports = { enhanceText, generateImage, enhanceSurvey,enhanceAssessment,createQuestions ,generateSurveyWithSections};

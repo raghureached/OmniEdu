@@ -378,7 +378,7 @@ const QuestionsForm = ({
 
                                     {/* Thumbnail upload */}
                                     <div className="survey-assess-form-group" >
-                                        <label className="survey-assess-form-label">Thumbnail</label>
+                                        <label className="survey-assess-form-label">Thumbnail<span className="assess-required">*</span></label>
 
                                         {formData.thumbnail_url ? (
                                             <div

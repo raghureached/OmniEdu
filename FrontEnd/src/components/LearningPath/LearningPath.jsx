@@ -12,14 +12,11 @@ import { getSurveyById } from '../../store/slices/adminSurveySlice';
 import { adminfetchContentById } from '../../store/slices/adminModuleSlice';
 import LoadingScreen from '../common/Loading/Loading';
 
-const LearningPath = ({ courseData: propCourseData }) => {
-    const { id } = useParams()
+const LearningPath = ({ courseData: propCourseData, embedded = false }) => {
+    console.log(propCourseData)
     const [expandedSections, setExpandedSections] = useState([0]);
     const [activeLesson, setActiveLesson] = useState(null);
     const [contentData, setContentData] = useState(null);
-    const [showRating, setShowRating] = useState(false);
-    const [rating, setRating] = useState(0);
-    const [hoverRating, setHoverRating] = useState(0);
     // Submission & feedback state (ported from Preview)
     const [submission, setSubmission] = useState(null);
     const objectUrlRef = React.useRef(null);
@@ -31,18 +28,10 @@ const LearningPath = ({ courseData: propCourseData }) => {
     const [surveyOpen, setSurveyOpen] = useState(false);
     const [completedSet, setCompletedSet] = React.useState(new Set());
     const dispatch = useDispatch();
-    const { selectedPath } = useSelector((state) => state.learningPaths);
-    // console.log(selectedPath)
-    useEffect(() => {
-        // dispatch(getLearningPathById(id))
-    }, [id])
+
     const handleSectionClick = async (section) => {
         setActiveLesson(section);
         setLoadError(null)
-        // Control assessment modal visibility based on selection
-        // setAssessOpen((section?.type || '').toLowerCase() === 'assessment');
-        // setSurveyOpen((section?.type || '').toLowerCase() === 'survey');
-        // Otherwise attempt fetch by ID/UUID depending on type
         const type = (section?.type || '').toLowerCase();
         const ref = section?.ref ?? null; // may be id string or object
         let idOrUuid = null;
@@ -59,7 +48,7 @@ const LearningPath = ({ courseData: propCourseData }) => {
             let payload = null;
             if (type === 'module') {
                 // console.log(idOrUuid)
-                payload = await dispatch(adminfetchContentById(idOrUuid)).unwrap();
+                payload = await dispatch(adminfetchContentById(section.uuid)).unwrap();
             } else if (type === 'assessment') {
                 payload = await dispatch(getGlobalAssessmentById(idOrUuid)).unwrap();
             } else if (type === 'survey') {
@@ -138,8 +127,7 @@ const LearningPath = ({ courseData: propCourseData }) => {
         setFeedbackComment('');
     };
 
-    // Build from provided data (Redux selectedPath preferred over prop)
-    const sourceData = selectedPath || propCourseData || null;
+    const sourceData =  propCourseData || null;
     const sections = React.useMemo(() => {
         if (!sourceData || !Array.isArray(sourceData.lessons)) return [];
         const ordered = [...sourceData.lessons].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -153,7 +141,7 @@ const LearningPath = ({ courseData: propCourseData }) => {
                 completed: false,
                 // Always force fetch for right panel; do not pass embedded objects into contentData
                 data: null,
-                // Keep original reference (string id/uuid or object) for fetching
+                uuid: l.uuid,
                 ref: l.id ?? null,
             };
         });
@@ -167,17 +155,18 @@ const LearningPath = ({ courseData: propCourseData }) => {
             progress: 0,
             completedLessons: 0,
             totalLessons: sections.length,
+            uuid: sourceData?.uuid,
             feedbackEnabled: !!sourceData?.enableFeedback,
             thumbnail: sourceData?.coverImage || sourceData?.thumbnail || firstThumb || '',
             sections,
         };
     }, [sourceData, sections]);
 
-    const activeSection = activeLesson || courseData.sections[0];
-    // Always fetch payload for active section; do not use embedded props data
+    const activeSection = courseData.sections[0];
     React.useEffect(() => {
         (async () => {
             if (!activeSection || contentData) return;
+            setActiveLesson(activeSection);
             try {
                 setLoadingContent(true);
                 setLoadError(null);
@@ -191,18 +180,12 @@ const LearningPath = ({ courseData: propCourseData }) => {
                 if (!idOrUuid) { setLoadingContent(false); return; }
                 let payload = null;
                 if (type === 'module') {
-                    payload = await dispatch(adminfetchContentById(idOrUuid)).unwrap();
+                    payload = await dispatch(adminfetchContentById(activeSection.uuid)).unwrap();
                 } else if (type === 'assessment') {
-                    payload = await dispatch(getGlobalAssessmentById(idOrUuid)).unwrap();
-                    // setAssessOpen(true);
+                    payload = await dispatch(getGlobalAssessmentById(activeSection.uuid)).unwrap();
                 } else if (type === 'survey') {
-                    payload = await dispatch(getSurveyById(idOrUuid)).unwrap();
-                    // setSurveyOpen(true);
+                    payload = await dispatch(getSurveyById(activeSection.uuid)).unwrap();
                 }
-                console.log('Active section survey data:', payload)
-                // console.log('Active section formElements:', payload?.formElements)
-                // console.log('Active section formElements structure:', payload?.formElements?.map(el => ({ type: el?.type, question_type: el?.question_type, question_text: el?.question_text, options: el?.options })))
-                // console.log(payload)
                 setContentData(payload || null);
             } catch (e) {
                 setLoadError(e?.message || 'Failed to load content');
@@ -223,6 +206,7 @@ const LearningPath = ({ courseData: propCourseData }) => {
             default: return <FileText size={14} />;
         }
     };
+    const mockThumbnail = "https://miro.medium.com/v2/resize:fit:1400/format:webp/0*8yleeYR1g-nLSHJj";
 
     // Custom Video Player (adapted from Module Preview) with fixed height
     const VideoPlayer = ({ src, poster }) => {
@@ -423,54 +407,30 @@ const LearningPath = ({ courseData: propCourseData }) => {
     if(loadingContent) return <LoadingScreen text="Loading content..." />
 
     return (
-        <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', backgroundColor: '#f8f9fa' }}>
+        <div style={{ display: 'flex', height: embedded ? '70vh' : '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', backgroundColor: '#f8f9fa' }}>
             {/* Sidebar */}
             <div style={{ width: '360px', backgroundColor: '#fff', borderRight: '1px solid #e5e7eb', overflowY: 'auto', padding: '24px' }}>
-                <button style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#6b7280', padding: '8px 0', marginBottom: '20px', transition: 'color 0.2s' }}
-                    onMouseEnter={(e) => e.target.style.color = '#111827'}
-                    onMouseLeave={(e) => e.target.style.color = '#6b7280'}>
-                    <ChevronLeft size={16} style={{ marginRight: '4px' }} />
-                    <span>Go to Dashboard</span>
-                </button>
+                {!embedded && (
+                    <button style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#6b7280', padding: '8px 0', marginBottom: '20px', transition: 'color 0.2s' }}
+                        onMouseEnter={(e) => e.target.style.color = '#111827'}
+                        onMouseLeave={(e) => e.target.style.color = '#6b7280'}>
+                        <ChevronLeft size={16} style={{ marginRight: '4px' }} />
+                        <span>Go to Dashboard</span>
+                    </button>
+                )}
 
-                {/* <button
-                    onClick={() => setShowRating(!showRating)}
-                    style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#f59e0b', padding: '8px 0', marginBottom: '24px', transition: 'color 0.2s' }}
-                    onMouseEnter={(e) => e.target.style.color = '#d97706'}
-                    onMouseLeave={(e) => e.target.style.color = '#f59e0b'}>
-                    <Star size={16} style={{ marginRight: '8px' }} />
-                    <span>Rate this course</span>
-                </button> */}
-
-                {/* {showRating && (
-                    <div style={{ marginBottom: '24px', padding: '16px', backgroundColor: '#fffbeb', borderRadius: '8px', border: '1px solid #fef3c7' }}>
-                        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                            {[1, 2, 3, 4, 5].map((star) => (
-                                <Star
-                                    key={star}
-                                    size={24}
-                                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
-                                    fill={star <= (hoverRating || rating) ? '#f59e0b' : 'none'}
-                                    color={star <= (hoverRating || rating) ? '#f59e0b' : '#d1d5db'}
-                                    onClick={() => setRating(star)}
-                                    onMouseEnter={() => setHoverRating(star)}
-                                    onMouseLeave={() => setHoverRating(0)}
-                                />
-                            ))}
-                        </div>
-                        {rating > 0 && (
-                            <button style={{ width: '100%', padding: '8px', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
-                                Submit Rating
-                            </button>
-                        )}
-                    </div>
-                )} */}
 
                 <div style={{ marginBottom: '24px' }}>
-                    <div style={{ width: '80px', height: '80px', borderRadius: '12px', overflow: 'hidden', marginBottom: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-                        <img src={courseData.thumbnail} alt="course" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ width: '300px', height: '250px', borderRadius: '12px', overflow: 'hidden', marginBottom: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+                        <div style={{backgroundImage:`url(${mockThumbnail})`,backgroundSize:'cover',backgroundPosition:'center',width:'100%',height:'100%'}}>
+                            <div style={{width:'100%',height:'100%',background:'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.45) 80%)',display:'flex',flexDirection:'column',justifyContent:'space-between',alignItems:'center'}}>
+                                <div></div>
+                                <p style={{fontSize:'17px',fontWeight:'700',color:'#fff',textAlign:'center',marginBottom:'16px'}}>{courseData.title}</p>
+                            </div>
+                            
+                        </div>
                     </div>
-                    <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111827', marginBottom: '8px', lineHeight: '1.4' }}>{courseData.title}</h1>
+                    {/* <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111827', marginBottom: '8px', lineHeight: '1.4' }}>{courseData.title}</h1> */}
                 </div>
 
                 <div style={{ marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid #e5e7eb' }}>
@@ -509,7 +469,7 @@ const LearningPath = ({ courseData: propCourseData }) => {
             </div>
 
             {/* Main Content */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '40px', backgroundColor: '#f8f9fa' }}>
+            {<div style={{ flex: 1, overflowY: 'auto', padding: '40px', backgroundColor: '#f8f9fa' }}>
                 <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                     <div style={{ color: '#5570f1', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: '13px', marginBottom: '16px' }}>
                         {courseData.title.toUpperCase()}
@@ -525,7 +485,6 @@ const LearningPath = ({ courseData: propCourseData }) => {
                             Mark as Complete
                         </button>
                     </div>
-
                     {activeSection?.type === 'Assessment' && assessOpen ? (
                         <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: 0, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
                             <AssessmentQuiz
@@ -550,7 +509,6 @@ const LearningPath = ({ courseData: propCourseData }) => {
                                     formElements={contentData?.sections ? (() => {
                                         // Transform nested sections/questions structure to flat formElements array
                                         const elements = [];
-                                        console.log('Transforming survey sections:', contentData.sections);
                                         if (Array.isArray(contentData.sections) && contentData.sections.length > 0) {
                                             contentData.sections.forEach((section) => {
                                                 // Add section first
@@ -574,11 +532,8 @@ const LearningPath = ({ courseData: propCourseData }) => {
                                                 }
                                             });
                                         }
-                                        console.log('Transformed formElements:', elements);
                                         return elements;
                                     })() : contentData?.questions ? (() => {
-                                        // Fallback for legacy format with direct questions array
-                                        console.log('Using legacy questions format:', contentData.questions);
                                         return [
                                             { type: 'section', description: contentData.description || '' },
                                             ...contentData.questions.map(q => ({
@@ -661,7 +616,6 @@ const LearningPath = ({ courseData: propCourseData }) => {
                             {contentData?.submissionEnabled && <div className="global-preview-actions">
                                 <div>
                                     <h3 style={{ margin: "10px" }}>Submission <span className='module-overlay__required'>*</span></h3>
-
                                     <input
                                         type="file"
                                         name="primaryFile"
@@ -737,7 +691,7 @@ const LearningPath = ({ courseData: propCourseData }) => {
                                     </button>
                                 </div>
                             )}
-            </div>
+            </div>}
 
         </div>
     );

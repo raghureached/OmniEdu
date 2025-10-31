@@ -4,7 +4,7 @@ import api from '../../../services/api.js';
 import './QuestionsForm.css';
 import '../GlobalSurveys/QuestionsForm-survey.css';
 import RichText from './RichTextSurvey.jsx';
-import PreviewCard from '../../../components/common/PreviewCard/PreviewCard.jsx';
+import FilePreviewModal from '../../../components/common/FilePreviewModal/FilePreviewModal.jsx';
 
 import AssessmentPreview from '../../../components/common/Preview/AssessmentPreview.jsx';
 import CsvUpload from '../GlobalAssessments/CsvUpload.jsx';
@@ -44,15 +44,17 @@ const QuestionsForm = ({
     const [tagInput, setTagInput] = useState('');
     // Local UI state to toggle optional instructions per question index
     const [instructionsOpen, setInstructionsOpen] = useState({});
-    // Local UI state to toggle file preview per question index
-    const [previewOpen, setPreviewOpen] = useState({});
+    const [questionFilePreview, setQuestionFilePreview] = useState({ open: false, url: null, name: '', type: '', index: null });
+
+    const [filePreview, setFilePreview] = useState({ open: false, url: null, name: '', type: '', isBlob: false });
+    
     // Local UI state for question preview modal; holds the qIndex or null
     const [questionPreviewIndex, setQuestionPreviewIndex] = useState(null);
     // Whole-assessment preview modal
     const [assessmentPreviewOpen, setAssessmentPreviewOpen] = useState(false);
     const [previewResponses, setPreviewResponses] = useState({});
-    // Thumbnail preview modal for Step 1
-    const [thumbPreviewOpen, setThumbPreviewOpen] = useState(false);
+  
+   
     // Cache shuffled option orders by a stable key so options don't reshuffle on each selection
     const previewShuffleRef = useRef({});
     // Sections removed: assessments are now flat (questions only)
@@ -124,6 +126,70 @@ const QuestionsForm = ({
     // Helper function to convert number to letter (0 -> A, 1 -> B, etc.)
     const getLetterFromIndex = (index) => {
         return String.fromCharCode(65 + index); // 65 is ASCII code for 'A'
+    };
+    //added for thumbnail preview
+
+    const getFileType = (file, url) => {
+        if (file && typeof file !== 'string' && file.type) return file.type;
+        const href = typeof file === 'string' ? file : url || '';
+        const lower = href?.toLowerCase?.() || '';
+        if (lower.endsWith('.pdf')) return 'application/pdf';
+        if (/(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(lower)) return 'image/*';
+        if (/(mp4|webm|ogg)$/i.test(lower)) return 'video/*';
+        if (/(mp3|wav|aac|m4a|ogg)$/i.test(lower)) return 'audio/*';
+        return 'application/octet-stream';
+    };
+
+    const handlePreviewFile = (file, previewUrl) => {
+        if (!file) return;
+        const isString = typeof file === 'string';
+        let url = '';
+        let isBlob = false;
+
+        if (isString) {
+            url = resolveUrl(file);
+        } else if (previewUrl) {
+            url = previewUrl;
+        } else {
+            url = URL.createObjectURL(file);
+            isBlob = true;
+        }
+
+        const name = isString
+            ? (file.split('/').pop() || 'Preview')
+            : (file.name || 'Preview');
+
+        const type = getFileType(file, url);
+
+        setFilePreview({ open: true, url, name, type, isBlob });
+    };
+
+    const closeFilePreview = () => {
+        setFilePreview((prev) => {
+            if (prev.isBlob && prev.url) {
+                try { URL.revokeObjectURL(prev.url); } catch (_) { }
+            }
+            return { open: false, url: null, name: '', type: '', isBlob: false };
+        });
+    };
+
+    const handlePreviewQuestionFile = (q, index) => {
+        if (!q?.file_url) return;
+        const resolvedUrl = resolveUrl(q.file_url);
+        const fileName = q.file_url.split('/').pop() || 'Preview';
+        const type = getFileType(q.file_url, resolvedUrl);
+
+        setQuestionFilePreview(prev => {
+            const isSame = prev.open && prev.index === index;
+            if (isSame) {
+                return { open: false, url: null, name: '', type: '', index: null };
+            }
+            return { open: true, url: resolvedUrl, name: fileName, type, index };
+        });
+    };
+
+    const closeQuestionFilePreview = () => {
+        setQuestionFilePreview({ open: false, url: null, name: '', type: '', index: null });
     };
 
     const validatePass = () => {
@@ -506,7 +572,7 @@ const QuestionsForm = ({
                                                     <button
                                                         type="button"
                                                         className="survey-assess-btn-link"
-                                                        onClick={() => setThumbPreviewOpen(true)}
+                                                        onClick={() => handlePreviewFile(formData.thumbnail, formData.thumbnail_preview)}                     
                                                         style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4f46e5', background: 'transparent' }}
                                                     >
                                                         <Eye size={16} /> Preview
@@ -571,20 +637,7 @@ const QuestionsForm = ({
                                     <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(formData.title, formData.description)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
 
 
-                                    {thumbPreviewOpen && formData.thumbnail && (
-                                        <PreviewCard
-                                            imageUrl={(() => {
-                                                // Prefer created preview URL for File; fallback to string URL
-                                                if (formData.thumbnail && typeof formData.thumbnail !== 'string') {
-                                                    return formData.thumbnail_preview;
-                                                }
-                                                return resolveUrl(formData.thumbnail);
-                                            })()}
-                                            title={formData.title}
-                                            description={formData.description}
-                                            onClose={() => setThumbPreviewOpen(false)}
-                                        />
-                                    )}
+                                   
                                 </div>}
 
                             {step === 2 && <div className="assess-form-section">
@@ -743,11 +796,13 @@ const QuestionsForm = ({
                                                                 type="button"
                                                                 className="assess-preview-toggle"
                                                                 title="Preview File"
-                                                                onClick={() => setPreviewOpen(prev => ({ ...prev, [qIndex]: !prev[qIndex] }))}
+                                                                onClick={() => handlePreviewQuestionFile(q, qIndex)}
                                                                 disabled={!q.file_url}
                                                                 style={{ whiteSpace: 'nowrap' }}
                                                             >
-                                                                <Eye size={16} /> {previewOpen[qIndex] ? 'Hide Preview' : 'Preview'}
+                                                                <Eye size={16} />
+                                                                {questionFilePreview.open && questionFilePreview.index === qIndex ? ' Hide Preview' : ' Preview'}
+                                                           
                                                             </button>
                                                         </div>
 
@@ -766,50 +821,12 @@ const QuestionsForm = ({
                                                     </div>}
 
 
-                                                    {/* Preview overlay (opens on clicking Preview; closes with X) */}
-                                                    {previewOpen[qIndex] && (
-                                                        <div className="assess-file-preview-overlay" onClick={(e) => { if (e.target === e.currentTarget) setPreviewOpen(prev => ({ ...prev, [qIndex]: false })); }}>
-                                                            <div className="assess-file-preview-modal">
+                                                    <FilePreviewModal
+                                                        open={questionFilePreview.open && questionFilePreview.index === qIndex}
+                                                        filePreview={questionFilePreview}
+                                                        onClose={closeQuestionFilePreview}
+                                                    />
 
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setPreviewOpen(prev => ({ ...prev, [qIndex]: false }))}
-                                                                    aria-label="Close file preview"
-                                                                    className="assess-file-preview-close"
-                                                                >
-                                                                    <X size={18} />
-                                                                </button>
-                                                                <div className="assess-file-preview-body">
-
-                                                                    {q.file_url ? (
-                                                                        <>
-                                                                            {q.file_url.match(/\.(jpeg|jpg|png|gif)$/i) && (
-                                                                                <img src={resolveUrl(q.file_url)} alt="Preview" />
-                                                                            )}
-                                                                            {q.file_url.match(/\.(mp4|webm|ogg)$/i) && (
-                                                                                <video src={resolveUrl(q.file_url)} controls />
-                                                                            )}
-                                                                            {q.file_url.match(/\.(mp3|wav|ogg)$/i) && (
-                                                                                <audio src={resolveUrl(q.file_url)} controls />
-                                                                            )}
-                                                                            {q.file_url.match(/\.pdf$/i) && (
-                                                                                <iframe src={resolveUrl(q.file_url)} title="PDF Preview" />
-                                                                            )}
-                                                                            {!q.file_url.match(/\.(jpeg|jpg|png|gif|mp4|webm|ogg|mp3|wav|pdf)$/i) && (
-                                                                                <div>
-                                                                                    <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: 6 }}>
-                                                                                        Preview not supported for this file type.
-                                                                                    </p>
-                                                                                </div>
-                                                                            )}
-                                                                        </>
-                                                                    ) : (
-                                                                        <p>No file attached.</p>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    )}
 
 
                                                     {/* Question Text */}
@@ -1776,7 +1793,8 @@ const QuestionsForm = ({
                     }}
                 />
             )}
-
+            <FilePreviewModal open={filePreview.open} filePreview={filePreview} onClose={closeFilePreview} />
+       
         </>
     );
 };

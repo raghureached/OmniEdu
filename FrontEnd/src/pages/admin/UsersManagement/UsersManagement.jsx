@@ -11,7 +11,9 @@ import {
   Trash2,
   Plus,
   User2Icon,
-  User
+  User,
+  Share,
+  Import
 } from 'lucide-react';
 import { RiDeleteBinFill } from 'react-icons/ri';
 import { FiEdit3 } from 'react-icons/fi';
@@ -117,10 +119,10 @@ const UsersManagement = () => {
       setFormData({
         name: user.name || '',
         employeeId: user.employeeId || '',
-        role: user.role || 'user',
+        role: user.global_role_id._id || 'user',
         status: user.status || 'active',
-        team: user.team || '',
-        subteam:user.subteam || '',
+        team: user.profile.team_id._id || '',
+        subteam:user.profile.sub_team_id._id || '',
         department: user.department || '',
         designation: user.designation || '',
         email: user.email || '',
@@ -180,7 +182,7 @@ const UsersManagement = () => {
       try {
         console.log(formData)
         await dispatch(updateUser({ id: currentUser.id || currentUser._id, userData: formData }));
-        // closeForm();
+        closeForm();
       } catch (error) {
         console.error('Error updating user:', error);
       }
@@ -188,7 +190,7 @@ const UsersManagement = () => {
       try {
         console.log(formData)
         await dispatch(createUser(formData));
-        // closeForm();
+        closeForm();
       } catch (error) {
         console.error('Error creating user:', error);
       }
@@ -298,6 +300,12 @@ const UsersManagement = () => {
           </form>
 
           <div className="controls-right" style={{ position: 'relative' }}>
+            <button className="control-btn">
+              Import <Import size={16} color="#6b7280" />
+            </button>
+            <button className="control-btn">
+              Export <Share size={16} color="#6b7280" />
+            </button>
             <button
               className="control-btn"
               onClick={() => setShowBulkAction(!showBulkAction)}
@@ -308,24 +316,33 @@ const UsersManagement = () => {
             </button>
 
             {showBulkAction && (
-              <div className="bulk-action-panel" style={{position:"absolute",right:"10px",top:"10px",zIndex:1000}}>
-                <span style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><h4 style={{margin:0}}>Bulk Actions</h4><GoX size={20} style={{cursor:"pointer"}} color="#6b7280" onClick={() => setShowBulkAction(false)} /></span>
-                <div className="bulk-actions">
-                  <button
-                    className="bulk-action-btn"
-                    onClick={() => handleBulkAction('deactivate')}
-                  >
-                    Deactivate Selected
-                  </button>
-                  <button
-                    className="bulk-action-btn delete"
-                    onClick={() => handleBulkAction('delete')}
-                  >
-                    Delete Selected
-                  </button>
-                </div>
-              </div>
-            )}
+        <div className="bulk-action-panel" style={{top: '50px', right: '-50px'}}>
+          <div className="bulk-action-header">
+            <label className="bulk-action-title">Items Selected: {selectedItems.length}</label>
+          </div>
+          <div className="bulk-action-actions" style={{ display: 'flex', gap: 8 ,flexDirection: 'row'}}>
+            <button
+              className="bulk-action-btn"
+              disabled={selectedItems.length === 0}
+              onClick={() => handleBulkAction('deactivate')}
+            >
+              Deactivate
+            </button>
+            <button
+              className="bulk-action-delete-btn"
+              disabled={selectedItems.length === 0}
+              onClick={() => handleBulkAction('delete')}
+            >
+              Delete
+            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {/* <button className="control-btn" onClick={() => document.getElementById('import-groups').click()}>
+                Import
+              </button> */}
+            </div>
+          </div>
+        </div>
+      )}
           </div>
           <button
             className="btn-primary"
@@ -439,7 +456,9 @@ const UsersManagement = () => {
             <div className="addOrg-modal-header">
               
               <div className="addOrg-header-content">
-              <User size={50} />
+              <div className="addOrg-header-icon">
+                    <User size={24} color="#5570f1" />
+                  </div>
                 <div>
                 
                   <h2>{editMode ? 'Edit User' : 'Add New User'}</h2>
@@ -462,7 +481,7 @@ const UsersManagement = () => {
                 <h3 className="addOrg-section-title" style={{marginTop:'10px'}}>Basic Information</h3>
                 <div className="addOrg-form-grid">
                   <div className="addOrg-form-group">
-                    <label className="addOrg-form-label">Name</label>
+                    <label className="addOrg-form-label">Name <span style={{color:'red'}}>*</span></label>
                     <input
                       type="text"
                       name="name"
@@ -473,20 +492,7 @@ const UsersManagement = () => {
                     />
                   </div>
                   <div className="addOrg-form-group">
-                    <label className="addOrg-form-label">Employee ID</label>
-                    <input
-                      type="text"
-                      name="employeeId"
-                      className="addOrg-form-input"
-                      value={formData.employeeId}
-                      onChange={handleFormChange}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="addOrg-form-grid">
-                  <div className="addOrg-form-group">
-                    <label className="addOrg-form-label">Email</label>
+                    <label className="addOrg-form-label">Email <span style={{color:'red'}}>*</span></label>
                     <input
                       type="email"
                       name="email"
@@ -497,27 +503,10 @@ const UsersManagement = () => {
                       disabled={editMode}
                     />
                   </div>
-                  <div className="addOrg-form-group">
-                    <label className="addOrg-form-label">Role</label>
-                    <select
-                      name="role"
-                      className="addOrg-form-select"
-                      value={formData.role}
-                      onChange={handleFormChange}
-                      required
-                    >
-                      <option value="">Select Role</option>
-                      {roles.map((role) => (
-                        <option key={role._id} value={role._id}>
-                          {role.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
                 </div>
                 <div className="addOrg-form-grid">
                   <div className="addOrg-form-group">
-                    <label className="addOrg-form-label">Team</label>
+                    <label className="addOrg-form-label">Team <span style={{color:'red'}}>*</span></label>
                     <select
                       name="team"
                       className="addOrg-form-select"
@@ -533,7 +522,7 @@ const UsersManagement = () => {
                     </select>
                   </div>
                   <div className="addOrg-form-group">
-                    <label className="addOrg-form-label">Sub Team</label>
+                    <label className="addOrg-form-label">Sub Team <span style={{color:'red'}}>*</span></label>
                     <select
                       name="subteam"
                       className="addOrg-form-select"
@@ -553,6 +542,37 @@ const UsersManagement = () => {
                   
                 </div>
                 <div className="addOrg-form-grid">
+                  
+                  <div className="addOrg-form-group">
+                    <label className="addOrg-form-label">Role <span style={{color:'red'}}>*</span></label>
+                    <select
+                      name="role"
+                      className="addOrg-form-select"
+                      value={formData.role}
+                      onChange={handleFormChange}
+                      required
+                    >
+                      <option value="">Select Role</option>
+                      {roles.map((role) => (
+                        <option key={role._id} value={role._id}>
+                          {role.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="addOrg-form-group"> 
+                    <label className="addOrg-form-label">Employee ID</label>
+                    <input
+                      type="text"
+                      name="employeeId"
+                      className="addOrg-form-input"
+                      value={formData.employeeId}
+                      onChange={handleFormChange}
+                    />
+                  </div>
+                </div>
+                
+                {/* <div className="addOrg-form-grid">
                   <div className="addOrg-form-group">
                     <label className="addOrg-form-label">Department</label>
                     <select
@@ -579,7 +599,7 @@ const UsersManagement = () => {
                       onChange={handleFormChange}
                     />
                   </div>
-                </div>
+                </div> */}
                 <div className="addOrg-form-grid">
                   <div className="addOrg-form-group">
                   <span style={{display:'flex',alignItems:'center',gap:'5px'}}><input

@@ -180,6 +180,8 @@
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 999px;
+  width: 90px;
+  text-align: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #ffffff;
   letter-spacing: 0.3px;

@@ -45,17 +45,8 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
   const { items: contentItems = [] } = useSelector((state) => state.content || {});
-  const modulesRaw = Array.isArray(contentItems) ? contentItems.filter((i) => (i.type || '').toLowerCase() === 'module') : [];
-  const assessmentsRaw = Array.isArray(contentItems) ? contentItems.filter((i) => (i.type || '').toLowerCase() === 'assessment') : [];
-  const surveysRaw = Array.isArray(contentItems) ? contentItems.filter((i) => (i.type || '').toLowerCase() === 'survey') : [];
   const [preview,setPreview] = useState(false);
   const [aiProcessing,setAiProcessing] = useState(false);
-  // Fallback dummy data if store is empty
-  // const modules = modulesRaw.length ? modulesRaw : [
-  //   { uuid: 'm-101', type: 'module', title: 'Intro to Programming', },
-  //   { uuid: 'm-102', type: 'module', title: 'JavaScript Basics' },
-  //   { uuid: 'm-103', type: 'module', title: 'React Fundamentals' },
-  // ];
   const { items: modules } = useSelector((state) => state.adminModule);
   const { assessments } = useSelector((state) => state.adminAssessments)
   const { surveys } = useSelector((state) => state.surveys || {});
@@ -63,7 +54,19 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
   const [selectedAssessments, setSelectedAssessments] = useState([]); // ids
   const [selectedSurveys, setSelectedSurveys] = useState([]); // ids
   const [search, setSearch] = useState({ module: '', assessment: '', survey: '' });
-
+  const [teams,setTeams] = useState([]);
+useEffect(() => {
+        const fetchTeams = async () => {
+            try {
+                const response = await api.get('/api/admin/getGroups');
+                setTeams(response.data.data);
+                console.log(response.data.data);
+            } catch (error) {
+                console.error('Error fetching teams:', error);
+            }
+        };
+        fetchTeams();
+    }, []);
   // Ordered builder items for Step 2, each item: {type: 'module'|'assessment'|'survey', id, title}
   const [pathItems, setPathItems] = useState([]);
   const [adding, setAdding] = useState(false); // deprecated inline panel flag (kept for safety)
@@ -83,9 +86,10 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
   const [tagInput, setTagInput] = useState('');
   // Always use uuid as the identifier
   const itemsByType = {
-    module: (modules || []).map(m => ({ id: m._id, title: m.title })),
+    module: (modules || []).map(m => ({ id: m._id, uuid: m.uuid, title: m.title })),
     assessment: (assessments || []).map(a => ({
       id: a._id,
+      uuid: a.uuid,
       title: a.title,
       // total questions and duration from the provided shape
       totalQuestions: Array.isArray(a?.questions) ? a.questions.length : (a?.totalQuestions || 0),
@@ -95,7 +99,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
       percentage_to_pass: a?.percentage_to_pass,
       display_answers: a?.display_answers,
     })),
-    survey: (surveys || []).map(s => ({ id: s._id, title: s.title })),
+    survey: (surveys || []).map(s => ({ id: s._id, uuid: s.uuid, title: s.title })),
   };
 
   // Auto-compute total duration from selected items (modules/assessments/surveys)
@@ -168,7 +172,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
               const found = src.find((x) => x.id === l.id);
               if (found) title = found.title;
             }
-            return { type, id: l.id, title: title || 'Untitled' };
+            return { type, id: l.id, uuid: l.uuid, title: title || 'Untitled' };
           });
         setPathItems(normalized);
       } else if (Array.isArray(initialData.pathItems) && initialData.pathItems.length) {
@@ -177,15 +181,15 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
         const combined = [];
         (initialData.modules || []).forEach(id => {
           const found = itemsByType.module.find(x => x.id === id);
-          if (found) combined.push({ type: 'module', id, title: found.title });
+          if (found) combined.push({ type: 'module', id, uuid: found.uuid, title: found.title });
         });
         (initialData.assessments || []).forEach(id => {
           const found = itemsByType.assessment.find(x => x.id === id);
-          if (found) combined.push({ type: 'assessment', id, title: found.title });
+          if (found) combined.push({ type: 'assessment', id, uuid: found.uuid, title: found.title });
         });
         (initialData.surveys || []).forEach(id => {
           const found = itemsByType.survey.find(x => x.id === id);
-          if (found) combined.push({ type: 'survey', id, title: found.title });
+          if (found) combined.push({ type: 'survey', id, uuid: found.uuid, title: found.title });
         });
         setPathItems(combined);
       }
@@ -276,7 +280,7 @@ const enhanceTexthelper = async (title) => {
     const asmt = pathItems.filter(i => i.type === 'assessment').map(i => i.id);
     const surv = pathItems.filter(i => i.type === 'survey').map(i => i.id);
     // unified ordered lessons array
-    const lessons = pathItems.map((it, index) => ({ id: it.id, type: it.type, title: it.title, order: index, ...(it.type === 'assessment' ? { questions: Number(it.questions) || undefined } : {}) }));
+    const lessons = pathItems.map((it, index) => ({ id: it.id, uuid: it.uuid, type: it.type, title: it.title, order: index, ...(it.type === 'assessment' ? { questions: Number(it.questions) || undefined } : {}) }));
     const payload = {
       ...form,
       tags,
@@ -294,7 +298,7 @@ const enhanceTexthelper = async (title) => {
     const asmt = pathItems.filter(i => i.type === 'assessment').map(i => i.id);
     const surv = pathItems.filter(i => i.type === 'survey').map(i => i.id);
     // unified ordered lessons array
-    const lessons = pathItems.map((it, index) => ({ id: it.id, type: it.type, title: it.title, order: index, ...(it.type === 'assessment' ? { questions: Number(it.questions) || undefined } : {}) }));
+    const lessons = pathItems.map((it, index) => ({ id: it.id, uuid: it.uuid, type: it.type, title: it.title, order: index, ...(it.type === 'assessment' ? { questions: Number(it.questions) || undefined } : {}) }));
     const payload = {
       ...initialData,
       ...form,
@@ -327,7 +331,7 @@ const enhanceTexthelper = async (title) => {
         </div>
 
         {/* BODY */}
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => e.preventDefault()}>
           <div className="module-overlay__body" style={{ overflowY: 'auto', maxHeight: 'calc(90vh - 180px)' }}>
             {currentStep === 1 && (
               <div className="module-overlay__step">
@@ -335,16 +339,13 @@ const enhanceTexthelper = async (title) => {
                   <label className="module-overlay__form-label">Title <span className="module-overlay__required">*</span></label>
                   <input className="addOrg-form-input" type="text" name="title" value={form.title} onChange={handleChange} placeholder="Enter learning path name" autoComplete="off" required style={{ width: '100%' }} />
                 </div>
-
+                    <button type='button' className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(form.title)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
                 <div className="module-overlay__form-group">
                   <label className="module-overlay__form-label">Description <span className="module-overlay__required">*</span></label>
                   <textarea className="addOrg-form-input" name="description" value={form.description} onChange={handleChange} placeholder="Enter detailed description" rows={4} style={{ width: '100%' }} />
                 </div>
 
-                <div className="module-overlay__form-group">
-                  <label className="module-overlay__form-label">Prerequisites<span className="module-overlay__required">*</span></label>
-                  <input className="addOrg-form-input" type="text" name="prerequisite" value={form.prerequisite} onChange={handleChange} placeholder="Enter prerequisites" autoComplete="off" style={{ width: '100%' }} />
-                </div>
+                
 
                 <div className="module-overlay__form-group">
                   <label className="module-overlay__form-label">Tags<span className="module-overlay__required">*</span></label>
@@ -374,7 +375,10 @@ const enhanceTexthelper = async (title) => {
                     ))}
                   </div>
                 </div>
-                    <button type='button' className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(form.title)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
+                <div className="module-overlay__form-group">
+                  <label className="module-overlay__form-label">Prerequisites<span className="module-overlay__required">*</span></label>
+                  <input className="addOrg-form-input" type="text" name="prerequisite" value={form.prerequisite} onChange={handleChange} placeholder="Enter prerequisites" autoComplete="off" style={{ width: '100%' }} />
+                </div>
                 <div className="module-overlay__form-group">
                   <label className="module-overlay__form-label">Thumbnail<span className="module-overlay__required">*</span></label>
                   <input id="lpCoverImage" type="file" name="thumbnail" onChange={handleChange} accept="image/*" style={{ display: 'none' }} />
@@ -508,10 +512,12 @@ const enhanceTexthelper = async (title) => {
                                     if (pickerType === 'assessment') {
                                       const src = itemsByType.assessment.find(a => a.id === x.id);
                                       const total = src?.totalQuestions || 1;
+
                                       setAssessmentQtyModal({
                                         open: true,
                                         item: {
                                           id: x.id,
+                                          uuid: x.uuid,
                                           title: x.title,
                                           total,
                                           duration: src?.duration,
@@ -522,8 +528,10 @@ const enhanceTexthelper = async (title) => {
                                         },
                                         qty: Math.min(total, Math.max(1, Number(assessmentQtyModal.qty) || total))
                                       });
+                                      // console.log(x)
                                     } else {
-                                      const newItem = { type: pickerType, id: x.id, title: x.title };
+                                      const newItem = { type: pickerType, id: x.id, uuid: x.uuid, title: x.title };
+                                      console.log(newItem)
                                       setPathItems(prev => [...prev, newItem]);
                                       setPickerOpen(false);
                                     }
@@ -667,17 +675,22 @@ const enhanceTexthelper = async (title) => {
                       <label className="module-overlay__form-label">Target Team/Sub Team <span className="module-overlay__required">*</span></label>
                       <div className="lp-grid-2">
                         <select className="addOrg-form-input" name="team" value={form.team} onChange={handleChange} style={{ width: '100%' }}>
-                          <option value="">Team</option>
-                          <option value="engineering">Engineering</option>
-                          <option value="sales">Sales</option>
-                          <option value="marketing">Marketing</option>
-                          <option value="hr">Human Resources</option>
+                          <option value="">Select a Team</option>
+                          {teams.map((team) => (
+                            <option key={team.id} value={team.id}>
+                              {team.name}
+                            </option>
+                          ))}
                         </select>
                         <select className="addOrg-form-input" name="subteam" value={form.subteam} onChange={handleChange} style={{ width: '100%' }}>
-                          <option value="">Sub-team</option>
-                          <option value="frontend">Frontend</option>
-                          <option value="backend">Backend</option>
-                          <option value="devops">DevOps</option>
+                          <option value="">Select a Sub-team</option>
+                          {teams.filter((team) => team.id === form.team).map((subteam) => (
+                            subteam.subTeams.map((subteam) => (
+                              <option key={subteam.id} value={subteam.id}>
+                                {subteam.name}
+                              </option>
+                            ))  
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -764,8 +777,8 @@ const enhanceTexthelper = async (title) => {
                       className="btn-primary"
                       onClick={() => {
                         if (!assessmentQtyModal.item) return;
-                        const { id, title } = assessmentQtyModal.item;
-                        const newItem = { type: 'assessment', id, title, questions: qty };
+                        const { id, uuid, title } = assessmentQtyModal.item;
+                        const newItem = { type: 'assessment', id, uuid, title, questions: qty };
                         setPathItems(prev => [...prev, newItem]);
                         setAssessmentQtyModal({ open: false, item: null, qty: 1 });
                         setPickerOpen(false);
@@ -795,6 +808,7 @@ const enhanceTexthelper = async (title) => {
                   <button type='button' className="btn-secondary" onClick={() => {
                     const lessons = pathItems.map((it, index) => ({
                       id: it.id,
+                      uuid: it.uuid,
                       type: it.type,
                       title: it.title,
                       order: index,
@@ -805,7 +819,7 @@ const enhanceTexthelper = async (title) => {
                     setPreview(true);
                   }}><Eye size={20} />Preview</button>
                   <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
-                  <button type="submit" className="btn-primary" onClick={(e) => initialData ? handleEdit(e) : handleSubmit(e)}>{initialData ? 'Save Changes' : 'Create'}</button>
+                  <button type="button" className="btn-primary" onClick={(e) => initialData ? handleEdit(e) : handleSubmit(e)}>{initialData ? 'Save Changes' : 'Create'}</button>
                 </div>
               )}
             </div>

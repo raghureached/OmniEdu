@@ -65,7 +65,7 @@ router.route('/bulkDeleteContent').delete(bulkDelete)
 
 router.route('/createAssessment').post(upload.single('thumbnail'),uploadToCloudinary('assessments'),createAssessment)
 router.route('/uploadAssessmentCSV').post(uploadAssessmentCSV)
-router.route('/editAssessment/:id').put(editAssessment)
+router.route('/editAssessment/:id').put(upload.single('thumbnail'),uploadToCloudinary('assessments'),editAssessment)
 router.route('/deleteAssessment/:id').delete(deleteAssessment)
 router.route('/getAssessments').get(getAssessments)
 router.route('/getAssessmentById/:id').get(getAssessmentById)

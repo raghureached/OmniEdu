@@ -1,4 +1,4 @@
-import { Edit3, Trash2 } from 'lucide-react';
+import { Edit3, Trash2, Eye } from 'lucide-react';
 import React from 'react';
 
 const GroupsTable = ({
@@ -9,10 +9,12 @@ const GroupsTable = ({
   handleSelectAll,
   handleEditGroup,
   handleDeleteGroup,
+  onPreviewTeam,
   currentPage,
   totalPages,
   handlePageChange,
 }) => {
+  console.log(groups)
   return (
     <>
     {groups.length === 0 ? (
@@ -24,63 +26,74 @@ const GroupsTable = ({
         <div className="table-header">
           {/* 1: Select All */}
           <input
+            className="col-select"
             type="checkbox"
             checked={selectAll}
             onChange={handleSelectAll}
           />
-          {/* 2: Placeholder for Plan ID column to match 8-col grid */}
-          <div>Team Name</div>
-          {/* 3: Group (Name) */}
-          <div>Sub Team Name</div>
-          {/* 4: Members */}
-          <div>Members</div>
-          {/* 5: Status */}
-          <div>Status</div>
-          {/* 6: Actions */}
-          <div>Actions</div>
+          {/* 2: Team Name */}
+          <div className="col-team">Team Name</div>
+          {/* 3: Members */}
+          <div className="col-members">Members</div>
+          {/* 4: Status */}
+          <div className="col-status">Status</div>
+          <div></div>
+
+          {/* 5: Actions */}
+          <div className="col-actions">Actions</div>
         </div>
 
         {groups.map((group) => (
           <div key={group.id} className="table-row">
             {/* 1: Checkbox */}
             <input
+              className="col-select"
               type="checkbox"
               checked={selectedGroups.includes(group.id)}
               onChange={(e) => handleSelectGroup(e, group.id)}
             />
 
-            {/* 2: Group name */}
-            <div>{group.teamName}</div>
+            {/* 2: Team name */}
+            <div className="col-team">{group.teamName}</div>
 
             {/* 3: Members */}
-            <div>{group.subTeamName }</div>
+            {/* <div>{group.subTeamName }</div> */}
 
             {/* 4: Members */}
-            <div>{group.membersCount || 0}</div>
+            <div className="col-members">{group.membersCount || 0}</div>
 
             {/* 5: Status */}
-            <div>
+            <div className="col-status">
               <span
-                className={`status-badge ${group.status === 'active' ? 'status-paid' : 'status-cancelled'}`}
+                className={`status-badge ${group.status.toLowerCase() === 'active' ? 'status-paid' : 'status-cancelled'}`}
               >
-                {group.status === 'active' ? '✓ Active' : '✕ Inactive'}
+                {group.status.toLowerCase() === 'active' ? '✓ Active' : '✕ Inactive'}
               </span>
             </div>
+          <div></div>
+
 
             {/* 6: Actions */}
-            <div style={{ display: "flex", gap: "10px" }}>
-                    <button
-                      className="global-action-btn delete"
-                      onClick={() => handleDeleteGroup(group.id)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                    <button className="global-action-btn edit" onClick={() => {
-                      handleEditGroup(group)
-                    }}>
-                      <Edit3 size={16} />
-                    </button>
-                  </div>
+            <div className="col-actions" style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+              <button
+                className="global-action-btn"
+                onClick={() => onPreviewTeam && onPreviewTeam(group)}
+                aria-label={`Preview team ${group.teamName}`}
+              >
+                <Eye size={16} />
+              </button>
+              <button
+                className="global-action-btn delete"
+                onClick={() => handleDeleteGroup(group.id)}
+              >
+                <Trash2 size={16} />
+              </button>
+              <button className="global-action-btn edit" onClick={() => {
+                handleEditGroup(group)
+              }}>
+                <Edit3 size={16} />
+              </button>
+            </div>
           </div>
         ))}
 

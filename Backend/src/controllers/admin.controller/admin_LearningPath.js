@@ -7,7 +7,7 @@ const addLearningPath = async (req, res) => {
       title,
       description,
       prerequisite,
-      tags,
+      tags: rawTags,
       team,
       subteam,
       category,
@@ -19,22 +19,27 @@ const addLearningPath = async (req, res) => {
       enforceOrder,
       bypassRewards,
       enableFeedback,
-      lessons = [],
+      lessons: rawLessons = [],
       status,
     } = req.body;
-
+    // console.log(req.body)
     const typeToModel = {
       module: 'OrganizationModule',
       assessment: 'OrganizationAssessments',
       survey: 'OrganizationSurvey',
     };
 
+    const lessons = typeof rawLessons === 'string' ? (() => { try { return JSON.parse(rawLessons); } catch { return []; } })() : rawLessons;
+    const tags = typeof rawTags === 'string' ? (() => { try { return JSON.parse(rawTags); } catch { return []; } })() : rawTags;
+
     const normalizedLessons = Array.isArray(lessons)
       ? lessons.map((l) => ({
+
         id: l.id,
         type: (l.type || '').toLowerCase(),
         model: typeToModel[(l.type || '').toLowerCase()],
         title: l.title || null,
+        uuid: l.uuid,
         order: typeof l.order === 'number' ? l.order : undefined,
       }))
       : [];
@@ -131,7 +136,7 @@ const editLearningPath = async (req, res) => {
       title,
       description,
       prerequisite,
-      tags,
+      tags: rawTags,
       team,
       subteam,
       category,
@@ -144,7 +149,7 @@ const editLearningPath = async (req, res) => {
       enforceOrder,
       bypassRewards,
       enableFeedback,
-      lessons,
+      lessons: rawLessons,
       organization_id,
       status,
     } = req.body;
@@ -154,6 +159,9 @@ const editLearningPath = async (req, res) => {
       assessment: 'OrganizationAssessments',
       survey: 'OrganizationSurvey',
     };
+
+    const lessons = typeof rawLessons === 'string' ? (() => { try { return JSON.parse(rawLessons); } catch { return undefined; } })() : rawLessons;
+    const tags = typeof rawTags === 'string' ? (() => { try { return JSON.parse(rawTags); } catch { return []; } })() : rawTags;
 
     const normalizedLessons = Array.isArray(lessons)
       ? lessons.map((l) => ({

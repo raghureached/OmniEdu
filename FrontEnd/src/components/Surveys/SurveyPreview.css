@@ -1,0 +1,8 @@
+.survey-assess-btn-primary:disabled {
+    background-color: #d6dbe1 !important; /* grayish-blue */
+    color: #64748b !important;            /* muted text */
+    cursor: not-allowed;
+    opacity: 0.8;
+    border: none;
+  }
+  

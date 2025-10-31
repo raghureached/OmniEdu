@@ -1,5 +1,6 @@
-import { Search } from 'lucide-react';
+import { ChevronDown, Search, Share } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import api from '../../../../services/api';
 
 const GroupsFilter = ({
   groups,
@@ -59,9 +60,12 @@ const GroupsFilter = ({
           <button className="control-btn" onClick={() => setShowFilters((prev) => !prev)}>
             Filter
           </button>
+          {/* <button className="control-btn" onClick={handleExportGroups}>
+                Export <Share size={16} color="#6b7280" />
+              </button> */}
 
           <button className="control-btn" onClick={() => setShowBulkAction((prev) => !prev)}>
-            Bulk Action
+            Bulk Action <ChevronDown size={16} color="#6b7280" />
           </button>
 
           <button className="btn-primary" onClick={handleCreateGroup}>
@@ -85,11 +89,8 @@ const GroupsFilter = ({
             <label>Status</label>
             <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)}>
               <option value="All">All</option>
-              {statuses.map((status) => (
-                <option key={status} value={status}>
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </option>
-              ))}
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
             </select>
           </div>
           <div className="filter-actions">
@@ -108,7 +109,14 @@ const GroupsFilter = ({
           <div className="bulk-action-header">
             <label className="bulk-action-title">Items Selected: {selectedGroups.length}</label>
           </div>
-          <div className="bulk-action-actions">
+          <div className="bulk-action-actions" style={{ display: 'flex', gap: 8 ,flexDirection: 'row'}}>
+            {/* <button
+              className="bulk-action-btn"
+              disabled={selectedGroups.length === 0}
+              onClick={handleDeactivateGroups}
+            >
+              Deactivate
+            </button> */}
             <button
               className="bulk-action-delete-btn"
               disabled={selectedGroups.length === 0}
@@ -117,12 +125,9 @@ const GroupsFilter = ({
               Delete
             </button>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="control-btn" onClick={() => document.getElementById('import-groups').click()}>
+              {/* <button className="control-btn" onClick={() => document.getElementById('import-groups').click()}>
                 Import
-              </button>
-              <button className="control-btn" onClick={handleExportGroups}>
-                Export
-              </button>
+              </button> */}
             </div>
           </div>
         </div>

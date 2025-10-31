@@ -71,7 +71,6 @@ const LearningPaths = () => {
     setIsModalOpen(true)
     setEditingPath(path)
   }
-  // Apply filters to paths
   const filteredPaths = learningPaths.filter(path => {
     const matchesName = path.title.toLowerCase().includes(nameSearch.toLowerCase());
     const matchesClassification = classificationFilter === 'all' || path.classification === classificationFilter;

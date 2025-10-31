@@ -19,14 +19,19 @@ const teamSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    description: {
+    status: {
       type: String,
-      default: "",
+      enum: ["Active", "Inactive"],
+      default: "Active",
     },
     created_by: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       default: null,
+    },
+    membersCount: {
+      type: Number,
+      default: 0,
     },
   },
   { timestamps: true }

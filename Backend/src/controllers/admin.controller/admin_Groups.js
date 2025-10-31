@@ -127,23 +127,43 @@ const SubTeam = require("../../models/subTeams_model");
 
 const addGroup = async (req, res) => {
     try {
-        const { teamName, subTeamName, teamDescription, subTeamDescription } = req.body;
-        if (!teamName || !subTeamName || !teamDescription || !subTeamDescription) {
+        const { teamName, subTeamName, status } = req.body;
+        if (!teamName || !subTeamName || !status) {
             return res.status(400).json({
                 isSuccess: false,
                 message: "All fields are required"
             })
         }
-        const team = await Team.create({
+        const teamNameExists = await Team.findOne({ name: teamName });
+        const subTeamNameExists = await SubTeam.findOne({ name: subTeamName });
+        if(teamNameExists && subTeamNameExists){
+            return res.status(400).json({
+                isSuccess: false,
+                message: "Team name and subteam name already exists"
+            })
+          }
+        if (teamNameExists) {
+            const subTeam = await SubTeam.create({
+                name: subTeamName,
+                team_id: teamNameExists._id,
+                ///Change when authentication is added
+                organization_id: req.user.organization_id,
+                created_by: req.user._id
+            })
+            return res.status(201).json({
+                isSuccess: true,
+                message: "Subteam added successfully",
+                data: { subTeam }
+            })
+        }
+          const team = await Team.create({
             name: teamName,
-            description: teamDescription,
-            ///Change when authentication is added
+            status: status.toLowerCase()==="active" ? "Active" : "Inactive",
             organization_id: req.user.organization_id,
             created_by: req.user._id
         })
         const subTeam = await SubTeam.create({
             name: subTeamName,
-            description: subTeamDescription,
             team_id: team._id,
             ///Change when authentication is added
             organization_id: req.user.organization_id,
@@ -248,10 +268,85 @@ const addGroup = async (req, res) => {
       });
     }
   };
+  const addTeam = async (req, res) => {
+    try {
+      const { teamName, status } = req.body;
+      const team = await Team.create({ name: teamName, status });
+      return res.status(201).json({
+        isSuccess: true,
+        message: "Team added successfully",
+        data: { team }
+      });
+    } catch (error) {
+      return res.status(500).json({
+        isSuccess: false,
+        message: "Failed to add team",
+        error: error.message
+      });
+    }
+  };
+  const addSubTeam = async(req,res) =>{
+    try {
+      const { subTeamName } = req.body;
+      const team = await SubTeam.create({ name: subTeamName ,team_id: req.params.id});
+      return res.status(201).json({
+        isSuccess: true,
+        message: "SubTeam added successfully",
+        data: { team }
+      });
+    } catch (error) {
+      return res.status(500).json({
+        isSuccess: false,
+        message: "Failed to add team",
+        error: error.message
+      });
+    }
+  }
 
+  const deleteGroups = async(req,res) =>{
+    try {
+      const {ids } = req.body;
+      const teamIds = await Team.find({uuid:{$in:ids}}).select("_id");
+      const group = await Team.deleteMany({uuid:{$in:ids}});
+      const subGroup = await SubTeam.deleteMany({team_id:{$in:teamIds}});
+      return res.status(200).json({
+        isSuccess: true,
+        message: "Group deleted successfully",
+        data: { group, subGroup }
+      });
+    } catch (error) {
+      return res.status(500).json({
+        isSuccess: false,
+        message: "Failed to delete group",
+        error: error.message
+      });
+    }
+  }
+  const deactivateGroups= async (req, res) => {
+    try {
+      const {ids} = req.body;
+      const group = await Team.updateMany({uuid:{$in:ids}},{ status: "Inactive" });
+      // const subGroup = await SubTeam.updateMany({team_id:{$in:ids}},{ status: "Inactive" });
+      return res.status(200).json({
+        isSuccess: true,
+        message: "Group deactivated successfully",
+        data: { group }
+      });
+    } catch (error) {
+      return res.status(500).json({
+        isSuccess: false,
+        message: "Failed to deactivate group",
+        error: error.message
+      });
+    }
+  }
 module.exports = {
     addGroup,
     getGroups,
     editGroup,
-    deleteGroup
+    deleteGroup,
+    deleteGroups,
+    deactivateGroups,
+    addTeam,
+    addSubTeam
 } 

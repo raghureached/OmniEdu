@@ -1,37 +1,82 @@
 import {createSlice,createAsyncThunk} from "@reduxjs/toolkit";
 import api from "../../services/api";
 
-export const addLearningPath = createAsyncThunk("learningPath/addLearningPath", async (learningPath) => {
+export const addLearningPath = createAsyncThunk("learningPath/addLearningPath", async (learningPath, { rejectWithValue }) => {
     try {
-        console.log(learningPath);
-        const response = await api.post("/api/admin/addLearningPath", learningPath);
-        console.log(response.data)
+        const form = new FormData();
+        // Primitive fields
+        const primitives = [
+            'title','description','prerequisite','team','subteam','category','trainingType','status','version'
+        ];
+        primitives.forEach((k) => {
+            if (learningPath[k] !== undefined && learningPath[k] !== null) form.append(k, learningPath[k]);
+        });
+        // Numeric selects
+        ['duration','credits','badges','stars'].forEach((k) => {
+            if (learningPath[k] !== undefined && learningPath[k] !== null) form.append(k, String(learningPath[k]));
+        });
+        // Booleans
+        ['enforceOrder','bypassRewards','enableFeedback'].forEach((k) => {
+            if (typeof learningPath[k] !== 'undefined') form.append(k, learningPath[k] ? 'true' : 'false');
+        });
+        // Tags array
+        if (Array.isArray(learningPath.tags)) form.append('tags', JSON.stringify(learningPath.tags));
+        // Lessons array of objects
+        if (Array.isArray(learningPath.lessons)) form.append('lessons', JSON.stringify(learningPath.lessons));
+        // Thumbnail file or URL
+        if (learningPath.thumbnail instanceof File) {
+            form.append('thumbnail', learningPath.thumbnail);
+        } else if (typeof learningPath.thumbnail === 'string' && learningPath.thumbnail) {
+            // backend expects uploaded file for new create; keep as is if provided URL
+            form.append('thumbnail_url', learningPath.thumbnail);
+        }
+
+        const response = await api.post("/api/admin/addLearningPath", form, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
         return response.data.data;
     } catch (error) {
-        console.log(error.response.data)
-        return error.response.data;
+        return rejectWithValue(error.response?.data || { isSuccess: false, message: error.message });
     }
 });
-export const editLearningPath = createAsyncThunk("learningPath/editLearningPath", async (learningPath) => {
+export const editLearningPath = createAsyncThunk("learningPath/editLearningPath", async (learningPath, { rejectWithValue }) => {
     try {
-        console.log(learningPath);
-        const response = await api.put(`/api/admin/editLearningPath/${learningPath.uuid}`, learningPath,{headers:{"Content-Type":"multipart/form-data"}});
-        console.log(response.data)
+        const form = new FormData();
+        const primitives = [
+            'title','description','prerequisite','team','subteam','category','trainingType','status','version'
+        ];
+        primitives.forEach((k) => {
+            if (learningPath[k] !== undefined && learningPath[k] !== null) form.append(k, learningPath[k]);
+        });
+        ['duration','credits','badges','stars'].forEach((k) => {
+            if (learningPath[k] !== undefined && learningPath[k] !== null) form.append(k, String(learningPath[k]));
+        });
+        ['enforceOrder','bypassRewards','enableFeedback'].forEach((k) => {
+            if (typeof learningPath[k] !== 'undefined') form.append(k, learningPath[k] ? 'true' : 'false');
+        });
+        if (Array.isArray(learningPath.tags)) form.append('tags', JSON.stringify(learningPath.tags));
+        if (Array.isArray(learningPath.lessons)) form.append('lessons', JSON.stringify(learningPath.lessons));
+        if (learningPath.thumbnail instanceof File) {
+            form.append('thumbnail', learningPath.thumbnail);
+        } else if (typeof learningPath.thumbnail === 'string' && learningPath.thumbnail) {
+            form.append('thumbnail', learningPath.thumbnail);
+        }
+
+        const response = await api.put(`/api/admin/editLearningPath/${learningPath.uuid}`, form, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
         return response.data.data;
     } catch (error) {
-        console.log(error.response.data)
-        return error.response.data;
+        return error.response?.data || { isSuccess: false, message: error.message };
     }
 });
 
 export const getLearningPaths = createAsyncThunk("learningPath/getLearningPaths", async () => {
     try {
-        const response = await api.get("/api/admin/getLearningpaths");
-        console.log(response.data)
+        const response = await api.get("/api/admin/getLearningPaths");
         return response.data.data;
     } catch (error) {
-        console.log(error.response.data)
-        return error.response.data;
+        return error.response?.data || { isSuccess: false, message: error.message };
     }
 });
 export const getLearningPathById = createAsyncThunk("learningPath/getLearningPathById", async (learningPathId) => {

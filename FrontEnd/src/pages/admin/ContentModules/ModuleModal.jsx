@@ -339,15 +339,16 @@ const ModuleModal = ({
 
 
                                 </div>
+                                <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(newContent.title, newContent.description)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
 
                             </div>
 
-                            <div className="module-overlay__form-group">
+                            <div className="module-overlay__form-group" style={{marginTop:'20px'}}>
                                 <label className="module-overlay__form-label">
                                     <span style={{display:'flex',alignItems:'center',gap:'5px'}}>Learning Outcomes <span className="module-overlay__required">*</span>
                                     {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}</span>
                                 </label>
-                                <div className="module-overlay__learning-outcomes">
+                                <div className="module-overlay__learning-outcomes" >
                                     {learningOutcomes?.map((outcome, index) => (
                                         <div key={index} className="module-overlay__learning-outcome-item">
                                             <input
@@ -419,7 +420,7 @@ const ModuleModal = ({
                             </div>
 
                             <div className="module-overlay__form-group">
-                                <label className="module-overlay__form-label">Prerequisites</label>
+                                <label className="module-overlay__form-label">Prerequisites<span className='module-overlay__required'>*</span></label>
                                 <input
                                     type="text"
                                     name="prerequisites"
@@ -432,7 +433,7 @@ const ModuleModal = ({
                                 />
                             </div>
 
-                            <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(newContent.title, newContent.description)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
+                            
 
                             <div className="module-overlay__form-group">
                                 <label className="module-overlay__form-label">Thumbnail</label>
@@ -499,7 +500,7 @@ const ModuleModal = ({
                                     Text / External URL
                                 </button>
                             </div>
-                            <label className="module-overlay__form-label">Instructions</label>
+                            <label className="module-overlay__form-label">Description</label>
 
                             <textarea
                                 name="instructions"
@@ -602,7 +603,7 @@ const ModuleModal = ({
                                     <FullRichTextEditor value={newContent.richText || ''} onChange={handleRichInputChange} />
 
                                     <label className="module-overlay__form-label" style={{ marginTop: '20px' }}>External Resource</label>
-                                    <span style={{ display: 'flex', alignItems: 'center' }}>
+                                    <span style={{ display: 'flex', alignItems: 'center' ,gap:'10px'}}>
                                         <input
                                             type="text"
                                             name="externalResource"
@@ -620,7 +621,7 @@ const ModuleModal = ({
                                                 aria-expanded={showIframe}
                                                 aria-controls="externalResourceIframe"
                                             >
-                                                {showIframe ? 'Hide Resource' : 'View Resource'}
+                                                {showIframe ? 'Hide' : 'Preview'}
                                             </button>
                                         )}
                                     </span>
@@ -848,8 +849,7 @@ const ModuleModal = ({
                                     Please enable this if you have an additional file.
                                 </p>
                                 <div className="module-overlay__form-group" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' ,marginTop:"120px"}}>
-                                    <button className='btn-primary' onClick={handleSaveDraft} disabled={editContentId}>Save Draft</button>
-                                    <button className='btn-secondary' onClick={() => setPreview(true)} disabled={!canProceed()} >Preview</button>
+                                    {/* <button className='btn-primary' onClick={handleSaveDraft} disabled={editContentId}>Save Draft</button> */}
                                 </div>
                             </div>
                         </div>
@@ -908,6 +908,8 @@ const ModuleModal = ({
                         </button>
 
                         <div className="module-overlay__action-buttons" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                    {currentStep===totalSteps && <button className='btn-secondary' onClick={() => setPreview(true)} disabled={!canProceed()} ><EyeIcon size={16} /> Preview</button>}
+
                             <button className="btn-secondary" onClick={() => setShowModal(false)} aria-label="Cancel " disabled={uploading}>
                                 Cancel
                             </button>

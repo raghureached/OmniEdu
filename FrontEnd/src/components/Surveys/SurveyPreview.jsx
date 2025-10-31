@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, X } from 'lucide-react';
-import SubmissionPopupSurveys from '../../../components/Surveys/SubmissionPopupSurveys';
+import SubmissionPopupSurveys from '../Surveys/SubmissionPopupSurveys';
 
 const SurveyPreview = ({
     isOpen,
@@ -194,6 +194,31 @@ const SurveyPreview = ({
 
         setHighlightedUnansweredQuestions(unansweredKeys);
     }, [previewResponses, builtSections, showUnansweredHighlight]);
+// Check if all questions in a given section are answered
+const isSectionComplete = (sectionIndex) => {
+    const section = builtSections[sectionIndex];
+    if (!section) return true;
+
+    return section.items.every((el, itemIndex) => {
+        if (el.type !== 'question') return true;
+        const qKey = el.uuid || el._id || `sec-${sectionIndex}-q-${itemIndex}`;
+        const response = previewResponses[qKey];
+
+        if (el.question_type === 'Multiple Choice') {
+            return response !== undefined && response !== null;
+        } else if (el.question_type === 'Multi Select') {
+            return Array.isArray(response) && response.length > 0;
+        } else if (el.question_type === 'Short Answer' || el.question_type === 'Paragraph') {
+            return !!(response && response.trim() !== '');
+        }
+        return true;
+    });
+};
+
+// Check if all questions in all sections are answered
+const isSurveyComplete = () => {
+    return builtSections.every((_, idx) => isSectionComplete(idx));
+};
 
     if (!isOpen) return null;
 
@@ -443,23 +468,39 @@ const SurveyPreview = ({
                                             Section {sectionPreviewIndex + 1} of {builtSections.length}
                                         </div>
                                         <div className="survey-nav-right" style={{ display: 'flex', gap: 8 }}>
-                                            {sectionPreviewIndex < builtSections.length - 1 ? (
-                                                <button
-                                                    type="button"
-                                                    className="survey-assess-btn-primary"
-                                                    onClick={() => setSectionPreviewIndex(Math.min(builtSections.length - 1, sectionPreviewIndex + 1))}
-                                                >
-                                                    Next
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    type="button"
-                                                    className="survey-assess-btn-primary"
-                                                    onClick={handleSubmit}
-                                                >
-                                                    Submit
-                                                </button>
-                                            )}
+                                        {sectionPreviewIndex < builtSections.length - 1 ? (
+    <button
+        type="button"
+        className="survey-assess-btn-primary"
+        disabled={!isSectionComplete(sectionPreviewIndex)}
+        style={{
+            backgroundColor: !isSectionComplete(sectionPreviewIndex) ? '#cbd5e1' : '#3b82f6',
+            color: !isSectionComplete(sectionPreviewIndex) ? '#64748b' : 'white',
+            cursor: !isSectionComplete(sectionPreviewIndex) ? 'not-allowed' : 'pointer',
+            opacity: !isSectionComplete(sectionPreviewIndex) ? 0.8 : 1,
+        }}
+        onClick={() => setSectionPreviewIndex(Math.min(builtSections.length - 1, sectionPreviewIndex + 1))}
+    >
+        Next
+    </button>
+) : (
+    <button
+        type="button"
+        className="survey-assess-btn-primary"
+        disabled={!isSurveyComplete()}
+        style={{
+            backgroundColor: !isSurveyComplete() ? '#cbd5e1' : '#3b82f6',
+            color: !isSurveyComplete() ? '#64748b' : 'white',
+            cursor: !isSurveyComplete() ? 'not-allowed' : 'pointer',
+            opacity: !isSurveyComplete() ? 0.8 : 1,
+        }}
+        onClick={handleSubmit}
+    >
+        Submit
+    </button>
+)}
+
+
                                         </div>
                                     </div>
                                 </div>

@@ -105,7 +105,7 @@
   .survey-assess-form-section {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 5px;
   }
   
   .survey-assess-section-title {
@@ -974,4 +974,17 @@ margin-top: 15px; }
 }
 .survey-assess-form-group .module-overlay__upload-label {
   width: fit-content;
+}
+
+.survey-assess-btn-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #e2e8f0 !important;
+  color: #94a3b8 !important;
+  box-shadow: none !important;
+}
+
+.survey-assess-btn-disabled:hover {
+  transform: none !important;
+  box-shadow: none !important;
 }

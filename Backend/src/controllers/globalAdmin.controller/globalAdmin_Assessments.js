@@ -168,7 +168,7 @@ const createAssessment = async (req, res) => {
         feedbackEnabled,
         shuffle_questions,
         shuffle_options,
-        thumbnail:req?.uploadedFile?.url,
+        thumbnail:req?.uploadedFile.url,
         // thumbnail_url:req.uploadedFile.url,
         questions: questionIds,
         instructions:instructions

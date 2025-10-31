@@ -330,6 +330,7 @@ const AssessmentQuiz = ({ isOpen = true, onClose = () => { }, previewMode = true
   // Check if current question has an answer selected
   const currentQuestionAnswered = (selectedAnswers[currentIndex] || []).length > 0;
   const answeredCount = selectedAnswers.filter((arr) => arr.length > 0).length;
+  const allQuestionsAnswered = selectedAnswers.length > 0 && selectedAnswers.every(arr => arr.length > 0);
   const progressPct = questions.length ? Math.round((answeredCount / questions.length) * 100) : 0;
 
   // Navigation filter helpers
@@ -557,9 +558,20 @@ const AssessmentQuiz = ({ isOpen = true, onClose = () => { }, previewMode = true
               </button>
               {currentIndex < questions.length - 1 ? (
                
-                <button className="assesspreview-btn assesspreview-btn-primary" onClick={goNext} disabled={!currentQuestionAnswered}  style={{display:"flex",alignItems:"center",gap:"2px"}}>
-                  Save & Next<ChevronRight size={16} />
-                </button>
+                <button 
+                className={`assesspreview-btn ${!currentQuestionAnswered ? 'assesspreview-btn-disabled' : 'assesspreview-btn-primary'}`} 
+                onClick={goNext} 
+                disabled={!currentQuestionAnswered}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '2px',
+                  opacity: !currentQuestionAnswered ? 0.7 : 1,
+                  cursor: !currentQuestionAnswered ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Save & Next<ChevronRight size={16} />
+              </button>
                
                
               ) : (
@@ -568,7 +580,15 @@ const AssessmentQuiz = ({ isOpen = true, onClose = () => { }, previewMode = true
                     Close
                   </button>
                 ) : (
-                  <button className="assesspreview-btn assesspreview-btn-primary" onClick={submit}>
+                  <button 
+                    className={`assesspreview-btn ${!allQuestionsAnswered ? 'assesspreview-btn-disabled' : 'assesspreview-btn-primary'}`} 
+                    onClick={submit}
+                    disabled={!allQuestionsAnswered}
+                    style={{
+                      opacity: !allQuestionsAnswered ? 0.7 : 1,
+                      cursor: !allQuestionsAnswered ? 'not-allowed' : 'pointer'
+                    }}
+                  >
                     Submit
                   </button>
                 )

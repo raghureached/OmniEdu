@@ -5,7 +5,7 @@ const { addOrgRole, editOrgRole, deleteOrgRole, getOrgRoles } = require("../cont
 const {upload,uploadContent, uploadAssessment, uploadQuestionFile } = require("../middleware/multer_middleware");
 const { uploadToCloudinary, uploadMultipleToCloudinary } = require("../utils/uploadOnCloud");
 const Department = require("../models/departments_model");
-const { addGroup, getGroups, editGroup, deleteGroup } = require("../controllers/admin.controller/admin_Groups");
+const { addGroup, getGroups, editGroup, deleteGroup, deleteGroups, deactivateGroups } = require("../controllers/admin.controller/admin_Groups");
 const { addLearningPath, getLearningPaths, getContentsOfLearningPath, editLearningPath, deleteLearningPath, getLearningPathById } = require("../controllers/admin.controller/admin_LearningPath");
 //const { createSurvey, deleteSurvey, getSurveys, editSurvey } = require("../controllers/admin.controller/admin_Surveys");
 const { setMessage, editMessage, deleteMessage, getMessage } = require("../controllers/admin.controller/admin_message");
@@ -29,6 +29,7 @@ const {
   } = require("../controllers/admin.controller/admin_Assessments");
   const {createSurvey, editSurvey, deleteSurvey, getSurveys, getSurvey} = require("../controllers/admin.controller/admin_Surveys");
 const { enhanceText, enhanceSurvey, enhanceAssessment, createQuestions } = require("../controllers/admin.controller/admin_AI");
+const { generateSurveyWithSections } = require("../controllers/admin.controller/admin_AI");
   
 const router = require("express").Router();
 
@@ -87,6 +88,9 @@ router.route('/addGroup').post(addGroup)
 router.route('/getGroups').get(getGroups)
 router.route('/editGroup/:id').put(editGroup)
 router.route('/deleteGroup/:id').delete(deleteGroup)
+router.route('/deleteGroups').delete(deleteGroups)
+router.route('/deactivateGroups').put(deactivateGroups)
+
 
 //////Learning Path////////
 
@@ -126,5 +130,6 @@ router.route('/enhanceText').post(enhanceText)
 router.route('/enhanceSurvey').post(enhanceSurvey)
 router.route('/enhanceAssessment').post(enhanceAssessment)
 router.route('/createQuestions').post(createQuestions)
+router.route('/createSurveyQuestions').post(generateSurveyWithSections)
 
 module.exports = router;

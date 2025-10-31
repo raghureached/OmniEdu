@@ -1,13 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './SubmissionPopup.css';
 import { ThumbsUp, ThumbsDown, Send } from 'lucide-react';
 
 const SubmissionPopup = ({ isOpen, onClose, assessmentData, answers, timeSpent, currentAttempt, onRetake }) => {
+  const [isLoading, setIsLoading] = useState(true);
   const [feedbackReaction, setFeedbackReaction] = useState(null); // 'like' | 'dislike' | null
   const [feedbackComment, setFeedbackComment] = useState('');
 
-  //console.log("assessments data in popup",assessmentData)
+  useEffect(() => {
+    if (isOpen) {
+      // Simulate loading for 2 seconds (you can adjust this or replace with actual submission logic)
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    } else {
+      // Reset loading state when popup is closed
+      setIsLoading(true);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
+  if (isLoading) {
+    return (
+      <div className="submission-popup-overlay" onClick={onClose}>
+        <div className="submission-popup-panel loading" onClick={(e) => e.stopPropagation()}>
+          <div className="loader-container">
+            <div className="loader"></div>
+            <p>Submitting your assessment...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Feedback helpers
   const toggleReaction = (type) => {

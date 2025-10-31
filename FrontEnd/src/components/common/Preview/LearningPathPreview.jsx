@@ -7,6 +7,7 @@ import { EyeIcon, Plus, ThumbsUp, ThumbsDown, Send, Play, Pause, Volume2, Volume
 import { useSelector } from 'react-redux';
 import { useDispatch } from 'react-redux';
 import { setSelectedPath } from '../../../store/slices/learningPathSlice';
+import LearningPath from '../../LearningPath/LearningPath';
 
 const LearningPathPreview = ({ isOpen, onClose, data }) => {
     console.log(data)
@@ -14,6 +15,7 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
     const dispatch = useDispatch();
     const [activeTab, setActiveTab] = useState('preview');
     const [showModal, setShowModal] = useState(false);
+    const [showPath, setShowPath] = useState(false);
     const [modalContent, setModalContent] = useState(null);
     const objectUrlRef = useRef(null);
     useEffect(() => () => {
@@ -43,18 +45,24 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
     };
 
     const handleTabChange = (tab) => {
+        if(tab === 'resources'){
+            setShowPath(true);
+        }else{
+            setShowPath(false);
+        }
         setActiveTab(tab);
     };
     const handlePreview = () => {
+        setActiveTab('resources');
         dispatch(setSelectedPath(data));
-        navigate('/admin/learning-paths/preview');
+        setShowPath(true);
     }
 
     if (!open) return null;
 
     return (
         <div className="module-preview-overlay" onClick={handleClose}>
-            <div className="module-preview-container" onClick={(e) => e.stopPropagation()}>
+            <div className="module-preview-container" style={{maxWidth: activeTab === 'resources' ? '100%' : '1100px'}} onClick={(e) => e.stopPropagation()}>
                 <div className="module-preview-header">
                     <div className="module-preview-header-left">
                         <div className="module-preview-header-icon"><GoBook size={24} color="#5570f1" /></div>
@@ -74,16 +82,23 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
                         >
                             Preview
                         </button>
+                        <button
+                            type="button"
+                            className={` ${activeTab === 'resources' ? 'btn-primary' : 'btn-secondary'}`}
+                            onClick={() => handleTabChange('resources')}
+                            role="tab"
+                            aria-selected={activeTab === 'resources'}
+                            style={{width:"120px"}}
+                        >
+                            Resources
+                        </button>
                     </div>
                     <button type="button" className="module-preview-close-btn" onClick={handleClose} aria-label="Close preview">✕</button>
                 </div>
-                <div className="global-preview-wrap">
+                <div className="global-preview-wrap" style={{maxWidth: activeTab === 'resources' ? '100%' : '100%'}}>
                     <div className="global-preview-panel">
-                        {/* compact header; removed step/progress and moved tabs up */}
-
                         <div className="global-preview-content">
-
-                            {activeTab === 'preview' && (
+                            {!showPath && activeTab === 'preview' && (
                                 <div className="global-preview-tab-pane">
                                     <div className="global-preview-preview-grid">
 
@@ -191,6 +206,11 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
                                             </button>
                                         </div>
                                     </div>
+                                </div>
+                            )}
+                            {showPath && (
+                                <div className="global-preview-tab-pane" style={{ padding: 0 }}>
+                                    <LearningPath courseData={data} embedded />
                                 </div>
                             )}
                         </div>

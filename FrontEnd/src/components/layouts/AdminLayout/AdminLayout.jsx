@@ -169,17 +169,6 @@ const AdminLayout = () => {
           </li>
           <li>
             <Link
-              to="/admin/users"
-              className={isActive("/admin/users") ? "admin_link_active" : ""}
-            >
-              <Users size={20} />
-              {!sidebarCollapsed && (
-                <span className="admin_sidebar_names">Users</span>
-              )}
-            </Link>
-          </li>
-          <li>
-            <Link
               to="/admin/groups"
               className={isActive("/admin/groups") ? "admin_link_active" : ""}
             >
@@ -189,6 +178,18 @@ const AdminLayout = () => {
               )}
             </Link>
           </li>
+          <li>
+            <Link
+              to="/admin/users"
+              className={isActive("/admin/users") ? "admin_link_active" : ""}
+            >
+              <Users size={20} />
+              {!sidebarCollapsed && (
+                <span className="admin_sidebar_names">Users</span>
+              )}
+            </Link>
+          </li>
+          
           {/* <li>
             <Link
               to="/admin/roles"

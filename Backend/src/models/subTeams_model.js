@@ -19,13 +19,14 @@ const subTeamSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    description: {
-      type: String,
-    },
     created_by: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       default: null,
+    },
+    membersCount: {
+      type: Number,
+      default: 0,
     },
   },
   {

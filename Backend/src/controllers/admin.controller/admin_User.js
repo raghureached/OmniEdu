@@ -18,8 +18,8 @@ const addUser = async (req, res) => {
       email,
       role,
       designation,
-      team_id,
-      sub_team_id,
+      team,
+      subteam,
       status,
       invitation,
       department_id
@@ -49,8 +49,8 @@ const addUser = async (req, res) => {
     await UserProfile.create([{
       user_id: user[0]._id,
       designation: designation,
-      team_id:team_id,
-      sub_team_id:sub_team_id,
+      team_id:team,
+      sub_team_id:subteam,
       organization_roles_id: role,
       department_id,
       organization_id: req.user.organization_id,
@@ -72,7 +72,6 @@ const addUser = async (req, res) => {
       .findOne({ user_id: createdUser._id })
       .populate('team_id', 'name')
       .populate('sub_team_id', 'name')
-      .populate('department_id', 'name')
       .lean();
 
     return res.status(201).json({
@@ -105,21 +104,18 @@ const editUser = async (req, res) => {
   const session = mongoose.startSession();
   session.startTransaction();
   try {
-    const { name, email, password, role, designation, team_id, sub_team_id, department_id } = req.body;
+    const { name, email, password, role, team, subteam } = req.body;
     const user = await User.findOneAndUpdate({ uuid: req.params.id }, {
       name,
       email,
       password,
       global_role_id: role,
+      organization_id: req.user.organization_id
     })
     const userProfile = await UserProfile.findOneAndUpdate({ user_id: user._id }, {
-      designation: designation,
-      team_id:team_id,
-      sub_team_id:sub_team_id,
+      team_id:team,
+      sub_team_id:subteam,
       organization_roles_id: role,
-      department_id,
-      //Change when authentication is added
-      organization_id: req.user.organization_id
     })
     await userProfile.save();
     await logAdminActivity(req, "edit", `User edited successfully: ${user.name}`);
@@ -134,7 +130,6 @@ const editUser = async (req, res) => {
       .findOne({ user_id: updatedUser._id })
       .populate('team_id', 'name')
       .populate('sub_team_id', 'name')
-      .populate('department_id', 'name')
       .lean();
 
     return res.status(200).json({
@@ -226,7 +221,6 @@ const getUsers = async (req, res) => {
     const profiles = await UserProfile.find({ user_id: { $in: userIds } })
       .populate("team_id", "name")
       .populate("sub_team_id", "name")
-      .populate("department_id", "name")
       .lean();
 
     // Merge profiles into users

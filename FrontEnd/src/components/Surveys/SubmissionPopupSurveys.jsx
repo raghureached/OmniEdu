@@ -1,7 +1,23 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './SubmissionPopupSurveys.css';
 
 const SubmissionPopupSurveys = ({ isOpen, onClose, assessmentData, answers, timeSpent }) => {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Simulate loading for 1 second (you can adjust this or replace with actual submission logic)
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    } else {
+      // Reset loading state when popup is closed
+      setIsLoading(true);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   // Calculate basic statistics
@@ -32,6 +48,19 @@ const SubmissionPopupSurveys = ({ isOpen, onClose, assessmentData, answers, time
       return `${secs}s`;
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="submission-popup-overlay" onClick={onClose}>
+        <div className="submission-popup-panel loading" onClick={(e) => e.stopPropagation()}>
+          <div className="loader-container">
+            <div className="loader"></div>
+            <p>Submitting your survey...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="submission-popup-overlay" onClick={onClose}>

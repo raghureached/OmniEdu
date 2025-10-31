@@ -582,6 +582,19 @@ body {
   background: #4b63da;
 }
 
+.assesspreview-btn-disabled {
+  background: #e2e8f0 !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+  opacity: 0.7;
+  box-shadow: none;
+}
+
+.assesspreview-btn-disabled:hover {
+  background: #e2e8f0 !important;
+  transform: none !important;
+}
+
 /* Mark for Review button */
 .assesspreview-btn-review {
   background: #f8fafc;

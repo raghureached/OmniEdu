@@ -13,10 +13,12 @@ import {
 } from '../../../store/slices/groupSlice';
 import AdminForm from '../../../components/common/AdminForm/AdminForm';
 import GroupsTable from './components/GroupsTable';
+import TeamPreview from './components/TeamPreview';
 import GroupsFilter from './components/GroupsFilter';
 // Reuse OrganizationManagement styles for consistent look & feel
 import '../../globalAdmin/OrganizationManagement/OrganizationManagement.css';
 import LoadingScreen from '../../../components/common/Loading/Loading';
+import { Users } from 'lucide-react';
 
 const GroupsManagement = () => {
   const dispatch = useDispatch();
@@ -28,6 +30,8 @@ const GroupsManagement = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [filterParams, setFilterParams] = useState({});
   const [formData, setFormData] = useState({});
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewTeam, setPreviewTeam] = useState(null);
   const editMode = !!currentGroup;
 
   useEffect(() => {
@@ -40,16 +44,14 @@ const GroupsManagement = () => {
       if (currentGroup) {
         setFormData({
           teamName: currentGroup.teamName || currentGroup.name || '',
-          teamDescription: currentGroup.teamDescription || currentGroup.description || '',
           subTeamName: currentGroup.subTeamName || '',
-          subTeamDescription: currentGroup.subTeamDescription || ''
+          status: currentGroup.status || '',
         });
       } else {
         setFormData({
           teamName: '',
-          teamDescription: '',
           subTeamName: '',
-          subTeamDescription: ''
+          status: '',
         });
       }
     }
@@ -63,6 +65,19 @@ const GroupsManagement = () => {
     })).catch(error => {
       console.error('Error fetching groups:', error);
     });
+  };
+
+  const handlePreviewTeam = (group) => {
+    if (!group) return;
+    const id = group.id || group._id;
+    const full = Array.isArray(groups) ? groups.find(g => (g._id || g.id) === id) : null;
+    setPreviewTeam(full || group);
+    setPreviewOpen(true);
+  };
+
+  const handleDeleteSubTeam = (subTeamId) => {
+    // TODO: wire to delete subteam endpoint/action
+    console.log('Delete subteam requested:', subTeamId);
   };
 
   const handleRetry = () => {
@@ -130,9 +145,7 @@ const GroupsManagement = () => {
     const mappedPayload = {
       teamName: formData.teamName?.trim() || '',
       subTeamName: formData.subTeamName?.trim() || '',
-      teamDescription: formData.teamDescription?.trim() || '',
-      subTeamDescription: formData.subTeamDescription?.trim() || '',
-      description: formData.teamDescription?.trim() || '',
+      status: formData.status?.trim() || '',
     };
 
     try {
@@ -150,9 +163,8 @@ const GroupsManagement = () => {
       setCurrentGroup(null);
       setFormData({
         teamName: '',
-        teamDescription: '',
         subTeamName: '',
-        subTeamDescription: '',
+        status: '',
       });
       setSelectedGroups([]);
       setSelectAll(false);
@@ -222,13 +234,12 @@ const GroupsManagement = () => {
       return {
         id: team.id || team._id,
         teamName: team.teamName || team.name || '',
-        teamDescription: team.teamDescription || team.description || '',
         subTeamName: team.subTeamName || primarySubTeam.name || '—',
-        subTeamDescription: team.subTeamDescription || primarySubTeam.description || '',
         membersCount: typeof team.membersCount === 'number'
           ? team.membersCount
           : subTeamsArray.length,
         status: team.status || primarySubTeam.status || 'inactive',
+        membersCount: team.membersCount ,
       };
     });
   }, [groups]);
@@ -254,8 +265,8 @@ const GroupsManagement = () => {
   for (let i = 1; i <= totalPages; i++) {
     pageNumbers.push(i);
   }
-  if(loading){
-    return <LoadingScreen text={"Loading Groups..."}/>
+  if (loading) {
+    return <LoadingScreen text={"Loading Groups..."} />
   }
   return (
     <div className="app-container">
@@ -275,29 +286,29 @@ const GroupsManagement = () => {
           {showForm && (
 
             <div className='addOrg-modal-overlay'>
-              
+
               <div className='addOrg-modal-content'>
                 <div className="addOrg-modal-header">
-                <div className="addOrg-header-content">
-                  <div className="addOrg-header-icon">
-                    <GoOrganization size={24} color="#5570f1" />
+                  <div className="addOrg-header-content">
+                    <div className="addOrg-header-icon">
+                      <Users size={24} color="#5570f1" />
+                    </div>
+                    <div>
+                      <h2>{editMode ? "Edit Group" : "Add New Group"}</h2>
+                      <p className="addOrg-header-subtitle">
+                        {editMode ? "Update group details" : "Create a new group profile"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h2>{editMode ? "Edit Group" : "Add New Group"}</h2>
-                    <p className="addOrg-header-subtitle">
-                      {editMode ? "Update group details" : "Create a new group profile"}
-                    </p>
-                  </div>
+                  <button
+                    type="button"
+                    className="addOrg-close-btn"
+                    onClick={() => setShowForm(false)}
+                    aria-label="Close modal"
+                  >
+                    <GoX size={20} />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className="addOrg-close-btn"
-                  onClick={() => setShowForm(false)}
-                  aria-label="Close modal"
-                >
-                  <GoX size={20} />
-                </button>
-              </div>
                 <form onSubmit={handleFormSubmit} className="addOrg-org-form">
                   {/* Basic Information Section */}
                   <div className="addOrg-form-section">
@@ -310,55 +321,61 @@ const GroupsManagement = () => {
                         <input
                           type="text"
                           name="teamName"
-                          placeholder="Enter team name"
+                          placeholder="Enter or select team name"
+                          list="teamSuggestions"
                           value={formData.teamName}
                           onChange={handleInputChange}
                           className="addOrg-form-input"
                           required
                         />
+
+                        <datalist id="teamSuggestions">
+                          {filteredGroups.map((team, index) => (
+                            <option key={index} value={team.teamName} />
+                          ))}
+                        </datalist>
                       </div>
-                       <div className="addOrg-form-group">
+
+                      {/* <div className="addOrg-form-group">
                         <label className="addOrg-form-label">
                           SubTeam Name<span className="addOrg-required">*</span>
                         </label>
                         <input
                           type="text"
                           name="subTeamName"
+                          list='subTeamSuggestions'
                           placeholder="Enter subteam name"
                           value={formData.subTeamName}
                           onChange={handleInputChange}
                           className="addOrg-form-input"
                           required
-                        />
-                      </div>
+                        /> */}
+
+                        {/* <datalist id="subTeamSuggestions">
+                          {filteredGroups.filter((team, index) => (
+                            team.teamName === formData.teamName
+                          )).map((team, index) => (
+                            <option key={index} value={team.subTeamName} />
+                          ))}
+                        </datalist> 
+                      </div> */}
                       <div className="addOrg-form-group">
                         <label className="addOrg-form-label">
-                          Team Description<span className="addOrg-required">*</span>
+                          Status<span className="addOrg-required">*</span>
                         </label>
-                        <textarea
-                          name="teamDescription"
-                          placeholder="Enter team description"
-                          value={formData.teamDescription}
+                        <select
+                          name="status"
+                          value={formData?.status?.toLowerCase()}
                           onChange={handleInputChange}
                           className="addOrg-form-input"
                           required
-                        />
+                        >
+                          <option value="">Select Status</option>
+                          <option value="active">Active</option>
+                          <option value="inactive">Inactive</option>
+                        </select>
                       </div>
 
-                     
-                      <div className="addOrg-form-group">
-                        <label className="addOrg-form-label">
-                          SubTeam Description<span className="addOrg-required">*</span>
-                        </label>
-                        <textarea
-                          name="subTeamDescription"
-                          placeholder="Enter subteam description"
-                          value={formData.subTeamDescription}
-                          onChange={handleInputChange}
-                          className="addOrg-form-input"
-                          required
-                        />
-                      </div>
                     </div>
                   </div>
 
@@ -396,12 +413,19 @@ const GroupsManagement = () => {
               handleSelectAll={handleSelectAll}
               handleEditGroup={handleEditGroup}
               handleDeleteGroup={handleDeleteGroup}
+              onPreviewTeam={handlePreviewTeam}
               currentPage={currentPage}
               totalPages={totalPages}
               handlePageChange={handlePageChange}
               pageNumbers={pageNumbers}
             />
           )}
+          <TeamPreview
+            isOpen={previewOpen}
+            onClose={() => { setPreviewOpen(false); setPreviewTeam(null); }}
+            team={previewTeam}
+            onDeleteSubTeam={handleDeleteSubTeam}
+          />
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import SurveyPreview from '../../../pages/globalAdmin/GlobalSurveys/SurveyPreview.jsx';
+import SurveyPreview from '../../Surveys/SurveyPreview';
 import './Preview.css';
 import { GoBook } from 'react-icons/go';
 import { RiDeleteBin2Fill } from 'react-icons/ri';
