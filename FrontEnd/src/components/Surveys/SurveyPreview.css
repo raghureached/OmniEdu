@@ -6,3 +6,30 @@
     border: none;
   }
   
+  .module-preview-overlay-embedded .global-preview-wrap {
+    max-width: 100%;
+    padding: 2px;                 /* tighter padding when embedded */
+  }
+/* Normalize SurveyPreview internals when embedded */
+.module-preview-overlay-embedded .survey-assess-apreview-modal {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: none;
+  background: transparent;    /* use parent bg */
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.module-preview-overlay-embedded .survey-assess-qpreview-body {
+  overflow-x: hidden;         /* ensure no x-axis scroll */
+}
+
+/* Center the Google Forms-like card */
+.module-preview-overlay-embedded .survey-gforms-card {
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}

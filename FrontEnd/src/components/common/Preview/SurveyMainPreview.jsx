@@ -6,7 +6,7 @@ import { GoBook } from 'react-icons/go';
 import { RiDeleteBin2Fill } from 'react-icons/ri';
 import { EyeIcon, Plus, ThumbsUp, ThumbsDown, Send, Play, Pause, Volume2, VolumeX, Maximize, Minimize, ChevronLast, ChevronLeft, ChevronRight,FileText } from 'lucide-react';
 
-const SurveyMainPreview = ({ isOpen, onClose, data }) => {
+const SurveyMainPreview = ({ isOpen, onClose, data,embedded }) => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('preview');
     const [showModal, setShowModal] = useState(false);
@@ -336,9 +336,9 @@ const SurveyMainPreview = ({ isOpen, onClose, data }) => {
     };
 
     return (
-        <div className="module-preview-overlay" onClick={handleClose}>
+        <div className={embedded ? 'module-preview-overlay-embedded' : 'module-preview-overlay'} onClick={handleClose}>
             <div className="module-preview-container" onClick={(e) => e.stopPropagation()}>
-                <div className="module-preview-header">
+               {!embedded && <div className="module-preview-header">
                     <div className="module-preview-header-left">
                         {/* <div className="module-preview-header-icon"><GoBook size={24} color="#5570f1" /></div> */}
                         <div className="assess-modal-icon">
@@ -369,7 +369,7 @@ const SurveyMainPreview = ({ isOpen, onClose, data }) => {
                         </button>
                     </div>
                     <button className="module-preview-close-btn" onClick={handleClose} aria-label="Close preview">✕</button>
-                </div>
+                </div>}
                 <div className="global-preview-wrap">
                     <div className="global-preview-panel">
                         {/* compact header; removed step/progress and moved tabs up */}
@@ -397,9 +397,9 @@ const SurveyMainPreview = ({ isOpen, onClose, data }) => {
                                             </div>
 
                                             <div className="global-preview-stats-row">
-                                                <div className="global-preview-stat" data-tooltip="Total run-time of all videos and activities">
+                                                {/* <div className="global-preview-stat" data-tooltip="Total run-time of all videos and activities">
                                                     <span className="global-preview-icon">⏱</span>{durationMins ? `${durationMins} mins` : '—'}
-                                                </div>
+                                                </div> */}
                                                 {/* <div className="global-preview-stat" data-tooltip="Credits awarded after completion">
                                                     <span className="global-preview-icon">🎓</span>{credits} Credit{Number(credits) === 1 ? '' : 's'}
                                                 </div>
@@ -488,7 +488,7 @@ const SurveyMainPreview = ({ isOpen, onClose, data }) => {
                                         }}
                                         formElements={data.formElements || []}
                                         groups={data.groups || []}
-                                        feedback={data.feedback || {}}
+                                        feedback={data.feedback || {}} embedded={true}
                                     />
                                 </div>
                             )}

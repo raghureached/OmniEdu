@@ -27,7 +27,7 @@ body {
 .assesspreview-modal-panel {
   background: #ffffff;
   border-radius: 20px;
-  width: 1100px;            /* fixed modal width */
+  width: 1100px;           
   max-width: 1100px;
   min-width: 1080px;
   height: 90vh;             /* fixed modal height to prevent shrinking */
@@ -651,7 +651,7 @@ body {
 /* Responsive fallback: allow modal to shrink on small screens */
 @media (max-width: 1140px) {
   .assesspreview-modal-panel {
-    width: 100%;
+    /* width: 100%; */
     max-width: 100%;
     min-width: 0;
   }

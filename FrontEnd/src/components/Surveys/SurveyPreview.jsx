@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, X } from 'lucide-react';
 import SubmissionPopupSurveys from '../Surveys/SubmissionPopupSurveys';
-
+import "./SurveyPreview.css"
 const SurveyPreview = ({
     isOpen,
     onClose,
     formData,
     formElements,
     groups = [],
-    feedback
+    feedback,embedded
 }) => {
     const [sectionPreviewIndex, setSectionPreviewIndex] = useState(0);
     const [previewResponses, setPreviewResponses] = useState({});
@@ -223,9 +223,9 @@ const isSurveyComplete = () => {
     if (!isOpen) return null;
 
     return (
-        <div className="survey-assess-qpreview-overlay" onClick={(e) => { if (e.target === e.currentTarget) { handleClose(); } }}>
+        <div className={embedded ? 'module-preview-overlay-embedded' : 'survey-assess-qpreview-overlay'} onClick={(e) => { if (e.target === e.currentTarget) { handleClose(); } }}>
             <div className="survey-assess-apreview-modal">
-                <div className="survey-assess-qpreview-header">
+               {!embedded&& <div className="survey-assess-qpreview-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <Eye size={16} />
                         <span className="survey-assess-qpreview-title">Survey Preview</span>
@@ -238,7 +238,7 @@ const isSurveyComplete = () => {
                     >
                         <X size={18} />
                     </button>
-                </div>
+                </div>}
                 <div className="survey-assess-qpreview-body">
                     {/* Header card like Google Forms */}
                     <div className="survey-assess-qpreview-section">

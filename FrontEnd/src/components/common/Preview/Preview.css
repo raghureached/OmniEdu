@@ -773,6 +773,7 @@
     border-color: #fecaca;
     color: #dc2626;
   }
+  
 
   @keyframes mp-fade-in {
     from { opacity: 0; }

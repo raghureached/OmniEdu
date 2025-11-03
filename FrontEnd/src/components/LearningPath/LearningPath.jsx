@@ -12,6 +12,8 @@ import { getSurveyById } from '../../store/slices/adminSurveySlice';
 import { adminfetchContentById } from '../../store/slices/adminModuleSlice';
 import LoadingScreen from '../common/Loading/Loading';
 import ModulePreview from '../common/Preview/Preview';
+import AssessmentPreview from '../common/Preview/AssessmentPreview';
+import SurveyMainPreview from "../common/Preview/SurveyMainPreview"
 
 const LearningPath = ({ courseData: propCourseData, embedded = false }) => {
     console.log(propCourseData)
@@ -50,9 +52,9 @@ const LearningPath = ({ courseData: propCourseData, embedded = false }) => {
             if (type === 'module') {
                 payload = await dispatch(adminfetchContentById(section.uuid)).unwrap();
             } else if (type === 'assessment') {
-                payload = await dispatch(getGlobalAssessmentById(idOrUuid)).unwrap();
+                payload = await dispatch(getGlobalAssessmentById(section.uuid)).unwrap();
             } else if (type === 'survey') {
-                payload = await dispatch(getSurveyById(idOrUuid)).unwrap();
+                payload = await dispatch(getSurveyById(section.uuid)).unwrap();
             }
             setContentData(payload || null);
         } catch (e) {
@@ -192,6 +194,61 @@ const LearningPath = ({ courseData: propCourseData, embedded = false }) => {
             }
         })();
     }, [activeSection]);
+    // Build Survey payload for SurveyMainPreview: map sections/questions -> formElements
+    const surveyPayload = React.useMemo(() => {
+        if (!contentData) return null;
+        // If already in expected structure, return as-is
+        if (Array.isArray(contentData.formElements)) return contentData;
+
+        let mappedFormElements = [];
+        if (Array.isArray(contentData.sections) && contentData.sections.length > 0) {
+            contentData.sections.forEach((sec) => {
+                // Section descriptor
+                mappedFormElements.push({
+                    type: 'section',
+                    title: sec?.title || '',
+                    description: sec?.description || ''
+                });
+                // Questions under section
+                (sec?.questions || []).forEach((q) => {
+                    const opts = Array.isArray(q.options) && q.options.length ? [...q.options] : ['', ''];
+                    mappedFormElements.push({
+                        _id: q._id,
+                        uuid: q.uuid,
+                        type: 'question',
+                        question_type: q.type || '',
+                        question_text: q.question_text || '',
+                        options: opts.length >= 2 ? opts : [...opts, ''].slice(0, 2)
+                    });
+                });
+            });
+            // Ensure at least one question follows a section
+            if (mappedFormElements.length === 1) {
+                mappedFormElements.push({ type: 'question', question_type: '', question_text: '', options: ['', ''] });
+            }
+        } else if (Array.isArray(contentData.questions)) {
+            // Legacy fallback if questions are at root
+            mappedFormElements = [
+                { type: 'section', description: contentData.description || '' },
+                ...contentData.questions.map((q) => ({
+                    _id: q._id,
+                    uuid: q.uuid,
+                    type: 'question',
+                    question_type: q.type || '',
+                    question_text: q.question_text || '',
+                    options: Array.isArray(q.options) && q.options.length ? [...q.options] : ['', '']
+                }))
+            ];
+        } else {
+            mappedFormElements = [{ type: 'section', description: contentData.description || '' }];
+        }
+
+        // Normalize team/subteam into objects with .name for UI expectations
+        const teamObj = typeof contentData.team === 'string' ? { name: contentData.team } : contentData.team;
+        const subteamObj = typeof contentData.subteam === 'string' ? { name: contentData.subteam } : contentData.subteam;
+
+        return { ...contentData, formElements: mappedFormElements, team: teamObj, subteam: subteamObj };
+    }, [contentData]);
 
     const getTypeIcon = (type) => {
         switch (type?.toLowerCase()) {
@@ -469,13 +526,16 @@ const LearningPath = ({ courseData: propCourseData, embedded = false }) => {
                 </div>
             )}
             {activeLesson?.type === 'Assessment' && (
-                <div style={{ flex: 1, overflowY: 'auto', padding: '40px', backgroundColor: '#f8f9fa' }}>
-                    assessment
+                <div style={{ flex: 1, overflowY: 'auto', backgroundColor: '#f8f9fa' }}>
+                    <AssessmentPreview
+                        embedded={true}
+                        data={{...contentData,learningOutcomes:contentData?.learning_outcomes}}
+                    />
                 </div>
             )}
             {activeLesson?.type === 'Survey' && (
-                <div style={{ flex: 1, overflowY: 'auto', padding: '40px', backgroundColor: '#f8f9fa' }}>
-                    survey
+                <div style={{ flex: 1, overflowY: 'auto', backgroundColor: '#f8f9fa' }}>
+                    <SurveyMainPreview embedded={true} data={surveyPayload || contentData}/>
                 </div>
             )}
             
