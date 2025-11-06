@@ -3,13 +3,16 @@ import { GoOrganization, GoX } from 'react-icons/go';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchGroups,
-  createGroup,
-  updateGroup,
   deleteGroup,
   importGroups,
   setGroupFilters,
   setGroupCurrentPage,
-  setGroupPageSize
+  setGroupPageSize,
+  createTeam,
+  updateTeam,
+  createSubTeam,
+  updateSubTeam,
+  deleteSubTeam
 } from '../../../store/slices/groupSlice';
 import AdminForm from '../../../components/common/AdminForm/AdminForm';
 import GroupsTable from './components/GroupsTable';
@@ -44,13 +47,11 @@ const GroupsManagement = () => {
       if (currentGroup) {
         setFormData({
           teamName: currentGroup.teamName || currentGroup.name || '',
-          subTeamName: currentGroup.subTeamName || '',
           status: currentGroup.status || '',
         });
       } else {
         setFormData({
           teamName: '',
-          subTeamName: '',
           status: '',
         });
       }
@@ -73,11 +74,6 @@ const GroupsManagement = () => {
     const full = Array.isArray(groups) ? groups.find(g => (g._id || g.id) === id) : null;
     setPreviewTeam(full || group);
     setPreviewOpen(true);
-  };
-
-  const handleDeleteSubTeam = (subTeamId) => {
-    // TODO: wire to delete subteam endpoint/action
-    console.log('Delete subteam requested:', subTeamId);
   };
 
   const handleRetry = () => {
@@ -144,26 +140,24 @@ const GroupsManagement = () => {
 
     const mappedPayload = {
       teamName: formData.teamName?.trim() || '',
-      subTeamName: formData.subTeamName?.trim() || '',
       status: formData.status?.trim() || '',
     };
 
     try {
       if (currentGroup) {
-        const id = currentGroup.id || currentGroup._id;
+        const id = currentGroup.uuid;
         if (!id) {
           throw new Error('Unable to determine group identifier for update.');
         }
-        await dispatch(updateGroup({ id, groupData: mappedPayload })).unwrap();
+        await dispatch(updateTeam({ id, teamData: mappedPayload })).unwrap();
       } else {
-        await dispatch(createGroup(mappedPayload)).unwrap();
+        await dispatch(createTeam(mappedPayload)).unwrap();
       }
 
       setShowForm(false);
       setCurrentGroup(null);
       setFormData({
         teamName: '',
-        subTeamName: '',
         status: '',
       });
       setSelectedGroups([]);
@@ -233,13 +227,13 @@ const GroupsManagement = () => {
 
       return {
         id: team.id || team._id,
+        uuid: team.uuid,
         teamName: team.teamName || team.name || '',
-        subTeams: team.subTeams || [],
+        subTeams: subTeamsArray,
         membersCount: typeof team.membersCount === 'number'
           ? team.membersCount
           : subTeamsArray.length,
         status: team.status || primarySubTeam.status || 'inactive',
-        membersCount: team.membersCount ,
       };
     });
   }, [groups]);
@@ -252,7 +246,6 @@ const GroupsManagement = () => {
 
     return nameMatch && statusMatch;
   });
-
   // Calculate pagination
   const totalItems = filteredGroups.length;
   const totalPages = Math.ceil(totalItems / pageSize);
@@ -267,6 +260,23 @@ const GroupsManagement = () => {
   }
   if (loading) {
     return <LoadingScreen text={"Loading Groups..."} />
+  }
+
+  const handlecreateSubTeam = async (data) => {
+    await dispatch(createSubTeam(data.data)).unwrap();
+  }
+  
+  const handleupdateSubTeam = async (id, data) => {
+    await dispatch(updateSubTeam({id, subTeamData: data})).unwrap();
+  }
+  
+  const handleDeleteSubTeam = async (id) => {
+    try {
+      await dispatch(deleteSubTeam(id)).unwrap();
+    } catch (error) {
+      console.error('Failed to delete subteam:', error);
+      alert('Failed to delete subteam. Please try again.');
+    }
   }
   return (
     <div className="app-container">
@@ -294,9 +304,9 @@ const GroupsManagement = () => {
                       <Users size={24} color="#5570f1" />
                     </div>
                     <div>
-                      <h2>{editMode ? "Edit Group" : "Add New Group"}</h2>
+                      <h2>{editMode ? "Edit Team" : "Add New Team"}</h2>
                       <p className="addOrg-header-subtitle">
-                        {editMode ? "Update group details" : "Create a new group profile"}
+                        {editMode ? "Update Team details" : "Create a new Team profile"}
                       </p>
                     </div>
                   </div>
@@ -309,7 +319,7 @@ const GroupsManagement = () => {
                     <GoX size={20} />
                   </button>
                 </div>
-                <form onSubmit={handleFormSubmit} className="addOrg-org-form">
+                <form className="addOrg-org-form">
                   {/* Basic Information Section */}
                   <div className="addOrg-form-section">
                     <h3 className="addOrg-section-title" style={{ marginTop: "10px" }}>Basic Information</h3>
@@ -329,36 +339,12 @@ const GroupsManagement = () => {
                           required
                         />
 
-                        <datalist id="teamSuggestions">
+                        <datalist id="teamSuggestions" style={{ width: "100%" }}>
                           {filteredGroups.map((team, index) => (
                             <option key={index} value={team.teamName} />
                           ))}
                         </datalist>
                       </div>
-
-                      {/* <div className="addOrg-form-group">
-                        <label className="addOrg-form-label">
-                          SubTeam Name<span className="addOrg-required">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          name="subTeamName"
-                          list='subTeamSuggestions'
-                          placeholder="Enter subteam name"
-                          value={formData.subTeamName}
-                          onChange={handleInputChange}
-                          className="addOrg-form-input"
-                          required
-                        /> */}
-
-                        {/* <datalist id="subTeamSuggestions">
-                          {filteredGroups.filter((team, index) => (
-                            team.teamName === formData.teamName
-                          )).map((team, index) => (
-                            <option key={index} value={team.subTeamName} />
-                          ))}
-                        </datalist> 
-                      </div> */}
                       <div className="addOrg-form-group">
                         <label className="addOrg-form-label">
                           Status<span className="addOrg-required">*</span>
@@ -389,7 +375,7 @@ const GroupsManagement = () => {
                     >
                       Cancel
                     </button>
-                    <button type="submit" className="btn-primary" disabled={loading}>
+                    <button onClick={(e )=>handleFormSubmit(e)} className="btn-primary" disabled={loading}>
                       <GoOrganization size={16} />
                       <span>{editMode ? 'Update Team' : 'Create Team'}</span>
                     </button>
@@ -424,7 +410,10 @@ const GroupsManagement = () => {
             isOpen={previewOpen}
             onClose={() => { setPreviewOpen(false); setPreviewTeam(null); }}
             team={previewTeam}
-            onDeleteSubTeam={handleDeleteSubTeam}
+            createSubTeam={handlecreateSubTeam}
+            updateSubTeam={handleupdateSubTeam}
+            deleteSubTeam={handleDeleteSubTeam}
+            loading={loading}
           />
         </div>
       </div>

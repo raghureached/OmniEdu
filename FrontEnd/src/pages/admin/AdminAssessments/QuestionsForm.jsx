@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { FileText, Plus, X, Upload, Copy, Eye, ChevronRight, ChevronLeft } from 'lucide-react';
+import { FileText, Plus, X, Upload, Copy, Eye, ChevronRight, ChevronLeft, Info } from 'lucide-react';
 import api from '../../../services/api.js';
 import './QuestionsForm.css';
 import '../../../pages/globalAdmin/GlobalSurveys/QuestionsForm-survey.css'
@@ -10,6 +10,9 @@ import CustomLoader2 from '../../../components/common/Loading/CustomLoader2';
 import AssessmentPreview from '../../../components/common/Preview/AssessmentPreview.jsx';
 import CsvUpload from './CsvUpload.jsx';
 import { useSelector } from 'react-redux';
+import { toast, ToastContainer } from "react-toastify";
+import { CheckCircle, AlertTriangle } from "lucide-react";
+import "react-toastify/dist/ReactToastify.css";
 const QuestionsForm = ({
     currentAssessment,
     formData,
@@ -39,6 +42,7 @@ const QuestionsForm = ({
     const [step, setStep] = useState(1);
     const [aiProcessing, setAiProcessing] = useState(false);
     const [creating, setCreating] = useState(false)
+    const [aiHelpOpen, setAiHelpOpen] = useState(false);
     const [passError, setPassError] = useState('');
     const [noOfQuestions, setNoOfQuestions] = useState(0);
     const [Level, setLevel] = useState("Beginner");
@@ -71,14 +75,26 @@ const QuestionsForm = ({
     const subTeams = selectedTeam?.subTeams || [];
     const [Viacsv, setViacsv] = useState(false)
 
+
+    //ai related 
+    const [errorsDisplay, setErrorsDisplay] = useState({ title: '', description: '' });
+    const isAIDisabled = !formData.title?.trim() ||
+        !formData.description?.trim();
+
+
+
     // Duration will be stored as a plain number of minutes (integer)
-    const enhanceTexthelper = async (title,description) => {
+    const enhanceTexthelper = async (title, description) => {
         try {
             setAiProcessing(true);
-            const response = await api.post('/api/admin/enhanceAssessment', { title,description });
-            setFormData({ ...formData, title: response.data.data.title, description: response.data.data.description, tags: response.data.data.tags});
+            const response = await api.post('/api/admin/enhanceAssessment', { title, description });
+            setFormData({ ...formData, title: response.data.data.title, description: response.data.data.description, tags: response.data.data.tags });
+            toast.success('Tags generated from AI');
+            return true; // indicate success so caller can proceed to question generation
         } catch (error) {
             console.error('Error enhancing text:', error);
+            toast.error('Failed to generate tags');
+            return false; // indicate failure so caller can stop
         } finally {
             setAiProcessing(false);
         }
@@ -261,24 +277,47 @@ const QuestionsForm = ({
         }
     };
 
-    const createAIQuestions = async (title,noOfQuestions,Level) => {
+    const createAIQuestions = async (title, description, noOfQuestions, Level) => {
         try {
             setCreating(true);
             if (!noOfQuestions) {
-                setCreating(false);
+                toast.error(
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                        <div style={{ marginLeft: 10 }}>
+                            <strong>Enter the Number of Questions</strong>
+                        </div>
+                    </div>
+                );
+                setCreating(false)
                 return;
             }
-                if (!Level) {
+            if (!Level) {
+                toast.error(
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                        <div style={{ marginLeft: 10 }}>
+                            <strong>Enter the  Level of Questions</strong>
+                        </div>
+                    </div>
+                );
                 setCreating(false);
                 return;
             }
 
-            const resp = await api.post('/api/admin/createQuestions', { title, noOfQuestions, Level });
+            const resp = await api.post('/api/admin/createQuestions', { title, description, noOfQuestions, Level });
             const aiQs = resp?.data?.data?.questions;
 
             // Validate
             if (!Array.isArray(aiQs) || aiQs.length === 0) {
-                alert('AI did not return a valid questions array. Please try again.');
+              
+                toast.error(
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                       
+                        <div style={{ marginLeft: 10 }}>
+                            <strong>AI did not return a valid questions array. Please try again.</strong>
+                         
+                        </div>
+                    </div>
+                );
                 setCreating(false);
                 return;
             }
@@ -292,17 +331,35 @@ const QuestionsForm = ({
                     ? q.correct_option.filter((n) => Number.isInteger(n))
                     : (Number.isInteger(q?.correct_option) ? [q.correct_option] : []),
                 file_url: typeof q?.file_url === 'string' ? q.file_url : '',
-               
+
                 total_points: Number.isFinite(q?.total_points) ? q.total_points : 1,
-                
+
             }));
 
             // Update both parent state (source of truth) and formData
             setQuestions(normalized);
             setFormData((prev) => ({ ...prev, questions: normalized }));
+             toast.success(
+                                <div style={{ display: "flex", alignItems: "center" }}>
+                                  
+                                    <div style={{ marginLeft: 10 }}>
+                                        <strong>Survey questions generated successfully</strong>
+                                        <div style={{ fontSize: 13, opacity: 0.8 }}>
+                                            You can review and edit them in Step 2
+                                        </div>
+                                    </div>
+                                </div>)
         } catch (error) {
             console.log(error);
-            alert('Failed to generate questions. Please try again.');
+            toast.error(
+                <div style={{ display: "flex", alignItems: "center" }}>
+                   
+                    <div style={{ marginLeft: 10 }}>
+                        <strong>Failed to generate questions. Please try again.</strong>
+                    </div>
+                </div>
+            );
+
         } finally {
             setCreating(false);
         }
@@ -460,7 +517,7 @@ const QuestionsForm = ({
                             />
                         </div>
                     </div>
-                     {/* BODY */}
+                    {/* BODY */}
                     {/* Form + Preview Panel */}
                     <div className="assess-modal-form-container">
                         {/* Left Side - Form */}
@@ -470,116 +527,159 @@ const QuestionsForm = ({
                                 <div className="module-overlay__step">
                                     {/* <h3 className="assess-section-title">Basic Information</h3> */}
 
-                                   
-                                        <div className="module-overlay__form-group" style={{ marginBottom: '20px' }}>
+
+                                    <div className="module-overlay__form-group" style={{ marginBottom: '20px' }}>
                                         <label className="module-overlay__form-label">
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Assessment Title <span className="module-overlay__required">*</span>
-                                            {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}</span>
-                                       </label>
-                                            <input
-                                                type="text"
-                                                name="title"
-                                                className="addOrg-form-input"
-                                                placeholder="Enter assessment title"
-                                                value={formData.title}
-                                                onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                                required
-                                                autoComplete="off"
-                                                style={{ width: '100%' }}
-                                            />
-                                        </div>
-                                        <div className="module-overlay__form-group" >
-                                    <label className="module-overlay__form-label">
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Assessment Description<span className="module-overlay__required">*</span>
-                                        {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}
-                                            </span>
-                                    </label>
-                                        <textarea
-                                            name="description"
-                                            className="addOrg-form-input"
-                                            placeholder="Provide a detailed description of this assessment"
-                                            rows="3"
-                                            value={formData.description}
-                                            onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Assessment Title <span className="module-overlay__required">*</span>
+                                                {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="title"
+                                            className={`addOrg-form-input ${errorsDisplay.title ? 'input-error' : ''}`}
+                                            placeholder="Enter assessment title"
+                                            value={formData.title}
+                                            onChange={e => { setFormData({ ...formData, title: e.target.value }); setErrorsDisplay({ ...errorsDisplay, title: '' }); }}
+                                            required
+                                            autoComplete="off"
                                             style={{ width: '100%' }}
                                         />
-                                    </div>
-                                        <div className="module-overlay__form-group">
-                                        <label className="module-overlay__form-label">
-                                    <span style={{display:'flex',alignItems:'center',gap:'5px'}}>Tags<span className='module-overlay__required'>*</span>
-                                    {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}
-                                   </span>
-                                </label>
-                                            <div className="assess-tag-picker">
-                                                <div className="assess-tag-controls">
-                                                    <input
-                                                        type="text"
-                                                        className="addOrg-form-input"
-                                                        placeholder="Type a tag and press Enter or comma"
-                                                        style={{ width: '100%' }}
-                                                        value={tagInput}
-                                                        autoComplete="off"
-                                                        onChange={(e) => setTagInput(e.target.value)}
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === 'Enter' || e.key === ',') {
-                                                                e.preventDefault();
-                                                                const t = tagInput.trim();
-                                                                if (!t) return;
-                                                                const current = Array.isArray(formData.tags) ? formData.tags : [];
-                                                                if (!current.includes(t)) {
-                                                                    setFormData({ ...formData, tags: [...current, t] });
-                                                                }
-                                                                setTagInput('');
-                                                            }
-                                                        }}
+                                        {errorsDisplay.title && (
+                                            <div className="field-error">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                                    <path
+                                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                        stroke="#ef4444"
+                                                        strokeWidth="2"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
                                                     />
-                                                </div>
-                                                {(formData.tags && formData.tags.length > 0) && (
-                                                    <div className="module-overlay__tags-container">
-                                                        {formData.tags.map((t, idx) => (
-                                                            <span key={`${t}-${idx}`} className="module-overlay__tag">
-                                                                {t}
-                                                                <button
-                                                                    type="button"
-                                                                    className="module-overlay__tag-remove"
-                                                                    aria-label={`Remove tag ${t}`}
-                                                                    onClick={() => {
-                                                                        const next = (formData.tags || []).filter(x => x !== t);
-                                                                        setFormData({ ...formData, tags: next });
-                                                                    }}
-                                                                >
-                                                                    <X size={12} />
-                                                                </button>
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                )}
-
+                                                </svg>
+                                                <span>{errorsDisplay.title}</span>
                                             </div>
+                                        )}
+                                    </div>
+                                    <div className="module-overlay__form-group" >
+                                        <label className="module-overlay__form-label">
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Assessment Description<span className="module-overlay__required">*</span>
+                                                {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}
+                                            </span>
+                                        </label>
+                                        <textarea
+                                            name="description"
+                                            className={`survey-assess-form-textarea ${errorsDisplay.description ? 'input-error' : ''}`}
+                                            placeholder="Provide a detailed description of this assessment"
+                                            rows={3}
+                                            value={formData.description}
+                                            onChange={e => { setFormData({ ...formData, description: e.target.value }); setErrorsDisplay({ ...errorsDisplay, description: '' }) }}
+                                            style={{ width: '100%' }}
+                                        />
+                                        {errorsDisplay.description && (
+                                            <div className="field-error">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                                    <path
+                                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                        stroke="#ef4444"
+                                                        strokeWidth="2"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                    />
+                                                </svg>
+                                                <span>{errorsDisplay.description}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="module-overlay__form-group">
+                                        <label className="module-overlay__form-label">
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Tags<span className='module-overlay__required'>*</span>
+                                                {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}
+                                            </span>
+                                        </label>
+                                        <div className="assess-tag-picker">
+                                            <div className="assess-tag-controls">
+                                                <input
+                                                    type="text"
+                                                    className="addOrg-form-input"
+                                                    placeholder="Type a tag and press Enter or comma"
+                                                    style={{ width: '100%' }}
+                                                    value={tagInput}
+                                                    autoComplete="off"
+                                                    onChange={(e) => setTagInput(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' || e.key === ',') {
+                                                            e.preventDefault();
+                                                            const t = tagInput.trim();
+                                                            if (!t) return;
+                                                            const current = Array.isArray(formData.tags) ? formData.tags : [];
+                                                            if (!current.includes(t)) {
+                                                                setFormData({ ...formData, tags: [...current, t] });
+                                                            }
+                                                            setTagInput('');
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                            {(formData.tags && formData.tags.length > 0) && (
+                                                <div className="module-overlay__tags-container">
+                                                    {formData.tags.map((t, idx) => (
+                                                        <span key={`${t}-${idx}`} className="module-overlay__tag">
+                                                            {t}
+                                                            <button
+                                                                type="button"
+                                                                className="module-overlay__tag-remove"
+                                                                aria-label={`Remove tag ${t}`}
+                                                                onClick={() => {
+                                                                    const next = (formData.tags || []).filter(x => x !== t);
+                                                                    setFormData({ ...formData, tags: next });
+                                                                }}
+                                                            >
+                                                                <X size={12} />
+                                                            </button>
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+
                                         </div>
-                                        <p style={{ color: '#1a73e8', fontSize: '14px', marginBottom: '10px' }}>
+                                    </div>
+                                    {/* <p style={{ color: '#1a73e8', fontSize: '14px', marginBottom: '10px' }}>
                                         Provide title,Description,Number of Questions and Level to generate tags and questions with AI
-                                    </p>
-                                    <div style={{ display: "flex", gap: "12px",marginBottom: "20px" }}>
+                                    </p> */}
+                                    <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
                                         <div style={{ width: "50%" }} >
                                             <label className='assess-form-label' style={{ margin: "10px" }}>Number of Questions</label>
-                                            <input type="number" placeholder="Enter the Number of Questions"  value={formData.noOfQuestions} className='assess-form-input' onChange={(e) => setNoOfQuestions(e.target.value)} />
+                                            <input type="number" name="noOfQuestions" placeholder="Enter the Number of Questions" value={formData.noOfQuestions} className='assess-form-input' 
+                                          
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                setNoOfQuestions(value);
+                                                setFormData({ ...formData, noOfQuestions: value });
+                                            }} />
                                         </div>
                                         <div style={{ width: "50%" }}>
                                             <label className='assess-form-label' style={{ margin: "10px" }}>Level</label>
-                                            <select 
-                                                value={formData.Level} 
-                                                className='assess-form-input' 
-                                                onChange={(e) => setLevel(e.target.value)}
+                                            <select
+                                                type="text"
+                                                name="Level"
+                                                value={formData.Level}
+                                                className='assess-form-input'
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    setLevel(value);
+                                                    setFormData({ ...formData, Level: value });
+                                                }}
                                             >
+                                                <option value="">Select Type</option>
                                                 <option value="Beginner">Beginner</option>
                                                 <option value="Intermediate">Intermediate</option>
                                                 <option value="Advanced">Advanced</option>
                                             </select>
-                                            
+
                                         </div>
                                     </div>
-                                    <button 
+
+                                    {/* ai button */}
+                                    {/* <button 
                                        className='btn-primary' 
                                        style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' ,marginBottom: "15px"}} 
                                        onClick={async () => {
@@ -599,22 +699,104 @@ const QuestionsForm = ({
                                        disabled={aiProcessing || creating}
                                    >
                                        {aiProcessing || creating ? "Please Wait.." : "Create with AI ✨"}
-                                   </button>
+                                   </button> */}
+                                        <div style={{  margin: '0 auto 8px', display: 'flex', justifyContent: 'flex-start' }}>
+                                        <button
+                                            type="button"
+                                            className="survey-assess-btn-link"
+                                            onClick={() => setAiHelpOpen(prev => !prev)}
+                                            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4f46e5', background: 'transparent' }}
+                                            aria-expanded={aiHelpOpen}
+                                            aria-controls="ai-help-panel"
+                                        >
+                                            <Info size={16} /> How create with ai works
+                                        </button>
+                                    </div>
+                                    {aiHelpOpen && (
+                                        <div
+                                            id="ai-help-panel"
+                                            style={{
+                                                width: '70%',
+                                                margin: '0 auto 12px',
+                                                background: '#eef2ff',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: 8,
+                                                padding: '10px 12px',
+                                                color: '#1f2937',
+                                                fontSize: 14
+                                            }}
+                                        >
+                                            <div style={{ fontWeight: 600, marginBottom: 6 }}>Create with AI – How it works</div>
+                                            <ul style={{ marginLeft: 16, listStyle: 'disc' }}>
+                                                <li>Fill <strong>Title</strong> and <strong>Description</strong>. These are required to enable the button.</li>
+                                                <li>Set <strong>Number of Questions</strong> and <strong>Level</strong> if you want AI to generate questions. Without them, only tags are generated.</li>
+                                                <li>Click <strong>“Create with AI ✨”</strong>. First tags are enhanced, then questions are generated if inputs are provided.</li>
+                                                <li>Review and edit generated questions in <strong>Step 2</strong>.</li>
+                                            </ul>
+                                        </div>
+                                    )}
+                                    <button
+                                        className={`btn-primary ${isAIDisabled ? 'btn-disabled' : ''}`}
+                                        style={{
+                                            width: "70%",
+                                            margin: "auto",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            cursor: isAIDisabled ? "not-allowed" : "pointer",
+                                            opacity: isAIDisabled ? 0.6 : 1,
+
+
+                                        }}
+                                        onClick={async () => {
+                                            if (isAIDisabled) return;
+                                            // prevent accidental click
+
+                                            // ✅ continue only if both fields filled
+                                            try {
+                                                const enhanced = await enhanceTexthelper(formData.title, formData.description);
+                                                if (!enhanced) {
+                                                    toast.error('Enhancement failed');
+                                                    return;
+                                                } 
+                                                // stop if failed ❗
+           
+                                                const q = parseInt(formData.noOfQuestions);
+                                                const l = formData.Level;
+
+                                                if (Number.isFinite(q) && q > 0) {
+                                                    await createAIQuestions(formData.title, formData.description, q, l);
+                                                } else {
+                                                    toast.success('Tags generated from AI');
+                                                }
+                                            } catch (e) {
+                                                console.error('AI generation failed', e);
+                                                toast.error('Something went wrong during AI generation');
+                                            }
+                                        }}
+
+                                        disabled={isAIDisabled || aiProcessing}
+                                    >
+                                        {aiProcessing ? "Please Wait.." : "Create with AI ✨"}
+                                    </button>
+
+
+
                                     <div className='module-overlay__form-group'>
-                                    <label className="module-overlay__form-label">
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Instructions<span className="module-overlay__required">*</span>
-                                      </span>
-                                    </label>
-                                    
+                                        <label className="module-overlay__form-label">
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Instructions<span className="module-overlay__required">*</span>
+                                            </span>
+                                        </label>
+
                                         <div className="assess-instructions-box">
-                                            <RichText value={formData.instructions || ''}  name="instructions" onChange={(value) => setFormData({ ...formData, instructions: value })} />
+                                            <RichText value={formData.instructions || ''} name="instructions" onChange={(value) => setFormData({ ...formData, instructions: value })} />
                                         </div>
                                     </div>
                                     <div className="module-overlay__form-group">
-                                    <label className="module-overlay__form-label">
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Thumbnail <span className="module-overlay__required">*</span>
-                                           </span>
-                                    </label>
+                                        <label className="module-overlay__form-label">
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Thumbnail <span className="module-overlay__required">*</span>
+                                            </span>
+                                        </label>
                                         {formData.thumbnail ? (
                                             <div
                                                 style={{
@@ -677,8 +859,8 @@ const QuestionsForm = ({
                                                 </label>
                                             </div>
                                         )}
-                                    </div>  
-                                   
+                                    </div>
+
                                     {/* <button className='btn-primary' style={{  width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => createAIQuestions(formData.title,noOfQuestions,Level)}>{aiProcessing ? "Please Wait.." : "Generate Questions with AI ✨"}</button> */}
                                 </div>}
 
@@ -769,6 +951,7 @@ const QuestionsForm = ({
                                                                     onChange={e => updateQuestionField(qIndex, 'type', e.target.value)}
                                                                     required
                                                                 >
+                                                                    
                                                                     <option value="">Select Type</option>
                                                                     <option value="Multiple Choice">Multiple Choice</option>
                                                                     <option value="Multi Select">Multi Select</option>
@@ -1878,7 +2061,18 @@ const QuestionsForm = ({
                 />
             )}
             <FilePreviewModal open={filePreview.open} filePreview={filePreview} onClose={closeFilePreview} />
-
+             <ToastContainer
+                           position="top-right"
+                           autoClose={10000}
+                           hideProgressBar={false}
+                           newestOnTop
+                           closeOnClick
+                           pauseOnHover
+                           draggable
+                           toastClassName="custom-toast"
+                           bodyClassName="custom-toast-body"
+                       />
+           
         </>
     );
 };

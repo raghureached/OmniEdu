@@ -74,9 +74,9 @@ async function generateImage(req, res) {
 }
 
 const enhanceSurvey = async( req,res)=>{
-  const { title } = req.body;
+  const { title ,description} = req.body;
   const prompt = `
-You are a helpful assistant for an LMS app. Given the survey title below, rewrite it to be more engaging, clear, and professional and add tags and description.
+You are a helpful assistant for an LMS app. Given the survey title and description below, rewrite it to be more engaging, clear, and professional and add tags and description.
 Return the improved title in JSON format as:
 {
   "title": "<enhanced title>",
@@ -84,7 +84,7 @@ Return the improved title in JSON format as:
   "tags": ["tag1", "tag2", "tag3"],
 }
 Survey Title: ${title}
-
+Survey Description: ${description}
   `;
     
     const response = await ai.models.generateContent({
@@ -112,9 +112,10 @@ Survey Title: ${title}
     });
 }
 const enhanceAssessment = async( req,res)=>{
-  const { title } = req.body;
+  const { title ,description} = req.body;
   const prompt = `
-You are a helpful assistant for an LMS app. Given the assessmnest title below, rewrite it to be more engaging, clear, and professional and add tags and description.
+You are a helpful assistant for an LMS app. Given the assessmnest title and desc
+ below, rewrite it to be more engaging, clear, and professional and add tags.
 Return the improved title in JSON format as:
 {
   "title": "<enhanced title>",
@@ -122,7 +123,7 @@ Return the improved title in JSON format as:
   "tags": ["tag1", "tag2", "tag3"],
 }
 Assessment Title: ${title}
-
+Assessment Description: ${description}
   `;
     
     const response = await ai.models.generateContent({
@@ -151,9 +152,9 @@ Assessment Title: ${title}
 }
 
 const createQuestions = async(req,res)=>{
-  const { title,noOfQuestions ,Level} = req.body;
+  const { title,description,noOfQuestions ,Level} = req.body;
   const prompt = `
-You are a helpful assistant for an LMS app. Given the assessment title below, create ${noOfQuestions} questions based on given ${Level} for it.The type can Multiple Choice or Multi Select
+You are a helpful assistant for an LMS app. Given the assessment title and description below, create ${noOfQuestions} questions based on given ${Level} for it.The type can Multiple Choice or Multi Select
 Return the questions in JSON format as:
 {
 "questions": [
@@ -167,10 +168,21 @@ Return the questions in JSON format as:
       ],
       "correct_option": [0],
       "total_points": 1
+    }, {
+      "question_text": "The table below shows the sales of a company over five years (in ₹ lakhs):",
+      "type": "Multiple Select",
+      "options": [
+        "fjhgd",
+        "djhfdjmsf",
+        "fdsf"
+      ],
+      "correct_option": [0,2],
+      "total_points": 1
     }
 ]
 }
 Assessment Title: ${title}
+Assessment Description: ${description}
   `;
     
     const response = await ai.models.generateContent({
@@ -199,20 +211,13 @@ Assessment Title: ${title}
 }
 const generateSurveyWithSections = async (req, res) => {
   try {
-      const { title, noOfQuestions = 2, level = 'Beginner' } = req.body;
-
-      if (!title) {
-          return res.status(400).json({
-              isSuccess: false,
-              message: "Title is required"
-          });
-      }
+      const { title,description, noOfSections ,noOfQuestions } = req.body;
 
       const prompt = `
-You are an expert survey designer. Create a survey with 2 sections, each containing ${noOfQuestions} questions, based on the following details:
+You are an expert survey designer. Create a survey with ${noOfSections} sections, each containing ${noOfQuestions} questions, based on the following details:
 
 Survey Title: ${title}
-Difficulty Level: ${level}
+Survey Description: ${description}
 Questions per Section: ${noOfQuestions}
 
 Section 1: Course Rating
@@ -221,7 +226,7 @@ Section 2: Mentor Rating
 For each question, follow these guidelines:
 1. Create clear, focused questions about the course and mentor
 2. Include appropriate options (e.g., rating scales, multiple choice)
-3. Make questions appropriate for ${level} level participants
+3. Make questions appropriate for participants
 4. For rating questions, use consistent scales (e.g., 1-5)
 
 Return the survey in the following JSON format:
@@ -232,7 +237,7 @@ Return the survey in the following JSON format:
           "questions": [
               {
                   "question_text": "How would you rate the course content?",
-                  "type": "Multiple Choice",
+                  "type": "Multiple Select",
                   "options": ["5 - Excellent", "4 - Very Good", "3 - Good", "2 - Fair", "1 - Poor"],
                   "order": 1
               },
@@ -255,7 +260,7 @@ Return the survey in the following JSON format:
               },
               {
                   "question_text": "How effective was the mentor in explaining concepts?",
-                  "type": "Multiple Choice",
+                  "type": "Multiple Select",
                   "options": ["5 - Excellent", "4 - Very Good", "3 - Good", "2 - Fair", "1 - Poor"],
                   "order": 4
               }

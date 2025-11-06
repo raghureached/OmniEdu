@@ -14,7 +14,7 @@ const GroupsTable = ({
   totalPages,
   handlePageChange,
 }) => {
-  console.log(groups)
+  // console.log(groups)
   return (
     <>
     {groups.length === 0 ? (

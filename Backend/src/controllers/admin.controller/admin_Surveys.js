@@ -13,7 +13,7 @@ const createSurvey = async (req, res) => {
   let session;
   let transactionCommitted = false; // Track transaction state
   try {
-    const { title, description, sections, tags = [], team, subteam, status } = req.body;
+    const { title, description, sections, tags = [], team, subteam, status, noOfSections, noOfQuestions } = req.body;
    console.log("log in surveys controller:",req.body)
     const created_by = req.user?.id || req.body.created_by; // Ensure created_by is passed or derived
     const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
@@ -71,6 +71,8 @@ const createSurvey = async (req, res) => {
           team,
           subteam,
           status,
+          noOfSections,
+          noOfQuestions,
          //feedback: createdFeedback[0]._id,
         },
       ],
@@ -110,7 +112,7 @@ const editSurvey = async (req, res) => {
   let session;
   let transactionCommitted = false; // Track transaction state
   try {
-    const { title, description, sections, tags = [], team, subteam, status} = req.body;
+    const { title, description, sections, tags = [], team, subteam, status, noOfSections, noOfQuestions } = req.body;
     const surveyUUID = req.params.id;
     const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
 
@@ -200,6 +202,8 @@ const editSurvey = async (req, res) => {
     survey.team = team;
     survey.subteam = subteam;
     survey.status = status || "Draft";
+    survey.noOfSections = noOfSections;
+    survey.noOfQuestions = noOfQuestions;
     await survey.save({ session });
 
     // Commit transaction

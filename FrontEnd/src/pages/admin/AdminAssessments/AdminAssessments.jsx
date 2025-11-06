@@ -23,7 +23,9 @@ const GlobalAssessments = () => {
     duration: '',            // NEW
     tags: [],                // NEW
     team: '',  
-    subteam:'',          // NEW    
+    subteam:'',  
+    Level:'',
+    noOfQuestions:0,        // NEW    
     attempts: 1,             // NEW
     unlimited_attempts: false,
     percentage_to_pass: 0,   // NEW
@@ -85,7 +87,9 @@ const GlobalAssessments = () => {
       duration: '',            // NEW
       tags: [],                // NEW
       team: '',                // NEW
-      subteam: '',            // NEW
+      subteam: '',
+      Level:'',
+      noOfQuestions:0,              // NEW
       attempts: 1,             // NEW
       unlimited_attempts: false,
       percentage_to_pass: 0,   // NEW
@@ -187,12 +191,14 @@ const GlobalAssessments = () => {
         tags: full.tags || [],
         team: full.team || '',
         subteam: full.subteam || '',
+        Level:full.Level||'',
+        noOfQuestions:full.noOfQuestions||0,
         attempts: full.attempts ?? 1,
         unlimited_attempts: !!full.unlimited_attempts,
         percentage_to_pass: full.percentage_to_pass ?? 0,
         instructions:full.instructions,
         display_answers:
-          full.display_answers || 'AfterAssessment',
+        full.display_answers || 'AfterAssessment',
         // Newly added fields
         credits: Number.isFinite(full.credits) ? full.credits : 0,
         stars: Number.isFinite(full.stars) ? full.stars : 0,
@@ -260,6 +266,8 @@ const GlobalAssessments = () => {
         tags: assessment.tags || [],
         team: assessment.team || '',
         subteam: assessment.subteam || '',
+        Level:assessment.Level||'',
+        noOfQuestions:assessment.noOfQuestions||0,
         attempts: assessment.attempts ?? 1,
         unlimited_attempts: !!assessment.unlimited_attempts,
         percentage_to_pass: assessment.percentage_to_pass ?? 0,
@@ -322,6 +330,8 @@ const GlobalAssessments = () => {
       duration: toMinutesNumber(formData.duration),
       team: formData.team,
       subteam: formData.subteam,
+      Level:formData.Level||'',
+      noOfQuestions:formData.noOfQuestions||0,
       attempts: formData.attempts,
       unlimited_attempts: Boolean(formData.unlimited_attempts),
       percentage_to_pass: formData.percentage_to_pass,
@@ -388,6 +398,8 @@ const GlobalAssessments = () => {
         duration: formData.duration,
         team: formData.team,
         subteam: formData.subteam,
+        Level:formData.Level||'',
+        noOfQuestions:formData.noOfQuestions||0,
         attempts: formData.attempts,
         unlimited_attempts: Boolean(formData.unlimited_attempts),
         percentage_to_pass: formData.percentage_to_pass,

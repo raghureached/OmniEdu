@@ -1,14 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { FileText, Plus, X, Upload, Copy, Eye, ChevronRight, ChevronLeft } from 'lucide-react';
+import { FileText, Plus, X, Upload, Copy, Eye, ChevronRight, ChevronLeft , Info} from 'lucide-react';
 import api from '../../../services/api.js';
 import './QuestionsForm.css';
 import '../GlobalSurveys/QuestionsForm-survey.css';
 import RichText from './RichTextSurvey.jsx';
 import FilePreviewModal from '../../../components/common/FilePreviewModal/FilePreviewModal.jsx';
-
+import CustomLoader2 from '../../../components/common/Loading/CustomLoader2';
 import AssessmentPreview from '../../../components/common/Preview/AssessmentPreview.jsx';
 import CsvUpload from '../GlobalAssessments/CsvUpload.jsx';
 import { useSelector } from 'react-redux';
+import { toast, ToastContainer } from "react-toastify";
+import { CheckCircle, AlertTriangle } from "lucide-react";
+import "react-toastify/dist/ReactToastify.css";
 const QuestionsForm = ({
     currentAssessment,
     formData,
@@ -34,27 +37,28 @@ const QuestionsForm = ({
     setQuestions
 }) => {
     // console.log(formData)
-    const {fileupload} = useSelector((state) => state.globalAssessments);
+    const { fileupload } = useSelector((state) => state.globalAssessments);
     const [step, setStep] = useState(1);
     const [aiProcessing, setAiProcessing] = useState(false);
     const [creating, setCreating] = useState(false)
+    const [aiHelpOpen, setAiHelpOpen] = useState(false);
     const [passError, setPassError] = useState('');
     const [noOfQuestions, setNoOfQuestions] = useState(0);
-    const [level,setLevel] = useState("Beginner");
+    const [Level, setLevel] = useState("Beginner");
     const [tagInput, setTagInput] = useState('');
     // Local UI state to toggle optional instructions per question index
     const [instructionsOpen, setInstructionsOpen] = useState({});
     const [questionFilePreview, setQuestionFilePreview] = useState({ open: false, url: null, name: '', type: '', index: null });
 
     const [filePreview, setFilePreview] = useState({ open: false, url: null, name: '', type: '', isBlob: false });
-    
+
     // Local UI state for question preview modal; holds the qIndex or null
     const [questionPreviewIndex, setQuestionPreviewIndex] = useState(null);
     // Whole-assessment preview modal
     const [assessmentPreviewOpen, setAssessmentPreviewOpen] = useState(false);
     const [previewResponses, setPreviewResponses] = useState({});
-  
-   
+
+
     // Cache shuffled option orders by a stable key so options don't reshuffle on each selection
     const previewShuffleRef = useRef({});
     // Sections removed: assessments are now flat (questions only)
@@ -67,19 +71,29 @@ const QuestionsForm = ({
     // Derive sub-teams for the selected team
     const selectedTeam = groups.find(t => String(t._id) === String(formData.team));
     const subTeams = selectedTeam?.subTeams || [];
-    const [Viacsv,setViacsv] = useState(false)
+    const [Viacsv, setViacsv] = useState(false)
     // Duration will be stored as a plain number of minutes (integer)
-    const enhanceTexthelper = async (title) => {
-        try {
-            setAiProcessing(true);
-            const response = await api.post('/api/globalAdmin/enhanceAssessment', { title });
-            setFormData({ ...formData, title: response.data.data.title, description: response.data.data.description, tags: response.data.data.tags });
-        } catch (error) {
-            console.error('Error enhancing text:', error);
-        } finally {
-            setAiProcessing(false);
-        }
-    };
+
+    //ai related 
+        const [errorsDisplay, setErrorsDisplay] = useState({ title: '', description: '' });
+        const isAIDisabled = !formData.title?.trim() ||
+            !formData.description?.trim();
+    
+            const enhanceTexthelper = async (title, description) => {
+                try {
+                    setAiProcessing(true);
+                    const response = await api.post('/api/globalAdmin/enhanceAssessment', { title, description });
+                    setFormData({ ...formData, title: response.data.data.title, description: response.data.data.description, tags: response.data.data.tags });
+                    toast.success('Tags generated from AI');
+                    return true; // indicate success so caller can proceed to question generation
+                } catch (error) {
+                    console.error('Error enhancing text:', error);
+                    toast.error('Failed to generate tags');
+                    return false; // indicate failure so caller can stop
+                } finally {
+                    setAiProcessing(false);
+                }
+            };
     // Ensure preview uses absolute URL when backend returns relative path like /uploads/xyz
     const resolveUrl = (u) => {
         if (!u) return u;
@@ -260,54 +274,93 @@ const QuestionsForm = ({
         }
     };
 
-    const createAIQuestions = async (title) => {
-        try {
-            setCreating(true);
-            const noOfQuestions = prompt("Enter no of questions");
-            const level = prompt("Enter level of questions");
-            if (!noOfQuestions) {
-                setCreating(false);
-                return;
-            }
-            if (!level) {
-                setCreating(false);
-                return;
-            }
-
-            const resp = await api.post('/api/globalAdmin/createQuestions', { title, noOfQuestions,level });
-            const aiQs = resp?.data?.data?.questions;
-
-            // Validate
-            if (!Array.isArray(aiQs) || aiQs.length === 0) {
-                alert('AI did not return a valid questions array. Please try again.');
-                setCreating(false);
-                return;
-            }
-
-            // Normalize fields to what the UI expects
-            const normalized = aiQs.map((q) => ({
-                type: q?.type || 'Multiple Choice',
-                question_text: q?.question_text || '',
-                options: Array.isArray(q?.options) && q.options.length ? q.options : ['', ''],
-                correct_option: Array.isArray(q?.correct_option)
-                    ? q.correct_option.filter((n) => Number.isInteger(n))
-                    : (Number.isInteger(q?.correct_option) ? [q.correct_option] : []),
-                file_url: typeof q?.file_url === 'string' ? q.file_url : '',
-                instructions: typeof q?.instructions === 'string' ? q.instructions : '',
-                total_points: Number.isFinite(q?.total_points) ? q.total_points : 1,
-                shuffle_options: Boolean(q?.shuffle_options),
-            }));
-
-            // Update both parent state (source of truth) and formData
-            setQuestions(normalized);
-            setFormData((prev) => ({ ...prev, questions: normalized }));
-        } catch (error) {
-            console.log(error);
-            alert('Failed to generate questions. Please try again.');
-        } finally {
-            setCreating(false);
-        }
-    };
+    const createAIQuestions = async (title, description, noOfQuestions, Level) => {
+           try {
+               setCreating(true);
+               if (!noOfQuestions) {
+                   toast.error(
+                       <div style={{ display: "flex", alignItems: "center" }}>
+                           <div style={{ marginLeft: 10 }}>
+                               <strong>Enter the Number of Questions</strong>
+                           </div>
+                       </div>
+                   );
+                   setCreating(false)
+                   return;
+               }
+               if (!Level) {
+                   toast.error(
+                       <div style={{ display: "flex", alignItems: "center" }}>
+                           <div style={{ marginLeft: 10 }}>
+                               <strong>Enter the  Level of Questions</strong>
+                           </div>
+                       </div>
+                   );
+                   setCreating(false);
+                   return;
+               }
+   
+               const resp = await api.post('/api/globalAdmin/createQuestions', { title, description, noOfQuestions, Level });
+               const aiQs = resp?.data?.data?.questions;
+   
+               // Validate
+               if (!Array.isArray(aiQs) || aiQs.length === 0) {
+                 
+                   toast.error(
+                       <div style={{ display: "flex", alignItems: "center" }}>
+                          
+                           <div style={{ marginLeft: 10 }}>
+                               <strong>AI did not return a valid questions array. Please try again.</strong>
+                            
+                           </div>
+                       </div>
+                   );
+                   setCreating(false);
+                   return;
+               }
+   
+               // Normalize fields to what the UI expects
+               const normalized = aiQs.map((q) => ({
+                   type: q?.type || 'Multiple Choice',
+                   question_text: q?.question_text || '',
+                   options: Array.isArray(q?.options) && q.options.length ? q.options : ['', ''],
+                   correct_option: Array.isArray(q?.correct_option)
+                       ? q.correct_option.filter((n) => Number.isInteger(n))
+                       : (Number.isInteger(q?.correct_option) ? [q.correct_option] : []),
+                   file_url: typeof q?.file_url === 'string' ? q.file_url : '',
+   
+                   total_points: Number.isFinite(q?.total_points) ? q.total_points : 1,
+   
+               }));
+   
+               // Update both parent state (source of truth) and formData
+               setQuestions(normalized);
+               setFormData((prev) => ({ ...prev, questions: normalized }));
+                toast.success(
+                                   <div style={{ display: "flex", alignItems: "center" }}>
+                                     
+                                       <div style={{ marginLeft: 10 }}>
+                                           <strong>Survey questions generated successfully</strong>
+                                           <div style={{ fontSize: 13, opacity: 0.8 }}>
+                                               You can review and edit them in Step 2
+                                           </div>
+                                       </div>
+                                   </div>)
+           } catch (error) {
+               console.log(error);
+               toast.error(
+                   <div style={{ display: "flex", alignItems: "center" }}>
+                      
+                       <div style={{ marginLeft: 10 }}>
+                           <strong>Failed to generate questions. Please try again.</strong>
+                       </div>
+                   </div>
+               );
+   
+           } finally {
+               setCreating(false);
+           }
+       };
     const handleCloseForm = () => {
         setShowForm(false);
         // Reset questions in parent so the next open starts clean
@@ -339,7 +392,7 @@ const QuestionsForm = ({
     const handleCsvQuestionsUpload = (csvQuestions) => {
         // Debug: Log the incoming CSV questions to see if type is present
         console.log('CSV Questions received:', csvQuestions);
-         setViacsv(true)
+        setViacsv(true)
         // Normalize CSV questions to match the expected format
         const normalizedQuestions = csvQuestions.map(q => {
             // Filter out empty options and create a clean options array
@@ -468,85 +521,225 @@ const QuestionsForm = ({
                         <div className="assess-modal-form">
                             {/* Basic Information */}
                             {step === 1 &&
-                                <div className="assess-form-section">
-                                    <h3 className="assess-section-title">Basic Information</h3>
+                                <div className="module-overlay__step">
+                                    {/* <h3 className="assess-section-title">Basic Information</h3> */}
 
-                                    <div className="assess-form-grid">
-                                        <div className="assess-form-group">
-                                            <label className="assess-form-label">
-                                                Assessment Title<span className="assess-required">*</span>
-                                            </label>
-                                            <input
-                                                type="text"
-                                                className="assess-form-input"
-                                                placeholder="Enter assessment title"
-                                                value={formData.title}
-                                                onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="assess-form-group">
-                                            <label className="assess-form-label">Tags<span className="assess-required">*</span></label>
-                                            <div className="assess-tag-picker">
-                                                <div className="assess-tag-controls">
-                                                    <input
-                                                        type="text"
-                                                        className="assess-form-input"
-                                                        placeholder="Type a tag and press Enter or comma"
-                                                        value={tagInput}
-                                                        onChange={(e) => setTagInput(e.target.value)}
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === 'Enter' || e.key === ',') {
-                                                                e.preventDefault();
-                                                                const t = tagInput.trim();
-                                                                if (!t) return;
-                                                                const current = Array.isArray(formData.tags) ? formData.tags : [];
-                                                                if (!current.includes(t)) {
-                                                                    setFormData({ ...formData, tags: [...current, t] });
-                                                                }
-                                                                setTagInput('');
-                                                            }
-                                                        }}
-                                                    />
-                                                </div>
-                                                {(formData.tags && formData.tags.length > 0) && (
-                                                    <div className="module-overlay__tags-container">
-                                                        {formData.tags.map((t, idx) => (
-                                                            <span key={`${t}-${idx}`} className="module-overlay__tag">
-                                                                {t}
-                                                                <button
-                                                                    type="button"
-                                                                    className="module-overlay__tag-remove"
-                                                                    aria-label={`Remove tag ${t}`}
-                                                                    onClick={() => {
-                                                                        const next = (formData.tags || []).filter(x => x !== t);
-                                                                        setFormData({ ...formData, tags: next });
-                                                                    }}
-                                                                >
-                                                                    <X size={12} />
-                                                                </button>
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                )}
-
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="assess-form-group" style={{ marginBottom: "15px" }}>
-                                        <label className="assess-form-label">Description<span className="assess-required">*</span></label>
-                                        <textarea
-                                            className="assess-form-textarea"
-                                            placeholder="Provide a detailed description of this assessment"
-                                            rows="3"
-                                            value={formData.description}
-                                            onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                    <div className="module-overlay__form-group" style={{ marginBottom: '20px' }}>
+                                        <label className="module-overlay__form-label">
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Assessment Title <span className="module-overlay__required">*</span>
+                                                {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="title"
+                                            className="assess-form-input"
+                                            placeholder="Enter assessment title"
+                                            value={formData.title}
+                                            onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                            required
+                                            autoComplete="off"
+                                            style={{ width: '100%' }}
                                         />
                                     </div>
+                                    <div className="module-overlay__form-group" >
+                                        <label className="module-overlay__form-label">
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Assessment Description<span className="module-overlay__required">*</span>
+                                                {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}
+                                            </span>
+                                        </label>
+                                        <textarea
+                                            name="description"
+                                            className="survey-assess-form-textarea"
+                                            placeholder="Provide a detailed description of this assessment"
+                                            rows={3}
+                                            value={formData.description}
+                                            onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                            style={{ width: '100%' }}
+                                        />
+                                    </div>
+                                    <div className="module-overlay__form-group">
+                                        <label className="module-overlay__form-label">
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Tags<span className='module-overlay__required'>*</span>
+                                                {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}
+                                            </span>
+                                        </label>
+                                        <div className="assess-tag-picker">
+                                            <div className="assess-tag-controls">
+                                                <input
+                                                    type="text"
+                                                    className="addOrg-form-input"
+                                                    placeholder="Type a tag and press Enter or comma"
+                                                    style={{ width: '100%' }}
+                                                    value={tagInput}
+                                                    autoComplete="off"
+                                                    onChange={(e) => setTagInput(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' || e.key === ',') {
+                                                            e.preventDefault();
+                                                            const t = tagInput.trim();
+                                                            if (!t) return;
+                                                            const current = Array.isArray(formData.tags) ? formData.tags : [];
+                                                            if (!current.includes(t)) {
+                                                                setFormData({ ...formData, tags: [...current, t] });
+                                                            }
+                                                            setTagInput('');
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                            {(formData.tags && formData.tags.length > 0) && (
+                                                <div className="module-overlay__tags-container">
+                                                    {formData.tags.map((t, idx) => (
+                                                        <span key={`${t}-${idx}`} className="module-overlay__tag">
+                                                            {t}
+                                                            <button
+                                                                type="button"
+                                                                className="module-overlay__tag-remove"
+                                                                aria-label={`Remove tag ${t}`}
+                                                                onClick={() => {
+                                                                    const next = (formData.tags || []).filter(x => x !== t);
+                                                                    setFormData({ ...formData, tags: next });
+                                                                }}
+                                                            >
+                                                                <X size={12} />
+                                                            </button>
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
 
-                                    <div className="assess-form-group">
-                                        <label className="assess-form-label">Thumbnail<span className="assess-required">*</span></label>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
+                                        <div style={{ width: "50%" }} >
+                                            <label className='assess-form-label' style={{ margin: "10px" }}>Number of Questions</label>
+                                            <input type="number" name="noOfQuestions" placeholder="Enter the Number of Questions" value={formData.noOfQuestions} className='assess-form-input'
+
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    setNoOfQuestions(value);
+                                                    setFormData({ ...formData, noOfQuestions: value });
+                                                }} />
+                                        </div>
+                                        <div style={{ width: "50%" }}>
+                                            <label className='assess-form-label' style={{ margin: "10px" }}>Level</label>
+                                            <select
+                                                type="text"
+                                                name="Level"
+                                                value={formData.Level}
+                                                className='assess-form-input'
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    setLevel(value);
+                                                    setFormData({ ...formData, Level: value });
+                                                }}
+                                            >
+                                                <option value="">Select Type</option>
+                                                <option value="Beginner">Beginner</option>
+                                                <option value="Intermediate">Intermediate</option>
+                                                <option value="Advanced">Advanced</option>
+                                            </select>
+
+                                        </div>
+                                    </div>
+                                    <div style={{  margin: '0 auto 8px', display: 'flex', justifyContent: 'flex-start' }}>
+                                        <button
+                                            type="button"
+                                            className="survey-assess-btn-link"
+                                            onClick={() => setAiHelpOpen(prev => !prev)}
+                                            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4f46e5', background: 'transparent' }}
+                                            aria-expanded={aiHelpOpen}
+                                            aria-controls="ai-help-panel"
+                                        >
+                                            <Info size={16} /> How create with ai works
+                                        </button>
+                                    </div>
+                                    {aiHelpOpen && (
+                                        <div
+                                            id="ai-help-panel"
+                                            style={{
+                                                width: '70%',
+                                                margin: '0 auto 12px',
+                                                background: '#eef2ff',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: 8,
+                                                padding: '10px 12px',
+                                                color: '#1f2937',
+                                                fontSize: 14
+                                            }}
+                                        >
+                                            <div style={{ fontWeight: 600, marginBottom: 6 }}>Create with AI – How it works</div>
+                                            <ul style={{ marginLeft: 16, listStyle: 'disc' }}>
+                                                <li>Fill <strong>Title</strong> and <strong>Description</strong>. These are required to enable the button.</li>
+                                                <li>Set <strong>Number of Questions</strong> and <strong>Level</strong> if you want AI to generate questions. Without them, only tags are generated.</li>
+                                                <li>Click <strong>“Create with AI ✨”</strong>. First tags are enhanced, then questions are generated if inputs are provided.</li>
+                                                <li>Review and edit generated questions in <strong>Step 2</strong>.</li>
+                                            </ul>
+                                        </div>
+                                    )}
+                                    <button
+                                        className={`btn-primary ${isAIDisabled ? 'btn-disabled' : ''}`}
+                                        style={{
+                                            width: "70%",
+                                            margin: "auto",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            cursor: isAIDisabled ? "not-allowed" : "pointer",
+                                            opacity: isAIDisabled ? 0.6 : 1,
+
+
+                                        }}
+                                        onClick={async () => {
+                                            if (isAIDisabled) return;
+                                            // prevent accidental click
+
+                                            // ✅ continue only if both fields filled
+                                            try {
+                                                const enhanced = await enhanceTexthelper(formData.title, formData.description);
+                                                if (!enhanced) {
+                                                    toast.error('Enhancement failed');
+                                                    return;
+                                                } 
+                                                // stop if failed ❗
+
+                                                const q = parseInt(formData.noOfQuestions);
+                                                const l = formData.Level;
+
+                                                if (Number.isFinite(q) && q > 0) {
+                                                    await createAIQuestions(formData.title, formData.description, q, l);
+                                                } else {
+                                                    toast.success('Tags generated from AI');
+                                                }
+                                            } catch (e) {
+                                                console.error('AI generation failed', e);
+                                                toast.error('Something went wrong during AI generation');
+                                            }
+                                        }}
+
+                                        disabled={isAIDisabled || aiProcessing}
+                                    >
+                                        {aiProcessing ? "Please Wait.." : "Create with AI ✨"}
+                                    </button>
+
+
+
+                                   
+                                    <div className='module-overlay__form-group'>
+                                    <label className="module-overlay__form-label">
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Instructions<span className="module-overlay__required">*</span>
+                                            </span>
+                                        </label>
+                                        <div className="assess-instructions-box">
+                                            <RichText value={formData.instructions || ''} name="instructions" onChange={(value) => setFormData({ ...formData, instructions: value })} />
+                                        </div>
+                                    </div>
+                                    <div className="module-overlay__form-group">
+                                    <label className="module-overlay__form-label">
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Thumbnail <span className="module-overlay__required">*</span>
+                                            </span>
+                                        </label>
                                         {formData.thumbnail ? (
                                             <div
                                                 style={{
@@ -572,7 +765,7 @@ const QuestionsForm = ({
                                                     <button
                                                         type="button"
                                                         className="survey-assess-btn-link"
-                                                        onClick={() => handlePreviewFile(formData.thumbnail, formData.thumbnail_preview)}                     
+                                                        onClick={() => handlePreviewFile(formData.thumbnail, formData.thumbnail_preview)}
                                                         style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4f46e5', background: 'transparent' }}
                                                     >
                                                         <Eye size={16} /> Preview
@@ -610,34 +803,8 @@ const QuestionsForm = ({
                                             </div>
                                         )}
                                     </div>
-                                    <div className='assess-form-group'>
-                                        <label className="assess-form-label">Instructions<span className="assess-required">*</span></label>
-                                        <div className="assess-instructions-box">
-                                            <RichText value={formData.instructions || ''} onChange={(value) => setFormData({ ...formData, instructions: value })} />
-                                        </div>
-                                    </div>
-                                    <div style={{ display: "flex", gap: 12 }}>
-                                        <div style={{ width: "50%" }} >
-                                            <label className='assess-form-label' style={{ margin: "10px" }}>Number of Questions</label>
-                                            <input type="number" value={noOfQuestions} className='assess-form-input' onChange={(e) => setNoOfQuestions(e.target.value)} />
-                                        </div>
-                                        <div style={{ width: "50%" }}>
-                                            <label className='assess-form-label' style={{ margin: "10px" }}>Level</label>
-                                            <select
-                                                value={level}
-                                                className='assess-form-input'
-                                                onChange={(e) => setLevel(e.target.value)}
-                                            >
-                                                <option value="Beginner">Beginner</option>
-                                                <option value="Intermediate">Intermediate</option>
-                                                <option value="Advanced">Advanced</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(formData.title, formData.description)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
+                                        
 
-
-                                   
                                 </div>}
 
                             {step === 2 && <div className="assess-form-section">
@@ -736,89 +903,89 @@ const QuestionsForm = ({
                                                     </div>
 
 
-                                                    {fileupload ?  
-                                                    <div className="assess-form-group" style={{ marginTop: '20px' }}>
-                                                        <div style={{width:'100%',backgroundColor:'#f5f5f5',height:'100px'}}>
-                                                            <p>Please Wait..</p>
+                                                    {fileupload ?
+                                                        <div className="assess-form-group" style={{ marginTop: '20px' }}>
+                                                            <div style={{ width: '100%', backgroundColor: '#f5f5f5', height: '100px' }}>
+                                                                <p>Please Wait..</p>
 
+                                                            </div>
                                                         </div>
-                                                        </div> 
-                                                    :<div className="assess-form-group" style={{ marginTop: '20px' }}>
-                                                        <label className="assess-form-label">Attach File (Optional)</label>
-                                                        <div
-                                                            className="assess-file-upload-container"
-                                                            style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
-                                                        >
-                                                            <select
-                                                                className="assess-form-select"
-                                                                value={q.file_url || ''}
-                                                                onChange={e => updateQuestionField(qIndex, 'file_url', e.target.value)}
-                                                            >
-                                                                <option value="">No file selected</option>
-                                                                {/* Show existing file option if it's not part of uploadedFiles list */}
-                                                                {q.file_url && !uploadedFiles.includes(q.file_url) && (
-                                                                    <option value={q.file_url}>
-                                                                        {q.file_url.split('/').pop() || 'Current File'}
-                                                                    </option>
-                                                                )}
-                                                                {uploadedFiles.map((fUrl, i) => (
-                                                                    <option key={i} value={fUrl}>
-                                                                        {`Uploaded File ${i + 1}`}
-                                                                    </option>
-                                                                ))}
-                                                            </select>
+                                                        : <div className="assess-form-group" style={{ marginTop: '20px' }}>
+                                                            <label className="assess-form-label">Attach File (Optional)</label>
                                                             <div
-                                                                className="assess-file-upload"
-                                                                style={{ position: 'relative' }}
+                                                                className="assess-file-upload-container"
+                                                                style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
                                                             >
-                                                                <input
-                                                                    type="file"
-                                                                    id={`file-${qIndex}`}
-                                                                    className="assess-file-input"
-                                                                    name="files"
-                                                                    onChange={(e)=>handleAddFile(qIndex, e)}
-                                                                />
-                                                                <label
-                                                                    htmlFor={`file-${qIndex}`}
-                                                                    className="assess-file-label"
+                                                                <select
+                                                                    className="assess-form-select"
+                                                                    value={q.file_url || ''}
+                                                                    onChange={e => updateQuestionField(qIndex, 'file_url', e.target.value)}
+                                                                >
+                                                                    <option value="">No file selected</option>
+                                                                    {/* Show existing file option if it's not part of uploadedFiles list */}
+                                                                    {q.file_url && !uploadedFiles.includes(q.file_url) && (
+                                                                        <option value={q.file_url}>
+                                                                            {q.file_url.split('/').pop() || 'Current File'}
+                                                                        </option>
+                                                                    )}
+                                                                    {uploadedFiles.map((fUrl, i) => (
+                                                                        <option key={i} value={fUrl}>
+                                                                            {`Uploaded File ${i + 1}`}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                                <div
+                                                                    className="assess-file-upload"
+                                                                    style={{ position: 'relative' }}
+                                                                >
+                                                                    <input
+                                                                        type="file"
+                                                                        id={`file-${qIndex}`}
+                                                                        className="assess-file-input"
+                                                                        name="files"
+                                                                        onChange={(e) => handleAddFile(qIndex, e)}
+                                                                    />
+                                                                    <label
+                                                                        htmlFor={`file-${qIndex}`}
+                                                                        className="assess-file-label"
+                                                                        style={{
+                                                                            cursor: 'pointer',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            gap: '8px',
+                                                                        }}
+                                                                    >
+                                                                        <Upload size={16} />
+                                                                        Upload File
+                                                                    </label>
+                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    className="assess-preview-toggle"
+                                                                    title="Preview File"
+                                                                    onClick={() => handlePreviewQuestionFile(q, qIndex)}
+                                                                    disabled={!q.file_url}
+                                                                    style={{ whiteSpace: 'nowrap' }}
+                                                                >
+                                                                    <Eye size={16} />
+                                                                    {questionFilePreview.open && questionFilePreview.index === qIndex ? ' Hide Preview' : ' Preview'}
+
+                                                                </button>
+                                                            </div>
+
+                                                            {/* File name display */}
+                                                            {q.file_url && (
+                                                                <div
                                                                     style={{
-                                                                        cursor: 'pointer',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        gap: '8px',
+                                                                        marginTop: '6px',
+                                                                        fontSize: '0.9rem',
+                                                                        color: '#64748b',
                                                                     }}
                                                                 >
-                                                                    <Upload size={16} />
-                                                                    Upload File
-                                                                </label>
-                                                            </div>
-                                                            <button
-                                                                type="button"
-                                                                className="assess-preview-toggle"
-                                                                title="Preview File"
-                                                                onClick={() => handlePreviewQuestionFile(q, qIndex)}
-                                                                disabled={!q.file_url}
-                                                                style={{ whiteSpace: 'nowrap' }}
-                                                            >
-                                                                <Eye size={16} />
-                                                                {questionFilePreview.open && questionFilePreview.index === qIndex ? ' Hide Preview' : ' Preview'}
-                                                           
-                                                            </button>
-                                                        </div>
-
-                                                        {/* File name display */}
-                                                        {q.file_url && (
-                                                            <div
-                                                                style={{
-                                                                    marginTop: '6px',
-                                                                    fontSize: '0.9rem',
-                                                                    color: '#64748b',
-                                                                }}
-                                                            >
-                                                                File: {q.file_url.split('/').pop()}
-                                                            </div>
-                                                        )}
-                                                    </div>}
+                                                                    File: {q.file_url.split('/').pop()}
+                                                                </div>
+                                                            )}
+                                                        </div>}
 
 
                                                     <FilePreviewModal
@@ -889,14 +1056,14 @@ const QuestionsForm = ({
                                                                                 type="button"
                                                                                 className="assess-remove-option"
                                                                                 onClick={() => removeOption(qIndex, optIndex)}
-                                                                               
+
                                                                             >
                                                                                 <X size={16} />
                                                                             </button>
                                                                         )}
                                                                     </div>
                                                                 ))
-                                                            )}  
+                                                            )}
                                                             {(() => {
                                                                 // Count total options (including empty ones)
                                                                 const totalOptions = q.options.length;
@@ -1102,10 +1269,10 @@ const QuestionsForm = ({
 
                                                                             // Show popup if any index is out of range or points to empty option
                                                                             if (hasInvalidIndex) {
-                                                                                const optionLetters = Array.from({length: validOptions}, (_, i) => getLetterFromIndex(i)).join(', ');
+                                                                                const optionLetters = Array.from({ length: validOptions }, (_, i) => getLetterFromIndex(i)).join(', ');
                                                                                 // alert(`Invalid correct answer index. Please select from options: ${optionLetters}`);
                                                                             } else if (hasEmptyOptionIndex) {
-                                                                                const optionLetters = Array.from({length: validOptions}, (_, i) => getLetterFromIndex(i)).join(', ');
+                                                                                const optionLetters = Array.from({ length: validOptions }, (_, i) => getLetterFromIndex(i)).join(', ');
                                                                                 // alert(`Selected option is empty. Please select from available options: ${optionLetters}`);
                                                                             }
                                                                         }}
@@ -1452,104 +1619,104 @@ const QuestionsForm = ({
 
                             </div>}
 
-                            
+
                         </div>
                     </div>
                     {/* Form Actions */}
                     <div className="assess-form-actions">
-                                {step === 3 ? (
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                        {step > 1 && <button type="button" className="btn-secondary" onClick={() => setStep(step - 1)}>
-                                            <ChevronLeft size={16} />Previous
-                                        </button>}
-                                        <div style={{ display: 'flex', gap: 12 }}>
-                                            <button
-                                                type="button"
-                                                className="btn-secondary"
-                                                onClick={() => setAssessmentPreviewOpen(true)}
-                                                disabled={!canProceedToNext()}
-                                                title="Preview the entire assessment as the user sees it"
-                                            >
-                                                <Eye size={16} />
-                                                <span>Preview Assessment</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn-secondary"
-                                                onClick={() => {
-                                                    if (!validatePass()) {
-                                                        if (step !== 1) setStep(1);
-                                                        return;
-                                                    }
-                                                    // Save/Update explicitly as Draft
-                                                    if (currentAssessment) {
-                                                        handleUpdateAssessment('Draft');
-                                                    } else {
-                                                        handleSaveAssessment(undefined, 'Draft');
-                                                    }
-                                                }}
-                                                disabled={!canProceedToNext()}
-                                                title="Save this assessment as Draft"
-                                            >
-                                                <FileText size={16} />
-                                                <span>Save as Draft</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn-primary"
-                                                onClick={() => {
-                                                    if (!validatePass()) {
-                                                        if (step !== 1) setStep(1);
-                                                        return;
-                                                    }
-                                                    // Create/Update explicitly as Saved
-                                                    if (currentAssessment) {
-                                                        handleUpdateAssessment('Saved');
-                                                    } else {
-                                                        handleSaveAssessment(undefined, 'Saved');
-                                                    }
-                                                }}
-                                                disabled={!canProceedToNext()}
-                                            >
-                                                <FileText size={16} />
-                                                <span>{currentAssessment ? "Update Assessment" : "Create Assessment"}</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                            {/* {step > 1 && <button type="button" className="btn-secondary" onClick={() => setStep(step - 1)}>
+                        {step === 3 ? (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                {step > 1 && <button type="button" className="btn-secondary" onClick={() => setStep(step - 1)}>
+                                    <ChevronLeft size={16} />Previous
+                                </button>}
+                                <div style={{ display: 'flex', gap: 12 }}>
+                                    <button
+                                        type="button"
+                                        className="btn-secondary"
+                                        onClick={() => setAssessmentPreviewOpen(true)}
+                                        disabled={!canProceedToNext()}
+                                        title="Preview the entire assessment as the user sees it"
+                                    >
+                                        <Eye size={16} />
+                                        <span>Preview Assessment</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn-secondary"
+                                        onClick={() => {
+                                            if (!validatePass()) {
+                                                if (step !== 1) setStep(1);
+                                                return;
+                                            }
+                                            // Save/Update explicitly as Draft
+                                            if (currentAssessment) {
+                                                handleUpdateAssessment('Draft');
+                                            } else {
+                                                handleSaveAssessment(undefined, 'Draft');
+                                            }
+                                        }}
+                                        disabled={!canProceedToNext()}
+                                        title="Save this assessment as Draft"
+                                    >
+                                        <FileText size={16} />
+                                        <span>Save as Draft</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn-primary"
+                                        onClick={() => {
+                                            if (!validatePass()) {
+                                                if (step !== 1) setStep(1);
+                                                return;
+                                            }
+                                            // Create/Update explicitly as Saved
+                                            if (currentAssessment) {
+                                                handleUpdateAssessment('Saved');
+                                            } else {
+                                                handleSaveAssessment(undefined, 'Saved');
+                                            }
+                                        }}
+                                        disabled={!canProceedToNext()}
+                                    >
+                                        <FileText size={16} />
+                                        <span>{currentAssessment ? "Update Assessment" : "Create Assessment"}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                    {/* {step > 1 && <button type="button" className="btn-secondary" onClick={() => setStep(step - 1)}>
                                                 <ChevronLeft size={16} />Previous
                                             </button>} */}
-                                            {step > 1 && <button
-                                                type="button"
-                                                className="btn-secondary"
-                                                onClick={handlePrev}
-                                                disabled={step === 1}
-                                            >
-                                                <ChevronLeft size={16} />Previous
-                                            </button>}
-                                            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', width: '100%', gap: "10px   " }}>
-                                                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>
-                                                    Cancel
-                                                </button>
-                                                {/* {step < 3 && <button type="button" className="btn-primary" onClick={() => setStep(step + 1)}>
+                                    {step > 1 && <button
+                                        type="button"
+                                        className="btn-secondary"
+                                        onClick={handlePrev}
+                                        disabled={step === 1}
+                                    >
+                                        <ChevronLeft size={16} />Previous
+                                    </button>}
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', width: '100%', gap: "10px   " }}>
+                                        <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>
+                                            Cancel
+                                        </button>
+                                        {/* {step < 3 && <button type="button" className="btn-primary" onClick={() => setStep(step + 1)}>
                                                     Next <ChevronRight size={16} />
                                                 </button>} */}
-                                                {step < 3 && <button
-                                                    type="button"
-                                                    className="btn-primary"
-                                                    onClick={handleNext}
-                                                    disabled={!canProceedToNext()}
-                                                >
-                                                    Next <ChevronRight size={16} />
-                                                </button>}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
+                                        {step < 3 && <button
+                                            type="button"
+                                            className="btn-primary"
+                                            onClick={handleNext}
+                                            disabled={!canProceedToNext()}
+                                        >
+                                            Next <ChevronRight size={16} />
+                                        </button>}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
             {/* Question Preview Modal (end-user view) */}
@@ -1644,7 +1811,7 @@ const QuestionsForm = ({
                 </div>
             )}
             {/* Assessment Preview Modal (single page, no sections) */}
-           
+
             {assessmentPreviewOpen && (<AssessmentPreview data={{ ...formData, questions }} onClose={() => setAssessmentPreviewOpen(false)} />)}
 
             {/* Single Question Preview Modal (Survey UI) */}
@@ -1724,26 +1891,26 @@ const QuestionsForm = ({
                                                             .filter(({ opt }) => opt && opt.trim() !== '') // Filter out empty options
                                                             .map(({ opt, originalIndex }, displayIndex) => {
 
-                                                            const checked = isMulti
-                                                                ? Array.isArray(selected) && selected.includes(originalIndex)
-                                                                : selected === originalIndex;
-                                                            return (
-                                                                <label key={`single-prev-q-${questionPreviewIndex}-opt-${originalIndex}`} className="survey-assess-qpreview-option">
-                                                                    <input
-                                                                        type={isMulti ? 'checkbox' : 'radio'}
-                                                                        name={`single-prev-q-${questionPreviewIndex}`}
-                                                                        checked={!!checked}
-                                                                        onChange={(e) => handleChange(originalIndex, e.target.checked)}
-                                                                    />
-                                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                        <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '20px' }}>
-                                                                            {getLetterFromIndex(displayIndex)}.
+                                                                const checked = isMulti
+                                                                    ? Array.isArray(selected) && selected.includes(originalIndex)
+                                                                    : selected === originalIndex;
+                                                                return (
+                                                                    <label key={`single-prev-q-${questionPreviewIndex}-opt-${originalIndex}`} className="survey-assess-qpreview-option">
+                                                                        <input
+                                                                            type={isMulti ? 'checkbox' : 'radio'}
+                                                                            name={`single-prev-q-${questionPreviewIndex}`}
+                                                                            checked={!!checked}
+                                                                            onChange={(e) => handleChange(originalIndex, e.target.checked)}
+                                                                        />
+                                                                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                            <span style={{ fontWeight: 'bold', color: '#374151', minWidth: '20px' }}>
+                                                                                {getLetterFromIndex(displayIndex)}.
+                                                                            </span>
+                                                                            <span className="opt-text">{opt || `Option ${displayIndex + 1}`}</span>
                                                                         </span>
-                                                                        <span className="opt-text">{opt || `Option ${displayIndex + 1}`}</span>
-                                                                    </span>
-                                                                </label>
-                                                            );
-                                                        })}
+                                                                    </label>
+                                                                );
+                                                            })}
                                                     </div>
                                                 )}
                                             </div>
@@ -1789,12 +1956,23 @@ const QuestionsForm = ({
                         attempts: formData.attempts || 1,
                         passPercentage: formData.passPercentage || 50,
                         isPublished: formData.isPublished || false,
-                        
+
                     }}
                 />
             )}
             <FilePreviewModal open={filePreview.open} filePreview={filePreview} onClose={closeFilePreview} />
-       
+             <ToastContainer
+                                       position="top-right"
+                                       autoClose={10000}
+                                       hideProgressBar={false}
+                                       newestOnTop
+                                       closeOnClick
+                                       pauseOnHover
+                                       draggable
+                                       toastClassName="custom-toast"
+                                       bodyClassName="custom-toast-body"
+                                   />
+                       
         </>
     );
 };

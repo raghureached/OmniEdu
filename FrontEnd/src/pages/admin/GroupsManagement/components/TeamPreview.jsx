@@ -1,18 +1,22 @@
 import React, { useState } from 'react';
-import { Users, Trash2 } from 'lucide-react';
+import { Users, Trash2, Eye } from 'lucide-react';
 import { GoOrganization, GoX } from 'react-icons/go';
 import { useSelector } from 'react-redux';
-// import { useDispatch } from 'react-redux';
-
-const TeamPreview = ({ isOpen, onClose, team, onDeleteSubTeam,loading }) => {
+import { FiEdit3 } from 'react-icons/fi';
+const TeamPreview = ({ isOpen, onClose, team, loading, createSubTeam, updateSubTeam, deleteSubTeam }) => {
   const [showForm, setShowForm] = useState(false);
-  const [currentGroup, setCurrentGroup] = useState(null);
+  const [currentSubTeam, setCurrentSubTeam] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({});
-  if (!isOpen) return null;
-  // const {loading} = useSelector((state) => state.groups);
+  
+  // Get the latest team data from Redux store
+  const groups = useSelector(state => state.groups.groups);
+  const teamId = team?.id || team?._id;
+  const latestTeam = groups.find(g => (g.id || g._id) === teamId) || team;
+  
+  if (!isOpen) return null
 
-  const subTeams = Array.isArray(team?.subTeams) ? team.subTeams : [];
+  const subTeams = Array.isArray(latestTeam?.subTeams) ? latestTeam.subTeams : [];
 
   const handleOverlayClick = (e) => {
     if (e.target.classList.contains('addOrg-modal-overlay')) {
@@ -26,43 +30,60 @@ const TeamPreview = ({ isOpen, onClose, team, onDeleteSubTeam,loading }) => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
-    // const mappedPayload = {
-    //   teamName: formData.teamName?.trim() || '',
-    //   subTeamName: formData.subTeamName?.trim() || '',
-    //   status: formData.status?.trim() || '',
-    // };
+    const mappedPayload = {
+      team_id: latestTeam._id,
+      subTeamName: formData.subTeamName?.trim() || '',
+    };
 
-    // try {
-    //   if (currentGroup) {
-    //     const id = currentGroup.id || currentGroup._id;
-    //     if (!id) {
-    //       throw new Error('Unable to determine group identifier for update.');
-    //     }
-    //     await dispatch(updateGroup({ id, groupData: mappedPayload })).unwrap();
-    //   } else {
-    //     await dispatch(createGroup(mappedPayload)).unwrap();
-    //   }
+    try {
+      if (currentSubTeam) {
+        const id = currentSubTeam.uuid;
+        if (!id) {
+          throw new Error('Unable to determine group identifier for update.');
+        }
+        await updateSubTeam(id, mappedPayload);
+      } else {
+        await createSubTeam({data: mappedPayload});  
+      }
+      handleCloseForm();
+    } catch (submitError) {
+      console.error('Failed to submit group form:', submitError);
+    }
+  };
+  const handleEdit = (uuid, name) => {
+    setCurrentSubTeam({ uuid, name });
+    setFormData({
+      subTeamName: name,
+    });
+    setEditMode(true);
+    setShowForm(true);
+  }
 
-    //   setShowForm(false);
-    //   setCurrentGroup(null);
-    //   setFormData({
-    //     teamName: '',
-    //     subTeamName: '',
-    //     status: '',
-    //   });
-    //   setSelectedGroups([]);
-    //   setSelectAll(false);
-    //   fetchGroupData();
-    // } catch (submitError) {
-    //   console.error('Failed to submit group form:', submitError);
-    // }
+  const handleDelete = async (uuid, name) => {
+    if (!uuid) return;
+    const ok = window.confirm(`Are you sure you want to delete subteam "${name || ''}"?`);
+    if (ok && deleteSubTeam) {
+      try {
+        await deleteSubTeam(uuid);
+      } catch (error) {
+        console.error('Failed to delete subteam:', error);
+        alert('Failed to delete subteam. Please try again.');
+      }
+    }
   };
 
+  const handleAddSubTeam = () => {
+    setCurrentSubTeam(null);
+    setFormData({ subTeamName: '' });
+    setEditMode(false);
+    setShowForm(true);
+  };
 
-  const handleDelete = (id, name) => {
-    if (!id) return;
-    const ok = window.confirm(`Delete subteam "${name || ''}"?`);
-    if (ok && onDeleteSubTeam) onDeleteSubTeam(id);
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setCurrentSubTeam(null);
+    setEditMode(false);
+    setFormData({ subTeamName: '' });
   };
 
   return (
@@ -74,7 +95,7 @@ const TeamPreview = ({ isOpen, onClose, team, onDeleteSubTeam,loading }) => {
               <Users size={24} color="#5570f1" />
             </div>
             <div>
-              <h2 id="team-preview-title">Team {team?.name || '—'}</h2>
+              <h2 id="team-preview-title">Team {latestTeam?.name || '—'}</h2>
               <p className="addOrg-header-subtitle">View and manage subteams for this team</p>
             </div>
           </div>
@@ -83,7 +104,7 @@ const TeamPreview = ({ isOpen, onClose, team, onDeleteSubTeam,loading }) => {
           </button>
         </div>
         <div style={{display:'flex',justifyContent:'flex-end',width:'100%',padding:12}}>
-          <button className='btn-primary' onClick={() => setShowForm(true)}>+ Add Sub Team</button>
+          <button className='btn-primary' onClick={handleAddSubTeam}>+ Add Sub Team</button>
         </div>
 
         <div className="addOrg-form-section" style={{ padding: 12 }}>
@@ -113,8 +134,22 @@ const TeamPreview = ({ isOpen, onClose, team, onDeleteSubTeam,loading }) => {
                   <div></div>
                   <div className="col-actions" style={{ display: 'flex', gap: 10,justifyContent:'center' }}>
                     <button
+                      className="global-action-btn view"
+                      
+                      aria-label={`View subteam ${st.name}`}
+                    >
+                      <Eye size={16} />
+                    </button>
+                    <button
+                      className="global-action-btn edit"
+                      onClick={() => handleEdit(st.uuid, st.name)}
+                      aria-label={`Edit subteam ${st.name}`}
+                    >
+                      <FiEdit3 size={16} />
+                    </button>
+                    <button
                       className="global-action-btn delete"
-                      onClick={() => handleDelete(st._id, st.name)}
+                      onClick={() => handleDelete(st.uuid, st.name)}
                       aria-label={`Delete subteam ${st.name}`}
                     >
                       <Trash2 size={16} />
@@ -135,16 +170,16 @@ const TeamPreview = ({ isOpen, onClose, team, onDeleteSubTeam,loading }) => {
                                 <Users size={24} color="#5570f1" />
                               </div>
                               <div>
-                                <h2>{editMode ? "Edit Group" : "Add New Group"}</h2>
+                                <h2>{editMode ? "Edit Sub Team" : "Add New Sub Team"}</h2>
                                 <p className="addOrg-header-subtitle">
-                                  {editMode ? "Update group details" : "Create a new group profile"}
+                                  {editMode ? "Update sub team details" : "Create a new sub team"}
                                 </p>
                               </div>
                             </div>
                             <button
                               type="button"
                               className="addOrg-close-btn"
-                              onClick={() => setShowForm(false)}
+                              onClick={handleCloseForm}
                               aria-label="Close modal"
                             >
                               <GoX size={20} />
@@ -185,7 +220,7 @@ const TeamPreview = ({ isOpen, onClose, team, onDeleteSubTeam,loading }) => {
                               <button
                                 type="button"
                                 className="btn-secondary"
-                                onClick={() => setShowForm(false)}
+                                onClick={handleCloseForm}
                                 disabled={loading}
                               >
                                 Cancel

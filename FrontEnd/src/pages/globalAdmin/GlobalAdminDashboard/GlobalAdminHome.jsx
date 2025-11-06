@@ -1,30 +1,21 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { BookOpen, Users, Award, TrendingUp, ClipboardCheck, ListChecks, GraduationCap, PencilLine, ClipboardList, MessageSquare, Activity, HelpCircle, Megaphone } from 'lucide-react';
-import './AdminHome.css';
-import { fetchMessagesForAdmin } from '../../../store/slices/globalMessageSlice';
+import { BookOpen, Users, Award, TrendingUp, ClipboardCheck, ListChecks, GraduationCap, PencilLine, ClipboardList, MessageSquare, Activity, HelpCircle, Megaphone, Building } from 'lucide-react';
+import './GlobalAdminHome.css';
+import { fetchAllMessages } from '../../../store/slices/globalMessageSlice';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line
 } from 'recharts';
 
-const AdminHome = () => {
+const GlobalAdminHome = () => {
+
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { currentMessages, loading } = useSelector((state) => state.globalMessage);
-  const userName = user?.name || 'Admin';
+  const userName = user?.name || 'GlobalAdmin';
   const currentHour = new Date().getHours();
-  // Try to infer organization id/uuid from user payload (supports multiple backend shapes)
-  const orgId = user?.organization?.uuid
-    || user?.organizationUuid
-    || user?.organization_uuid
-    || user?.orgId
-    || user?.org_id
-    || user?.organization_id
-    || user?.orgUuid
-    || user?.organizationUUID
-    || user?.organizationId
-    || user?.organization?.id;
+  // Global admin: no orgId needed here
 
   // Mock data for Organization Performance
   const organizationData = [
@@ -46,10 +37,9 @@ const AdminHome = () => {
   ];
 
   useEffect(() => {
-    if (orgId) {
-      dispatch(fetchMessagesForAdmin(orgId));
-    }
-  }, [dispatch, orgId]);
+    // Fetch all messages directly from the global message board (no org filter)
+    dispatch(fetchAllMessages());
+  }, [dispatch]);
 
   // Keep hover effect visible while scrolling by tracking the element under the pointer
   useEffect(() => {
@@ -115,14 +105,16 @@ const AdminHome = () => {
   };
 
   const quickLinks = [
-    // { to: '/admin/content-assessments', title: 'Assessments', desc: 'Create quizzes and tests to evaluate learning.', Icon: ClipboardCheck },
-    // { to: '/admin/manage-surveys', title: 'Surveys', desc: 'Collect feedback and insights from learners.', Icon: ListChecks },
-    { to: '/admin/learning-paths', title: 'Learning Paths', desc: 'Build structured, guided progressions.', Icon: GraduationCap },
-    { to: '/admin/create-assignment', title: 'Create Assignment', desc: 'Assign tasks and set deadlines for learners.', Icon: PencilLine },
-    // { to: '/admin/manage-assignments', title: 'Manage Assignments', desc: 'Track submissions and manage grading.', Icon: ClipboardList },
-    // { to: '/admin/message-board', title: 'Message Board', desc: 'Broadcast updates to your organization.', Icon: MessageSquare },
-    { to: '/admin/activity-log', title: 'Activity Log', desc: 'Review recent actions and system events.', Icon: Activity },
-    { to: '/admin/help-center', title: 'Help Center', desc: 'Find documentation and get support.', Icon: HelpCircle },
+    // { to: '/global-admin/organizations', title: 'Organizations', desc: 'Manage and configure tenant organizations.', Icon: Building },
+    // { to: '/global-admin/module', title: 'Modules', desc: 'Create and manage global modules.', Icon: BookOpen },
+    // { to: '/global-admin/assessments', title: 'Assessments', desc: 'Build and manage global assessments.', Icon: ClipboardCheck },
+    // { to: '/global-admin/surveys', title: 'Surveys', desc: 'Design and distribute surveys.', Icon: ListChecks },
+    { to: '/global-admin/assignments', title: 'Assignments', desc: 'Assign content across organizations.', Icon: ClipboardList },
+    // { to: '/global-admin/message-board', title: 'Message Board', desc: 'Broadcast updates platform-wide.', Icon: MessageSquare },
+    { to: '/global-admin/users', title: 'Users', desc: 'View and administer users.', Icon: Users },
+    // { to: '/global-admin/analytics-view', title: 'Analytics', desc: 'High-level analytics and trends.', Icon: TrendingUp },
+    { to: '/global-admin/activity-log', title: 'Activity Log', desc: 'Review recent platform activities.', Icon: Activity },
+    { to: '/global-admin/help-center', title: 'Help Center', desc: 'Find documentation and get support.', Icon: HelpCircle },
   ];
 
   return (
@@ -136,7 +128,7 @@ const AdminHome = () => {
                 {getGreeting()}, {userName}! 👋
               </h1>
               <p className="admin-welcome-subtitle">
-                Welcome to OmniEdu Admin Dashboard
+                Welcome to OmniEdu Global Admin Dashboard
               </p>
             </div>
           </div>
@@ -257,4 +249,4 @@ const AdminHome = () => {
   );
 };
 
-export default AdminHome;
+export default GlobalAdminHome;

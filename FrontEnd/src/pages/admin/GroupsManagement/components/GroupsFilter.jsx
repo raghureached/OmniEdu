@@ -1,4 +1,4 @@
-import { ChevronDown, Search, Share } from 'lucide-react';
+import { ChevronDown, Import, Search, Share } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import api from '../../../../services/api';
 
@@ -57,6 +57,12 @@ const GroupsFilter = ({
         </div>
 
         <div className="controls-right">
+          <button className="control-btn">
+              Import <Import size={16} color="#6b7280" />
+            </button>
+            <button className="control-btn">
+              Export <Share size={16} color="#6b7280" />
+            </button>
           <button className="control-btn" onClick={() => setShowFilters((prev) => !prev)}>
             Filter
           </button>
@@ -69,7 +75,7 @@ const GroupsFilter = ({
           </button>
 
           <button className="btn-primary" onClick={handleCreateGroup}>
-            + Add Group
+            + Add Team
           </button>
 
           {/* Hidden inputs for Import/Export still available from actions */}

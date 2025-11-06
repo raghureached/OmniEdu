@@ -30,6 +30,8 @@ const surveySchema = new mongoose.Schema({
   team: { type: mongoose.Schema.Types.ObjectId, ref: "Team" },         // can set required: true if desired
   subteam: { type: mongoose.Schema.Types.ObjectId, ref: "SubTeam" },   // can set required: true if desired
   thumbnail: { type: String },
+  noOfSections:{type: Number},
+  noOfQuestions:{type: Number},
 
   // Status and meta
   status: {

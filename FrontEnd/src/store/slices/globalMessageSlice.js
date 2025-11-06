@@ -16,6 +16,36 @@ export const fetchMessages = createAsyncThunk(
     }
 );
 
+// Fetch all messages across organizations (Global Admin dashboard)
+export const fetchAllMessages = createAsyncThunk(
+  'message/fetchAllMessages',
+  async ({ page = 1, limit = 50 } = {}, { rejectWithValue }) => {
+    try {
+      const response = await api.get('/api/globalAdmin/getAllMessages', {
+        params: { page, limit },
+      });
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+// Admin-safe: Fetch Global Admin messages for the current admin's org
+export const fetchMessagesForAdmin = createAsyncThunk(
+  'message/fetchMessageForAdmin',
+  async (orgId, { rejectWithValue }) => {
+    try {
+      const response = await api.get('/api/admin/getGlobalAdminMessages', {
+        params: orgId ? { orgId } : {},
+      });
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
 // Post a new message
 export const sendMessage = createAsyncThunk(
   'message/updateMessage',
@@ -71,6 +101,35 @@ const globalMessageSlice = createSlice({
             .addCase(fetchMessages.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
+            })
+
+            // Admin-safe fetch
+            .addCase(fetchMessagesForAdmin.pending, (state) => {
+              state.loading = true;
+              state.error = null;
+            })
+            .addCase(fetchMessagesForAdmin.fulfilled, (state, action) => {
+              state.loading = false;
+              state.currentMessages = action.payload;
+              console.log("globaladmin",state.currentMessages)
+            })
+            .addCase(fetchMessagesForAdmin.rejected, (state, action) => {
+              state.loading = false;
+              state.error = action.payload;
+            })
+
+            // Global Admin: fetch all messages
+            .addCase(fetchAllMessages.pending, (state) => {
+              state.loading = true;
+              state.error = null;
+            })
+            .addCase(fetchAllMessages.fulfilled, (state, action) => {
+              state.loading = false;
+              state.currentMessages = action.payload;
+            })
+            .addCase(fetchAllMessages.rejected, (state, action) => {
+              state.loading = false;
+              state.error = action.payload;
             })
 
             // Update (Post new message)

@@ -31,6 +31,7 @@ import {
   selectAllUsers,
   deselectAllUsers
 } from '../../../store/slices/userSlice';
+import { addUsersToGroup } from '../../../store/slices/userSlice';
 import api from '../../../services/api';
 import { useNavigate } from 'react-router-dom';
 import './UsersManagement.css';
@@ -52,6 +53,9 @@ const UsersManagement = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
   const [showBulkAction, setShowBulkAction] = useState(false);
+  const [assignTeamOpen, setAssignTeamOpen] = useState(false);
+  const [assignTeamId, setAssignTeamId] = useState('');
+  const [assignSubTeamId, setAssignSubTeamId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [roles,setRoles] = useState([]);
   const [teams,setTeams] = useState([]);
@@ -197,6 +201,27 @@ const UsersManagement = () => {
     }
   };
 
+  const handleBulkAssignToGroup = async () => {
+    if (!assignTeamId) {
+      alert('Please select a team');
+      return;
+    }
+    try {
+      await dispatch(addUsersToGroup({ team_id: assignTeamId, sub_team_id: assignSubTeamId || null, userIds: selectedItems })).unwrap();
+      // Refresh users and reset
+      setAssignTeamOpen(false);
+      setShowBulkAction(false);
+      setSelectedItems([]);
+      setAssignTeamId('');
+      setAssignSubTeamId('');
+      dispatch(fetchUsers(filters));
+      alert('Users assigned to the selected team successfully');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to assign users to team');
+    }
+  };
+
   const handleDelete = (userId) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       dispatch(deleteUser(userId));
@@ -284,7 +309,7 @@ const UsersManagement = () => {
             <input
               type="text"
               className="search-input"
-              placeholder="Search users..."
+              placeholder="Search Users"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -306,6 +331,9 @@ const UsersManagement = () => {
             <button className="control-btn">
               Export <Share size={16} color="#6b7280" />
             </button>
+            <button className="control-btn">
+            Filter
+          </button>
             <button
               className="control-btn"
               onClick={() => setShowBulkAction(!showBulkAction)}
@@ -320,7 +348,7 @@ const UsersManagement = () => {
           <div className="bulk-action-header">
             <label className="bulk-action-title">Items Selected: {selectedItems.length}</label>
           </div>
-          <div className="bulk-action-actions" style={{ display: 'flex', gap: 8 ,flexDirection: 'row'}}>
+          <div className="bulk-action-actions" style={{ display: 'flex', gap: 8 ,flexDirection: 'row', alignItems:'center'}}>
             <button
               className="bulk-action-btn"
               disabled={selectedItems.length === 0}
@@ -335,12 +363,29 @@ const UsersManagement = () => {
             >
               Delete
             </button>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {/* <button className="control-btn" onClick={() => document.getElementById('import-groups').click()}>
-                Import
-              </button> */}
+            <div style={{ display: 'flex', gap: 8, alignItems:'center' }}>
+              <button className="btn-primary" disabled={selectedItems.length === 0} onClick={() => setAssignTeamOpen(!assignTeamOpen)}>
+                Assign to Team
+              </button>
             </div>
           </div>
+          {assignTeamOpen && (
+            <div style={{ marginTop: 10, display:'flex', gap: 8, alignItems:'center' }}>
+              <select className="addOrg-form-select" value={assignTeamId} onChange={(e)=>{setAssignTeamId(e.target.value); setAssignSubTeamId('');}}>
+                <option value="">Select Team</option>
+                {teams.map((team) => (
+                  <option key={team._id} value={team._id}>{team.name}</option>
+                ))}
+              </select>
+              <select className="addOrg-form-select" value={assignSubTeamId} onChange={(e)=>setAssignSubTeamId(e.target.value)} disabled={!assignTeamId}>
+                <option value="">Select Sub Team (optional)</option>
+                {teams.filter(t=>t._id===assignTeamId).flatMap(t=>t.subTeams||[]).map((st)=> (
+                  <option key={st._id} value={st._id}>{st.name}</option>
+                ))}
+              </select>
+              <button className="btn-primary" onClick={handleBulkAssignToGroup} disabled={selectedItems.length===0 || !assignTeamId}>Apply</button>
+            </div>
+          )}
         </div>
       )}
           </div>
@@ -567,6 +612,30 @@ const UsersManagement = () => {
                       name="employeeId"
                       className="addOrg-form-input"
                       value={formData.employeeId}
+                      onChange={handleFormChange}
+                    />
+                  </div>
+                </div>
+                <div className="addOrg-form-grid">
+                  
+                  <div className="addOrg-form-group">
+                    <label className="addOrg-form-label">Custom 1</label>
+                    <input
+                      type="text"
+                      name="custom1"
+                      className="addOrg-form-input"
+                      value={formData.custom1}
+                      onChange={handleFormChange}
+                      required
+                    />
+                  </div>
+                  <div className="addOrg-form-group"> 
+                    <label className="addOrg-form-label">Custom 2</label>
+                    <input
+                      type="text"
+                      name="custom2"
+                      className="addOrg-form-input"
+                      value={formData.custom2}
                       onChange={handleFormChange}
                     />
                   </div>

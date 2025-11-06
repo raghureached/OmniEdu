@@ -44,17 +44,22 @@ const addUser = async (req, res) => {
     if (!orgName) throw new Error("Organization not found");
 
     const empId = `${orgName.name.substring(0, 3).toUpperCase()}-${new Date().getFullYear()}-${user[0].uuid.substring(0, 3).toUpperCase()}`;
-
+    const teamArr = [];
+    if(team){
+      teamArr.push({
+        team_id: team,
+        sub_team_id: subteam
+      })
+    }
     // Create UserProfile
     await UserProfile.create([{
       user_id: user[0]._id,
       designation: designation,
-      team_id:team,
-      sub_team_id:subteam,
       organization_roles_id: role,
       department_id,
       organization_id: req.user.organization_id,
-      employee_id: empId
+      employee_id: empId,
+      teams: teamArr
     }], { session });
     
     // ✅ Commit both if all good
@@ -70,8 +75,8 @@ const addUser = async (req, res) => {
 
     const createdProfile = await UserProfile
       .findOne({ user_id: createdUser._id })
-      .populate('team_id', 'name')
-      .populate('sub_team_id', 'name')
+      .populate('teams.team_id', 'name')
+      .populate('teams.sub_team_id', 'name')
       .lean();
 
     return res.status(201).json({
@@ -100,27 +105,47 @@ const addUser = async (req, res) => {
 
 
 const editUser = async (req, res) => {
-  mongoose.startSession();
-  const session = mongoose.startSession();
-  session.startTransaction();
   try {
     const { name, email, password, role, team, subteam } = req.body;
-    const user = await User.findOneAndUpdate({ uuid: req.params.id }, {
-      name,
-      email,
-      password,
-      global_role_id: role,
-      organization_id: req.user.organization_id
-    })
-    const userProfile = await UserProfile.findOneAndUpdate({ user_id: user._id }, {
-      team_id:team,
-      sub_team_id:subteam,
-      organization_roles_id: role,
-    })
-    await userProfile.save();
-    await logAdminActivity(req, "edit", `User edited successfully: ${user.name}`);
 
-    // Fetch updated user + populated relations to match getUsers shape
+    // Update user core fields
+    const user = await User.findOneAndUpdate(
+      { uuid: req.params.id },
+      {
+        name,
+        email,
+        password,
+        global_role_id: role,
+        organization_id: req.user.organization_id,
+      },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ isSuccess: false, message: 'User not found' });
+    }
+
+    // Update profile org role; handle team membership append if provided
+    const membership = team ? { team_id: team, sub_team_id: subteam || null } : null;
+
+    if (membership) {
+      await UserProfile.updateOne(
+        { user_id: user._id },
+        {
+          $set: { organization_roles_id: role },
+          $addToSet: { teams: membership },
+        }
+      );
+    } else {
+      await UserProfile.updateOne(
+        { user_id: user._id },
+        { $set: { organization_roles_id: role } }
+      );
+    }
+
+    await logAdminActivity(req, 'edit', `User edited successfully: ${user.name}`);
+
+    // Fetch updated user + populated relations
     const updatedUser = await User
       .findOne({ uuid: req.params.id })
       .populate({ path: 'global_role_id', select: 'name' })
@@ -128,23 +153,22 @@ const editUser = async (req, res) => {
 
     const updatedProfile = await UserProfile
       .findOne({ user_id: updatedUser._id })
-      .populate('team_id', 'name')
-      .populate('sub_team_id', 'name')
+      .populate('teams.team_id', 'name')
+      .populate('teams.sub_team_id', 'name')
       .lean();
 
     return res.status(200).json({
       isSuccess: true,
       message: 'User updated successfully',
       data: { ...updatedUser, profile: updatedProfile },
-    })
+    });
   } catch (error) {
-    await session.abortTransaction();
-    await logAdminActivity(req, "edit", `User editing failed: ${error.message}`);
+    await logAdminActivity(req, 'edit', `User editing failed: ${error.message}`);
     return res.status(500).json({
       isSuccess: false,
-      message: "Failed to update user",
-      error: error.message
-    })
+      message: 'Failed to update user',
+      error: error.message,
+    });
   }
 }
 const deleteUser = async (req, res) => {
@@ -219,8 +243,8 @@ const getUsers = async (req, res) => {
     // Get all related profiles and populate them deeply
     const userIds = users.map((u) => u._id);
     const profiles = await UserProfile.find({ user_id: { $in: userIds } })
-      .populate("team_id", "name")
-      .populate("sub_team_id", "name")
+      .populate("teams.team_id", "name")
+      .populate("teams.sub_team_id", "name")
       .lean();
 
     // Merge profiles into users

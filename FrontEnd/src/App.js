@@ -55,7 +55,7 @@ import AdminDashBoardConfig from './pages/globalAdmin/AdminDashBoardConfig/Admin
 import GlobalCreateAssignment from './pages/globalAdmin/GlobalAssignments/CreateAssignment';
 import GlobalAdminActivity from './pages/globalAdmin/GlobalActivityLog/GlobalActivityLog';
 import AnalyticsView from './pages/globalAdmin/Analyticsview/AnalyticsView';
-import GlobalAdminDashboard from './pages/globalAdmin/GlobalAdminDashboard/GlobalAdminDashboard';
+import GlobalAdminHome from './pages/globalAdmin/GlobalAdminDashboard/GlobalAdminHome';
 import GlobalAssessments from './pages/globalAdmin/GlobalAssessments/GlobalAssessments';
 import GlobalModuleManagement from './pages/globalAdmin/GlobalModuleManagement/GlobalModuleManagement';
 import Globalusers from './pages/globalAdmin/Users/Globalusers';
@@ -116,7 +116,7 @@ function App() {
           </Route>
 
           <Route path="/global-admin/*" element={<GlobalAdminLayout />}>
-            <Route index element={<Navigate to="assessments" replace />} />
+            <Route index element={<GlobalAdminHome/>} />
             <Route path="organizations" element={<OrganizationManagement />} />
             <Route path="message-board" element={<GlobalMessageBoard />} />
             <Route path="roles" element={<GlobalRolesManagement />} />

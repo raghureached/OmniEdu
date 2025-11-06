@@ -4,7 +4,7 @@ const {addContent, editContent, deleteContent, getContent, getContentById, bulkD
 const {createSurvey, editSurvey, deleteSurvey, getSurveys, getSurvey} = require("../controllers/globalAdmin.controller/globalAdmin_Surveys");
 const {upload,uploadContent, uploadAssessment, uploadQuestionFile} = require("../middleware/multer_middleware");
 const { uploadMultipleToCloudinary, uploadToCloudinary, uploadQuestionFilestoCloud, uploadQuestionFilesToCloud } = require("../utils/uploadOnCloud");
-const { setMessage, editMessage, deleteMessage, getMessage } = require("../controllers/globalAdmin.controller/globalAdmin_message");
+const { setMessage, editMessage, deleteMessage, getMessage, getAllMessages } = require("../controllers/globalAdmin.controller/globalAdmin_message");
 const { getPlans } = require("../controllers/globalAdmin.controller/globalAdmin_plans");
 const { createAssignment, fetchAssignments } = require("../controllers/globalAdmin.controller/globalAdmin_Assignmnet");
 const { getGlobalAdminActivity } = require("../controllers/globalAdmin.controller/globalAdmin_activity");
@@ -28,7 +28,7 @@ const {
     fileUploadHandler,
   } = require("../controllers/globalAdmin.controller/globalAdmin_Assessments");
 const { getTeams } = require("../controllers/globalAdmin.controller/globalAdmin_Teams");
-const { enhanceText, enhanceAssessment, enhanceSurvey, createQuestions } = require("../controllers/globalAdmin.controller/globalAdmin_AI");
+const { enhanceText, enhanceAssessment, enhanceSurvey, createQuestions,generateSurveyWithSections } = require("../controllers/globalAdmin.controller/globalAdmin_AI");
 const { getGroups } = require("../controllers/globalAdmin.controller/globalAdmin_Teams");
 
 const router = require("express").Router();
@@ -91,6 +91,7 @@ router.route('/setMessage').post(setMessage)
 router.route('/editMessage/:id').put(editMessage)
 router.route('/deleteMessage/:id').delete(deleteMessage)
 router.route('/getMessage').post(getMessage)
+router.route('/getAllMessages').get(getAllMessages)
 
 //////////////Plans////////////
 
@@ -133,5 +134,5 @@ router.route('/enhanceText').post(enhanceText)
 router.route('/enhanceSurvey').post(enhanceSurvey)
 router.route('/enhanceAssessment').post(enhanceAssessment)
 router.route('/createQuestions').post(createQuestions)
-
+router.route('/createSurveyQuestions').post(generateSurveyWithSections)
 module.exports = router;

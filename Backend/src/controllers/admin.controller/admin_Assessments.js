@@ -96,7 +96,7 @@ const createAssessment = async (req, res) => {
     let transactionCommitted = false; // Track transaction state
     try {
       const {
-        title, description, tags, duration, team, subteam,
+        title, description, tags, duration, team, subteam,Level,noOfQuestions,
         attempts, unlimited_attempts, percentage_to_pass,
          display_answers, status,credits,stars,badges,category,feedbackEnabled,shuffle_questions,shuffle_options,questions=[],instructions
 
@@ -173,6 +173,8 @@ const createAssessment = async (req, res) => {
         duration,
         team,
         subteam,
+        Level,
+        noOfQuestions,
         attempts,
         unlimited_attempts,
         percentage_to_pass,
@@ -690,6 +692,8 @@ const editAssessment = async (req, res) => {
             ...(Number.isFinite(durationNum) && durationNum >= 0 ? { duration: durationNum } : {}),
             ...(req.body.team ? { team: req.body.team } : {}),
             ...(req.body.subteam ? { subteam: req.body.subteam } : {}),
+            ...(req.body.Level ? { Level: req.body.Level } : {}),
+            ...(req.body.noOfQuestions ? { noOfQuestions: req.body.noOfQuestions } : {}),
             ...(Number.isFinite(attemptsNum) && attemptsNum >= 1 ? { attempts: attemptsNum } : {}),
             unlimited_attempts: unlimited,
             ...(Number.isFinite(passNum) && passNum >= 0 && passNum <= 100 ? { percentage_to_pass: passNum } : {}),

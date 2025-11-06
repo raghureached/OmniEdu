@@ -1,0 +1,84 @@
+const ForAdminMessage = require("../../models/messageforAdmin");
+const Organization = require("../../models/organization_model");
+const mongoose = require("mongoose");
+
+// Fetch Global Admin -> Admin messages for the current admin's organization
+// Uses req.user to infer organization id set by admin auth middleware
+const getGlobalAdminMessages = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 50;
+    const skip = (page - 1) * limit;
+
+    // Try multiple shapes for organization identifier
+    const orgIdFromUser =
+      req.user?.organization_id ||
+      req.user?.organization?.uuid ||
+      req.user?.organizationUuid ||
+      req.user?.orgId ||
+      req.user?.org_id ||
+      req.user?.orgUuid ||
+      req.user?.organizationUUID ||
+      req.user?.organizationId ||
+      req.user?.organization?.id;
+
+    const candidate = orgIdFromUser || req.query.orgId || req.body?.orgId;
+
+    if (!candidate) {
+      return res.status(400).json({
+        success: false,
+        message: "Organization id not provided or not found on user",
+      });
+    }
+
+    // Resolve to organization UUID (messages are stored with organization uuid)
+    let orgDoc = null;
+    // Try by uuid first
+    const orgByUuid = await Organization.findOne({ uuid: candidate }).select("_id uuid");
+    if (orgByUuid) {
+      orgDoc = orgByUuid;
+    } else if (mongoose.isValidObjectId(candidate)) {
+      const orgById = await Organization.findById(candidate).select("_id uuid");
+      if (orgById) orgDoc = orgById;
+    }
+
+    if (!orgDoc) {
+      return res.status(404).json({
+        success: false,
+        message: "Organization not found for provided id",
+      });
+    }
+
+    // Query using uuid, and also fallback to candidate and _id string in case older records used them
+    const idVariants = [orgDoc.uuid, String(orgDoc._id), candidate].filter(Boolean);
+    const query = { organization_id: { $in: idVariants }, status: "active" };
+
+    const messages = await ForAdminMessage.find(query)
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const total = await ForAdminMessage.countDocuments(query);
+
+    return res.status(200).json({
+      success: true,
+      message: "Messages fetched successfully",
+      data: messages,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page * limit < total,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch messages",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = { getGlobalAdminMessages };

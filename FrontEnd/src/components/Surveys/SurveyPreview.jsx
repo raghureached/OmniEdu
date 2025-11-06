@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, X } from 'lucide-react';
-import SubmissionPopupSurveys from '../Surveys/SubmissionPopupSurveys';
+import SubmissionPopupSurveys from './SubmissionPopupSurveys';
 import "./SurveyPreview.css"
 const SurveyPreview = ({
     isOpen,

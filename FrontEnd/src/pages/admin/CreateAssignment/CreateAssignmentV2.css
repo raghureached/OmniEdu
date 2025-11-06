@@ -1,0 +1,847 @@
+/* ==============================
+   Assignment Manager V2 Styles
+   Based on HTML Reference
+   ============================== */
+
+* {
+  box-sizing: border-box;
+}
+
+.cae-scope .container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.cae-scope .page-header {
+  background: white;
+  padding: 20px 30px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.cae-scope .page-header h1 {
+  color: #2c3e50;
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.cae-scope .page-header p {
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+/* Progress Steps */
+.cae-scope .progress-steps {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  background: white;
+  padding: 20px 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.cae-scope .step {
+  flex: 1;
+  text-align: center;
+  position: relative;
+  padding: 0 20px;
+}
+
+.cae-scope .step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 20px;
+  right: -50%;
+  width: 100%;
+  height: 2px;
+  background: #dce4ec;
+  z-index: 1;
+}
+
+.cae-scope .step.active:not(:last-child)::after {
+  background: #5570f1;
+}
+
+.cae-scope .step.completed:not(:last-child)::after {
+  background: #5570f1;
+}
+
+.cae-scope .step-number {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #dce4ec;
+  color: #7f8c8d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
+  font-weight: 600;
+  position: relative;
+  z-index: 2;
+  transition: all 0.3s;
+}
+
+.cae-scope .step.active .step-number {
+  background: #5570f1;
+  color: white;
+  box-shadow: 0 0 12px rgba(85, 112, 241, 0.8);
+}
+
+.cae-scope .step.completed .step-number {
+  background: #9aabff;
+  color: white;
+}
+
+.cae-scope .step-label {
+  font-size: 14px;
+  color: #7f8c8d;
+  font-weight: 500;
+}
+
+.cae-scope .step.active .step-label {
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+/* Main Content */
+.cae-scope .main-content {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+}
+
+.cae-scope .assignment-section {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.cae-scope .section-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #2c3e50;
+  border-bottom: 2px solid #5570f1;
+  padding-bottom: 10px;
+}
+
+.cae-scope .form-group {
+  margin-bottom: 25px;
+}
+
+.cae-scope .form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #34495e;
+}
+
+.cae-scope .required::after {
+  content: " *";
+  color: #e74c3c;
+}
+
+/* Radio Group */
+.cae-scope .radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cae-scope .radio-option {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  border: 2px solid #dce4ec;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.cae-scope .radio-option:hover {
+  border-color: #5570f1;
+  background: #f8f9fa;
+}
+
+.cae-scope .radio-option.selected {
+  border-color: #5570f1;
+  background: #e3f2fd;
+}
+
+.cae-scope .radio-option input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+  cursor: pointer;
+  accent-color: #5570f1;
+}
+
+.cae-scope .radio-option-content {
+  flex: 1;
+}
+
+.cae-scope .radio-option-title {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.cae-scope .radio-option-desc {
+  font-size: 13px;
+  color: #7f8c8d;
+}
+
+/* Filter Row */
+.cae-scope .filter-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+/* Form Inputs */
+.cae-scope select,
+.cae-scope input[type="text"],
+.cae-scope input[type="email"],
+.cae-scope input[type="number"],
+.cae-scope input[type="datetime-local"],
+.cae-scope textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #dce4ec;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.3s;
+  background: #f9fafb;
+}
+
+.cae-scope select:focus,
+.cae-scope input[type="text"]:focus,
+.cae-scope input[type="email"]:focus,
+.cae-scope input[type="number"]:focus,
+.cae-scope input[type="datetime-local"]:focus,
+.cae-scope textarea:focus {
+  outline: none;
+  border-color: #5570f1;
+  background: #fff;
+  box-shadow: 0 0 6px rgba(85, 112, 241, 0.3);
+}
+
+.cae-scope textarea {
+  min-height: 120px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.cae-scope .help-text {
+  font-size: 13px;
+  color: #7f8c8d;
+  margin-top: 5px;
+}
+
+/* Email Counter */
+.cae-scope .email-counter {
+  font-size: 13px;
+  color: #7f8c8d;
+  margin-top: 5px;
+  font-weight: 500;
+}
+
+.cae-scope .email-counter.warning {
+  color: #f39c12;
+}
+
+.cae-scope .email-counter.error {
+  color: #e74c3c;
+}
+
+/* Items List */
+.cae-scope .items-list {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #dce4ec;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.cae-scope .item-card {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #dce4ec;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  transition: all 0.3s;
+}
+
+.cae-scope .item-card:hover {
+  border-color: #5570f1;
+  background: #f8f9fa;
+}
+
+.cae-scope .item-card.selected {
+  border-color: #5570f1;
+  background: #e3f2fd;
+}
+
+.cae-scope .item-card input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+  cursor: pointer;
+  accent-color: #5570f1;
+}
+
+.cae-scope .item-info {
+  flex: 1;
+  cursor: pointer;
+}
+
+.cae-scope .item-title {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.cae-scope .item-meta {
+  font-size: 12px;
+  color: #7f8c8d;
+}
+
+.cae-scope .item-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.cae-scope .item-badge.module {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.cae-scope .item-badge.assessment {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.cae-scope .item-badge.survey {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.cae-scope .item-badge.path {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+
+/* User Selection Mode */
+.cae-scope .user-selection-mode {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.cae-scope .mode-btn {
+  flex: 1;
+  padding: 12px;
+  border: 2px solid #dce4ec;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.cae-scope .mode-btn:hover {
+  border-color: #5570f1;
+}
+
+.cae-scope .mode-btn.active {
+  border-color: #5570f1;
+  background: #5570f1;
+  color: white;
+}
+
+/* Users List */
+.cae-scope .users-list {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #dce4ec;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.cae-scope .user-card {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #dce4ec;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.cae-scope .user-card:hover {
+  border-color: #5570f1;
+  background: #f8f9fa;
+}
+
+.cae-scope .user-card.selected {
+  border-color: #5570f1;
+  background: #e3f2fd;
+}
+
+.cae-scope .user-card input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-right: 12px;
+  cursor: pointer;
+  accent-color: #5570f1;
+}
+
+.cae-scope .user-info {
+  flex: 1;
+}
+
+.cae-scope .user-name {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.cae-scope .user-email {
+  font-size: 12px;
+  color: #7f8c8d;
+}
+
+.cae-scope .user-team {
+  font-size: 11px;
+  color: #95a5a6;
+  margin-top: 2px;
+}
+
+/* Toggle Switch */
+.cae-scope .toggle-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  border: 1px solid #dce4ec;
+}
+
+.cae-scope .toggle-label {
+  flex: 1;
+  cursor: pointer;
+}
+
+.cae-scope .toggle-label strong {
+  display: block;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.cae-scope .toggle-label .help-text {
+  margin-top: 0;
+}
+
+.cae-scope .toggle-switch {
+  position: relative;
+  width: 56px;
+  height: 28px;
+  margin-left: 15px;
+}
+
+.cae-scope .toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.cae-scope .toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #bdc3c7;
+  transition: .3s;
+  border-radius: 28px;
+}
+
+.cae-scope .toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+}
+
+.cae-scope .toggle-switch input:checked + .toggle-slider {
+  background-color: #5570f1;
+}
+
+.cae-scope .toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(28px);
+}
+
+/* Schedule Section */
+.cae-scope .schedule-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.cae-scope .datetime-group {
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #dce4ec;
+}
+
+.cae-scope .datetime-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #34495e;
+}
+
+.cae-scope .datetime-group input {
+  width: 100%;
+}
+
+/* Warning/Alert Boxes */
+.cae-scope .warning-box {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  padding: 15px;
+  margin-top: 15px;
+  display: flex;
+  align-items: start;
+  gap: 12px;
+}
+
+.cae-scope .warning-box-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.cae-scope .warning-box-content {
+  flex: 1;
+}
+
+.cae-scope .warning-box-content strong {
+  display: block;
+  color: #856404;
+  margin-bottom: 5px;
+}
+
+.cae-scope .warning-box-content p {
+  color: #856404;
+  font-size: 14px;
+  margin: 0;
+}
+
+.cae-scope .info-box {
+  background: #e3f2fd;
+  border: 1px solid #2196f3;
+  border-radius: 6px;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.cae-scope .info-box strong {
+  display: block;
+  color: #1976d2;
+  margin-bottom: 5px;
+}
+
+.cae-scope .info-box p {
+  color: #1976d2;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Recurring Options */
+.cae-scope .recurring-options {
+  display: none;
+  margin-top: 15px;
+  padding: 20px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #5570f1;
+}
+
+.cae-scope .recurring-options.visible {
+  display: block;
+}
+
+.cae-scope .recurring-options h4 {
+  color: #2c3e50;
+  margin-bottom: 15px;
+  font-size: 16px;
+}
+
+.cae-scope .custom-interval {
+  display: none;
+  margin-top: 15px;
+}
+
+.cae-scope .custom-interval.visible {
+  display: block;
+}
+
+.cae-scope .custom-interval-input {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Advanced Settings */
+.cae-scope .advanced-toggle {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 1px solid #dce4ec;
+}
+
+.cae-scope .advanced-toggle:hover {
+  background: #e3f2fd;
+}
+
+.cae-scope .advanced-toggle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.cae-scope .advanced-content {
+  display: none;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #dce4ec;
+}
+
+.cae-scope .advanced-content.visible {
+  display: block;
+}
+
+/* Summary Panel */
+.cae-scope .summary-panel {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 20px;
+  height: fit-content;
+}
+
+.cae-scope .summary-panel h3 {
+  font-size: 18px;
+  margin-bottom: 15px;
+  color: #2c3e50;
+}
+
+.cae-scope .summary-item {
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.cae-scope .summary-item strong {
+  display: block;
+  color: #2c3e50;
+  margin-bottom: 5px;
+  font-size: 13px;
+}
+
+.cae-scope .summary-value {
+  color: #5570f1;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.summary-list {
+  font-size: 13px;
+  color: #7f8c8d;
+  margin-top: 5px;
+}
+
+.cae-scope .validation-warning {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 15px;
+  font-size: 13px;
+  color: #856404;
+}
+
+/* Action Buttons */
+.cae-scope .action-buttons {
+  display: flex;
+  gap: 15px;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #dce4ec;
+}
+
+/* Confirmation Modal */
+.cae-scope .modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.cae-scope .modal.active {
+  display: flex;
+}
+
+.cae-scope .modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.cae-scope .modal-header {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #2c3e50;
+  border-bottom: 2px solid #5570f1;
+  padding-bottom: 10px;
+}
+
+.cae-scope .confirmation-details {
+  margin-bottom: 20px;
+}
+
+.cae-scope .confirmation-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.cae-scope .confirmation-section h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+.cae-scope .confirmation-section ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.cae-scope .confirmation-section li {
+  padding: 5px 0;
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+.cae-scope .modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #dce4ec;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #7f8c8d;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+  .cae-scope .main-content {
+    grid-template-columns: 1fr;
+  }
+
+  .cae-scope .summary-panel {
+    position: relative;
+    top: 0;
+  }
+
+  .cae-scope .progress-steps {
+    flex-wrap: wrap;
+  }
+
+  .cae-scope .step {
+    flex-basis: 100%;
+    margin-bottom: 15px;
+  }
+
+  .cae-scope .step:not(:last-child)::after {
+    display: none;
+  }
+
+  .cae-scope .filter-row,
+  .cae-scope .schedule-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .cae-scope .user-selection-mode {
+    flex-direction: column;
+  }
+
+  .cae-scope .action-buttons {
+    flex-direction: column;
+  }
+
+  .cae-scope .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .cae-scope .custom-interval-input {
+    grid-template-columns: 1fr;
+  }
+}

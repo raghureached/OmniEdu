@@ -30,6 +30,13 @@ const userProfileSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "SubTeam",
     },
+    teams: [
+      {
+        team_id: { type: mongoose.Schema.Types.ObjectId, ref: "Team" },
+        sub_team_id: { type: mongoose.Schema.Types.ObjectId, ref: "SubTeam", default: null },
+        _id: false,
+      },
+    ],
     custom_group_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CustomGroup",

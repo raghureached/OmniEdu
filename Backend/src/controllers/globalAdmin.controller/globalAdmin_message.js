@@ -121,6 +121,42 @@ const getMessage = async (req, res) => {
         page,
         limit,
         totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch messages",
+      error: error.message,
+    });
+  }
+};
+
+// duplicate getAllMessages removed
+
+// New: Fetch all messages across organizations (Global Admin dashboard)
+const getAllMessages = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 50;
+    const skip = (page - 1) * limit;
+
+    const messages = await ForAdminMessage.find({})
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await ForAdminMessage.countDocuments({});
+
+    return res.status(200).json({
+      success: true,
+      message: "All messages fetched successfully",
+      data: messages,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
         hasNextPage: page * limit < total,
       },
     });
@@ -133,9 +169,10 @@ const getMessage = async (req, res) => {
   }
 };
 
-module.exports={
-    setMessage,
-    editMessage,
-    deleteMessage,
-    getMessage
-}
+module.exports = {
+  setMessage,
+  editMessage,
+  deleteMessage,
+  getMessage,
+  getAllMessages,
+};

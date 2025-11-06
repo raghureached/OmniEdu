@@ -7,12 +7,16 @@ import RichText from './RichTextSurvey.jsx';
 import SurveyMainPreview from '../../../components/common/Preview/SurveyMainPreview.jsx';
 import FilePreviewModal from '../../../components/common/FilePreviewModal/FilePreviewModal.jsx';
 import CustomLoader2 from '../../../components/common/Loading/CustomLoader2';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from "react-toastify";
+import { CheckCircle, AlertTriangle } from "lucide-react";
+import "react-toastify/dist/ReactToastify.css";
+
 const QuestionsForm = ({
     currentAssessment,
     formData,
     setFormData,
     formElements,
+    setFormElements,
     showForm,
     setShowForm,
     uploadedFiles,
@@ -50,14 +54,19 @@ const QuestionsForm = ({
     // Local validation message for pass percentage
     const [passError, setPassError] = useState('');
     const [noOfQuestions, setNoOfQuestions] = useState(0);
-    const [Level, setLevel] = useState("Beginner");
+    const [noOfSections, setNoOfSections] = useState(0);
     // AI processing state for enhance text feature
     const [aiProcessing, setAiProcessing] = useState(false);
+    const [aiHelpOpen, setAiHelpOpen] = useState(false);
 
     // Derive sub-teams for the selected team
     const selectedTeam = groups.find(t => String(t._id) === String(formData.team));
     const subTeams = selectedTeam?.subTeams || [];
 
+    //ai related 
+    const [errorsDisplay, setErrorsDisplay] = useState({ title: '', description: '' });
+    const isAIDisabled = !formData.title?.trim() ||
+        !formData.description?.trim();
 
 
     const parseHm = (d) => {
@@ -127,17 +136,57 @@ const QuestionsForm = ({
     };
 
 
-    const enhanceTexthelper = async (title) => {
+    // const enhanceTexthelper = async (title, description) => {
+    //     try {
+    //         setAiProcessing(true);
+
+    //         if (!title && !description) {
+    //             toast.error('Please enter both title and description');
+    //             setAiProcessing(false)
+    //             return;
+    //         }
+    //         if (!title) {
+    //             toast.error('Please enter title ');
+    //             setAiProcessing(false)
+    //             return;
+    //         }
+    //         if (!description) {
+    //             toast.error('Please enter description');
+    //             setAiProcessing(false)
+    //             return;
+    //         }
+
+    //         const response = await api.post('/api/admin/enhanceSurvey', { title, description });
+    //         setFormData({ ...formData, title: response.data.data.title, description: response.data.data.description, tags: response.data.data.tags });
+    //     } catch (error) {
+    //         console.error('Error enhancing text:', error);
+    //     } finally {
+    //         setAiProcessing(false);
+    //     }
+    // }
+    const enhanceTexthelper = async (title, description) => {
         try {
             setAiProcessing(true);
-            const response = await api.post('/api/admin/enhanceSurvey', { title });
-            setFormData({ ...formData, title: response.data.data.title, description: response.data.data.description, tags: response.data.data.tags });
+            
+
+            const response = await api.post('/api/admin/enhanceSurvey', { title, description });
+            setFormData({
+                ...formData,
+                title: response.data.data.title,
+                description: response.data.data.description,
+                tags: response.data.data.tags
+            });
+            toast.success('Tags generated from AI');
+            return true; // ✅ success
         } catch (error) {
             console.error('Error enhancing text:', error);
+            toast.error('Failed to generate tags');
+            return false; // ❗ failure
         } finally {
             setAiProcessing(false);
         }
-    }
+    };
+
     const getFileType = (file, url) => {
         if (file && typeof file !== 'string' && file.type) return file.type;
         const href = typeof file === 'string' ? file : url || '';
@@ -256,65 +305,91 @@ const QuestionsForm = ({
         }
     }, [assessmentPreviewOpen, questionPreviewIndex]);
 
-    const createAIQuestions = async (title, noOfQuestions, level) => {
+    const createAIQuestions = async (title, description, noOfSections, noOfQuestions) => {
         try {
             setAiProcessing(true);
+            if (!noOfSections) {
+               
+                toast.error(
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                       
+                        <div style={{ marginLeft: 10 }}>
+                            <strong>Enter the Number of sections</strong>
+                           
+                        </div>
+                    </div>
+                );
 
-            if (!title || !noOfQuestions) {
-                toast.error("Please provide a title and number of questions");
+                setAiProcessing(false);
                 return;
             }
+            if (!noOfQuestions) {
+               
+                toast.error(
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                       
+                        <div style={{ marginLeft: 10 }}>
+                            <strong>Enter the  Number of Questions</strong>
+                            
+                        </div>
+                    </div>
+                );
+
+                setAiProcessing(false);
+                return;
+            }
+            
+
 
             const response = await api.post('/api/admin/createSurveyQuestions', {
                 title,
+                description,
+                noOfSections: parseInt(noOfSections),
                 noOfQuestions: parseInt(noOfQuestions),
-                level
+                
             });
 
             if (response.data.isSuccess && response.data.data?.sections) {
                 const newFormElements = [];
-                let questionOrder = 1;
 
-                // Process each section from the API response
+                // Build UI-friendly formElements: section then its questions
                 response.data.data.sections.forEach((section, sectionIndex) => {
-                    // Add section
-                    const sectionId = `section-${Date.now()}-${sectionIndex}`;
                     newFormElements.push({
-                        id: sectionId,
                         type: 'section',
                         title: section.title || `Section ${sectionIndex + 1}`,
-                        description: section.description || '',
-                        order: sectionIndex + 1
+                        description: section.description || ''
                     });
 
-                    // Add questions for this section
-                    section.questions.forEach((question) => {
-                        const questionId = `question-${Date.now()}-${sectionIndex}-${question.order}`;
+                    (section.questions || []).forEach((q) => {
                         newFormElements.push({
-                            id: questionId,
                             type: 'question',
-                            question_type: question.type === 'Multi Select' ? 'multi_select' : 'multiple_choice',
-                            question_text: question.question_text,
-                            options: question.options.map((opt, optIndex) => ({
-                                id: `opt-${Date.now()}-${sectionIndex}-${question.order}-${optIndex}`,
-                                text: opt,
-                                isCorrect: false // Default to false for survey questions
-                            })),
-                            required: true,
-                            order: questionOrder++
+                            question_type: (q?.type && String(q.type).toLowerCase().includes('multi select')) ? 'Multi Select' : 'Multiple Choice',
+                            question_text: q?.question_text || '',
+                            options: Array.isArray(q?.options)
+                                ? q.options.map(opt => typeof opt === 'string' ? opt : (opt?.text ?? String(opt)))
+                                : ['', '']
                         });
                     });
                 });
-                console.log("Generated form elements:", newFormElements);
-                // Update the form state with the new sections and questions
-                setFormData(prev => ({
-                    ...prev,
-                    sections: newFormElements
-                }));
 
-                // Move to the questions step
-                setStep(2);
-                toast.success("Survey questions generated successfully!");
+                // Replace parent's formElements and go to Step 2
+                if (typeof setFormElements === 'function') {
+                    setFormElements(newFormElements);
+                }
+                // setStep(2);
+                // toast.success("Survey questions generated successfully!");
+                toast.success(
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                        <CheckCircle color="#10b981" size={22} />
+                        <div style={{ marginLeft: 10 }}>
+                            <strong>Survey questions generated successfully</strong>
+                            <div style={{ fontSize: 13, opacity: 0.8 }}>
+                                You can review and edit them in Step 2
+                            </div>
+                        </div>
+                    </div>
+                );
+
             } else {
                 throw new Error("Failed to generate questions");
             }
@@ -379,13 +454,28 @@ const QuestionsForm = ({
                                         </label>
                                         <input
                                             type="text"
-                                            className="addOrg-form-input"
+                                            className={`addOrg-form-input ${errorsDisplay.title ? 'input-error' : ''}`}
                                             placeholder="Enter assessment title"
                                             value={formData.title}
-                                            onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                            onChange={e => { setFormData({ ...formData, title: e.target.value }); setErrorsDisplay({ ...errorsDisplay, title: '' }); }}
                                             required
                                             style={{ width: '100%' }}
                                         />
+
+                                        {errorsDisplay.title && (
+                                            <div className="field-error">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                                    <path
+                                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                        stroke="#ef4444"
+                                                        strokeWidth="2"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                    />
+                                                </svg>
+                                                <span>{errorsDisplay.title}</span>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="module-overlay__form-group" >
                                         <label className="module-overlay__form-label">
@@ -393,12 +483,26 @@ const QuestionsForm = ({
                                                 {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}</span>
                                         </label>
                                         <textarea
-                                            className="survey-assess-form-textarea"
+                                            className={`survey-assess-form-textarea ${errorsDisplay.description ? 'input-error' : ''}`}
                                             placeholder="Provide a detailed description of this survey"
                                             rows={3}
                                             value={formData.description || ''}
-                                            onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                            onChange={e => { setFormData({ ...formData, description: e.target.value }); setErrorsDisplay({ ...errorsDisplay, description: '' }) }}
                                         />
+                                        {errorsDisplay.description && (
+                                            <div className="field-error">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                                    <path
+                                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                        stroke="#ef4444"
+                                                        strokeWidth="2"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                    />
+                                                </svg>
+                                                <span>{errorsDisplay.description}</span>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="module-overlay__form-group">
                                         <label className="module-overlay__form-label">
@@ -455,32 +559,150 @@ const QuestionsForm = ({
 
 
                                     {/* <p style={{ color: '#1a73e8', fontSize: '14px', marginBottom: '10px' }}>
-                                        Provide title,Description,Number of Questions and Level to generate tags and questions with AI
-                                    </p>
-                                    <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
-                                        <div style={{ width: "50%" }} >
-                                            <label className='assess-form-label' style={{ margin: "10px" }}>Number of Questions</label>
-                                            <input type="number" placeholder="Enter the Number of Questions" value={formData.noOfQuestions} className='assess-form-input' onChange={(e) => setNoOfQuestions(e.target.value)} />
-                                        </div>
-                                        <div style={{ width: "50%" }}>
-                                            <label className='assess-form-label' style={{ margin: "10px" }}>Level</label>
-                                            <select
-                                                value={formData.Level}
+                                        Provide Title, Description, Number of Sections and Number of Questions to generate tags and questions with AI
+                                    </p> */}
+                                    <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+                                        <div style={{ width: '50%' }}>
+                                            <label className='assess-form-label' style={{ margin: '10px' }}>Number of Sections</label>
+                                            <input
+                                                type="number"
+                                                placeholder="Enter number of sections"
+                                                value={formData.noOfSections}
                                                 className='assess-form-input'
-                                                onChange={(e) => setLevel(e.target.value)}
-                                            >
-                                                <option value="Beginner">Beginner</option>
-                                                <option value="Intermediate">Intermediate</option>
-                                                <option value="Advanced">Advanced</option>
-                                            </select>
+                                                // onChange={(e) => {setNoOfSections(e.target.value),setFormData({ ...formData, noOfSections: e.target.value })}}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    setNoOfSections(value);
+                                                    setFormData({ ...formData, noOfSections: value });
+                                                }}
 
+
+                                            />
                                         </div>
-                                    </div> */}
+                                        <div style={{ width: '50%' }}>
+                                            <label className='assess-form-label' style={{ margin: '10px' }}>Number of Questions</label>
+                                            <input
+                                                type="number"
+                                                placeholder="Enter number of questions"
+                                                value={formData.noOfQuestions}
+                                                className='assess-form-input'
+                                                // onChange={(e) => {setNoOfQuestions(e.target.value),setFormData({ ...formData, noOfQuestions: e.target.value })}}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    setNoOfQuestions(value);
+                                                    setFormData({ ...formData, noOfQuestions: value });
+                                                }}
+
+                                            />
+                                        </div>
+                                    </div>
 
 
 
                                     {/* ai button */}
-                                    <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(formData.title)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
+                                    {/* <button
+                                        className='btn-primary'
+                                        style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                        onClick={async () => {
+                                            try {
+                                                await enhanceTexthelper(formData.title, formData.description);
+                                                const q = parseInt(noOfQuestions);
+                                                const s = parseInt(noOfSections);
+                                                if (Number.isFinite(q) && q > 0 && Number.isFinite(s) && s > 0) {
+                                                    await createAIQuestions(formData.title, q, s);
+                                                } else {
+                                                    toast.success('Tags generated from AI');
+                                                }
+                                            } catch (e) {
+                                                console.error('AI generation failed', e);
+                                            }
+                                        }}
+                                        disabled={aiProcessing}
+                                    >
+                                        {aiProcessing ? 'Please Wait..' : 'Create with AI ✨'}
+                                    </button> */}
+                                    <div style={{ margin: '0 auto 8px', display: 'flex', justifyContent: 'flex-start' }}>
+                                        <button
+                                            type="button"
+                                            className="survey-assess-btn-link"
+                                            onClick={() => setAiHelpOpen(prev => !prev)}
+                                            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4f46e5', background: 'transparent' }}
+                                            aria-expanded={aiHelpOpen}
+                                            aria-controls="ai-help-panel"
+                                        >
+                                            <Info size={16} /> How create with ai works
+                                        </button>
+                                    </div>
+                                    {aiHelpOpen && (
+                                        <div
+                                            id="ai-help-panel"
+                                            style={{
+                                                width: '70%',
+                                                margin: '0 auto 12px',
+                                                background: '#eef2ff',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: 8,
+                                                padding: '10px 12px',
+                                                color: '#1f2937',
+                                                fontSize: 14
+                                            }}
+                                        >
+                                            <div style={{ fontWeight: 600, marginBottom: 6 }}>Create with AI – How it works</div>
+                                            <ul style={{ marginLeft: 16, listStyle: 'disc' }}>
+                                                <li>Fill <strong>Title</strong> and <strong>Description</strong>. These are required to enable the button.</li>
+                                                <li>Set <strong>Number of Sections</strong> and <strong>Number of Questions</strong> to generate survey sections and questions.</li>
+                                                <li>Click <strong>“Create with AI ✨”</strong>. First tags are enhanced, then survey content is generated.</li>
+                                                <li>Review and edit generated content in <strong>Step 2</strong>.</li>
+                                            </ul>
+                                        </div>
+                                    )}
+                                    <button
+                                        className={`btn-primary ${isAIDisabled ? 'btn-disabled' : ''}`}
+                                        style={{
+                                            width: "70%",
+                                            margin: "auto",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            cursor: isAIDisabled ? "not-allowed" : "pointer",
+                                            opacity: isAIDisabled ? 0.6 : 1,
+                                        }}
+                                        onClick={async () => {
+                                            if (isAIDisabled) return; // prevent accidental click
+                                            const newErrors = {};
+                                            if (!formData.title?.trim()) newErrors.title = "Title is required";
+                                            if (!formData.description?.trim()) newErrors.description = "Description is required";
+
+                                            if (Object.keys(newErrors).length > 0) {
+                                                setErrorsDisplay(newErrors);
+                                                return; // stop execution
+                                            }
+
+                                            // ✅ continue only if both fields filled
+                                            try {
+                                                const enhanced = await enhanceTexthelper(formData.title, formData.description);
+                                                if (!enhanced) return; // stop if failed ❗
+
+                                                const q = parseInt(noOfQuestions);
+                                                const s = parseInt(noOfSections);
+
+                                                if (Number.isFinite(q) && q > 0 && Number.isFinite(s) && s > 0) {
+                                                    await createAIQuestions(formData.title,formData.description, q, s);
+                                                } else {
+                                                    toast.success('Tags generated from AI');
+                                                }
+                                            } catch (e) {
+                                                console.error('AI generation failed', e);
+                                                toast.error('Something went wrong during AI generation');
+                                            }
+                                        }}
+
+                                        disabled={isAIDisabled || aiProcessing}
+                                    >
+                                        {aiProcessing ? "Please Wait.." : "Create with AI ✨"}
+                                    </button>
+
+
                                     {/* <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => createAIQuestions(formData.title, noOfQuestions, Level)}>{aiProcessing ? "Please Wait.." : "Generate Questions with AI ✨"}</button> */}
                                     {/* Thumbnail upload */}
                                     <div className="module-overlay__form-group" >
@@ -884,7 +1106,7 @@ const QuestionsForm = ({
                                         </select>
                                     </div>
                                 </div>
-                                <div className="survey-assess-form-grid">
+                                {/* <div className="survey-assess-form-grid">
                                     <div className="survey-assess-form-group">
                                         <label className="survey-assess-form-label">
                                             Duration<span className="assess-required">*</span>
@@ -909,7 +1131,7 @@ const QuestionsForm = ({
                                         </div>
 
                                     </div>
-                                </div>
+                                </div> */}
                             </div>}
                         </div>
 
@@ -1011,10 +1233,32 @@ const QuestionsForm = ({
                         duration: parseInt((formData.duration || '10').split(' ')[0]) || 10,
                         thumbnail_url: formData.thumbnail_url || '',
                         subteamName: groups.find(t => String(t._id) === String(formData.team))?.subTeams?.find(st => String(st._id) === String(formData.subteam))?.name || '—'
-                    }}
+                    }} embedded={false}
                 />
             )}
             <FilePreviewModal open={filePreview.open} filePreview={filePreview} onClose={closeFilePreview} />
+
+            {/* <ToastContainer
+    position="top-right"
+    autoClose={10000}
+    hideProgressBar={false}
+    newestOnTop
+    closeOnClick
+    pauseOnHover
+    theme="colored"
+    /> */}
+            <ToastContainer
+                position="top-right"
+                autoClose={10000}
+                hideProgressBar={false}
+                newestOnTop
+                closeOnClick
+                pauseOnHover
+                draggable
+                toastClassName="custom-toast"
+                bodyClassName="custom-toast-body"
+            />
+
         </>
     );
 }

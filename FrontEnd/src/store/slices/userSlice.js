@@ -75,6 +75,20 @@ export const bulkUpdateUserGroup = createAsyncThunk(
   }
 );
 
+// New: add selected users to a group (team/subteam)
+export const addUsersToGroup = createAsyncThunk(
+  'users/addUsersToGroup',
+  async ({ team_id, sub_team_id, userIds }, { rejectWithValue }) => {
+    try {
+      const payload = { team_id, sub_team_id, userIds };
+      const response = await api.post('/api/admin/addUsersToGroup', payload);
+      return response.data.data; // contains counts
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
 export const importUsers = createAsyncThunk(
   'users/importUsers',
   async (fileData, { rejectWithValue }) => {
@@ -267,6 +281,19 @@ const userSlice = createSlice({
       .addCase(bulkUpdateUserGroup.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || 'Failed to update user groups';
+      })
+      // Add Users To Group
+      .addCase(addUsersToGroup.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(addUsersToGroup.fulfilled, (state) => {
+        state.loading = false;
+        // We will refetch users in UI after success
+      })
+      .addCase(addUsersToGroup.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.message || 'Failed to add users to group';
       })
       
       // Import Users

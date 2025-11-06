@@ -988,3 +988,47 @@ margin-top: 15px; }
   transform: none !important;
   box-shadow: none !important;
 }
+
+
+/* for error below the text box  */
+/* 🔴 Input field error highlight */
+.input-error {
+  border: 1.5px solid #ef4444 !important;
+  background-color: #fef2f2 !important;
+  border-radius: 8px !important;
+  outline: none;
+}
+
+/* 🔴 Error message below input */
+.field-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #ef4444;
+  font-size: 13px;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.field-error svg {
+  flex-shrink: 0;
+}
+
+.addOrg-form-input:focus.input-error,
+.survey-assess-form-textarea:focus.input-error {
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3); /* soft red glow */
+}
+
+/* ai button disabled */
+.btn-disabled {
+  background-color: #9ca3af !important; /* gray-400 */
+  border: none !important;
+  cursor: not-allowed !important;
+  color: #f9fafb !important; /* light text */
+  transition: none !important;
+}
+
+.btn-disabled:hover {
+  background-color: #9ca3af !important;
+  transform: none !important;
+}

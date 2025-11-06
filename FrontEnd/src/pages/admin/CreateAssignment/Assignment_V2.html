@@ -1,0 +1,2218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignment Manager - V2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .page-header {
+            background: white;
+            padding: 20px 30px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .page-header h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .page-header p {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        /* Progress Steps */
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            padding: 0 20px;
+        }
+
+        .step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            right: -50%;
+            width: 100%;
+            height: 2px;
+            background: #dce4ec;
+            z-index: 1;
+        }
+
+        .step.active:not(:last-child)::after {
+            background: #3498db;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #dce4ec;
+            color: #7f8c8d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-weight: 600;
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s;
+        }
+
+        .step.active .step-number {
+            background: #3498db;
+            color: white;
+        }
+
+        .step.completed .step-number {
+            background: #27ae60;
+            color: white;
+        }
+
+        .step-label {
+            font-size: 14px;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+
+        .step.active .step-label {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 20px;
+        }
+
+        .assignment-section {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #34495e;
+        }
+
+        .required::after {
+            content: " *";
+            color: #e74c3c;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 2px solid #dce4ec;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .radio-option:hover {
+            border-color: #3498db;
+            background: #f8f9fa;
+        }
+
+        .radio-option.selected {
+            border-color: #3498db;
+            background: #e3f2fd;
+        }
+
+        .radio-option input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            cursor: pointer;
+        }
+
+        .radio-option-content {
+            flex: 1;
+        }
+
+        .radio-option-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .radio-option-desc {
+            font-size: 13px;
+            color: #7f8c8d;
+        }
+
+        .filter-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        select,
+        input[type="text"],
+        input[type="email"],
+        input[type="number"],
+        input[type="datetime-local"],
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #dce4ec;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        select:focus,
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="number"]:focus,
+        input[type="datetime-local"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .help-text {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        .email-counter {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-top: 5px;
+            font-weight: 500;
+        }
+
+        .email-counter.warning {
+            color: #f39c12;
+        }
+
+        .email-counter.error {
+            color: #e74c3c;
+        }
+
+        /* Items List */
+        .items-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dce4ec;
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        .item-card {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid #dce4ec;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+
+        .item-card:hover {
+            border-color: #3498db;
+            background: #f8f9fa;
+        }
+
+        .item-card.selected {
+            border-color: #3498db;
+            background: #e3f2fd;
+        }
+
+        .item-card input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            cursor: pointer;
+        }
+
+        .item-info {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .item-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .item-meta {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        .item-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .item-badge.module {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .item-badge.assessment {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .item-badge.survey {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .item-badge.path {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        /* User Selection */
+        .user-selection-mode {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #dce4ec;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .mode-btn:hover {
+            border-color: #3498db;
+        }
+
+        .mode-btn.active {
+            border-color: #3498db;
+            background: #3498db;
+            color: white;
+        }
+
+        .users-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dce4ec;
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        .user-card {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #dce4ec;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .user-card:hover {
+            border-color: #3498db;
+            background: #f8f9fa;
+        }
+
+        .user-card.selected {
+            border-color: #3498db;
+            background: #e3f2fd;
+        }
+
+        .user-card input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 12px;
+            cursor: pointer;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .user-email {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        .user-team {
+            font-size: 11px;
+            color: #95a5a6;
+            margin-top: 2px;
+        }
+
+        /* Toggle Switch */
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border: 1px solid #dce4ec;
+        }
+
+        .toggle-label {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .toggle-label strong {
+            display: block;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .toggle-label .help-text {
+            margin-top: 0;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 56px;
+            height: 28px;
+            margin-left: 15px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #bdc3c7;
+            transition: .3s;
+            border-radius: 28px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: #3498db;
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(28px);
+        }
+
+        /* Schedule Section */
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .datetime-group {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #dce4ec;
+        }
+
+        .datetime-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #34495e;
+        }
+
+        .datetime-group input {
+            width: 100%;
+        }
+
+        /* Warning/Alert Boxes */
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            display: flex;
+            align-items: start;
+            gap: 12px;
+        }
+
+        .warning-box-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .warning-box-content {
+            flex: 1;
+        }
+
+        .warning-box-content strong {
+            display: block;
+            color: #856404;
+            margin-bottom: 5px;
+        }
+
+        .warning-box-content p {
+            color: #856404;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .info-box strong {
+            display: block;
+            color: #1976d2;
+            margin-bottom: 5px;
+        }
+
+        .info-box p {
+            color: #1976d2;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        /* Recurring Options */
+        .recurring-options {
+            display: none;
+            margin-top: 15px;
+            padding: 20px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #3498db;
+        }
+
+        .recurring-options.visible {
+            display: block;
+        }
+
+        .recurring-options h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .custom-interval {
+            display: none;
+            margin-top: 15px;
+        }
+
+        .custom-interval.visible {
+            display: block;
+        }
+
+        .custom-interval-input {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 10px;
+            align-items: center;
+        }
+
+        /* Advanced Settings */
+        .advanced-toggle {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #dce4ec;
+        }
+
+        .advanced-toggle:hover {
+            background: #e3f2fd;
+        }
+
+        .advanced-toggle-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .advanced-content {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #dce4ec;
+        }
+
+        .advanced-content.visible {
+            display: block;
+        }
+
+        .element-schedule {
+            padding: 15px;
+            background: white;
+            border: 1px solid #dce4ec;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .element-schedule-header {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Summary Panel */
+        .summary-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+        }
+
+        .summary-panel h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .summary-item {
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .summary-item strong {
+            display: block;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+
+        .summary-value {
+            color: #3498db;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .summary-list {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        .validation-warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #856404;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dce4ec;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .btn-back {
+            background: white;
+            color: #2c3e50;
+            border: 2px solid #dce4ec;
+        }
+
+        .btn-back:hover {
+            border-color: #3498db;
+            background: #f8f9fa;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Confirmation Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .confirmation-details {
+            margin-bottom: 20px;
+        }
+
+        .confirmation-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .confirmation-section h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .confirmation-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .confirmation-section li {
+            padding: 5px 0;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #dce4ec;
+        }
+
+        /* Hidden sections */
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        /* Responsive */
+        @media (max-width: 968px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-panel {
+                position: relative;
+                top: 0;
+            }
+
+            .progress-steps {
+                flex-wrap: wrap;
+            }
+
+            .step {
+                flex-basis: 100%;
+                margin-bottom: 15px;
+            }
+
+            .step:not(:last-child)::after {
+                display: none;
+            }
+
+            .filter-row,
+            .schedule-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .user-selection-mode {
+                flex-direction: column;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .custom-interval-input {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>Assignment Manager</h1>
+            <p>Assign learning content to users with customizable schedules and reminders</p>
+        </div>
+
+        <!-- Progress Steps -->
+        <div class="progress-steps">
+            <div class="step active" id="step1">
+                <div class="step-number">1</div>
+                <div class="step-label">Select Content</div>
+            </div>
+            <div class="step" id="step2">
+                <div class="step-number">2</div>
+                <div class="step-label">Select Users</div>
+            </div>
+            <div class="step" id="step3">
+                <div class="step-number">3</div>
+                <div class="step-label">Schedule & Settings</div>
+            </div>
+            <div class="step" id="step4">
+                <div class="step-number">4</div>
+                <div class="step-label">Review & Assign</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Column: Assignment Steps -->
+            <div>
+                <!-- STEP 1: Select Content -->
+                <div class="assignment-section step-content active" id="content-step1">
+                    <h2 class="section-title">Step 1: Select Content Type</h2>
+                    
+                    <div class="form-group">
+                        <label class="required">Choose Content Type</label>
+                        <div class="radio-group">
+                            <div class="radio-option" onclick="selectContentType('module')">
+                                <input type="radio" name="contentType" value="module" id="type-module">
+                                <div class="radio-option-content">
+                                    <div class="radio-option-title">Module (Standalone Topic)</div>
+                                    <div class="radio-option-desc">Individual learning modules covering specific topics</div>
+                                </div>
+                            </div>
+                            <div class="radio-option" onclick="selectContentType('assessment')">
+                                <input type="radio" name="contentType" value="assessment" id="type-assessment">
+                                <div class="radio-option-content">
+                                    <div class="radio-option-title">Assessment</div>
+                                    <div class="radio-option-desc">Quizzes and tests to evaluate knowledge</div>
+                                </div>
+                            </div>
+                            <div class="radio-option" onclick="selectContentType('survey')">
+                                <input type="radio" name="contentType" value="survey" id="type-survey">
+                                <div class="radio-option-content">
+                                    <div class="radio-option-title">Survey</div>
+                                    <div class="radio-option-desc">Feedback forms and questionnaires</div>
+                                </div>
+                            </div>
+                            <div class="radio-option" onclick="selectContentType('path')">
+                                <input type="radio" name="contentType" value="path" id="type-path">
+                                <div class="radio-option-content">
+                                    <div class="radio-option-title">Learning Path</div>
+                                    <div class="radio-option-desc">Structured sequence of modules and assessments</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="content-filters" style="display: none;">
+                        <div class="form-group">
+                            <label>Filter Content</label>
+                            <div class="filter-row">
+                                <select id="filterTeam" onchange="loadContentItems()">
+                                    <option value="">All Teams</option>
+                                    <option value="sales">Sales</option>
+                                    <option value="engineering">Engineering</option>
+                                    <option value="hr">Human Resources</option>
+                                    <option value="marketing">Marketing</option>
+                                </select>
+                                <select id="filterSubTeam" onchange="loadContentItems()">
+                                    <option value="">All Sub-Teams</option>
+                                    <option value="sales-east">Sales - East Region</option>
+                                    <option value="sales-west">Sales - West Region</option>
+                                    <option value="eng-frontend">Engineering - Frontend</option>
+                                    <option value="eng-backend">Engineering - Backend</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="required">Select Item to Assign</label>
+                            <div class="help-text">Only one item can be selected. To assign multiple items, create a Learning Path.</div>
+                            <div class="items-list" id="contentItemsList">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">📚</div>
+                                    <p>Select a content type to view available items</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" onclick="goToStep(2)" id="step1-next" disabled>
+                            Next: Select Users →
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Select Users -->
+                <div class="assignment-section step-content" id="content-step2">
+                    <h2 class="section-title">Step 2: Select Users</h2>
+
+                    <div class="form-group">
+                        <label>Assignment Method</label>
+                        <div class="user-selection-mode">
+                            <button class="mode-btn active" onclick="setUserMode('individual')" id="mode-individual">
+                                👤 Individual Users
+                            </button>
+                            <button class="mode-btn" onclick="setUserMode('bulk')" id="mode-bulk">
+                                📧 Bulk Email Entry
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Individual User Selection -->
+                    <div id="individual-mode" class="user-mode-content">
+                        <div class="form-group">
+                            <label>Filter Users</label>
+                            <div class="filter-row">
+                                <select id="userFilterTeam" onchange="loadUsers()">
+                                    <option value="">All Teams</option>
+                                    <option value="sales">Sales</option>
+                                    <option value="engineering">Engineering</option>
+                                    <option value="hr">Human Resources</option>
+                                    <option value="marketing">Marketing</option>
+                                </select>
+                                <select id="userFilterSubTeam" onchange="loadUsers()">
+                                    <option value="">All Sub-Teams</option>
+                                    <option value="sales-east">Sales - East Region</option>
+                                    <option value="sales-west">Sales - West Region</option>
+                                    <option value="eng-frontend">Engineering - Frontend</option>
+                                    <option value="eng-backend">Engineering - Backend</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Search Users</label>
+                            <input type="text" id="userSearch" placeholder="Search by name or email..." 
+                                   oninput="searchUsers(this.value)">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="required">Select Users</label>
+                            <div class="users-list" id="usersList">
+                                <!-- Users will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bulk Email Entry -->
+                    <div id="bulk-mode" class="user-mode-content" style="display: none;">
+                        <div class="form-group">
+                            <label class="required">Enter User Emails</label>
+                            <textarea id="bulkEmails" placeholder="Enter email addresses (one per line)
+john.doe@company.com
+jane.smith@company.com
+mike.wilson@company.com
+
+Maximum 50 emails allowed" oninput="validateBulkEmails()"></textarea>
+                            <div class="email-counter" id="emailCounter">0 emails entered | 50 remaining</div>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-back" onclick="goToStep(1)">
+                            ← Back
+                        </button>
+                        <button class="btn btn-primary" onclick="goToStep(3)" id="step2-next" disabled>
+                            Next: Schedule & Settings →
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 3: Schedule & Settings -->
+                <div class="assignment-section step-content" id="content-step3">
+                    <h2 class="section-title">Step 3: Schedule & Settings</h2>
+
+                    <div class="schedule-grid">
+                        <div class="datetime-group">
+                            <label>Assign Date & Time</label>
+                            <input type="datetime-local" id="assignDate" onchange="updateSummary()">
+                            <div class="help-text">Leave blank to assign immediately</div>
+                        </div>
+                        <div class="datetime-group">
+                            <label>Due Date & Time</label>
+                            <input type="datetime-local" id="dueDate" onchange="updateDueDateInfo()">
+                            <div class="help-text">Leave blank for no due date</div>
+                        </div>
+                    </div>
+
+                    <!-- Spacing Gap -->
+                    <div style="height: 30px;"></div>
+
+                    <!-- Email Notification Toggle -->
+                    <div class="form-group">
+                        <div class="toggle-group">
+                            <div class="toggle-label" onclick="document.getElementById('sendEmail').click()">
+                                <strong>Send Email Notification</strong>
+                                <div class="help-text">Users will receive an email when content is assigned</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="sendEmail" onchange="updateSummary()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Reminder Toggle -->
+                    <div class="form-group">
+                        <div class="toggle-group">
+                            <div class="toggle-label" onclick="document.getElementById('enableReminder').click()">
+                                <strong>Enable Reminder Notifications</strong>
+                                <div class="help-text" id="reminderHelp">Send reminder before due date or after assignment</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="enableReminder" onchange="toggleReminderOptions()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div id="reminderOptions" style="display: none; margin-top: 15px;">
+                            <div class="info-box">
+                                <strong>Automatic Reminder Schedule</strong>
+                                <p id="autoReminderText">Default: 7 working days after assignment (excludes weekends)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reset Progress Toggle -->
+                    <div class="form-group">
+                        <div class="toggle-group">
+                            <div class="toggle-label" onclick="document.getElementById('resetProgress').click()">
+                                <strong>Reset Progress (if re-assigning)</strong>
+                                <div class="help-text">Reset completion status and scores for selected users</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="resetProgress" onchange="checkProgressReset()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div id="resetProgressWarning" style="display: none;">
+                            <!-- Warning will be populated by API check -->
+                        </div>
+                    </div>
+
+                    <!-- Recurring Assignment Toggle -->
+                    <div class="form-group">
+                        <div class="toggle-group">
+                            <div class="toggle-label" onclick="document.getElementById('enableRecurring').click()">
+                                <strong>Enable Recurring Assignment</strong>
+                                <div class="help-text">Automatically reassign after user completion</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="enableRecurring" onchange="toggleRecurringOptions()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div id="recurringOptions" class="recurring-options">
+                            <h4>📅 Recurring Schedule</h4>
+                            <div class="form-group">
+                                <label>Recurrence Interval</label>
+                                <select id="recurringInterval" onchange="toggleCustomInterval()">
+                                    <option value="">Select interval...</option>
+                                    <option value="1m">Every 1 month after completion</option>
+                                    <option value="3m">Every 3 months after completion</option>
+                                    <option value="6m">Every 6 months after completion</option>
+                                    <option value="1y">Every 1 year after completion</option>
+                                    <option value="custom">Custom interval</option>
+                                </select>
+                            </div>
+
+                            <div id="customIntervalSection" class="custom-interval">
+                                <label>Custom Recurrence</label>
+                                <div class="custom-interval-input">
+                                    <input type="number" id="customIntervalValue" min="1" placeholder="Number">
+                                    <select id="customIntervalUnit">
+                                        <option value="days">Days</option>
+                                        <option value="weeks">Weeks</option>
+                                        <option value="months">Months</option>
+                                        <option value="years">Years</option>
+                                    </select>
+                                </div>
+                                <div class="help-text">Specify how long after completion to reassign</div>
+                            </div>
+
+                            <div class="info-box" style="margin-top: 15px;">
+                                <strong>ℹ️ Recurring Assignment Behavior</strong>
+                                <p>• Progress will be automatically reset with each recurrence<br>
+                                • Email notifications will be sent with each new assignment<br>
+                                • Recurring continues indefinitely until user or content is deactivated<br>
+                                • Due date intervals will be maintained for each cycle</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Settings for Learning Paths -->
+                    <div id="advancedScheduling" style="display: none;">
+                        <div class="advanced-toggle" onclick="toggleAdvancedSettings()">
+                            <div class="advanced-toggle-header">
+                                <span>⚙️ Advanced: Individual Element Scheduling</span>
+                                <span id="advancedToggleIcon">▼</span>
+                            </div>
+                            <div class="advanced-content" id="advancedContent">
+                                <p style="color: #7f8c8d; margin-bottom: 15px; font-size: 14px;">
+                                    Set individual assign and due dates for each element in the learning path.
+                                </p>
+                                <div class="warning-box">
+                                    <div class="warning-box-icon">⚠️</div>
+                                    <div class="warning-box-content">
+                                        <strong>Note on Recurring Assignments</strong>
+                                        <p>Advanced element scheduling is not compatible with recurring assignments. If recurring is enabled, path-level dates will be used.</p>
+                                    </div>
+                                </div>
+                                <div id="elementSchedules" style="margin-top: 15px;">
+                                    <!-- Individual element schedules will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-back" onclick="goToStep(2)">
+                            ← Back
+                        </button>
+                        <button class="btn btn-primary" onclick="goToStep(4)">
+                            Next: Review & Assign →
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 4: Review & Confirm -->
+                <div class="assignment-section step-content" id="content-step4">
+                    <h2 class="section-title">Step 4: Review & Confirm Assignment</h2>
+
+                    <div class="confirmation-details" id="reviewDetails">
+                        <!-- Review content will be loaded here -->
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-back" onclick="goToStep(3)">
+                            ← Back
+                        </button>
+                        <button class="btn btn-secondary" onclick="saveDraft()">
+                            💾 Save as Draft
+                        </button>
+                        <button class="btn btn-primary" onclick="confirmAssignment()">
+                            ✓ Confirm & Assign
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Summary Panel -->
+            <div class="summary-panel">
+                <h3>Assignment Summary</h3>
+                
+                <div class="summary-item">
+                    <strong>Content Type</strong>
+                    <div class="summary-value" id="summaryContentType">Not selected</div>
+                </div>
+
+                <div class="summary-item">
+                    <strong>Selected Item</strong>
+                    <div class="summary-value" id="summaryItemCount">None</div>
+                    <div class="summary-list" id="summaryItems"></div>
+                </div>
+
+                <div class="summary-item">
+                    <strong>Users to Assign</strong>
+                    <div class="summary-value" id="summaryUserCount">0</div>
+                </div>
+
+                <div class="summary-item">
+                    <strong>Assign Date</strong>
+                    <div class="summary-value" id="summaryAssignDate">Immediately</div>
+                </div>
+
+                <div class="summary-item">
+                    <strong>Due Date</strong>
+                    <div class="summary-value" id="summaryDueDate">No due date</div>
+                </div>
+
+                <div class="summary-item">
+                    <strong>Email Notification</strong>
+                    <div class="summary-value" id="summaryEmail">Disabled</div>
+                </div>
+
+                <div class="summary-item">
+                    <strong>Reminders</strong>
+                    <div class="summary-value" id="summaryReminder">Disabled</div>
+                </div>
+
+                <div class="summary-item" id="summaryRecurringSection" style="display: none;">
+                    <strong>Recurring</strong>
+                    <div class="summary-value" id="summaryRecurring">-</div>
+                </div>
+
+                <div class="summary-item">
+                    <strong>Total Assignments</strong>
+                    <div class="summary-value" id="summaryTotal">0</div>
+                    <div class="help-text">1 item × Users</div>
+                </div>
+
+                <div id="summaryWarnings"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <div class="modal-header">⚠️ Confirm Assignment</div>
+            <div class="confirmation-details">
+                <p style="margin-bottom: 20px;">You are about to create the following assignment:</p>
+                
+                <div class="confirmation-section">
+                    <h4>📚 Content</h4>
+                    <ul id="modalContentList"></ul>
+                </div>
+
+                <div class="confirmation-section">
+                    <h4>👥 Users</h4>
+                    <ul id="modalUserList"></ul>
+                </div>
+
+                <div class="confirmation-section">
+                    <h4>📅 Schedule</h4>
+                    <ul id="modalSchedule"></ul>
+                </div>
+
+                <div class="confirmation-section">
+                    <h4>🔔 Notifications</h4>
+                    <ul id="modalNotifications"></ul>
+                </div>
+
+                <div class="confirmation-section" id="modalRecurringSection" style="display: none;">
+                    <h4>🔄 Recurring Settings</h4>
+                    <ul id="modalRecurring"></ul>
+                </div>
+
+                <div class="confirmation-section" style="background: #e3f2fd; border: 1px solid #2196f3;">
+                    <h4>📊 Total Assignments to Create</h4>
+                    <p style="font-size: 24px; font-weight: 600; color: #1976d2; margin-top: 10px;" id="modalTotalAssignments">0</p>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-back" onclick="closeConfirmModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="finalizeAssignment()">✓ Confirm Assignment</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentStep = 1;
+        let selectedContentType = null;
+        let selectedItem = null;
+        let selectedUsers = [];
+        let userMode = 'individual';
+        let advancedSchedulingEnabled = false;
+        let usersWithProgress = []; // Will be populated by API
+
+        // Sample data (will be replaced with API calls)
+        const sampleModules = [
+            { id: 'mod1', title: 'Introduction to Workplace Safety', duration: 30, team: 'sales' },
+            { id: 'mod2', title: 'Data Privacy and Security', duration: 45, team: 'engineering' },
+            { id: 'mod3', title: 'Effective Communication Skills', duration: 60, team: 'hr' },
+            { id: 'mod4', title: 'Time Management Techniques', duration: 40, team: 'marketing' }
+        ];
+
+        const sampleAssessments = [
+            { id: 'asmt1', title: 'Safety Compliance Test', duration: 20, questions: 25, team: 'sales' },
+            { id: 'asmt2', title: 'Security Knowledge Check', duration: 15, questions: 20, team: 'engineering' },
+            { id: 'asmt3', title: 'HR Policies Quiz', duration: 25, questions: 30, team: 'hr' }
+        ];
+
+        const sampleSurveys = [
+            { id: 'srv1', title: 'Employee Satisfaction Survey', duration: 10, team: 'hr' },
+            { id: 'srv2', title: 'Training Feedback Form', duration: 5, team: 'sales' },
+            { id: 'srv3', title: 'Quarterly Team Assessment', duration: 15, team: 'marketing' }
+        ];
+
+        const samplePaths = [
+            { id: 'path1', title: 'New Hire Onboarding', duration: 120, elements: 5, team: 'hr' },
+            { id: 'path2', title: 'Sales Excellence Program', duration: 180, elements: 8, team: 'sales' },
+            { id: 'path3', title: 'Leadership Development', duration: 240, elements: 10, team: 'marketing' }
+        ];
+
+        const sampleUsers = [
+            { id: 'u1', name: 'John Doe', email: 'john.doe@company.com', team: 'Sales', subteam: 'Sales - East Region' },
+            { id: 'u2', name: 'Jane Smith', email: 'jane.smith@company.com', team: 'Engineering', subteam: 'Engineering - Frontend' },
+            { id: 'u3', name: 'Mike Wilson', email: 'mike.wilson@company.com', team: 'Human Resources', subteam: 'HR - Recruitment' },
+            { id: 'u4', name: 'Sarah Johnson', email: 'sarah.johnson@company.com', team: 'Marketing', subteam: 'Marketing - Digital' },
+            { id: 'u5', name: 'David Brown', email: 'david.brown@company.com', team: 'Sales', subteam: 'Sales - West Region' },
+            { id: 'u6', name: 'Emily Davis', email: 'emily.davis@company.com', team: 'Engineering', subteam: 'Engineering - Backend' },
+            { id: 'u7', name: 'Robert Taylor', email: 'robert.taylor@company.com', team: 'Human Resources', subteam: 'HR - Training' },
+            { id: 'u8', name: 'Lisa Anderson', email: 'lisa.anderson@company.com', team: 'Marketing', subteam: 'Marketing - Content' }
+        ];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUsers();
+            updateSummary();
+        });
+
+        // Step Navigation
+        function goToStep(step) {
+            // Validate current step before proceeding
+            if (!validateStep(currentStep)) {
+                return;
+            }
+
+            // Hide current step
+            document.getElementById(`content-step${currentStep}`).classList.remove('active');
+            document.getElementById(`step${currentStep}`).classList.remove('active');
+            document.getElementById(`step${currentStep}`).classList.add('completed');
+
+            // Show new step
+            currentStep = step;
+            document.getElementById(`content-step${step}`).classList.add('active');
+            document.getElementById(`step${step}`).classList.add('active');
+
+            // Load step-specific content
+            if (step === 4) {
+                loadReviewContent();
+            }
+
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+
+        function validateStep(step) {
+            switch(step) {
+                case 1:
+                    if (!selectedContentType || !selectedItem) {
+                        alert('Please select a content type and an item to assign.');
+                        return false;
+                    }
+                    return true;
+                case 2:
+                    if (userMode === 'individual' && selectedUsers.length === 0) {
+                        alert('Please select at least one user to assign content to.');
+                        return false;
+                    }
+                    if (userMode === 'bulk') {
+                        const emails = document.getElementById('bulkEmails').value.trim();
+                        if (!emails) {
+                            alert('Please enter at least one email address.');
+                            return false;
+                        }
+                        const emailList = emails.split('\n').filter(e => e.trim());
+                        if (emailList.length === 0) {
+                            alert('Please enter at least one valid email address.');
+                            return false;
+                        }
+                        if (emailList.length > 50) {
+                            alert('Maximum 50 email addresses allowed. Please reduce the number of emails.');
+                            return false;
+                        }
+                    }
+                    return true;
+                case 3:
+                    // Validate dates
+                    const assignDate = document.getElementById('assignDate').value;
+                    const dueDate = document.getElementById('dueDate').value;
+                    
+                    if (assignDate && dueDate) {
+                        const assign = new Date(assignDate);
+                        const due = new Date(dueDate);
+                        if (due <= assign) {
+                            alert('Due date must be after the assign date.');
+                            return false;
+                        }
+                    }
+                    
+                    // Validate recurring settings
+                    if (document.getElementById('enableRecurring').checked) {
+                        const interval = document.getElementById('recurringInterval').value;
+                        if (!interval) {
+                            alert('Please select a recurrence interval.');
+                            return false;
+                        }
+                        if (interval === 'custom') {
+                            const customValue = document.getElementById('customIntervalValue').value;
+                            if (!customValue || customValue < 1) {
+                                alert('Please enter a valid custom interval value.');
+                                return false;
+                            }
+                        }
+                    }
+                    
+                    return true;
+                default:
+                    return true;
+            }
+        }
+
+        // Content Type Selection
+        function selectContentType(type) {
+            selectedContentType = type;
+            selectedItem = null;
+            
+            // Update UI
+            document.querySelectorAll('.radio-option').forEach(opt => opt.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+            document.getElementById(`type-${type}`).checked = true;
+            
+            // Show filters and load items
+            document.getElementById('content-filters').style.display = 'block';
+            loadContentItems();
+            
+            // Show/hide advanced scheduling for paths
+            if (type === 'path') {
+                document.getElementById('advancedScheduling').style.display = 'block';
+            } else {
+                document.getElementById('advancedScheduling').style.display = 'none';
+            }
+            
+            updateSummary();
+        }
+
+        function loadContentItems() {
+            const container = document.getElementById('contentItemsList');
+            const team = document.getElementById('filterTeam').value;
+            const subTeam = document.getElementById('filterSubTeam').value;
+            
+            let items = [];
+            let badgeClass = '';
+            
+            switch(selectedContentType) {
+                case 'module':
+                    items = sampleModules;
+                    badgeClass = 'module';
+                    break;
+                case 'assessment':
+                    items = sampleAssessments;
+                    badgeClass = 'assessment';
+                    break;
+                case 'survey':
+                    items = sampleSurveys;
+                    badgeClass = 'survey';
+                    break;
+                case 'path':
+                    items = samplePaths;
+                    badgeClass = 'path';
+                    break;
+            }
+            
+            // Filter items
+            if (team) {
+                items = items.filter(item => item.team === team);
+            }
+            
+            if (items.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <p>No items found matching the selected filters</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = items.map(item => {
+                const isSelected = selectedItem && selectedItem.id === item.id;
+                const meta = selectedContentType === 'path' ? 
+                    `${item.duration} min • ${item.elements} elements` :
+                    selectedContentType === 'assessment' ?
+                    `${item.duration} min • ${item.questions} questions` :
+                    `${item.duration} minutes`;
+                
+                return `
+                    <div class="item-card ${isSelected ? 'selected' : ''}">
+                        <input type="radio" name="contentItem" ${isSelected ? 'checked' : ''} 
+                               id="item-${item.id}" onchange="selectItem('${item.id}')">
+                        <label for="item-${item.id}" class="item-info">
+                            <div class="item-title">${item.title}</div>
+                            <div class="item-meta">${meta}</div>
+                        </label>
+                        <span class="item-badge ${badgeClass}">${selectedContentType}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectItem(itemId) {
+            let items = [];
+            switch(selectedContentType) {
+                case 'module':
+                    items = sampleModules;
+                    break;
+                case 'assessment':
+                    items = sampleAssessments;
+                    break;
+                case 'survey':
+                    items = sampleSurveys;
+                    break;
+                case 'path':
+                    items = samplePaths;
+                    break;
+            }
+            
+            const item = items.find(i => i.id === itemId);
+            selectedItem = {...item, type: selectedContentType};
+            
+            loadContentItems();
+            updateSummary();
+            updateStepButtons();
+        }
+
+        // User Selection
+        function setUserMode(mode) {
+            userMode = mode;
+            
+            // Update UI
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`mode-${mode}`).classList.add('active');
+            
+            // Show/hide sections
+            document.getElementById('individual-mode').style.display = mode === 'individual' ? 'block' : 'none';
+            document.getElementById('bulk-mode').style.display = mode === 'bulk' ? 'block' : 'none';
+            
+            // Reset selections
+            selectedUsers = [];
+            updateSummary();
+            updateStepButtons();
+        }
+
+        function loadUsers() {
+            const container = document.getElementById('usersList');
+            const team = document.getElementById('userFilterTeam').value;
+            const subTeam = document.getElementById('userFilterSubTeam').value;
+            const search = document.getElementById('userSearch').value.toLowerCase();
+            
+            let users = sampleUsers;
+            
+            // Apply filters
+            if (team) {
+                users = users.filter(u => u.team === team);
+            }
+            if (subTeam) {
+                users = users.filter(u => u.subteam === subTeam);
+            }
+            if (search) {
+                users = users.filter(u => 
+                    u.name.toLowerCase().includes(search) || 
+                    u.email.toLowerCase().includes(search)
+                );
+            }
+            
+            if (users.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <p>No users found matching the selected criteria</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = users.map(user => {
+                const isChecked = selectedUsers.some(su => su.id === user.id);
+                return `
+                    <div class="user-card ${isChecked ? 'selected' : ''}" onclick="toggleUser('${user.id}')">
+                        <input type="checkbox" ${isChecked ? 'checked' : ''} id="user-${user.id}" 
+                               onclick="event.stopPropagation(); toggleUser('${user.id}')">
+                        <div class="user-info">
+                            <div class="user-name">${user.name}</div>
+                            <div class="user-email">${user.email}</div>
+                            <div class="user-team">${user.team} • ${user.subteam}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleUser(userId) {
+            const checkbox = document.getElementById(`user-${userId}`);
+            checkbox.checked = !checkbox.checked;
+            
+            const user = sampleUsers.find(u => u.id === userId);
+            
+            if (checkbox.checked) {
+                selectedUsers.push(user);
+            } else {
+                selectedUsers = selectedUsers.filter(u => u.id !== userId);
+            }
+            
+            loadUsers();
+            updateSummary();
+            updateStepButtons();
+            
+            // Check for progress reset if user is selected
+            if (document.getElementById('resetProgress').checked) {
+                checkProgressReset();
+            }
+        }
+
+        function searchUsers(query) {
+            loadUsers();
+        }
+
+        function validateBulkEmails() {
+            const textarea = document.getElementById('bulkEmails');
+            const counter = document.getElementById('emailCounter');
+            const emails = textarea.value.split('\n').filter(e => e.trim());
+            
+            const count = emails.length;
+            const remaining = 50 - count;
+            
+            counter.textContent = `${count} emails entered | ${remaining} remaining`;
+            
+            if (count > 50) {
+                counter.className = 'email-counter error';
+                counter.textContent = `${count} emails entered | Maximum 50 allowed (${count - 50} over limit)`;
+            } else if (count > 40) {
+                counter.className = 'email-counter warning';
+            } else {
+                counter.className = 'email-counter';
+            }
+            
+            updateStepButtons();
+        }
+
+        // Schedule and Settings
+        function updateDueDateInfo() {
+            const dueDate = document.getElementById('dueDate').value;
+            const reminderHelp = document.getElementById('reminderHelp');
+            const autoReminderText = document.getElementById('autoReminderText');
+            
+            if (dueDate) {
+                reminderHelp.textContent = 'Send reminder 2 days before due date';
+                autoReminderText.textContent = 'Default: 2 days before due date';
+            } else {
+                reminderHelp.textContent = 'Send reminder after assignment';
+                autoReminderText.textContent = 'Default: 7 working days after assignment (excludes weekends)';
+            }
+            
+            updateSummary();
+        }
+
+        function toggleReminderOptions() {
+            const enabled = document.getElementById('enableReminder').checked;
+            document.getElementById('reminderOptions').style.display = enabled ? 'block' : 'none';
+            updateSummary();
+        }
+
+        function checkProgressReset() {
+            const resetEnabled = document.getElementById('resetProgress').checked;
+            const warningDiv = document.getElementById('resetProgressWarning');
+            
+            if (!resetEnabled) {
+                warningDiv.style.display = 'none';
+                return;
+            }
+            
+            // Simulate API call to check for users with progress
+            // In production: Call API endpoint like GET /api/assignments/progress-check
+            setTimeout(() => {
+                // Mock: Assume 3 users have started this content
+                const usersWithProgressCount = Math.min(selectedUsers.length, 3);
+                
+                if (usersWithProgressCount > 0) {
+                    warningDiv.innerHTML = `
+                        <div class="warning-box">
+                            <div class="warning-box-icon">⚠️</div>
+                            <div class="warning-box-content">
+                                <strong>Progress Reset Warning</strong>
+                                <p>${usersWithProgressCount} user${usersWithProgressCount > 1 ? 's have' : ' has'} already started or completed this content. 
+                                Progress will be reset to 0% (completion status, scores, certificates). 
+                                Assignment history will be maintained in records.</p>
+                            </div>
+                        </div>
+                    `;
+                    warningDiv.style.display = 'block';
+                } else {
+                    warningDiv.style.display = 'none';
+                }
+            }, 300);
+        }
+
+        function toggleRecurringOptions() {
+            const enabled = document.getElementById('enableRecurring').checked;
+            const options = document.getElementById('recurringOptions');
+            
+            if (enabled) {
+                options.classList.add('visible');
+            } else {
+                options.classList.remove('visible');
+                document.getElementById('recurringInterval').value = '';
+                document.getElementById('customIntervalSection').classList.remove('visible');
+            }
+            
+            updateSummary();
+        }
+
+        function toggleCustomInterval() {
+            const interval = document.getElementById('recurringInterval').value;
+            const customSection = document.getElementById('customIntervalSection');
+            
+            if (interval === 'custom') {
+                customSection.classList.add('visible');
+            } else {
+                customSection.classList.remove('visible');
+            }
+            
+            updateSummary();
+        }
+
+        function toggleAdvancedSettings() {
+            const content = document.getElementById('advancedContent');
+            const icon = document.getElementById('advancedToggleIcon');
+            advancedSchedulingEnabled = !advancedSchedulingEnabled;
+            
+            if (advancedSchedulingEnabled) {
+                content.classList.add('visible');
+                icon.textContent = '▲';
+                loadElementSchedules();
+            } else {
+                content.classList.remove('visible');
+                icon.textContent = '▼';
+            }
+        }
+
+        function loadElementSchedules() {
+            const container = document.getElementById('elementSchedules');
+            
+            if (!selectedItem || selectedItem.type !== 'path') return;
+            
+            // Mock element data for the path
+            const elements = [
+                { id: 1, title: 'Introduction Module', type: 'module' },
+                { id: 2, title: 'Core Concepts Assessment', type: 'assessment' },
+                { id: 3, title: 'Advanced Topics Module', type: 'module' },
+                { id: 4, title: 'Final Assessment', type: 'assessment' },
+                { id: 5, title: 'Feedback Survey', type: 'survey' }
+            ];
+            
+            container.innerHTML = elements.map(el => `
+                <div class="element-schedule">
+                    <div class="element-schedule-header">
+                        <span class="item-badge ${el.type}">${el.type}</span>
+                        ${el.title}
+                    </div>
+                    <div class="schedule-grid">
+                        <div class="datetime-group">
+                            <label>Assign Date</label>
+                            <input type="datetime-local" id="element-${el.id}-assign">
+                        </div>
+                        <div class="datetime-group">
+                            <label>Due Date</label>
+                            <input type="datetime-local" id="element-${el.id}-due">
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Review and Confirmation
+        function loadReviewContent() {
+            const container = document.getElementById('reviewDetails');
+            
+            const userCount = userMode === 'individual' ? 
+                selectedUsers.length : 
+                document.getElementById('bulkEmails').value.split('\n').filter(e => e.trim()).length;
+            
+            const assignDate = document.getElementById('assignDate').value || 'Immediately';
+            const dueDate = document.getElementById('dueDate').value || 'No due date';
+            const sendEmail = document.getElementById('sendEmail').checked;
+            const enableReminder = document.getElementById('enableReminder').checked;
+            const resetProgress = document.getElementById('resetProgress').checked;
+            const enableRecurring = document.getElementById('enableRecurring').checked;
+            
+            let reminderText = 'No reminders';
+            if (enableReminder) {
+                reminderText = dueDate !== 'No due date' ? 
+                    '2 days before due date' : 
+                    '7 working days after assignment';
+            }
+            
+            let recurringText = '';
+            if (enableRecurring) {
+                const interval = document.getElementById('recurringInterval').value;
+                const intervalMap = {
+                    '1m': 'Every 1 month',
+                    '3m': 'Every 3 months',
+                    '6m': 'Every 6 months',
+                    '1y': 'Every 1 year',
+                    'custom': 'Custom interval'
+                };
+                recurringText = intervalMap[interval] || 'Not configured';
+                
+                if (interval === 'custom') {
+                    const value = document.getElementById('customIntervalValue').value;
+                    const unit = document.getElementById('customIntervalUnit').value;
+                    recurringText = `Every ${value} ${unit}`;
+                }
+                recurringText += ' after completion';
+            }
+            
+            container.innerHTML = `
+                <div class="confirmation-section">
+                    <h4>📚 Content to Assign</h4>
+                    <ul>
+                        <li><strong>${selectedItem.title}</strong> (${selectedItem.type})</li>
+                    </ul>
+                </div>
+
+                <div class="confirmation-section">
+                    <h4>👥 Recipients</h4>
+                    <ul>
+                        <li><strong>${userCount}</strong> user${userCount > 1 ? 's' : ''} will receive this assignment</li>
+                        ${userMode === 'individual' ? `
+                            <li>Selected users: ${selectedUsers.map(u => u.name).join(', ')}</li>
+                        ` : `
+                            <li>Bulk email assignment mode</li>
+                        `}
+                    </ul>
+                </div>
+
+                <div class="confirmation-section">
+                    <h4>📅 Schedule</h4>
+                    <ul>
+                        <li><strong>Assign:</strong> ${assignDate === 'Immediately' ? assignDate : new Date(assignDate).toLocaleString()}</li>
+                        <li><strong>Due:</strong> ${dueDate === 'No due date' ? dueDate : new Date(dueDate).toLocaleString()}</li>
+                    </ul>
+                </div>
+
+                <div class="confirmation-section">
+                    <h4>🔔 Notifications & Settings</h4>
+                    <ul>
+                        <li><strong>Email notification:</strong> ${sendEmail ? 'Yes - users will be notified' : 'No'}</li>
+                        <li><strong>Reminders:</strong> ${reminderText}</li>
+                        <li><strong>Reset progress:</strong> ${resetProgress ? 'Yes - existing progress will be reset to 0%' : 'No'}</li>
+                        ${enableRecurring ? `<li><strong>Recurring:</strong> ${recurringText}</li>` : ''}
+                    </ul>
+                </div>
+
+                <div class="confirmation-section" style="background: #e8f5e9; border: 1px solid #4caf50;">
+                    <h4>📊 Summary</h4>
+                    <p style="font-size: 18px; font-weight: 600; color: #2e7d32; margin-top: 10px;">
+                        Total: ${userCount} assignment${userCount > 1 ? 's' : ''}
+                    </p>
+                    <p style="color: #558b2f; margin-top: 5px;">
+                        1 item × ${userCount} user${userCount > 1 ? 's' : ''}
+                    </p>
+                </div>
+            `;
+        }
+
+        function confirmAssignment() {
+            // Populate modal with details
+            const userCount = userMode === 'individual' ? 
+                selectedUsers.length : 
+                document.getElementById('bulkEmails').value.split('\n').filter(e => e.trim()).length;
+            
+            document.getElementById('modalContentList').innerHTML = `
+                <li>${selectedItem.title} (${selectedItem.type})</li>
+            `;
+            
+            document.getElementById('modalUserList').innerHTML = `
+                <li>${userCount} user${userCount > 1 ? 's' : ''} will receive this assignment</li>
+            `;
+            
+            const assignDate = document.getElementById('assignDate').value || 'Immediately';
+            const dueDate = document.getElementById('dueDate').value || 'No due date';
+            
+            document.getElementById('modalSchedule').innerHTML = `
+                <li><strong>Assign:</strong> ${assignDate === 'Immediately' ? assignDate : new Date(assignDate).toLocaleString()}</li>
+                <li><strong>Due:</strong> ${dueDate === 'No due date' ? dueDate : new Date(dueDate).toLocaleString()}</li>
+            `;
+            
+            const sendEmail = document.getElementById('sendEmail').checked;
+            const enableReminder = document.getElementById('enableReminder').checked;
+            const resetProgress = document.getElementById('resetProgress').checked;
+            
+            let reminderText = 'Disabled';
+            if (enableReminder) {
+                reminderText = dueDate !== 'No due date' ? 
+                    'Enabled (2 days before due date)' : 
+                    'Enabled (7 working days after assignment)';
+            }
+            
+            document.getElementById('modalNotifications').innerHTML = `
+                <li><strong>Email notification:</strong> ${sendEmail ? 'Enabled' : 'Disabled'}</li>
+                <li><strong>Reminders:</strong> ${reminderText}</li>
+                <li><strong>Reset progress:</strong> ${resetProgress ? 'Enabled' : 'Disabled'}</li>
+            `;
+            
+            // Recurring settings
+            const enableRecurring = document.getElementById('enableRecurring').checked;
+            if (enableRecurring) {
+                const interval = document.getElementById('recurringInterval').value;
+                const intervalMap = {
+                    '1m': 'Every 1 month after completion',
+                    '3m': 'Every 3 months after completion',
+                    '6m': 'Every 6 months after completion',
+                    '1y': 'Every 1 year after completion',
+                    'custom': 'Custom interval'
+                };
+                let recurringText = intervalMap[interval] || 'Not configured';
+                
+                if (interval === 'custom') {
+                    const value = document.getElementById('customIntervalValue').value;
+                    const unit = document.getElementById('customIntervalUnit').value;
+                    recurringText = `Every ${value} ${unit} after completion`;
+                }
+                
+                document.getElementById('modalRecurring').innerHTML = `
+                    <li><strong>Frequency:</strong> ${recurringText}</li>
+                    <li>Progress auto-resets with each cycle</li>
+                    <li>Notifications sent with each reassignment</li>
+                    <li>Continues until user/content is deactivated</li>
+                `;
+                document.getElementById('modalRecurringSection').style.display = 'block';
+            } else {
+                document.getElementById('modalRecurringSection').style.display = 'none';
+            }
+            
+            document.getElementById('modalTotalAssignments').textContent = userCount;
+            
+            // Show modal
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+        }
+
+        function finalizeAssignment() {
+            // This would be the API call to create assignments
+            const enableRecurring = document.getElementById('enableRecurring').checked;
+            const resetProgress = document.getElementById('resetProgress').checked;
+            
+            let message = '✓ Assignment created successfully!\n\n';
+            message += 'Users will be notified according to your settings.';
+            
+            if (resetProgress) {
+                message += '\n\nUser progress has been reset to 0%.';
+            }
+            
+            if (enableRecurring) {
+                message += '\n\nRecurring assignment is now active. Users will be automatically reassigned after completion.';
+            }
+            
+            alert(message);
+            
+            // Reset form
+            closeConfirmModal();
+            resetForm();
+        }
+
+        function saveDraft() {
+            alert('💾 Assignment saved as draft!\n\nYou can continue editing or publish it later.');
+        }
+
+        function resetForm() {
+            currentStep = 1;
+            selectedContentType = null;
+            selectedItem = null;
+            selectedUsers = [];
+            userMode = 'individual';
+            
+            // Reset UI
+            document.querySelectorAll('.step-content').forEach(content => content.classList.remove('active'));
+            document.getElementById('content-step1').classList.add('active');
+            
+            document.querySelectorAll('.step').forEach(step => {
+                step.classList.remove('active', 'completed');
+            });
+            document.getElementById('step1').classList.add('active');
+            
+            // Clear forms
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            document.querySelectorAll('input[type="radio"]').forEach(rb => rb.checked = false);
+            document.querySelectorAll('input[type="datetime-local"]').forEach(dt => dt.value = '');
+            document.querySelectorAll('select').forEach(sel => sel.selectedIndex = 0);
+            document.getElementById('bulkEmails').value = '';
+            
+            // Hide sections
+            document.getElementById('content-filters').style.display = 'none';
+            document.getElementById('recurringOptions').classList.remove('visible');
+            document.getElementById('reminderOptions').style.display = 'none';
+            document.getElementById('advancedScheduling').style.display = 'none';
+            
+            updateSummary();
+            window.scrollTo(0, 0);
+        }
+
+        // Summary Updates
+        function updateSummary() {
+            // Content Type
+            const typeDisplay = selectedContentType ? 
+                selectedContentType.charAt(0).toUpperCase() + selectedContentType.slice(1) : 
+                'Not selected';
+            document.getElementById('summaryContentType').textContent = typeDisplay;
+            
+            // Selected Item
+            if (selectedItem) {
+                document.getElementById('summaryItemCount').textContent = '1 item';
+                document.getElementById('summaryItems').textContent = selectedItem.title;
+            } else {
+                document.getElementById('summaryItemCount').textContent = 'None';
+                document.getElementById('summaryItems').textContent = '';
+            }
+            
+            // Users
+            const userCount = userMode === 'individual' ? 
+                selectedUsers.length : 
+                (document.getElementById('bulkEmails') ? 
+                    document.getElementById('bulkEmails').value.split('\n').filter(e => e.trim()).length : 0);
+            document.getElementById('summaryUserCount').textContent = userCount;
+            
+            // Dates
+            const assignDate = document.getElementById('assignDate') ? document.getElementById('assignDate').value : '';
+            const dueDate = document.getElementById('dueDate') ? document.getElementById('dueDate').value : '';
+            
+            document.getElementById('summaryAssignDate').textContent = assignDate ? 
+                new Date(assignDate).toLocaleDateString() : 'Immediately';
+            document.getElementById('summaryDueDate').textContent = dueDate ? 
+                new Date(dueDate).toLocaleDateString() : 'No due date';
+            
+            // Email & Reminder
+            const sendEmail = document.getElementById('sendEmail') ? document.getElementById('sendEmail').checked : false;
+            const enableReminder = document.getElementById('enableReminder') ? document.getElementById('enableReminder').checked : false;
+            
+            document.getElementById('summaryEmail').textContent = sendEmail ? 'Enabled' : 'Disabled';
+            document.getElementById('summaryReminder').textContent = enableReminder ? 'Enabled' : 'Disabled';
+            
+            // Recurring
+            const enableRecurring = document.getElementById('enableRecurring') ? document.getElementById('enableRecurring').checked : false;
+            if (enableRecurring) {
+                const interval = document.getElementById('recurringInterval').value;
+                const intervalMap = {
+                    '1m': 'Every 1 month',
+                    '3m': 'Every 3 months',
+                    '6m': 'Every 6 months',
+                    '1y': 'Every 1 year',
+                    'custom': 'Custom'
+                };
+                document.getElementById('summaryRecurring').textContent = intervalMap[interval] || 'Not set';
+                document.getElementById('summaryRecurringSection').style.display = 'block';
+            } else {
+                document.getElementById('summaryRecurringSection').style.display = 'none';
+            }
+            
+            // Total
+            const total = (selectedItem ? 1 : 0) * userCount;
+            document.getElementById('summaryTotal').textContent = total;
+            
+            // Warnings
+            const warnings = document.getElementById('summaryWarnings');
+            if (total > 50) {
+                warnings.innerHTML = `
+                    <div class="validation-warning">
+                        ⚠️ Large assignment: ${total} total assignments will be created
+                    </div>
+                `;
+            } else {
+                warnings.innerHTML = '';
+            }
+        }
+
+        function updateStepButtons() {
+            // Step 1 button
+            const step1Btn = document.getElementById('step1-next');
+            if (step1Btn) {
+                step1Btn.disabled = !selectedContentType || !selectedItem;
+            }
+            
+            // Step 2 button
+            const step2Btn = document.getElementById('step2-next');
+            if (step2Btn) {
+                if (userMode === 'individual') {
+                    step2Btn.disabled = selectedUsers.length === 0;
+                } else {
+                    const emails = document.getElementById('bulkEmails').value.trim();
+                    const emailCount = emails ? emails.split('\n').filter(e => e.trim()).length : 0;
+                    step2Btn.disabled = emailCount === 0 || emailCount > 50;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

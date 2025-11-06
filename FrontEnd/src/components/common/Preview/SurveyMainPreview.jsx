@@ -488,7 +488,7 @@ const SurveyMainPreview = ({ isOpen, onClose, data,embedded }) => {
                                         }}
                                         formElements={data.formElements || []}
                                         groups={data.groups || []}
-                                        feedback={data.feedback || {}} embedded={true}
+                                        feedback={data.feedback || {}} embedded={embedded}
                                     />
                                 </div>
                             )}

@@ -117,7 +117,8 @@ const GlobalSurveys = () => {
       // percentage_to_pass: 0,   // NEW
       // display_answers: true,
       // display_answers_when: 'AfterAssessment',
-    
+      noOfSections: 0,
+      noOfQuestions: 0,
     });
     setFormElements([{
       type: 'section',
@@ -204,7 +205,8 @@ const GlobalSurveys = () => {
         tags: full.tags || [],
         team: full.team || '',
         subteam: full.subteam || '',
-      
+         noOfSections: full.noOfSections || 0,
+        noOfQuestions: full.noOfQuestions || 0,
       });
       // Build formElements from sections if present; fallback to legacy questions
       let mappedFormElements = [];
@@ -270,6 +272,8 @@ const GlobalSurveys = () => {
         tags: assessment.tags || [],
         team: assessment.team || '',
         subteam: assessment.subteam || '',
+        noOfSections: assessment.noOfSections || 0,
+        noOfQuestions: assessment.noOfQuestions || 0,
       });
      // setFeedback({ instructionTop: '', instruction_header_top: '', question_text: '', instructionBottom: '', instruction_header_bottom: '' });
       setFormElements([
@@ -296,6 +300,8 @@ const GlobalSurveys = () => {
     let currentSection = null;
     let surveyTitle = formData.title || '';
     let surveyDescription = formData.description || '';
+    let noOfSections = formData.noOfSections || 0;
+    let noOfQuestions = formData.noOfQuestions || 0;
 
     for (const element of formElements) {
       if (element.type === 'section') {
@@ -349,6 +355,8 @@ const GlobalSurveys = () => {
       team: formData.team,
       subteam: formData.subteam,
       sections: sections,
+       noOfSections: noOfSections,
+      noOfQuestions: noOfQuestions,
     };
 //  console.log(sections )
     try {
@@ -387,6 +395,8 @@ const GlobalSurveys = () => {
       let currentSection = null;
       let surveyTitle = formData.title || '';
       let surveyDescription = formData.description || '';
+      let noOfSections = formData.noOfSections || 0;
+      let noOfQuestions = formData.noOfQuestions || 0;
 
       for (const element of formElements) {
         if (element.type === 'section') {
@@ -442,6 +452,8 @@ const GlobalSurveys = () => {
         subteam: formData.subteam,
         // Send questions with identifiers so backend can update GlobalQuestion
         sections: sections,
+        noOfSections: formData.noOfSections,
+        noOfQuestions: formData.noOfQuestions,
 
       };
      
@@ -825,6 +837,7 @@ const GlobalSurveys = () => {
         formData={formData}
         setFormData={setFormData}
         formElements={formElements}
+        setFormElements={setFormElements}
         showForm={showForm}
         setShowForm={setShowForm}
         // uploadedFiles={uploadedFiles}
