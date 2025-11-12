@@ -112,14 +112,15 @@ export const resetPassword = createAsyncThunk(
 export const logout = createAsyncThunk('auth/logout', async () => {
   // Clear auth data from localStorage
   localStorage.removeItem('authState');
-  localStorage.removeItem('token');
   try {
-    await api.post('/auth/logout');
+    const logoutResponse = await api.post('/auth/logout');
+    localStorage.removeItem('token');
+    return logoutResponse.data;
   } catch (error) {
     console.log(error)
     console.log('Logout API call failed, but continuing logout process');
+    return null;
   }
-  return null;
 });
 
 // Get persisted state from localStorage and normalize
@@ -275,16 +276,15 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload?.message || 'Failed to reset password';
       })
-      
-      // Logout
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
         state.token = null;
+        state.loading = false;
         state.isAuthenticated = false;
         state.lastLoginDateTime = null;
         state.sessionStartTime = null;
         state.role = null;
-      });
+      })
   },
 });
 

@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../../store/slices/authSlice';
 import { fetchNotifications, markNotificationAsRead } from '../../../store/slices/notificationSlice';
 import './AdminLayout.css';
-import { Menu, Home, Users, UserCheck, Shield, BookOpen,UserPen,NotebookText,NotebookPen,ClipboardType,LibraryBig, CheckCircle,MessagesSquare, Award, BookCopy, Clock, User, HelpCircle, LogOut, Bell, X, BarChart } from 'lucide-react';
+import { Menu, Home, User2, UserCheck, Shield, BookOpen, CircleUserRound, NotepadText, NotebookPen, LibraryBig, BookOpenCheck, MessageCircleCode, Award, BookCopy, Clock, HelpCircle, LogOut, Bell, X, ChartColumnIncreasing } from 'lucide-react';
 
 const AdminLayout = () => {
   const dispatch = useDispatch();
@@ -183,7 +183,7 @@ const AdminLayout = () => {
               to="/admin/users"
               className={isActive("/admin/users") ? "admin_link_active" : ""}
             >
-              <Users size={20} />
+              <User2 size={20} />
               {!sidebarCollapsed && (
                 <span className="admin_sidebar_names">Users</span>
               )}
@@ -228,7 +228,7 @@ const AdminLayout = () => {
                   : ""
               }
             >
-              <CheckCircle size={20} />
+              <BookOpenCheck size={20} />
               {!sidebarCollapsed && (
                 <span className="admin_sidebar_names">Assessments</span>
               )}
@@ -241,7 +241,7 @@ const AdminLayout = () => {
                 isActive("/admin/manage-surveys") ? "admin_link_active" : ""
               }
             >
-              <ClipboardType size={20} />
+              <NotepadText size={20} />
               {!sidebarCollapsed && (
                 <span className="admin_sidebar_names">Surveys</span>
               )}
@@ -324,7 +324,7 @@ const AdminLayout = () => {
               }
             >
               {/* <BookCopy size={20} /> */}
-              <MessagesSquare size={20} />
+              <MessageCircleCode size={20} />
               {!sidebarCollapsed && (
                 <span className="admin_sidebar_names">Message Board</span>
               )}
@@ -342,7 +342,7 @@ const AdminLayout = () => {
                 isActive("/admin/analytics-overview") ? "admin_link_active" : ""
               }
             >
-              <BarChart size={20} />
+              <ChartColumnIncreasing size={20} />
               {!sidebarCollapsed && (
                 <span className="admin_sidebar_names">Overview</span>
               )}
@@ -359,7 +359,7 @@ const AdminLayout = () => {
               className={isActive("/admin/profile") ? "admin_link_active" : ""}
             >
               {/* <Clock size={20} /> */}
-              <UserPen size={20} />
+              <CircleUserRound size={20} />
               {!sidebarCollapsed && (
                 <span className="admin_sidebar_names">Admin Profile</span>
               )}
@@ -520,7 +520,7 @@ const AdminLayout = () => {
                   </div>
                   <ul className="admin_profile_menu">
                     <li onClick={navigateToProfile}>
-                      <User size={16} />
+                      <CircleUserRound size={16} />
                       <span>My Profile</span>
                     </li>
                     <li onClick={handleLogout}>

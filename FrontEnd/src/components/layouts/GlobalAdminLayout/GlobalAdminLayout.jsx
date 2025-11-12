@@ -6,9 +6,8 @@ import { logout } from '../../../store/slices/authSlice';
 import { fetchNotifications, markNotificationAsRead } from '../../../store/slices/notificationSlice';
 import './GlobalAdminLayout.css';
 import { fetchOrganizations } from "../../../store/slices/organizationSlice";
-import { Menu, Home, UserCheck, Shield, BookOpen, Building2, CheckCircle, UserRoundPen, BookCopy, Clock, User, LogOut, Bell, X, BarChart, MessageCircle, Landmark, MessageCircleCode, BookCheck, NotebookTabs, CircleUserRound, NotepadText, ChartColumnIncreasing, BookOpenCheck, User2 } from 'lucide-react';
-import { SiAwsorganizations } from "react-icons/si";
-import { MdAssessment } from "react-icons/md";
+import { Menu, Home, UserCheck, Shield, BookOpen, Building2, CheckCircle, UserRoundPen, BookCopy, Clock, User, LogOut, Bell, X, BarChart, MessageCircle, Landmark, MessageCircleCode, BookCheck, NotebookTabs, CircleUserRound, NotepadText, ChartColumnIncreasing, BookOpenCheck, User2, NotebookPen } from 'lucide-react';
+
 
 const GlobalAdminLayout = () => {
     const dispatch = useDispatch();
@@ -62,8 +61,10 @@ const GlobalAdminLayout = () => {
     }, [profileDropdownOpen, notificationsOpen]);
 
     const handleLogout = () => {
-        dispatch(logout())
-        navigate("/");
+        dispatch(logout()).then(() => {
+            localStorage.removeItem("authState");
+            navigate("/login");
+        });
     };
 
     // Function to check if a link is active
@@ -114,7 +115,10 @@ const GlobalAdminLayout = () => {
     };
     const handleProfileLogout = () => {
         setProfileDropdownOpen(false);
-        dispatch(logout());
+        dispatch(logout()).then(() => {
+            localStorage.removeItem("authState");
+            navigate("/login");
+        });
     };
     // Function to format notification date
     const formatNotificationDate = (dateString) => {
@@ -241,7 +245,8 @@ const GlobalAdminLayout = () => {
                     </li>
                     <li>
                         <Link to="/global-admin/assignments" className={isActive("/global-admin/assignments") ? "globaladmin_link_active" : ""}>
-                            <CheckCircle size={20} />
+                                          <NotebookPen size={20} />
+                            
                             {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Create Assignment</span>}
                         </Link>
                     </li>

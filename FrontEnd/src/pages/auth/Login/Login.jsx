@@ -9,11 +9,11 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isAuthenticated, loading, error, user, role } = useSelector((state) => state.auth);
-
-  useEffect(() => {
-    dispatch(clearError());
-  }, []);
+  const { isAuthenticated, loading, error, role } = useSelector((state) => state.auth);
+  // console.log(error)
+  // useEffect(() => {
+  //   dispatch(clearError());
+  // }, []);
 
   useEffect(() => {
     if (isAuthenticated && role) {

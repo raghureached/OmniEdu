@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 
 import './App.css';
 // Import pages
@@ -62,17 +62,35 @@ import Globalusers from './pages/globalAdmin/Users/Globalusers';
 import GlobalSurveys from './pages/globalAdmin/GlobalSurveys/GlobalAssessments-survey';
 import LearningPath from './components/LearningPath/LearningPath';
 import CreateAssignmentEnhanced from './pages/admin/CreateAssignment/CreateAssignmentEnhanced';
-
 function App() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  // useEffect(() => {
+  //   dispatch(checkAuth());
+  //   const interval = setInterval(() => {
+  //     dispatch(updateSessionTime());
+  //   }, 60000);
+  //   return () => clearInterval(interval);
+  // }, [dispatch]);
   const { isAuthenticated, role, loading } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (role === 'user') {
+        navigate('/user/dashboard');
+      } else if (role === 'admin') {
+        navigate('/admin');
+      } else if (role === 'global-admin') {
+        navigate('/global-admin');
+      }
+    }
+  }, [isAuthenticated, role, navigate]);
   if (loading) {
     return <LoadingScreen />
   }
   return (
-    <Router>
-      <div className="App">
-        <Routes>
+    <div className="App">
+      <Routes>
           <Route
             path="/login"
             element={
@@ -93,8 +111,6 @@ function App() {
             <Route path="additional" element={<Additional />} />
             <Route path="mandatory" element={<Mandatory />} />
           </Route>
-          // above or below the /admin/* block
-{/* <Route path="/admin/learning-paths/:id" element={<LearningPath />} /> */}
           <Route path="/admin/*" element={<AdminLayout />}>
             <Route index element={<AdminHome />} />
             <Route path="users" element={<UsersManagement />} />
@@ -113,7 +129,6 @@ function App() {
             <Route path="profile" element={<AdminProfile />} />
             <Route path="activity-log" element={<AdminActivityLog />} />
           </Route>
-
           <Route path="/global-admin/*" element={<GlobalAdminLayout />}>
             <Route index element={<GlobalAdminHome/>} />
             <Route path="organizations" element={<OrganizationManagement />} />
@@ -139,7 +154,6 @@ function App() {
           <Route path='test' element={<LearningPath/>}/>
         </Routes>
       </div>
-    </Router>
   );
 }
 
