@@ -129,7 +129,7 @@ const addOrganization = async (req, res) => {
         organization_id: org._id,
         global_role_id: "68c67caae94bfd6484cd0d00",
       }], { session,ordered:true })
-      await userProfile.save({ session });
+      await user.save({ session });
   
       await session.commitTransaction();
       await session.endSession();

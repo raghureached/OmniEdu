@@ -9,6 +9,7 @@ import { RiDeleteBinFill } from "react-icons/ri";
 import { FiEdit3 } from "react-icons/fi";
 import ModuleModal from './ModuleModal';
 import { GoX } from 'react-icons/go';
+import { toast } from 'react-toastify';
 
 
 const ModuleManagement = () => {
@@ -25,6 +26,7 @@ const ModuleManagement = () => {
   const [showBulkAction, setShowBulkAction] = useState(false);
   const [selectedItems, setSelectedItems] = useState([]);
   // const [showFilters, setShowFilters] = useState(false);
+  // console.log(error)
   const [filters, setFilters] = useState({
     status: ''
   });
@@ -676,7 +678,6 @@ const ModuleManagement = () => {
           </div>
         </div>
       )}
-
           
     </div>
   );
