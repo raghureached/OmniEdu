@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, ChevronDown, Filter } from 'lucide-react';
+import { GoX } from 'react-icons/go';
+import { RiDeleteBinFill } from 'react-icons/ri';
 import './AdminSurvey.css'
 import { useDispatch, useSelector } from 'react-redux';
 //import { uploadAssessmentFile } from '../../../store/slices/globalAssessmentSlice'; 
-import { fetchGroups } from '../../../store/slices/groupSlice'; 
+import { fetchGroups } from '../../../store/slices/groupSlice';
 
 
 import {
@@ -18,32 +20,116 @@ import {
 import QuestionsForm from './QuestionsForm-survey';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import api from '../../../services/api';
-const GlobalSurveys = () => {
+const AdminSurveys = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [currentAssessment, setCurrentAssessment] = useState(null);
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState([]);
-  const [groups,setGroups] = useState([])
-  // const [formData, setFormData] = useState({
-  //   title: '',
-  //   description: '',
-  //   classification: '',
-  //   status: 'Draft',
-  //   date: ''
-  // });
-  
-  
- 
+  const [groups, setGroups] = useState([]);
+  const [showBulkAction, setShowBulkAction] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    status: ''
+  });
+  const [tempFilters, setTempFilters] = useState({
+    status: ''
+  });
+  const filterButtonRef = useRef(null);
+  const bulkButtonRef = useRef(null);
+  const filterPanelRef = useRef(null);
+  const bulkPanelRef = useRef(null);
+  const [filterPanelStyle, setFilterPanelStyle] = useState({ top: 0, left: 0 });
+  const [bulkPanelStyle, setBulkPanelStyle] = useState({ top: 0, left: 0 });
+
+  const updateFilterPanelPosition = () => {
+    const rect = filterButtonRef.current?.getBoundingClientRect();
+    if (rect) {
+      setFilterPanelStyle({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + window.scrollX,
+      });
+    }
+  };
+
+  const updateBulkPanelPosition = () => {
+    const rect = bulkButtonRef.current?.getBoundingClientRect();
+    if (rect) {
+      const panelWidth = bulkPanelRef.current?.offsetWidth || 0;
+      const fallbackLeft = rect.left + window.scrollX;
+      setBulkPanelStyle({
+        top: rect.bottom + window.scrollY + 8,
+        left: panelWidth ? rect.right + window.scrollX - panelWidth : fallbackLeft,
+      });
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const target = event.target;
+      const filterBtn = filterButtonRef.current;
+      const bulkBtn = bulkButtonRef.current;
+      const filterPanel = filterPanelRef.current;
+      const bulkPanel = bulkPanelRef.current;
+
+      if (
+        (showFilters || showBulkAction) &&
+        !(
+          (filterPanel && filterPanel.contains(target)) ||
+          (bulkPanel && bulkPanel.contains(target)) ||
+          (filterBtn && filterBtn.contains(target)) ||
+          (bulkBtn && bulkBtn.contains(target))
+        )
+      ) {
+        setShowFilters(false);
+        setShowBulkAction(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showFilters, showBulkAction]);
+
+  useEffect(() => {
+    if (showFilters) {
+      updateFilterPanelPosition();
+    }
+    if (showBulkAction) {
+      updateBulkPanelPosition();
+    }
+  }, [showFilters, showBulkAction]);
+
+  useEffect(() => {
+    const handleScrollOrResize = () => {
+      if (showFilters) {
+        updateFilterPanelPosition();
+      }
+      if (showBulkAction) {
+        updateBulkPanelPosition();
+      }
+    };
+
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+
+    return () => {
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
+  }, [showFilters, showBulkAction]);
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     status: 'Saved',
     duration: '',            // NEW
     tags: [],                // NEW
-    team: '',  
-    subteam:'',          // NEW    
+    team: '',
+    subteam: '',          // NEW    
     // attempts: 1,             // NEW
     // unlimited_attempts: false,
     // percentage_to_pass: 0,   // NEW
@@ -130,10 +216,10 @@ const GlobalSurveys = () => {
       question_text: '',
       options: ['', '']
     }]);
-   // setFeedback({ instructionTop: '', instruction_header_top: '', question_text: '', instructionBottom: '', instruction_header_bottom: '' });
+    // setFeedback({ instructionTop: '', instruction_header_top: '', question_text: '', instructionBottom: '', instruction_header_bottom: '' });
     setShowForm(true);
   };
-  
+
   // Visible IDs in the current table page
   const visibleIds = (assessments || []).map(a => a?.uuid || a?._id || a?.id).filter(Boolean);
   const allVisibleSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
@@ -170,24 +256,47 @@ const GlobalSurveys = () => {
     }
   };
 
-  const bulkDelete = async () => {
-    if (selectedIds.length === 0) return;
-    if (!window.confirm(`Delete ${selectedIds.length} survey(s)? This cannot be undone.`)) return;
+  const bulkDelete = async (itemsToDelete = selectedIds) => {
+    if (itemsToDelete.length === 0) return;
+    if (!window.confirm(`Delete ${itemsToDelete.length} survey(s)? This cannot be undone.`)) return;
     try {
       await Promise.all(
-        selectedIds.map(id => dispatch(deleteSurvey(id)).unwrap().catch(() => null))
+        itemsToDelete.map(id => dispatch(deleteSurvey(id)).unwrap().catch(() => null))
       );
       clearSelection();
+      setShowBulkAction(false);
       dispatch(fetchSurveys({ page, limit }));
     } catch (e) {
       console.error('Bulk delete failed', e);
     }
   };
 
+  // Alias handleBulkDelete to bulkDelete for backward compatibility
+  const handleBulkDelete = bulkDelete;
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setTempFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const resetFilters = () => {
+    setTempFilters({ status: '' });
+  };
+
+  const handleFilter = () => {
+    // Apply the temporary filters
+    setFilters({ ...tempFilters });
+    // Close the filter panel
+    setShowFilters(false);
+  };
+
   const handleEditAssessment = async (assessment) => {
     // Always fetch the latest populated assessment so questions are available
     const id = assessment?.uuid || assessment?._id || assessment?.id;
-   
+
     try {
       const full = await dispatch(getSurveyById(id)).unwrap();
       // Fallback if thunk returns nothing (shouldn't)
@@ -208,7 +317,7 @@ const GlobalSurveys = () => {
         subteam: full.subteam || '',
         noOfSections: full.noOfSections || 0,
         noOfQuestions: full.noOfQuestions || 0,
-      
+
       });
       // Build formElements from sections if present; fallback to legacy questions
       let mappedFormElements = [];
@@ -229,7 +338,7 @@ const GlobalSurveys = () => {
               question_type: q.type || '',
               question_text: q.question_text || '',
               options: (() => {
-                const arr = Array.isArray(q.options) && q.options.length ? [...q.options] : ['',''];
+                const arr = Array.isArray(q.options) && q.options.length ? [...q.options] : ['', ''];
                 return arr.length >= 2 ? arr : [...arr, ''].slice(0, 2);
               })()
             });
@@ -249,7 +358,7 @@ const GlobalSurveys = () => {
             question_type: q.type || '',
             question_text: q.question_text || '',
             options: (() => {
-              const arr = Array.isArray(q.options) && q.options.length ? [...q.options] : ['',''];
+              const arr = Array.isArray(q.options) && q.options.length ? [...q.options] : ['', ''];
               return arr.length >= 2 ? arr : [...arr, ''].slice(0, 2);
             })()
           }))
@@ -277,7 +386,7 @@ const GlobalSurveys = () => {
         noOfSections: assessment.noOfSections || 0,
         noOfQuestions: assessment.noOfQuestions || 0,
       });
-     // setFeedback({ instructionTop: '', instruction_header_top: '', question_text: '', instructionBottom: '', instruction_header_bottom: '' });
+      // setFeedback({ instructionTop: '', instruction_header_top: '', question_text: '', instructionBottom: '', instruction_header_bottom: '' });
       setFormElements([
         {
           type: 'section',
@@ -335,7 +444,7 @@ const GlobalSurveys = () => {
         currentSection.questions.push({
           question_text: question_text,
           type: question_type,
-         // instruction_text: element.instruction_text || '',
+          // instruction_text: element.instruction_text || '',
           options: options,
           order: currentSection.questions.length + 1
         });
@@ -359,7 +468,7 @@ const GlobalSurveys = () => {
       noOfSections: noOfSections,
       noOfQuestions: noOfQuestions,
     };
-//  console.log(sections )
+    //  console.log(sections )
     try {
       await dispatch(createSurvey(payload)).unwrap();
       setShowForm(false);
@@ -370,112 +479,112 @@ const GlobalSurveys = () => {
   };
 
   const handleUpdateAssessment = async (statusOverride) => {
-      // Validate that we have a current assessment to update
-     
-      if (!currentAssessment) {
-        console.error('❌ currentAssessment is null/undefined');
-        alert('Error: No assessment selected for update. Please select an assessment to edit first.');
-        return;
-      }
+    // Validate that we have a current assessment to update
 
-      if (typeof currentAssessment !== 'object') {
-        console.error('❌ currentAssessment is not an object:', currentAssessment);
-        alert('Error: Invalid assessment data. Please try again.');
-        return;
-      }
+    if (!currentAssessment) {
+      console.error('❌ currentAssessment is null/undefined');
+      alert('Error: No assessment selected for update. Please select an assessment to edit first.');
+      return;
+    }
 
-      if (!currentAssessment.uuid && !currentAssessment._id && !currentAssessment.id) {
-        console.error('❌ currentAssessment missing ID fields');
-        console.error('Available fields:', Object.keys(currentAssessment));
-        alert('Error: Assessment ID fields missing. Please try editing again.');
-        return;
-      }
-     
-      // Group formElements by sections and extract questions for update
-      const sections = [];
-      let currentSection = null;
-      let surveyTitle = formData.title || '';
-      let surveyDescription = formData.description || '';
-      let noOfSections = formData.noOfSections || 0;
-      let noOfQuestions = formData.noOfQuestions || 0;
+    if (typeof currentAssessment !== 'object') {
+      console.error('❌ currentAssessment is not an object:', currentAssessment);
+      alert('Error: Invalid assessment data. Please try again.');
+      return;
+    }
 
-      for (const element of formElements) {
-        if (element.type === 'section') {
-          // Save previous section if it exists
-          if (currentSection && currentSection.questions.length > 0) {
-            sections.push(currentSection);
-          }
-          // Start new section
-          currentSection = {
-            description: element.description || '',
-            questions: []
-          };
-        } else if (element.type === 'question') {
-          const question_type = (element.question_type || '').trim();
-          const question_text = (element.question_text || '').trim();
-          const options = (Array.isArray(element.options) ? element.options : []).map(o => (o || '').trim()).filter(Boolean);
+    if (!currentAssessment.uuid && !currentAssessment._id && !currentAssessment.id) {
+      console.error('❌ currentAssessment missing ID fields');
+      console.error('Available fields:', Object.keys(currentAssessment));
+      alert('Error: Assessment ID fields missing. Please try editing again.');
+      return;
+    }
 
-          if (!question_type || !['Multiple Choice', 'Multi Select'].includes(question_type)) {
-            alert('Each question must have a valid type: Multiple Choice or Multi Select');
-            return;
-          }
-          if (!question_text) {
-            alert('Each question must have non-empty text');
-            return;
-          }
-          if (options.length < 2) {
-            alert('Each question must have at least two non-empty options');
-            return;
-          }
-          currentSection.questions.push({
-            _id: element._id || element.uuid,
-            question_text: question_text,
-            type: question_type,
-            //instruction_text: element.instruction_text || '',
-            options: options,
-            order: currentSection.questions.length + 1
-          });
+    // Group formElements by sections and extract questions for update
+    const sections = [];
+    let currentSection = null;
+    let surveyTitle = formData.title || '';
+    let surveyDescription = formData.description || '';
+    let noOfSections = formData.noOfSections || 0;
+    let noOfQuestions = formData.noOfQuestions || 0;
+
+    for (const element of formElements) {
+      if (element.type === 'section') {
+        // Save previous section if it exists
+        if (currentSection && currentSection.questions.length > 0) {
+          sections.push(currentSection);
         }
+        // Start new section
+        currentSection = {
+          description: element.description || '',
+          questions: []
+        };
+      } else if (element.type === 'question') {
+        const question_type = (element.question_type || '').trim();
+        const question_text = (element.question_text || '').trim();
+        const options = (Array.isArray(element.options) ? element.options : []).map(o => (o || '').trim()).filter(Boolean);
+
+        if (!question_type || !['Multiple Choice', 'Multi Select'].includes(question_type)) {
+          alert('Each question must have a valid type: Multiple Choice or Multi Select');
+          return;
+        }
+        if (!question_text) {
+          alert('Each question must have non-empty text');
+          return;
+        }
+        if (options.length < 2) {
+          alert('Each question must have at least two non-empty options');
+          return;
+        }
+        currentSection.questions.push({
+          _id: element._id || element.uuid,
+          question_text: question_text,
+          type: question_type,
+          //instruction_text: element.instruction_text || '',
+          options: options,
+          order: currentSection.questions.length + 1
+        });
       }
+    }
 
-      // Don't forget the last section
-      if (currentSection && currentSection.questions.length > 0) {
-        sections.push(currentSection);
-      }
+    // Don't forget the last section
+    if (currentSection && currentSection.questions.length > 0) {
+      sections.push(currentSection);
+    }
 
-      const data = {
-        title: surveyTitle,
-        description: surveyDescription,
-        status: statusOverride ?? formData.status,
-        tags: Array.isArray(formData.tags) ? formData.tags : [],
-        // duration: formData.duration,
-        team: formData.team,
-        subteam: formData.subteam,
-        // Send questions with identifiers so backend can update GlobalQuestion
-        sections: sections,
-        noOfSections: formData.noOfSections,
-        noOfQuestions: formData.noOfQuestions,
+    const data = {
+      title: surveyTitle,
+      description: surveyDescription,
+      status: statusOverride ?? formData.status,
+      tags: Array.isArray(formData.tags) ? formData.tags : [],
+      // duration: formData.duration,
+      team: formData.team,
+      subteam: formData.subteam,
+      // Send questions with identifiers so backend can update GlobalQuestion
+      sections: sections,
+      noOfSections: formData.noOfSections,
+      noOfQuestions: formData.noOfQuestions,
 
-      };
-     
-      const id = currentAssessment?.uuid || currentAssessment?._id || currentAssessment?.id;
-
-
-      if (!id) {
-        console.error('❌ No valid ID found for current assessment:', currentAssessment);
-        alert('Error: Assessment ID not found. Please try again.');
-        return;
-      }
-      try {
-        await dispatch(updateSurvey({ uuid: id, data })).unwrap();
-        setShowForm(false);
-        dispatch(fetchSurveys({ page, limit }));
-      } catch (err) {
-        console.error('Failed to update assessment:', err?.response?.data || err.message);
-      }
     };
 
-    const updateFormElementField = (elementIndex, field, value) => {
+    const id = currentAssessment?.uuid || currentAssessment?._id || currentAssessment?.id;
+
+
+    if (!id) {
+      console.error('❌ No valid ID found for current assessment:', currentAssessment);
+      alert('Error: Assessment ID not found. Please try again.');
+      return;
+    }
+    try {
+      await dispatch(updateSurvey({ uuid: id, data })).unwrap();
+      setShowForm(false);
+      dispatch(fetchSurveys({ page, limit }));
+    } catch (err) {
+      console.error('Failed to update assessment:', err?.response?.data || err.message);
+    }
+  };
+
+  const updateFormElementField = (elementIndex, field, value) => {
     const updated = [...formElements];
     updated[elementIndex][field] = value;
     setFormElements(updated);
@@ -621,15 +730,26 @@ const GlobalSurveys = () => {
       console.error('Failed to delete assessment:', err?.response?.data || err.message);
     }
   };
-  if(creating){
+  if (creating) {
     return <LoadingScreen text="Creating Surveys..." />
   }
-  if(updating){
+  if (updating) {
     return <LoadingScreen text="Updating Surveys..." />
   }
-  if(loading){
-    return <LoadingScreen text="Loading Surveys..."/>
+  if (loading) {
+    return <LoadingScreen text="Loading Surveys..." />
   }
+
+  // Filter the assessments based on search term and status filter
+  const filteredAssessments = assessments.filter(assessment => {
+    const matchesSearch = searchTerm === '' || 
+      (assessment.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       assessment.description?.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesStatus = !filters.status || assessment.status === filters.status;
+    
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="assess-container">
@@ -663,38 +783,157 @@ const GlobalSurveys = () => {
         </div>
       </div>
 
-      {/* Toolbar */}
-      <div className="assess-toolbar">
-        <div className="assess-search-container">
-          <div className="assess-search-bar">
-            <Search size={16} />
-            <input 
-              type="text" 
-              placeholder="Search surveys by title or description " 
-              value={searchTerm} 
-              onChange={e => setSearchTerm(e.target.value)} 
-            />
+
+
+      {/* Controls */}
+      <div className="controls">
+        <div className="roles-search-bar">
+          <Search size={16} color="#6b7280" className="search-icon" />
+          <input
+            type="text"
+            name="name"
+            placeholder="Search Surveys"
+            className="search-input"
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <div className="controls-right">
+          <button
+            ref={filterButtonRef}
+            className="control-btn"
+            onClick={() => {
+              setShowFilters(prev => {
+                const next = !prev;
+                if (next) {
+                  setShowBulkAction(false);
+                  const rect = filterButtonRef.current?.getBoundingClientRect();
+                  if (rect) {
+                    setFilterPanelStyle({
+                      top: rect.bottom + window.scrollY + 8,
+                      left: rect.left + window.scrollX,
+                    });
+                  }
+                }
+                return next;
+              });
+            }}
+          >
+            <Filter size={16} />
+            Filter
+          </button>
+
+          {/* <button className="control-btn">
+                  <Share size={16} />
+                  Share
+                </button> */}
+          <button
+            ref={bulkButtonRef}
+            className="control-btn"
+            onClick={() => {
+              setShowBulkAction(prev => {
+                const next = !prev;
+                if (next) {
+                  setShowFilters(false);
+                  const rect = bulkButtonRef.current?.getBoundingClientRect();
+                  if (rect) {
+                    setBulkPanelStyle({
+                      top: rect.bottom + window.scrollY + 8,
+                      left: rect.left + window.scrollX,
+                    });
+                  }
+                }
+                return next;
+              });
+            }}
+          >
+            Bulk Action <ChevronDown size={16} />
+          </button>
+          <button className="assess-btn-primary" onClick={handleAddAssessment}>
+            <Plus size={16} />
+            <span>Create Survey</span>
+          </button>
+        </div>
+      </div>
+      {showFilters && (
+        <div
+          ref={filterPanelRef}
+          className="adminsurvey-filter-panel"
+          style={{ top: filterPanelStyle.top, left: filterPanelStyle.left, position: 'absolute' }}
+        >
+          <span style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px", hover: { color: "#6b7280" } }} onClick={() => setShowFilters(false)}><GoX size={20} color="#6b7280" /></span>
+          <div className="filter-group">
+            <label>Status</label>
+            <select
+              name="status"
+              value={tempFilters?.status || ""}
+              onChange={handleFilterChange}
+            >
+              <option value="">All</option>
+              <option value="Saved">Saved</option>
+              <option value="Draft">Draft</option>
+              <option value="Published">Published</option>
+            </select>
+          </div>
+
+
+          <div className="filter-actions">
+          <button className="btn-primary" onClick={handleFilter}>
+              Apply
+            </button>
+            <button className="reset-btn" onClick={resetFilters}>
+              Clear
+            </button>
+            
+           
           </div>
         </div>
-        <button className="assess-btn-primary" onClick={handleAddAssessment}>
-          <Plus size={16} />
-          <span>Create Survey</span>
-        </button>
-      </div>
+      )}
+      {showBulkAction && (
+        <div
+          ref={bulkPanelRef}
+          className="adminsurvey-bulk-action-panel"
+          style={{ top: bulkPanelStyle.top, left: bulkPanelStyle.left, position: 'absolute' }}
+        >
+          <div className="bulk-action-header">
+            <label className="bulk-action-title">Items Selected: {selectedIds.length}</label>
+            <GoX
+              size={20}
+              title="Close"
+              aria-label="Close bulk action panel"
+              onClick={() => setShowBulkAction(false)}
+              className="bulk-action-close"
+            />
+          </div>
+          <div className="bulk-action-actions">
+            <button
+              className="bulk-action-delete-btn"
+              disabled={selectedIds.length === 0}
+              onClick={() => handleBulkDelete(selectedIds)}
+            >
+              <RiDeleteBinFill size={16} color="#fff" />
+              <span>Delete</span>
+            </button>
+          </div>
+        </div>
+      )}
 
-      {selectedIds.length > 0 && (
+
+
+
+      {/* {selectedIds.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#f8fafc', margin: '8px 0' }}>
           <div style={{ color: '#0f172a' }}>
             <strong>{selectedIds.length}</strong> selected
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            {/* <button className="assess-btn-secondary" onClick={() => bulkUpdateStatus('Published')} disabled={loading}>Publish</button>
-            <button className="assess-btn-secondary" onClick={() => bulkUpdateStatus('Draft')} disabled={loading}>Move to Draft</button>*/}
-            <button className="assess-btn-secondary" onClick={bulkDelete} disabled={loading} title="Delete selected">Delete</button> 
+            <button className="assess-btn-secondary" onClick={() => bulkUpdateStatus('Published')} disabled={loading}>Publish</button>
+            <button className="assess-btn-secondary" onClick={() => bulkUpdateStatus('Draft')} disabled={loading}>Move to Draft</button>
+            <button className="assess-btn-secondary" onClick={bulkDelete} disabled={loading} title="Delete selected">Delete</button>
             <button className="assess-btn-secondary" onClick={clearSelection}>Clear</button>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Assessment Table */}
       <div className="assess-table-section">
@@ -706,7 +945,7 @@ const GlobalSurveys = () => {
               </div>
               <h3>No Survey found</h3>
               <p>Get started by creating your first Survey</p>
-              <button className="assess-btn-primary" style={{marginLeft:"40%"}} onClick={handleAddAssessment} >
+              <button className="assess-btn-primary" style={{ marginLeft: "40%" }} onClick={handleAddAssessment} >
                 <Plus size={16} />
                 Create Survey
               </button>
@@ -726,110 +965,110 @@ const GlobalSurveys = () => {
                 </tr>
               </thead>
               <tbody>
-                {assessments
-                  .filter(a => a.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                               a.description?.toLowerCase().includes(searchTerm.toLowerCase()))
-                  .map(assessment => (
-                  <tr key={assessment.uuid || assessment._id || assessment.id} className="assess-table-row">
-                    <td>
-                      {(() => { const rowId = assessment.uuid || assessment._id || assessment.id; const checked = selectedIds.includes(rowId); return (
-                        <input type="checkbox" checked={checked} onChange={() => toggleSelectOne(rowId)} aria-label="Select row" />
-                      ); })()}
-                    </td>
-                    <td>
-                      <div className="assess-cell-content">
-                        <div className="assess-title-container">
-                          <h4 className="assess-title">{assessment.title}</h4>
-                          <p className="assess-description">{assessment.description || "No description provided"}</p>
-                          {Array.isArray(assessment.tags) && assessment.tags.length > 0 && (
-                            <div className="assess-tags">
-                              {assessment.tags.map((t, idx) => (
-                                <span key={`${assessment.id}-tag-${idx}`} className="assess-classification">{t}</span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="assess-questions-info">
-                        <span className="assess-question-count">{Array.isArray(assessment.sections) ? assessment.sections.reduce((acc, section) => acc + ((section && Array.isArray(section.questions)) ? section.questions.length : 0), 0) : 0}</span>
-                        <span className="assess-question-label">{(Array.isArray(assessment.sections) ? assessment.sections.reduce((acc, section) => acc + ((section && Array.isArray(section.questions)) ? section.questions.length : 0), 0) : 0) <= 1 ? 'Question' : 'Questions'}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`assess-status-badge ${assessment.status?.toLowerCase()}`}>
-                        {assessment.status}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="assess-date-info">
-                        <Calendar size={14} />
-                        <span>{assessment.createdAt ? new Date(assessment.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        }) : ""}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="assess-actions">
-                      <button 
-                          className="assess-action-btn delete" 
-                          onClick={() => handleDeleteAssessment(assessment.uuid)}
-                          title="Delete Assessment"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                        <button 
-                          className="assess-action-btn edit" 
-                          onClick={() => handleEditAssessment(assessment)}
-                          title="Edit Assessment"
-                        >
-                          <Edit3 size={14} />
-                        </button>
-                        
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              {/* Pagination row */}
-              <tr className="assess-table-row">
-                <td colSpan={6}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-                   
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <button
-                        type="button"
-                        onClick={() => setPage(p => Math.max(1, p - 1))}
-                        disabled={page <= 1 || loading}
-                        style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: page <= 1 || loading ? 'not-allowed' : 'pointer' }}
-                      >
-                        Prev
-                      </button>
-                      <span style={{ color: '#0f172a' }}>
+
+               {filteredAssessments.map(assessment => (
+                    <tr key={assessment.uuid || assessment._id || assessment.id} className="assess-table-row">
+                      <td>
                         {(() => {
-                          const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1)));
-                          return `Page ${page} of ${totalPages}`;
+                          const rowId = assessment.uuid || assessment._id || assessment.id; const checked = selectedIds.includes(rowId); return (
+                            <input type="checkbox" checked={checked} onChange={() => toggleSelectOne(rowId)} aria-label="Select row" />
+                          );
                         })()}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1)));
-                          setPage(p => Math.min(totalPages, p + 1));
-                        }}
-                        disabled={loading || (pagination && page >= Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1))))}
-                        style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: loading || (pagination && page >= Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1)))) ? 'not-allowed' : 'pointer' }}
-                      >
-                        Next
-                      </button>
+                      </td>
+                      <td>
+                        <div className="assess-cell-content">
+                          <div className="assess-title-container">
+                            <h4 className="assess-title">{assessment.title}</h4>
+                            <p className="assess-description">{assessment.description || "No description provided"}</p>
+                            {Array.isArray(assessment.tags) && assessment.tags.length > 0 && (
+                              <div className="assess-tags">
+                                {assessment.tags.map((t, idx) => (
+                                  <span key={`${assessment.id}-tag-${idx}`} className="assess-classification">{t}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="assess-questions-info">
+                          <span className="assess-question-count">{Array.isArray(assessment.sections) ? assessment.sections.reduce((acc, section) => acc + ((section && Array.isArray(section.questions)) ? section.questions.length : 0), 0) : 0}</span>
+                          <span className="assess-question-label">{(Array.isArray(assessment.sections) ? assessment.sections.reduce((acc, section) => acc + ((section && Array.isArray(section.questions)) ? section.questions.length : 0), 0) : 0) <= 1 ? 'Question' : 'Questions'}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`assess-status-badge ${assessment.status?.toLowerCase()}`}>
+                          {assessment.status}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="assess-date-info">
+                          <Calendar size={14} />
+                          <span>{assessment.createdAt ? new Date(assessment.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          }) : ""}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="assess-actions">
+                          <button
+                            className="assess-action-btn delete"
+                            onClick={() => handleDeleteAssessment(assessment.uuid)}
+                            title="Delete Assessment"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                          <button
+                            className="assess-action-btn edit"
+                            onClick={() => handleEditAssessment(assessment)}
+                            title="Edit Assessment"
+                          >
+                            <Edit3 size={14} />
+                          </button>
+
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                {/* Pagination row */}
+                <tr className="assess-table-row">
+                  <td colSpan={6}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <button
+                          type="button"
+                          onClick={() => setPage(p => Math.max(1, p - 1))}
+                          disabled={page <= 1 || loading}
+                          style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: page <= 1 || loading ? 'not-allowed' : 'pointer' }}
+                        >
+                          Prev
+                        </button>
+                        <span style={{ color: '#0f172a' }}>
+                          {(() => {
+                            const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1)));
+                            return `Page ${page} of ${totalPages}`;
+                          })()}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1)));
+                            setPage(p => Math.min(totalPages, p + 1));
+                          }}
+                          disabled={loading || (pagination && page >= Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1))))}
+                          style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: loading || (pagination && page >= Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1)))) ? 'not-allowed' : 'pointer' }}
+                        >
+                          Next
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           )}
         </div>
       </div>
@@ -848,16 +1087,16 @@ const GlobalSurveys = () => {
         handleDeleteAssessment={handleDeleteAssessment}
         updateFormElementField={updateFormElementField}
         addFormElement={addFormElement}
-        removeFormElement={removeFormElement}   
+        removeFormElement={removeFormElement}
         addOption={addOption}
         updateOption={updateOption}
         removeOption={removeOption}
         // handleFileUpload={handleFileUpload}
         duplicateFormElement={duplicateFormElement}
         groups={groups}
-       
+
       />}
     </div>
   );
 };
-export default GlobalSurveys;
+export default AdminSurveys;

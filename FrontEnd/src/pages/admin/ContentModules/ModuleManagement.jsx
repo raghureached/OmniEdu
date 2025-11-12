@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { adminfetchContent, admindeleteContent, admincreateContent, adminupdateContent, adminbulkDeleteContent } from '../../../store/slices/adminModuleSlice';
 import "./ModuleManagement.css"
 import { useNavigate } from 'react-router-dom';
-import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X } from 'lucide-react';
+import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X, Filter } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading'
 import { RiDeleteBinFill } from "react-icons/ri";
 import { FiEdit3 } from "react-icons/fi";
@@ -24,6 +24,18 @@ const ModuleManagement = () => {
   const [selectAll, setSelectAll] = useState(false);
   const [showBulkAction, setShowBulkAction] = useState(false);
   const [selectedItems, setSelectedItems] = useState([]);
+  // const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    status: ''
+  });
+  const [tempFilters, setTempFilters] = useState({
+    status: ''
+  });
+  const [showFilters, setShowFilters] = useState(false);
+  const filterButtonRef = useRef(null);
+  const bulkButtonRef = useRef(null);
+  const filterPanelRef = useRef(null);
+  const bulkPanelRef = useRef(null);
   const [newContent, setNewContent] = useState({
     title: "",
     duration: "",
@@ -54,12 +66,43 @@ const ModuleManagement = () => {
     }
   };
 
+  // Filter handlers
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setTempFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleFilter = () => {
+    setFilters({
+      ...tempFilters,
+      search: searchTerm
+    });
+    setShowFilters(false);
+  };
+
+  const resetFilters = () => {
+    const resetFilters = {
+      status: '',
+      search: ''
+    };
+    setTempFilters(resetFilters);
+    setFilters(resetFilters);
+    setSearchTerm('');
+  };
+
+  // Filter the content based on search term and filters
   const filteredContent = items?.filter((item) => {
-    const matchesSearch = item.title
-      ?.toLowerCase()
-      .includes(searchTerm.toLowerCase());
+    const matchesSearch = !filters.search || 
+      (item.title?.toLowerCase().includes(filters.search.toLowerCase()) ||
+       item.description?.toLowerCase().includes(filters.search.toLowerCase()));
+    
     const matchesType = contentType === "all" || item.type === contentType;
-    return matchesSearch && matchesType;
+    const matchesStatus = !filters.status || item.status === filters.status;
+    
+    return matchesSearch && matchesType && matchesStatus;
   }) || [];
 
   //pagination code
@@ -232,6 +275,35 @@ const ModuleManagement = () => {
     localStorage.setItem('drafts', JSON.stringify(updatedDrafts));
     setShowDraftModal(false)
   }
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const target = event.target;
+      const filterBtn = filterButtonRef.current;
+      const bulkBtn = bulkButtonRef.current;
+      const filterPanel = filterPanelRef.current;
+      const bulkPanel = bulkPanelRef.current;
+
+      if (
+        (showFilters || showBulkAction) &&
+        !(
+          (filterPanel && filterPanel.contains(target)) ||
+          (bulkPanel && bulkPanel.contains(target)) ||
+          (filterBtn && filterBtn.contains(target)) ||
+          (bulkBtn && bulkBtn.contains(target))
+        )
+      ) {
+        setShowFilters(false);
+        setShowBulkAction(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showFilters, showBulkAction]);
   // if (loading && !uploading) {
   //   return <LoadingScreen text={"Loading Global Content..."} />
   // }
@@ -278,14 +350,79 @@ const ModuleManagement = () => {
             class
             placeholder="Search Modules"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setFilters(prev => ({
+                ...prev,
+                search: e.target.value
+              }));
+            }}
           />
           <div style={{ display: "flex", gap: "10px" }}>
-
+          <button
+            ref={filterButtonRef}
+            className="control-btn"
+            onClick={() => {
+              setShowFilters(prev => {
+                const next = !prev;
+                if (next) {
+                  setShowBulkAction(false);
+                }
+                return next;
+              });
+            }}
+          >
+            <Filter size={16} />
+            Filter
+          </button>
+          {showFilters && (
+            <div ref={filterPanelRef} className="adminmodule-filter-panel">
+              <span 
+                style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px" }} 
+                onClick={() => setShowFilters(false)}
+              >
+                <GoX size={20} color="#6b7280" />
+              </span>
+              <div className="filter-group">
+                <label>Status</label>
+                <select
+                  name="status"
+                  value={tempFilters?.status || ""}
+                  onChange={handleFilterChange}
+                >
+                  <option value="">All</option>
+                  <option value="Saved">Saved</option>
+                  <option value="Draft">Draft</option>
+                  <option value="Published">Published</option>
+                 
+                </select>
+              </div>
+              <div className="filter-actions">
+                <button className="btn-primary" onClick={handleFilter}>
+                  Apply
+                </button>
+                <button className="reset-btn" onClick={resetFilters}>
+                  Clear
+                </button>
+              </div>
+            </div>
+          )}
             {/* <button className="control-btn" style={{ color: "#6b7280", border: "1px solid #6b7280" }} onClick={() => openDraftModal()}> Drafts</button> */}
-            <button className="control-btn" onClick={() => setShowBulkAction(!showBulkAction)}> Bulk Action <ChevronDown size={16} /></button>
+            <button
+              ref={bulkButtonRef}
+              className="control-btn"
+              onClick={() => {
+                setShowBulkAction(prev => {
+                  const next = !prev;
+                  if (next) {
+                    setShowFilters(false);
+                  }
+                  return next;
+                });
+              }}
+            > Bulk Action <ChevronDown size={16} /></button>
             {showBulkAction && (
-              <div className="bulk-action-panel-module">
+              <div ref={bulkPanelRef} className="adminmodules-bulk-action-panel">
                 <div className="bulk-action-header">
                   <label className="bulk-action-title">Items Selected: {selectedItems.length}</label>
                   <GoX

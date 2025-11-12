@@ -73,8 +73,6 @@ const CreateAssignmentEnhanced = () => {
   const [recurringInterval, setRecurringInterval] = useState('');
   const [customIntervalValue, setCustomIntervalValue] = useState('');
   const [customIntervalUnit, setCustomIntervalUnit] = useState('days');
-  const [elementSchedules, setElementSchedules] = useState([]);
-  const [enforceOrder, setEnforceOrder] = useState(false);
 
   // Get content items based on selected type
   const getContentItems = () => {
@@ -169,16 +167,6 @@ const CreateAssignmentEnhanced = () => {
 
   const handleConfirm = async () => {
     try {
-      // Normalize element schedules: keep only entries with at least one date, and convert to ISO
-      const normalizedElementSchedules = Array.isArray(elementSchedules)
-        ? elementSchedules
-            .filter(s => (s.assign_on && s.assign_on.trim()) || (s.due_date && s.due_date.trim()))
-            .map(s => ({
-              elementId: s.elementId,
-              assign_on: s.assign_on ? new Date(s.assign_on).toISOString() : '',
-              due_date: s.due_date ? new Date(s.due_date).toISOString() : ''
-            }))
-        : [];
       const payload = {
         contentType: selectedContentType,
         contentId: selectedItem._id,
@@ -194,11 +182,9 @@ const CreateAssignmentEnhanced = () => {
         resetProgress,
         recurringInterval: enableRecurring ? recurringInterval : '',
         customIntervalValue: recurringInterval === 'custom' ? customIntervalValue : '',
-        customIntervalUnit: recurringInterval === 'custom' ? customIntervalUnit : '',
-        elementSchedules: selectedContentType === 'Learning Path' ? normalizedElementSchedules : [],
-        enforceOrder: selectedContentType === 'Learning Path' ? enforceOrder : false
+        customIntervalUnit: recurringInterval === 'custom' ? customIntervalUnit : ''
       };
-      // console.log(payload)
+
       await dispatch(admincreateAssignment(payload)).unwrap();
       
       alert('✓ Assignment created successfully!\n\nUsers will be notified according to your settings.');
@@ -230,8 +216,6 @@ const CreateAssignmentEnhanced = () => {
     setRecurringInterval('');
     setCustomIntervalValue('');
     setCustomIntervalUnit('days');
-    setElementSchedules([]);
-    setEnforceOrder(false);
     window.scrollTo(0, 0);
   };
 
@@ -283,7 +267,6 @@ const CreateAssignmentEnhanced = () => {
               setFilterSubTeam={setFilterSubTeam}
               contentItems={getContentItems()}
               onNext={() => goToStep(2)}
-              teams={groups}
             />
           )}
 
@@ -327,10 +310,6 @@ const CreateAssignmentEnhanced = () => {
               selectedContentType={selectedContentType}
               selectedItem={selectedItem}
               selectedUsers={selectedUsers}
-              elementSchedules={elementSchedules}
-              setElementSchedules={setElementSchedules}
-              enforceOrder={enforceOrder}
-              setEnforceOrder={setEnforceOrder}
               onNext={() => goToStep(4)}
               onBack={() => goToStep(2)}
             />

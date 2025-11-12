@@ -471,3 +471,109 @@ border-color: #1d4ed8;
 cursor: not-allowed;
 opacity: 0.5;
 }
+
+
+
+  /* Filter css  */
+  .adminmodule-filter-panel {
+    position: absolute;
+    top: 54px  ; /* adjust based on header height */
+    right: 145px; /* align with Filter button */
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    width: 220px;
+    z-index: 1000;
+  }
+  
+  .filter-group {
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .filter-group label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: #374151;
+  }
+  
+  .filter-group select {
+    padding: 6px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: #374151;
+  }
+  
+  .filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  
+  .apply-btn,
+  .reset-btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  
+  .apply-btn {
+    background: #2563eb;
+    color: white;
+    border: none;
+  }
+  
+  .reset-btn {
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    color: #374151;
+  }
+  
+  
+  .adminmodules-bulk-action-panel {
+    position: absolute;
+      top: 54px;
+      right: 7px;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(30, 42, 91, 0.12), 0 1.5px 6px rgba(70, 122, 236, 0.09);
+      padding: 24px 28px 20px 24px;
+      min-width: 270px;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      border: 1px solid #e8ebf0;
+      font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  }
+  
+  .bulk-action-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+  }
+  .bulk-action-delete-btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    border-radius: 6px;
+    cursor: pointer;
+    background: red;
+    outline: none ;
+    color: white;
+    border: none;
+  }
+  .bulk-action-actions{
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+  }

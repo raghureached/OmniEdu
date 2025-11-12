@@ -33,7 +33,7 @@ const assignmentSchema = new mongoose.Schema(
     },
     name: { type: String, required: false, trim: true },
     assign_on: { type: Date, default: Date.now },
-    due_date: { type: Date, required: true },
+    due_date: { type: Date, required: false },
     // Store separate time components if needed by UI
     assignTime: { type: String, default: null },
     dueTime: { type: String, default: null },
@@ -48,7 +48,24 @@ const assignmentSchema = new mongoose.Schema(
       type:[mongoose.Schema.Types.ObjectId],
       default:[],
       ref:"Team"
-    }
+    },
+    // frontend-aligned additional fields
+    bulkEmails: { type: [String], default: [] },
+    enableReminder: { type: Boolean, default: false },
+    resetProgress: { type: Boolean, default: false },
+    recurringInterval: { type: String, default: "" },
+    customIntervalValue: { type: Number, default: 0 },
+    customIntervalUnit: { type: String, default: "days" },
+    // Learning Path advanced element scheduling
+    elementSchedules: [
+      {
+        elementId: { type: mongoose.Schema.Types.ObjectId, required: true },
+        assign_on: { type: Date, default: null },
+        due_date: { type: Date, default: null },
+        _id: false
+      }
+    ],
+    
   },
   { timestamps: true }
 );

@@ -95,134 +95,134 @@ const createAssessment = async (req, res) => {
     let session;
     let transactionCommitted = false; // Track transaction state
     try {
-      const {
-        title, description, tags, duration, team, subteam,Level,noOfQuestions,
-        attempts, unlimited_attempts, percentage_to_pass,
-         display_answers, status,credits,stars,badges,category,feedbackEnabled,shuffle_questions,shuffle_options,questions=[],instructions
+        const {
+            title, description, tags, duration, team, subteam, Level, noOfQuestions,
+            attempts, unlimited_attempts, percentage_to_pass,
+            display_answers, status, credits, stars, badges, category, feedbackEnabled, shuffle_questions, shuffle_options, questions = [], instructions
 
-      } = req.body;
+        } = req.body;
+        console.log(req.body)
+        const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
 
-      const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
-
-      if (!organization_id) {
-        return res.status(400).json({ success: false, message: "Organization ID is required" });
-      }
-
-      // Build and save questions
-      const questionIds = [];
-      const inputQuestions = Array.isArray(questions) ? questions : [];
-      if (inputQuestions.length === 0) {
-        return res.status(400).json({ success: false, message: "At least one question is required" });
-      }
-
-      // Start MongoDB session
-      session = await mongoose.startSession();
-      session.startTransaction();
-
-      for (let index = 0; index < inputQuestions.length; index++) {
-        const q = inputQuestions[index];
-        if (!q || typeof q.question_text !== 'string' || typeof q.type !== 'string') {
-          throw new Error(`Invalid question at index ${index}: missing type or question_text`);
+        if (!organization_id) {
+            return res.status(400).json({ success: false, message: "Organization ID is required" });
         }
 
-        const type = String(q.type || '').trim();
-        if (!['Multiple Choice', 'Multi Select'].includes(type)) {
-          throw new Error(`Invalid type for question ${index}. Allowed: Multiple Choice, Multi Select`);
+        // Build and save questions
+        const questionIds = [];
+        const inputQuestions = Array.isArray(questions) ? questions : [];
+        if (inputQuestions.length === 0) {
+            return res.status(400).json({ success: false, message: "At least one question is required" });
         }
 
-        const options = Array.isArray(q.options) ? q.options.filter(o => typeof o === 'string' && o.length > 0) : [];
-        if (options.length < 2) {
-          throw new Error(`Question ${index} must have at least two options`);
-        }
+        // Start MongoDB session
+        session = await mongoose.startSession();
+        session.startTransaction();
 
-        const normalizedCorrect = normalizeCorrectOption(q.correct_option);
-        if (type === 'Multiple Choice') {
-          if (normalizedCorrect.length !== 1) {
-            throw new Error(`Question ${index}: Multiple Choice must have exactly 1 correct option index`);
-          }
-        } else {
-          if (normalizedCorrect.length < 1) {
-            throw new Error(`Question ${index}: Multi Select must have at least 1 correct option index`);
-          }
+        for (let index = 0; index < inputQuestions.length; index++) {
+            const q = inputQuestions[index];
+            if (!q || typeof q.question_text !== 'string' || typeof q.type !== 'string') {
+                throw new Error(`Invalid question at index ${index}: missing type or question_text`);
+            }
+
+            const type = String(q.type || '').trim();
+            if (!['Multiple Choice', 'Multi Select'].includes(type)) {
+                throw new Error(`Invalid type for question ${index}. Allowed: Multiple Choice, Multi Select`);
+            }
+
+            const options = Array.isArray(q.options) ? q.options.filter(o => typeof o === 'string' && o.length > 0) : [];
+            if (options.length < 2) {
+                throw new Error(`Question ${index} must have at least two options`);
+            }
+
+            const normalizedCorrect = normalizeCorrectOption(q.correct_option);
+            if (type === 'Multiple Choice') {
+                if (normalizedCorrect.length !== 1) {
+                    throw new Error(`Question ${index}: Multiple Choice must have exactly 1 correct option index`);
+                }
+            } else {
+                if (normalizedCorrect.length < 1) {
+                    throw new Error(`Question ${index}: Multi Select must have at least 1 correct option index`);
+                }
+            }
+            const maxIndex = options.length - 1;
+            if (normalizedCorrect.some(n => n < 0 || n > maxIndex)) {
+                throw new Error(`Question ${index}: correct_option indexes out of range for provided options`);
+            }
+            // console.log(req.uploadedFiles)
+            const newQuestion = new OrganizationAssessmentQuestion({
+                question_text: q.question_text.trim(),
+                type,
+                options,
+                correct_option: normalizedCorrect,
+                total_points: Number.isFinite(Number(q.total_points)) ? Number(q.total_points) : 1,
+                file_url: typeof q.file_url === 'string' && q.file_url.trim() ? q.file_url.trim() : null,
+            });
+
+            const savedQuestion = await newQuestion.save({ session });
+            questionIds.push(savedQuestion._id);
         }
-        const maxIndex = options.length - 1;
-        if (normalizedCorrect.some(n => n < 0 || n > maxIndex)) {
-          throw new Error(`Question ${index}: correct_option indexes out of range for provided options`);
-        }
-        // console.log(req.uploadedFiles)
-        const newQuestion = new OrganizationAssessmentQuestion({
-          question_text: q.question_text.trim(),
-          type,
-          options,
-          correct_option: normalizedCorrect,
-          total_points: Number.isFinite(Number(q.total_points)) ? Number(q.total_points) : 1,
-          file_url: typeof q.file_url === 'string' && q.file_url.trim() ? q.file_url.trim() : null,
+        console.log(req.uploadedFile)
+        const thumbnail_url = req.uploadedFile?.url;
+        // Create assessment using the saved question ids
+        const newAssessment = new OrganizationAssessments({
+            organization_id,
+            title,
+            description,
+            tags,
+            duration,
+            team,
+            subteam,
+            Level,
+            noOfQuestions,
+            attempts,
+            unlimited_attempts,
+            percentage_to_pass,
+            display_answers,
+            status,
+            credits,
+            stars,
+            badges,
+            category,
+            feedbackEnabled,
+            shuffle_questions,
+            shuffle_options,
+            questions: questionIds,
+            instructions: instructions,
+            created_by: req.user?._id,
+            thumbnail: thumbnail_url
         });
 
-        const savedQuestion = await newQuestion.save({ session });
-        questionIds.push(savedQuestion._id);
-      }
-      console.log(req.uploadedFile)
-      const thumbnail_url = req.uploadedFile?.url;
-      // Create assessment using the saved question ids
-      const newAssessment = new OrganizationAssessments({
-        organization_id,
-        title,
-        description,
-        tags,
-        duration,
-        team,
-        subteam,
-        Level,
-        noOfQuestions,
-        attempts,
-        unlimited_attempts,
-        percentage_to_pass,
-        display_answers,
-        status,
-        credits,
-        stars,
-        badges,
-        category,
-        feedbackEnabled,
-        shuffle_questions,
-        shuffle_options,
-        questions: questionIds,
-        instructions:instructions,
-        created_by: req.user?._id,
-        thumbnail:thumbnail_url
-      });
+        const savedAssessment = await newAssessment.save({ session });
 
-      const savedAssessment = await newAssessment.save({ session });
+        // Commit transaction
+        await session.commitTransaction();
+        transactionCommitted = true; // Mark as committed
 
-      // Commit transaction
-      await session.commitTransaction();
-      transactionCommitted = true; // Mark as committed
+        const populatedAssessment = await OrganizationAssessments.findById(savedAssessment._id)
+            .populate('questions');
 
-      const populatedAssessment = await OrganizationAssessments.findById(savedAssessment._id)
-        .populate('questions');
+        await logAdminActivity(req, "Create Assessment", "assessment", `Assessment created successfully ${newAssessment.title}`);
 
-      await logAdminActivity(req, "Create Assessment", "assessment", `Assessment created successfully ${newAssessment.title}`);
-
-      res.status(201).json({
-        success: true,
-        message: "Assessment created successfully",
-        assessment: populatedAssessment,
-      });
+        res.status(201).json({
+            success: true,
+            message: "Assessment created successfully",
+            assessment: populatedAssessment,
+        });
 
     } catch (error) {
-      // Only abort if transaction wasn't committed
-      if (session && !transactionCommitted) {
-        await session.abortTransaction();
-      }
-      console.error("Error creating assessment:", error);
-      res.status(500).json({ success: false, message: "Failed to create assessment", error: error.message });
+        // Only abort if transaction wasn't committed
+        if (session && !transactionCommitted) {
+            await session.abortTransaction();
+        }
+        console.error("Error creating assessment:", error);
+        res.status(500).json({ success: false, message: "Failed to create assessment", error: error.message });
     } finally {
-      if (session) {
-        session.endSession();
-      }
+        if (session) {
+            session.endSession();
+        }
     }
-  };
+};
 
 // const createAssessment = async (req, res) => {
 //     const session = await mongoose.startSession();
@@ -235,36 +235,36 @@ const createAssessment = async (req, res) => {
 //         category, feedbackEnabled, shuffle_questions,
 //         shuffle_options, questions = [], instructions
 //       } = req.body;
-  
+
 //       if (!Array.isArray(questions) || questions.length === 0) {
 //         await session.abortTransaction();
 //         session.endSession();
 //         return res.status(400).json({ success: false, message: "At least one question is required" });
 //       }
-  
+
 //       const questionIds = [];
-  
+
 //       for (let index = 0; index < questions.length; index++) {
 //         const q = questions[index];
 //         if (!q?.question_text || !q?.type)
 //           throw new Error(`Invalid question at index ${index}`);
-  
+
 //         const type = q.type.trim();
 //         if (!['Multiple Choice', 'Multi Select'].includes(type))
 //           throw new Error(`Invalid type for question ${index}`);
-  
+
 //         const options = Array.isArray(q.options)
 //           ? q.options.filter(o => typeof o === 'string' && o.trim().length > 0)
 //           : [];
-  
+
 //         if (options.length < 2)
 //           throw new Error(`Question ${index} must have at least two options`);
-  
+
 //         const normalizedCorrect = normalizeCorrectOption(q.correct_option);
 //         const maxIndex = options.length - 1;
 //         if (normalizedCorrect.some(n => n < 0 || n > maxIndex))
 //           throw new Error(`Question ${index}: correct_option out of range`);
-  
+
 //         const newQuestion = new OrganizationAssessmentQuestion({
 //           question_text: q.question_text.trim(),
 //           type,
@@ -273,11 +273,11 @@ const createAssessment = async (req, res) => {
 //           total_points: Number.isFinite(Number(q.total_points)) ? Number(q.total_points) : 1,
 //           file_url: q.file_url?.trim() || null,
 //         });
-  
+
 //         const savedQuestion = await newQuestion.save({ session });
 //         questionIds.push(savedQuestion._id);
 //       }
-  
+
 //       const newAssessment = new OrganizationAssessments({
 //         title,
 //         description,
@@ -300,19 +300,19 @@ const createAssessment = async (req, res) => {
 //         questions: questionIds,
 //         instructions
 //       });
-  
+
 //       const savedAssessment = await newAssessment.save({ session });
-  
+
 //       await session.commitTransaction();
 //       session.endSession();
-  
+
 //       const populatedAssessment = await OrganizationAssessments.findById(savedAssessment._id).populate("questions");
 //       res.status(201).json({
 //         success: true,
 //         message: "Assessment created successfully",
 //         assessment: populatedAssessment
 //       });
-  
+
 //     } catch (error) {
 //       await session.abortTransaction();
 //       session.endSession();
@@ -320,7 +320,7 @@ const createAssessment = async (req, res) => {
 //       res.status(500).json({ success: false, message: "Failed to create assessment", error: error.message });
 //     }
 //   };
-  
+
 
 
 
@@ -692,8 +692,8 @@ const editAssessment = async (req, res) => {
             ...(Number.isFinite(durationNum) && durationNum >= 0 ? { duration: durationNum } : {}),
             ...(req.body.team ? { team: req.body.team } : {}),
             ...(req.body.subteam ? { subteam: req.body.subteam } : {}),
-            ...(req.body.Level ? { Level: req.body.Level } : {}),
-            ...(req.body.noOfQuestions ? { noOfQuestions: req.body.noOfQuestions } : {}),
+            ...(req.body.Level !== undefined ? { Level: req.body.Level } : {}),
+            ...(req.body.noOfQuestions !== undefined ? { noOfQuestions: Number(req.body.noOfQuestions) } : {}),
             ...(Number.isFinite(attemptsNum) && attemptsNum >= 1 ? { attempts: attemptsNum } : {}),
             unlimited_attempts: unlimited,
             ...(Number.isFinite(passNum) && passNum >= 0 && passNum <= 100 ? { percentage_to_pass: passNum } : {}),
@@ -813,7 +813,7 @@ const editAssessment = async (req, res) => {
                             ...(q.correct_option !== undefined ? { correct_option: normalizedCorrect } : {}),
                             ...(typeof q.type === 'string' ? { type } : {}),
                             ...(typeof q.file_url === 'string' ? { file_url: q.file_url } : {}),
-                            },
+                        },
                         { new: false, session }
                     );
 
@@ -865,18 +865,18 @@ const editAssessment = async (req, res) => {
 //     try {
 //       const { id } = req.params;
 //       const qPayload = Array.isArray(req.body.questions) ? req.body.questions : [];
-  
+
 //       // Update assessment core details
 //       const assessment = await OrganizationAssessments.findOneAndUpdate(
 //         { uuid: id },
 //         { ...req.body },
 //         { new: true, session }
 //       );
-  
+
 //       if (!assessment) throw new Error("Assessment not found");
-  
+
 //       const newQuestionIds = [];
-  
+
 //       for (const q of qPayload) {
 //         if (q._id) {
 //           await OrganizationAssessmentQuestion.findByIdAndUpdate(q._id, q, { new: true, session });
@@ -887,16 +887,16 @@ const editAssessment = async (req, res) => {
 //           newQuestionIds.push(savedQ._id);
 //         }
 //       }
-  
+
 //       // Update question references
 //       if (newQuestionIds.length > 0) {
 //         assessment.questions = newQuestionIds;
 //         await assessment.save({ session });
 //       }
-  
+
 //       await session.commitTransaction();
 //       session.endSession();
-  
+
 //       const populated = await OrganizationAssessments.findById(assessment._id).populate("questions");
 //       res.status(200).json({
 //         success: true,
@@ -913,7 +913,7 @@ const editAssessment = async (req, res) => {
 //       });
 //     }
 //   };
-  
+
 
 // const deleteAssessment = async (req, res) => {
 //     try {
@@ -935,59 +935,59 @@ const deleteAssessment = async (req, res) => {
     let session;
     let transactionCommitted = false; // Track transaction state
     try {
-      const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
+        const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
 
-      if (!organization_id) {
-        return res.status(400).json({ success: false, message: "Organization ID is required" });
-      }
+        if (!organization_id) {
+            return res.status(400).json({ success: false, message: "Organization ID is required" });
+        }
 
-      const { id } = req.params;
-      const assessment = await OrganizationAssessments.findOne({ uuid: id, organization_id });
+        const { id } = req.params;
+        const assessment = await OrganizationAssessments.findOne({ uuid: id, organization_id });
 
-      if (!assessment) {
-        return res.status(404).json({
-          success: false,
-          message: "Assessment not found"
+        if (!assessment) {
+            return res.status(404).json({
+                success: false,
+                message: "Assessment not found"
+            });
+        }
+
+        // Start MongoDB session
+        session = await mongoose.startSession();
+        session.startTransaction();
+
+        // Delete all related questions
+        await OrganizationAssessmentQuestion.deleteMany({ _id: { $in: assessment.questions } }, { session });
+
+        // Delete the assessment itself
+        await OrganizationAssessments.deleteOne({ uuid: id, organization_id }, { session });
+
+        // Commit transaction
+        await session.commitTransaction();
+        transactionCommitted = true; // Mark as committed
+
+        await logAdminActivity(req, "Delete Assessment", "assessment", `Assessment deleted successfully: ${assessment.title}`);
+
+        res.status(200).json({
+            success: true,
+            message: "Assessment and its questions deleted successfully"
         });
-      }
-
-      // Start MongoDB session
-      session = await mongoose.startSession();
-      session.startTransaction();
-
-      // Delete all related questions
-      await OrganizationAssessmentQuestion.deleteMany({ _id: { $in: assessment.questions } }, { session });
-
-      // Delete the assessment itself
-      await OrganizationAssessments.deleteOne({ uuid: id, organization_id }, { session });
-
-      // Commit transaction
-      await session.commitTransaction();
-      transactionCommitted = true; // Mark as committed
-
-      await logAdminActivity(req, "Delete Assessment", "assessment", `Assessment deleted successfully: ${assessment.title}`);
-
-      res.status(200).json({
-        success: true,
-        message: "Assessment and its questions deleted successfully"
-      });
     } catch (error) {
         // Only abort if transaction wasn't committed
         if (session && !transactionCommitted) {
             await session.abortTransaction();
         }
         res.status(500).json({
-        success: false,
-        message: "Failed to delete assessment",
-        error: error.message
-      });
+            success: false,
+            message: "Failed to delete assessment",
+            error: error.message
+        });
     } finally {
-      if (session) {
-        session.endSession();
-      }
+        if (session) {
+            session.endSession();
+        }
     }
-  };
-  
+};
+
 
 const editQuestion = async (req, res) => {
     try {

@@ -133,13 +133,13 @@ const TeamPreview = ({ isOpen, onClose, team, loading, createSubTeam, updateSubT
                   <div></div>
                   <div></div>
                   <div className="col-actions" style={{ display: 'flex', gap: 10,justifyContent:'center' }}>
-                    <button
+                    {/* <button
                       className="global-action-btn view"
                       
                       aria-label={`View subteam ${st.name}`}
                     >
                       <Eye size={16} />
-                    </button>
+                    </button> */}
                     <button
                       className="global-action-btn edit"
                       onClick={() => handleEdit(st.uuid, st.name)}

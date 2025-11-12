@@ -14,7 +14,6 @@ import LoadingScreen from '../common/Loading/Loading';
 import ModulePreview from '../common/Preview/Preview';
 import AssessmentPreview from '../common/Preview/AssessmentPreview';
 import SurveyMainPreview from "../common/Preview/SurveyMainPreview"
-import CustomLoader from '../common/Loading/CustomLoader';
 
 const LearningPath = ({ courseData: propCourseData, embedded = false }) => {
     // console.log(propCourseData)
@@ -25,16 +24,9 @@ const LearningPath = ({ courseData: propCourseData, embedded = false }) => {
     const [completedSet, setCompletedSet] = React.useState(new Set());
     const dispatch = useDispatch();
 
-    const handleSectionClick = async (section, evt) => {
+    const handleSectionClick = async (section) => {
         setActiveLesson(section);
         setLoadError(null)
-        // Scroll the clicked item into view at the top of the nearest scroll container
-        try {
-            const wrapper = evt?.currentTarget?.parentElement;
-            if (wrapper && typeof wrapper.scrollIntoView === 'function') {
-                wrapper.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
-            }
-        } catch {}
         const type = (section?.type || '').toLowerCase();
 
         const ref = section?.ref ?? null; // may be id string or object
@@ -246,7 +238,7 @@ const LearningPath = ({ courseData: propCourseData, embedded = false }) => {
                 {courseData.sections.map((section, idx) => (
                     <div key={section.id} style={{ marginBottom: '12px' }} >
                         <div
-                            onClick={(e) => handleSectionClick(section, e)}
+                            onClick={() => handleSectionClick(section)}
                             style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 12px', cursor: 'pointer', borderRadius: '8px', transition: 'background-color 0.2s', backgroundColor: activeLesson?.id === section.id ? '#eff6ff' : 'transparent' }}
                             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = activeLesson?.id === section.id ? '#eff6ff' : '#f9fafb')}
                             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = activeLesson?.id === section.id ? '#eff6ff' : 'transparent')}>
@@ -262,11 +254,11 @@ const LearningPath = ({ courseData: propCourseData, embedded = false }) => {
                 ))}
 
             </div>
-            {/* {loadingContent && (
-                <div style={{ flex: 1, overflowY: 'auto', backgroundColor: '#f8f9fa' ,display:'flex',justifyContent:'center',alignItems:'center'}}>
-                    <CustomLoader text='Loading content'/>
+            {loadingContent && (
+                <div style={{ flex: 1, overflowY: 'auto', backgroundColor: '#f8f9fa' }}>
+                    <Loader2 color="#5570f1" size={24} />
                 </div>
-            )} */}
+            )}
             {activeLesson?.type === 'Module' && (
                 <div style={{ flex: 1, overflowY: 'auto', backgroundColor: '#f8f9fa' }}>
                     <ModulePreview

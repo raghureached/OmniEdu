@@ -872,8 +872,8 @@ const GlobalModuleModal = ({
 
                 {filePreview.open && (
                     <div className="addOrg-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="filePreviewTitle">
-                        <div className="addOrg-modal-content" style={{ maxWidth: '960px', width: '95%', height: '80vh', display: 'flex', flexDirection: 'column' }}>
-                            <div className="addOrg-modal-header">
+                        <div className="addOrg-modal-content" style={{ maxWidth: '1000px', width: '199%', height: '90vh', display: 'flex', flexDirection: 'column' }}>
+                        <div className="addOrg-modal-header">
                                 <div className="addOrg-header-content">
                                     <div className="addOrg-header-icon">
                                         <EyeIcon size={24} color="#5570f1" />

@@ -179,6 +179,14 @@ const userSlice = createSlice({
     clearExportSuccess: (state) => {
       state.exportSuccess = false;
     },
+    clearFilters: (state) => {
+      state.filters = {
+        status: '',
+        role: '',
+      
+        search: ''
+      };
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -220,9 +228,22 @@ const userSlice = createSlice({
       })
       .addCase(updateUser.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.users.findIndex(user => user.id === action.payload.id);
+        const payload = action.payload || {};
+        const matchId = payload.id || payload.uuid || payload._id;
+        if (!matchId) {
+          return;
+        }
+
+        const index = state.users.findIndex(user => {
+          const userId = user.id || user.uuid || user._id;
+          return userId === matchId;
+        });
+
         if (index !== -1) {
-          state.users[index] = action.payload;
+          state.users[index] = {
+            ...state.users[index],
+            ...payload,
+          };
         }
       })
       .addCase(updateUser.rejected, (state, action) => {
@@ -339,6 +360,7 @@ export const {
   clearUserError,
   clearImportSuccess,
   clearExportSuccess,
+  clearFilters,
 } = userSlice.actions;
 
 export default userSlice.reducer;

@@ -1,8 +1,7 @@
-import { ChevronLeft, X } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import React, { useState } from 'react';
-import { GoX } from 'react-icons/go';
 
-const Step4ReviewConfirm = ({
+const Step4ReviewConfirm = ({ 
   selectedItem,
   selectedContentType,
   userMode,
@@ -41,18 +40,18 @@ const Step4ReviewConfirm = ({
 
   const getRecurringText = () => {
     if (!enableRecurring) return '';
-
+    
     const intervalMap = {
       '1m': 'Every 1 month',
       '3m': 'Every 3 months',
       '6m': 'Every 6 months',
       '1y': 'Every 1 year',
     };
-
+    
     if (recurringInterval === 'custom' && customIntervalValue) {
       return `Every ${customIntervalValue} ${customIntervalUnit} after completion`;
     }
-
+    
     return (intervalMap[recurringInterval] || 'Not configured') + ' after completion';
   };
 
@@ -127,7 +126,7 @@ const Step4ReviewConfirm = ({
 
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <button className="btn-secondary" onClick={onBack} type="button">
-            <ChevronLeft size={16} /> Previous
+            <ChevronLeft size={16}/> Previous
           </button>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button className="btn-secondary" onClick={onSaveDraft} type="button">
@@ -144,20 +143,10 @@ const Step4ReviewConfirm = ({
       {showModal && (
         <div className="modal active">
           <div className="modal-content">
-            <div className="modal-header">⚠️ Confirm Assignment
-              <button
-                type="button"
-                className="addOrg-close-btn"
-                onClick={() => setShowModal(false)}
-                aria-label="Close modal"
-              >
-                <GoX size={20} />
-              </button>
-            </div>
-
+            <div className="modal-header">⚠️ Confirm Assignment</div>
             <div className="confirmation-details">
               <p style={{ marginBottom: '20px' }}>You are about to create the following assignment:</p>
-
+              
               <div className="confirmation-section">
                 <h4>📚 Content</h4>
                 <ul>

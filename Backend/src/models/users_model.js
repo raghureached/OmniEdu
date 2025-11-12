@@ -26,6 +26,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    status: {
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'active',
+    },
     global_role_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "GlobalRoles", // Make sure your global roles model uses this name

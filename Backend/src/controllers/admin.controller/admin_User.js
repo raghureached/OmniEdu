@@ -106,18 +106,24 @@ const addUser = async (req, res) => {
 
 const editUser = async (req, res) => {
   try {
-    const { name, email, password, role, team, subteam } = req.body;
+    const { name, email, password, role, team, subteam, removedAssignments, status } = req.body;
+
+    const updatePayload = {
+      name,
+      email,
+      password,
+      global_role_id: role,
+      organization_id: req.user.organization_id,
+    };
+
+    if (typeof status !== 'undefined') {
+      updatePayload.status = status;
+    }
 
     // Update user core fields
     const user = await User.findOneAndUpdate(
       { uuid: req.params.id },
-      {
-        name,
-        email,
-        password,
-        global_role_id: role,
-        organization_id: req.user.organization_id,
-      },
+      updatePayload,
       { new: true }
     );
 
@@ -127,21 +133,34 @@ const editUser = async (req, res) => {
 
     // Update profile org role; handle team membership append if provided
     const membership = team ? { team_id: team, sub_team_id: subteam || null } : null;
+    const cleanedRemoved = Array.isArray(removedAssignments) ? removedAssignments : [];
+    const pullConditions = cleanedRemoved
+      .filter((assignment) => assignment?.teamId)
+      .map((assignment) => {
+        const condition = { team_id: assignment.teamId };
+        if (assignment.subTeamId) {
+          condition.sub_team_id = assignment.subTeamId;
+        }
+        return condition;
+      });
+
+    const profileUpdate = {
+      $set: { organization_roles_id: role },
+    };
 
     if (membership) {
-      await UserProfile.updateOne(
-        { user_id: user._id },
-        {
-          $set: { organization_roles_id: role },
-          $addToSet: { teams: membership },
-        }
-      );
-    } else {
-      await UserProfile.updateOne(
-        { user_id: user._id },
-        { $set: { organization_roles_id: role } }
-      );
+      profileUpdate.$addToSet = { teams: membership };
     }
+
+    if (pullConditions.length > 0) {
+      profileUpdate.$pull = {
+        teams: pullConditions.length === 1
+          ? pullConditions[0]
+          : { $or: pullConditions },
+      };
+    }
+
+    await UserProfile.updateOne({ user_id: user._id }, profileUpdate);
 
     await logAdminActivity(req, 'edit', `User edited successfully: ${user.name}`);
 
@@ -225,20 +244,66 @@ const getUsers = async (req, res) => {
     const limit = parseInt(req.query.limit, 10) || 50;
     const skip = (page - 1) * limit;
 
-    // Fetch users with all related data populated
-    const users = await User.find({
+    const { status, role, search } = req.query;
+
+    const escapeRegex = (value = "") => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    const baseQuery = {
       organization_id: req.user.organization_id,
-      _id: { $ne: req.user._id }  // exclude current user
-    })
-    .populate({
-      path: "global_role_id",
-      select: "name",
-    })
-    .skip(skip)
-    .limit(limit)
-    .sort({ createdAt: -1 })
-    .lean();
-    
+      _id: { $ne: req.user._id },
+    };
+
+    const andConditions = [];
+
+    if (typeof status === "string" && status.trim()) {
+      const normalizedStatus = status.trim().toLowerCase();
+
+      if (normalizedStatus === "active") {
+        andConditions.push({
+          $or: [
+            { status: { $regex: /^\s*active\s*$/i } },
+            { status: { $exists: false } },
+            { status: null },
+            { status: "" },
+          ],
+        });
+      } else {
+        andConditions.push({
+          status: {
+            $regex: new RegExp(`^${escapeRegex(status.trim())}$`, "i"),
+          },
+        });
+      }
+    }
+
+    if (role) {
+      andConditions.push({ global_role_id: role });
+    }
+
+    if (typeof search === "string" && search.trim()) {
+      const searchRegex = new RegExp(escapeRegex(search.trim()), "i");
+      andConditions.push({
+        $or: [
+          { name: searchRegex },
+          { email: searchRegex },
+        ],
+      });
+    }
+
+    const query = andConditions.length
+      ? { ...baseQuery, $and: andConditions }
+      : baseQuery;
+
+    // Fetch users with all related data populated
+    const users = await User.find(query)
+      .populate({
+        path: "global_role_id",
+        select: "name",
+      })
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .lean();
 
     // Get all related profiles and populate them deeply
     const userIds = users.map((u) => u._id);
@@ -254,9 +319,8 @@ const getUsers = async (req, res) => {
       );
       return { ...user, profile };
     });
-    const filteredUsers = usersWithProfiles.filter((user)=>user._id !== req.user._id)
 
-    const total = await User.countDocuments();
+    const total = await User.countDocuments(query);
     const totalPages = Math.ceil(total / limit);
     const hasMore = page < totalPages;
 
@@ -271,7 +335,7 @@ const getUsers = async (req, res) => {
     return res.status(200).json({
       isSuccess: true,
       message: "Users fetched successfully",
-      data: filteredUsers,
+      data: usersWithProfiles,
       pagination,
     });
   } catch (error) {

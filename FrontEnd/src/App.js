@@ -25,10 +25,7 @@ import Mandatory from './pages/user/Mandatory/Mandatory';
 import AdminHome from './pages/admin/AdminHome/AdminHome';
 import UsersManagement from './pages/admin/UsersManagement/UsersManagement';
 import GroupsManagement from './pages/admin/GroupsManagement/GroupsManagement';
-import ContentModules from './pages/admin/ContentModules/ModuleManagement';
-//import ContentAssessments from './pages/admin/ContentAssessments/ContentAssessments';
 import LearningPaths from './pages/admin/LearningPaths/LearningPaths';
-import Surveys from './pages/admin/AdminSurveys/AdminSurvey'
 import AdminProfile from './pages/admin/AdminProfile/AdminProfile';
 import CreateAssignment from './pages/admin/CreateAssignment/CreateAssignment';
 import ManageAssignment from './pages/admin/ManageAssignment/ManageAssignment';
@@ -37,6 +34,9 @@ import AdminMessageBoard from './pages/admin/AdminMessageBoard/AdminMessageBoard
 import AdminActivityLog from './pages/admin/AdminActivityLog/AdminActivityLog';
 import AdminPortalActivity from './pages/admin/AdminPortalActivity/AdminPortalActivity';
 import AdminAssessments from './pages/admin/AdminAssessments/AdminAssessments';
+import ModuleManagement from './pages/admin/ContentModules/ModuleManagement';
+import AdminSurveys from './pages/admin/AdminSurveys/AdminSurvey';
+
 // Global Admin Pages 
 import OrganizationManagement from './pages/globalAdmin/OrganizationManagement/OrganizationManagement';
 import GlobalRolesManagement from './pages/globalAdmin/GlobalRolesManagement/GlobalRolesManagement';
@@ -61,8 +61,7 @@ import GlobalModuleManagement from './pages/globalAdmin/GlobalModuleManagement/G
 import Globalusers from './pages/globalAdmin/Users/Globalusers';
 import GlobalSurveys from './pages/globalAdmin/GlobalSurveys/GlobalAssessments-survey';
 import LearningPath from './components/LearningPath/LearningPath';
-import ModuleManagement from './pages/admin/ContentModules/ModuleManagement';
-import AdminSurveys from './pages/admin/AdminSurveys/AdminSurvey';
+import CreateAssignmentEnhanced from './pages/admin/CreateAssignment/CreateAssignmentEnhanced';
 
 function App() {
   const dispatch = useDispatch();
@@ -106,7 +105,7 @@ function App() {
             <Route path='learning-paths/preview' element={<LearningPath/>}/>
 
             <Route path="manage-surveys" element={<AdminSurveys />} />
-            <Route path="create-assignment" element={<CreateAssignment />} />
+            <Route path="create-assignment" element={<CreateAssignmentEnhanced />} />
             <Route path="manage-assignments" element={<ManageAssignment />} />
             <Route path="help-center" element={<AdminHelpCenter />} />
             <Route path="message-board" element={<AdminMessageBoard />} />

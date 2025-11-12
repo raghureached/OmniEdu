@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 const Step3ScheduleSettings = ({ 
   assignDate,
@@ -23,55 +23,10 @@ const Step3ScheduleSettings = ({
   selectedContentType,
   selectedItem,
   selectedUsers,
-  elementSchedules,
-  setElementSchedules,
-  enforceOrder,
-  setEnforceOrder,
   onNext,
   onBack
 }) => {
-  // Advanced section is always visible; use toggle to enable per-element scheduling
-  const [usePerElementScheduling, setUsePerElementScheduling] = useState(false);
-
-  // Initialize elementSchedules for Learning Path when enabling per-element scheduling
-  useEffect(() => {
-    if (
-      usePerElementScheduling &&
-      selectedContentType === 'Learning Path' &&
-      selectedItem && Array.isArray(selectedItem.lessons)
-    ) {
-      if (!elementSchedules || elementSchedules.length === 0) {
-        const init = selectedItem.lessons.map(lesson => {
-          const lessonId = lesson.id || lesson._id;
-          return {
-            elementId: lessonId,
-            assign_on: '',
-            due_date: ''
-          };
-        });
-        setElementSchedules(init);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usePerElementScheduling, selectedContentType, selectedItem]);
-
-  // If the Learning Path itself enforces order, mirror it and lock the toggle
-  useEffect(() => {
-    if (selectedContentType === 'Learning Path' && selectedItem && typeof selectedItem.enforceOrder === 'boolean') {
-      if (selectedItem.enforceOrder && !enforceOrder) setEnforceOrder(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedContentType, selectedItem]);
-
-  const updateElementSchedule = (elementId, field, value) => {
-    setElementSchedules(prev => {
-      const exists = prev.find(e => e.elementId === elementId);
-      if (exists) {
-        return prev.map(e => e.elementId === elementId ? { ...e, [field]: value } : e);
-      }
-      return [...prev, { elementId, assign_on: '', due_date: '', [field]: value }];
-    });
-  };
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const getReminderHelpText = () => {
     if (dueDate) {
@@ -280,98 +235,31 @@ const Step3ScheduleSettings = ({
       {/* Advanced Settings for Learning Paths */}
       {selectedContentType === 'Learning Path' && (
         <div id="advancedScheduling">
-          <div className="advanced-toggle">
-            <div className="advanced-toggle-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>⚙️ Advanced: Individual Resource Scheduling</span>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={usePerElementScheduling}
-                  onChange={(e) => {
-                    const enabled = e.target.checked;
-                    setUsePerElementScheduling(enabled);
-                    if (!enabled) {
-                      setElementSchedules([]);
-                    } else if (
-                      selectedItem && Array.isArray(selectedItem.lessons) && (!elementSchedules || elementSchedules.length === 0)
-                    ) {
-                      const init = selectedItem.lessons.map(lesson => ({ elementId: lesson._id, assign_on: '', due_date: '' }));
-                      setElementSchedules(init);
-                    }
-                  }}
-                />
-                <span className="toggle-slider"></span>
-              </label>
+          <div className="advanced-toggle" onClick={() => setShowAdvanced(!showAdvanced)}>
+            <div className="advanced-toggle-header">
+              <span>⚙️ Advanced: Individual Element Scheduling</span>
+              <span>{showAdvanced ? '▲' : '▼'}</span>
             </div>
-            <div className="advanced-content visible">
-              <p style={{ color: '#7f8c8d', marginBottom: '15px', fontSize: '14px' }}>
-                Set individual assign and due dates for each resource in the learning path.
-              </p>
-              <div className="warning-box">
-                <div className="warning-box-icon">⚠️</div>
-                <div className="warning-box-content">
-                  <strong>Note on Recurring Assignments</strong>
-                  <p>Advanced resource scheduling is not compatible with recurring assignments. If recurring is enabled, path-level dates will be used.</p>
+            {showAdvanced && (
+              <div className="advanced-content visible">
+                <p style={{ color: '#7f8c8d', marginBottom: '15px', fontSize: '14px' }}>
+                  Set individual assign and due dates for each element in the learning path.
+                </p>
+                <div className="warning-box">
+                  <div className="warning-box-icon">⚠️</div>
+                  <div className="warning-box-content">
+                    <strong>Note on Recurring Assignments</strong>
+                    <p>Advanced element scheduling is not compatible with recurring assignments. If recurring is enabled, path-level dates will be used.</p>
+                  </div>
+                </div>
+                <div style={{ marginTop: '15px' }}>
+                  <div className="info-box">
+                    <strong>ℹ️ Feature Available</strong>
+                    <p>Individual element scheduling can be configured after creating the base assignment.</p>
+                  </div>
                 </div>
               </div>
-
-              <div style={{ marginTop: '15px' }}>
-                {selectedItem?.enforceOrder && (
-                  <div className="info-box" style={{ marginBottom: 10 }}>
-                    <strong>Learning Path enforces order</strong>
-                    <p>This learning path is configured to require sequential completion. Subsequent lessons will be locked until the previous one is available/completed.</p>
-                  </div>
-                )}
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <input
-                    type="checkbox"
-                    checked={enforceOrder}
-                    onChange={(e) => setEnforceOrder(e.target.checked)}
-                    disabled={!!selectedItem?.enforceOrder}
-                  />
-                  Enforce path order (lock subsequent lessons until previous is available)
-                </label>
-              </div>
-
-              <div style={{ marginTop: '15px' }}>
-                {usePerElementScheduling && Array.isArray(selectedItem?.lessons) && selectedItem.lessons.length > 0 ? (
-                  <div style={{ display: 'grid', gap: 12 }}>
-                    {selectedItem.lessons.map((lesson, idx) => {
-                      const lessonId = lesson.id || lesson._id;
-                      const sched = elementSchedules.find(e => e.elementId === lessonId) || {};
-                      return (
-                        <div key={lessonId} className="datetime-group">
-                          <div style={{ fontWeight: 600, marginBottom: 8 }}>{idx + 1}. {lesson.title}</div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                            <div>
-                              <label>Assign Date & Time</label>
-                              <input
-                                type="datetime-local"
-                                value={sched.assign_on || ''}
-                                onChange={(e) => updateElementSchedule(lessonId, 'assign_on', e.target.value)}
-                              />
-                            </div>
-                            <div>
-                              <label>Due Date & Time</label>
-                              <input
-                                type="datetime-local"
-                                value={sched.due_date || ''}
-                                onChange={(e) => updateElementSchedule(lessonId, 'due_date', e.target.value)}
-                                />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="empty-state">
-                    <div className="empty-state-icon">📚</div>
-                    <p>{usePerElementScheduling ? 'No resources found in this Learning Path' : 'Enable per-resource scheduling to set dates for each lesson'}</p>
-                  </div>
-                )}
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}

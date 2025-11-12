@@ -131,7 +131,7 @@ th, td {
 th {
   background-color: #f9fafb;
   color: #374151;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -357,7 +357,7 @@ tbody tr:hover {
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  padding: 16px;
+  padding: 24px 28px 20px 24px;
   z-index: 10;
   min-width: 200px;
 }
@@ -765,4 +765,91 @@ tbody tr:hover {
 .users_management-btn-clear-filter:hover {
   background-color: #e5e7eb;
   color: #1f2937;
+}
+
+.users_management-assignment-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.users_management-assignment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #5570f1;
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: default;
+}
+
+.users_management-assignment-remove {
+  background: none;
+  border: none;
+  color: #e0e7ff;
+  font-size: 1rem;
+  cursor: pointer;
+  line-height: 1.5;
+  margin-top: 2px;
+  padding: 0;
+}
+
+.users_management-assignment-remove:hover {
+  color: #ffffff;
+}
+
+.users_management-assignment-table-wrapper {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.users_management-assignment-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.users_management-assignment-table th,
+.users_management-assignment-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.9rem;
+}
+
+.users_management-assignment-table thead {
+  background-color: #f8fafc;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.users_management-assignment-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.users_management-preview-table-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.users_management-preview-table-row:last-child {
+  border-bottom: none;
+}
+
+.users_management-preview-table-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background-color: #f1f5f9;
+  padding: 12px 16px;
+  font-weight: 600;
+  color: #475569;
 }

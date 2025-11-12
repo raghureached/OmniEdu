@@ -23,7 +23,8 @@ const GroupsTable = ({
       </div>
     ) : (
       <div className="table-container">
-        <div className="table-header">
+     
+        <div className="table-header" style={{fontSize:'0.9rem',fontWeight:'600',color:'#020202'}}>
           {/* 1: Select All */}
           <input
             className="col-select"
@@ -63,7 +64,7 @@ const GroupsTable = ({
 
             {/* 4: Members */}
             <div className="col-members">{group.membersCount || 0}</div>
-
+           
             {/* 5: Status */}
             <div className="col-status">
               <span
@@ -98,12 +99,8 @@ const GroupsTable = ({
             </div>
           </div>
         ))}
-
-        
-      </div>
-    )}
-      {/* Pagination aligned with OrganizationManagement */}
-      <div className="pagination" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+        {/* Pagination aligned with OrganizationManagement */}
+      <div className="pagination" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%',marginTop:'0px',borderTop:'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button
             type="button"
@@ -126,6 +123,10 @@ const GroupsTable = ({
           </button>
         </div>
       </div>
+        
+      </div>
+    )}
+     
     </>
   );
 };

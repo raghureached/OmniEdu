@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { FileText, Plus, X, Upload, Copy, Eye, EyeIcon, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, Plus, X, Upload, Copy, Eye, Info, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import api from '../../../services/api.js';
 import './QuestionsForm-survey.css';
 import '../GlobalAssessments/QuestionsForm.css';
@@ -52,11 +52,23 @@ const QuestionsForm = ({
     const [tagInput, setTagInput] = useState('');
     // Local validation message for pass percentage
     const [passError, setPassError] = useState('');
-    const [noOfQuestions, setNoOfQuestions] = useState(0);
-    const [noOfSections, setNoOfSections] = useState(0);
+    const mapZeroToEmpty = (value) => (value === 0 || value === '0' || value === null || value === undefined ? '' : value);
+   
+    const [noOfQuestions, setNoOfQuestions] = useState(mapZeroToEmpty(formData?.noOfQuestions));
+    const [noOfSections, setNoOfSections] = useState(mapZeroToEmpty(formData?.noOfSections));
+       
     // AI processing state for enhance text feature
     const [aiProcessing, setAiProcessing] = useState(false);
     const [aiHelpOpen, setAiHelpOpen] = useState(false);
+    
+    useEffect(() => {
+            setNoOfQuestions(mapZeroToEmpty(formData?.noOfQuestions));
+        }, [formData?.noOfQuestions]);
+    
+        useEffect(() => {
+            setNoOfSections(mapZeroToEmpty(formData?.noOfSections));
+        }, [formData?.noOfSections]);
+    
     // Derive sub-teams for the selected team
     const selectedTeam = groups.find(t => String(t._id) === String(formData.team));
     const subTeams = selectedTeam?.subTeams || [];
@@ -503,7 +515,7 @@ const QuestionsForm = ({
                                             <input
                                                 type="number"
                                                 placeholder="Enter number of sections"
-                                                value={formData.noOfSections}
+                                                value={noOfSections}
                                                 className='assess-form-input'
                                                 // onChange={(e) => {setNoOfSections(e.target.value),setFormData({ ...formData, noOfSections: e.target.value })}}
                                                 onChange={(e) => {
@@ -520,7 +532,7 @@ const QuestionsForm = ({
                                             <input
                                                 type="number"
                                                 placeholder="Enter number of questions"
-                                                value={formData.noOfQuestions}
+                                                value={ noOfQuestions}
                                                 className='assess-form-input'
                                                 // onChange={(e) => {setNoOfQuestions(e.target.value),setFormData({ ...formData, noOfQuestions: e.target.value })}}
                                                 onChange={(e) => {
@@ -615,76 +627,69 @@ const QuestionsForm = ({
 
 
                                     {/* Thumbnail upload */}
-                                    <div className="module-overlay__form-group" >
-                                        <label className="module-overlay__form-label">
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Thumbnail <span className="module-overlay__required">*</span></span>
-                                        </label>
-
+                                    <div className="module-overlay__form-group">
+                                        <label className="module-overlay__form-label">Thumbnail</label>
+                                        <input
+                                            id="survey-thumb-input"
+                                            type="file"
+                                            accept="image/*"
+                                            style={{ display: 'none' }}
+                                            onChange={(e) => {
+                                                const file = e.target.files && e.target.files[0];
+                                                if (!file) return;
+                                                const blobUrl = URL.createObjectURL(file);
+                                                setFormData({ ...formData, thumbnail_url: blobUrl, thumbnail_file: file });
+                                            }}
+                                        />
                                         {formData.thumbnail_url ? (
-                                            <div
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'space-between',
-                                                    gap: 12,
-                                                    background: '#eef2ff',
-                                                    borderRadius: 10,
-                                                    padding: '8px 12px',
-                                                    border: '1px solid #e2e8f0',
-                                                }}
-                                            >
-                                                <div style={{ color: '#1f2937', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            <div className="module-overlay__uploaded-file-container">
+                                                <span
+                                                    className="module-overlay__uploaded-file-name"
+                                                    title={(formData.thumbnail_file && formData.thumbnail_file.name) || String(formData.thumbnail_url).split('/').pop()}
+                                                >
                                                     {(formData.thumbnail_file && formData.thumbnail_file.name) || (String(formData.thumbnail_url).split('/').pop() || 'thumbnail')}
-                                                </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                                </span>
+                                                <div className="module-overlay__file-actions">
                                                     <button
                                                         type="button"
-                                                        className="survey-assess-btn-link"
+                                                        className="module-overlay__btn-preview"
                                                         onClick={() => handlePreviewFile(formData.thumbnail_file || formData.thumbnail_url, formData.thumbnail_url)}
-                                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4f46e5', background: 'transparent' }}
+                                                        aria-label="Preview thumbnail"
                                                     >
                                                         <Eye size={16} /> Preview
                                                     </button>
                                                     <button
                                                         type="button"
-                                                        className="survey-assess-btn-link"
+                                                        className="module-overlay__btn-delete"
                                                         onClick={() => {
                                                             try {
-                                                                if ((formData.thumbnail_url || '').startsWith('blob:')) URL.revokeObjectURL(formData.thumbnail_url);
+                                                                if ((formData.thumbnail_url || '').startsWith('blob:')) {
+                                                                    URL.revokeObjectURL(formData.thumbnail_url);
+                                                                }
                                                             } catch { }
                                                             setFormData({ ...formData, thumbnail_url: '', thumbnail_file: null });
                                                         }}
-                                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4f46e5', background: 'transparent' }}
+                                                        aria-label="Delete thumbnail"
                                                     >
-                                                        <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="16" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M7 6V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7ZM13.4142 13.9997L15.182 12.232L13.7678 10.8178L12 12.5855L10.2322 10.8178L8.81802 12.232L10.5858 13.9997L8.81802 15.7675L10.2322 17.1817L12 15.4139L13.7678 17.1817L15.182 15.7675L13.4142 13.9997ZM9 4V6H15V4H9Z"></path></svg>Delete
+                                                        <Trash2 size={16} /> Delete
                                                     </button>
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                <input
-                                                    type="file"
-                                                    id="survey-thumb-input"
-                                                    accept="image/*"
-                                                    style={{ display: 'none' }}
-                                                    onChange={(e) => {
-                                                        const file = e.target.files && e.target.files[0];
-                                                        if (!file) return;
-                                                        const blobUrl = URL.createObjectURL(file);
-                                                        setFormData({ ...formData, thumbnail_url: blobUrl, thumbnail_file: file });
-                                                    }}
-                                                />
-                                                <label
-                                                    htmlFor="survey-thumb-input"
-                                                    className="survey-assess-upload-btn"
-                                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
-                                                >
-                                                    <Upload size={16} /> Upload Thumbnail
-                                                </label>
-                                            </div>
+                                            <label
+                                                htmlFor="survey-thumb-input"
+                                                className="module-overlay__upload-label"
+                                                tabIndex={0}
+                                                onKeyPress={e => {
+                                                    if (e.key === 'Enter') {
+                                                        const input = document.getElementById('survey-thumb-input');
+                                                        input && input.click();
+                                                    }
+                                                }}
+                                            >
+                                                <Plus size={16} /> Upload File
+                                            </label>
                                         )}
-
-
                                     </div>
 
                                 </div>}

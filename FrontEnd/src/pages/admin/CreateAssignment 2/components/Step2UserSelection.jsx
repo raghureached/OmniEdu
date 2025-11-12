@@ -15,7 +15,6 @@ const Step2UserSelection = ({
   onNext,
   onBack
 }) => {
-  // console.log(users)
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [groupSearchTerm, setGroupSearchTerm] = useState('');
   const [userFilterTeam, setUserFilterTeam] = useState('');
@@ -77,10 +76,9 @@ const Step2UserSelection = ({
   };
 
   const filteredUsers = users.filter(u => {
-    const teamsArr = u?.profile?.teams || [];
-    if (userFilterTeam && !teamsArr.some(t => t.team_id && t.team_id._id === userFilterTeam)) return false;
-    if (userFilterSubTeam && !teamsArr.some(t => t.sub_team_id && t.sub_team_id._id === userFilterSubTeam)) return false;
-    if (userSearchTerm && !u.name.toLowerCase().includes(userSearchTerm.toLowerCase()) &&
+    if (userFilterTeam && u.team !== userFilterTeam) return false;
+    if (userFilterSubTeam && u.subteam !== userFilterSubTeam) return false;
+    if (userSearchTerm && !u.name.toLowerCase().includes(userSearchTerm.toLowerCase()) && 
         !u.email.toLowerCase().includes(userSearchTerm.toLowerCase())) return false;
     return true;
   });
@@ -132,16 +130,16 @@ const Step2UserSelection = ({
               <select value={userFilterTeam} onChange={(e) => { setUserFilterTeam(e.target.value); setUserFilterSubTeam(''); }}>
                 <option value="">All Teams</option>
                 {groups.map(team => (
-                  <option key={team._id} value={team._id}>{team.name}</option>
+                  <option key={team._id} value={team.name}>{team.name}</option>
                 ))}
               </select>
               <select value={userFilterSubTeam} onChange={(e) => setUserFilterSubTeam(e.target.value)} disabled={!userFilterTeam}>
                 <option value="">All Sub-Teams</option>
                 {groups
-                  .find(team => team._id === userFilterTeam)
+                  .find(team => team.name === userFilterTeam)
                   ?.subTeams
                   ?.map(sub => (
-                    <option key={sub._id} value={sub._id}>{sub.name}</option>
+                    <option key={sub._id} value={sub.name}>{sub.name}</option>
                   ))}
               </select>
             </div>
@@ -176,12 +174,7 @@ const Step2UserSelection = ({
                     <div className="user-info">
                       <div className="user-name">{user.name}</div>
                       <div className="user-email">{user.email}</div>
-                      {(() => {
-                        const teamsArr = user?.profile?.teams || [];
-                        if (!teamsArr.length) return null;
-                        const labels = teamsArr.map(t => `${t.team_id?.name || ''}${t.sub_team_id ? ` • ${t.sub_team_id.name}` : ''}`);
-                        return <div className="user-team">{labels.join(', ')}</div>;
-                      })()}
+                      {user.team && <div className="user-team">{user.team} {user.subteam ? `• ${user.subteam}` : ''}</div>}
                     </div>
                   </div>
                 ))

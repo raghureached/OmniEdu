@@ -14,6 +14,7 @@ import {
   updateSubTeam,
   deleteSubTeam
 } from '../../../store/slices/groupSlice';
+import { fetchUsers } from '../../../store/slices/userSlice';
 import AdminForm from '../../../components/common/AdminForm/AdminForm';
 import GroupsTable from './components/GroupsTable';
 import TeamPreview from './components/TeamPreview';
@@ -40,6 +41,12 @@ const GroupsManagement = () => {
   useEffect(() => {
     fetchGroupData();
   }, [dispatch, currentPage, pageSize]);
+
+  useEffect(() => {
+    dispatch(fetchUsers()).catch((error) => {
+      console.error('Failed to fetch users for member counts:', error);
+    });
+  }, [dispatch]);
 
   // Prefill form data when editing, or reset when creating
   useEffect(() => {
@@ -124,15 +131,45 @@ const GroupsManagement = () => {
   };
 
   const handleExportGroups = () => {
-    const jsonData = JSON.stringify(groups);
-    const blob = new Blob([jsonData], { type: 'application/json' });
+    if (!Array.isArray(filteredGroups) || filteredGroups.length === 0) {
+      alert('No groups available to export.');
+      return;
+    }
+
+    const rows = filteredGroups.map((group) => {
+      const subTeamNames = group.subTeams
+        .map((subTeam) => subTeam.name || subTeam.subTeamName || '')
+        .filter(Boolean);
+
+      return {
+        Team: group.teamName || '',
+        Subteams: subTeamNames.join(', '),
+        Members: group.membersCount ?? 0,
+      };
+    });
+
+    const headers = Object.keys(rows[0]);
+    const escape = (value) => {
+      const stringValue = value ?? '';
+      const normalized = typeof stringValue === 'string' ? stringValue : String(stringValue);
+      const escaped = normalized.replace(/"/g, '""');
+      return `"${escaped}"`;
+    };
+
+    const csvLines = [
+      headers.join(','),
+      ...rows.map((row) => headers.map((header) => escape(row[header])).join(',')),
+    ];
+
+    const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'groups.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `groups_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleFormSubmit = async (e) => {
@@ -225,14 +262,25 @@ const GroupsManagement = () => {
       const subTeamsArray = Array.isArray(team.subTeams) ? team.subTeams : [];
       const primarySubTeam = subTeamsArray[0] || {};
 
+      const subTeamsWithCounts = subTeamsArray.map((subTeam) => ({
+        ...subTeam,
+        membersCount: typeof subTeam?.membersCount === 'number'
+          ? subTeam.membersCount
+          : Array.isArray(subTeam?.members)
+            ? subTeam.members.length
+            : 0,
+      }));
+
+      const teamMembersCount = typeof team.membersCount === 'number'
+        ? team.membersCount
+        : subTeamsWithCounts.reduce((sum, subTeam) => sum + (subTeam.membersCount || 0), 0);
+
       return {
         id: team.id || team._id,
         uuid: team.uuid,
         teamName: team.teamName || team.name || '',
-        subTeams: subTeamsArray,
-        membersCount: typeof team.membersCount === 'number'
-          ? team.membersCount
-          : subTeamsArray.length,
+        subTeams: subTeamsWithCounts,
+        membersCount: teamMembersCount,
         status: team.status || primarySubTeam.status || 'inactive',
       };
     });

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { FileText, Plus, X, Upload, Copy, Eye, ChevronRight, ChevronLeft , Info} from 'lucide-react';
+import { FileText, Plus, X, Upload, Copy, Eye, ChevronRight, ChevronLeft, Info, Trash2 } from 'lucide-react';
 import api from '../../../services/api.js';
 import './QuestionsForm.css';
 import '../GlobalSurveys/QuestionsForm-survey.css';
@@ -43,9 +43,23 @@ const QuestionsForm = ({
     const [creating, setCreating] = useState(false)
     const [aiHelpOpen, setAiHelpOpen] = useState(false);
     const [passError, setPassError] = useState('');
-    const [noOfQuestions, setNoOfQuestions] = useState(0);
-    const [Level, setLevel] = useState("Beginner");
-    const [tagInput, setTagInput] = useState('');
+    const [noOfQuestions, setNoOfQuestions] = useState(
+            formData?.noOfQuestions === 0 || formData?.noOfQuestions === '0'
+                ? ''
+                : formData?.noOfQuestions ?? ''
+        );
+        const [Level, setLevel] = useState(formData?.Level ?? '');
+        const [tagInput, setTagInput] = useState('');
+        useEffect(() => {
+            const value = formData?.noOfQuestions;
+            setNoOfQuestions(value === 0 || value === '0' || value === null || value === undefined ? '' : value);
+        }, [formData?.noOfQuestions]);
+    
+        useEffect(() => {
+            setLevel(formData?.Level ?? '');
+        }, [formData?.Level]);
+    
+  
     // Local UI state to toggle optional instructions per question index
     const [instructionsOpen, setInstructionsOpen] = useState({});
     const [questionFilePreview, setQuestionFilePreview] = useState({ open: false, url: null, name: '', type: '', index: null });
@@ -614,7 +628,7 @@ const QuestionsForm = ({
                                     <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
                                         <div style={{ width: "50%" }} >
                                             <label className='assess-form-label' style={{ margin: "10px" }}>Number of Questions</label>
-                                            <input type="number" name="noOfQuestions" placeholder="Enter the Number of Questions" value={formData.noOfQuestions} className='assess-form-input'
+                                            <input type="number" name="noOfQuestions" placeholder="Enter the Number of Questions" value={noOfQuestions} className='assess-form-input'
 
                                                 onChange={(e) => {
                                                     const value = e.target.value;
@@ -627,7 +641,7 @@ const QuestionsForm = ({
                                             <select
                                                 type="text"
                                                 name="Level"
-                                                value={formData.Level}
+                                                value={Level}
                                                 className='assess-form-input'
                                                 onChange={(e) => {
                                                     const value = e.target.value;
@@ -735,72 +749,72 @@ const QuestionsForm = ({
                                             <RichText value={formData.instructions || ''} name="instructions" onChange={(value) => setFormData({ ...formData, instructions: value })} />
                                         </div>
                                     </div>
-                                    <div className="module-overlay__form-group">
-                                    <label className="module-overlay__form-label">
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Thumbnail <span className="module-overlay__required">*</span>
-                                            </span>
-                                        </label>
+                                    <div className='module-overlay__form-group'>
+                                        <label className="module-overlay__form-label">Thumbnail</label>
+                                        <input
+                                            id="assess-thumb-input"
+                                            type="file"
+                                            accept="image/*"
+                                            style={{ display: 'none' }}
+                                            onChange={(e) => {
+                                                const file = e.target.files && e.target.files[0];
+                                                if (!file) return;
+                                                const preview = URL.createObjectURL(file);
+                                                setFormData({ ...formData, thumbnail: file, thumbnail_preview: preview });
+                                            }}
+                                        />
                                         {formData.thumbnail ? (
-                                            <div
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'space-between',
-                                                    gap: 12,
-                                                    background: '#eef2ff',
-                                                    borderRadius: 10,
-                                                    padding: '8px 12px',
-                                                    border: '1px solid #e2e8f0',
-                                                }}
-                                            >
-                                                <div style={{ color: '#1f2937', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {(() => {
-                                                        if (formData.thumbnail && typeof formData.thumbnail !== 'string') {
-                                                            return formData.thumbnail.name || 'thumbnail';
-                                                        }
-                                                        return (String(formData.thumbnail).split('/').pop() || 'thumbnail');
-                                                    })()}
-                                                </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                            <div className="module-overlay__uploaded-file-container">
+                                                <span
+                                                    className="module-overlay__uploaded-file-name"
+                                                    title={typeof formData.thumbnail === 'string'
+                                                        ? formData.thumbnail.split('/').pop()
+                                                        : formData.thumbnail?.name}
+                                                >
+                                                    {typeof formData.thumbnail === 'string'
+                                                        ? (formData.thumbnail.split('/').pop() || 'thumbnail')
+                                                        : (formData.thumbnail?.name || 'thumbnail')}
+                                                </span>
+                                                <div className="module-overlay__file-actions">
                                                     <button
                                                         type="button"
-                                                        className="survey-assess-btn-link"
+                                                        className="module-overlay__btn-preview"
                                                         onClick={() => handlePreviewFile(formData.thumbnail, formData.thumbnail_preview)}
-                                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4f46e5', background: 'transparent' }}
+                                                        aria-label="Preview thumbnail"
                                                     >
                                                         <Eye size={16} /> Preview
                                                     </button>
                                                     <button
                                                         type="button"
-                                                        className="survey-assess-btn-link"
+                                                        className="module-overlay__btn-delete"
                                                         onClick={() => {
-                                                            try { if ((formData.thumbnail_preview || '').startsWith('blob:')) URL.revokeObjectURL(formData.thumbnail_preview); } catch { }
+                                                            try {
+                                                                if ((formData.thumbnail_preview || '').startsWith('blob:')) {
+                                                                    URL.revokeObjectURL(formData.thumbnail_preview);
+                                                                }
+                                                            } catch { }
                                                             setFormData({ ...formData, thumbnail: '', thumbnail_preview: '' });
                                                         }}
-                                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4f46e5', background: 'transparent' }}
+                                                        aria-label="Delete thumbnail"
                                                     >
-                                                        <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="16" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M7 6V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7ZM13.4142 13.9997L15.182 12.232L13.7678 10.8178L12 12.5855L10.2322 10.8178L8.81802 12.232L10.5858 13.9997L8.81802 15.7675L10.2322 17.1817L12 15.4139L13.7678 17.1817L15.182 15.7675L13.4142 13.9997ZM9 4V6H15V4H9Z"></path></svg> Delete
+                                                        <Trash2 size={16} /> Delete
                                                     </button>
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                <input
-                                                    type="file"
-                                                    id="assess-thumb-input"
-                                                    accept="image/*"
-                                                    style={{ display: 'none' }}
-                                                    onChange={(e) => {
-                                                        const file = e.target.files && e.target.files[0];
-                                                        if (!file) return;
-                                                        const preview = URL.createObjectURL(file);
-                                                        setFormData({ ...formData, thumbnail: file, thumbnail_preview: preview });
-                                                    }}
-                                                />
-                                                <label htmlFor="assess-thumb-input" className="assess-upload-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                                                    <Upload size={16} /> Upload Thumbnail
-                                                </label>
-                                            </div>
+                                            <label
+                                                htmlFor="assess-thumb-input"
+                                                className="module-overlay__upload-label"
+                                                tabIndex={0}
+                                                onKeyPress={e => {
+                                                    if (e.key === 'Enter') {
+                                                        const input = document.getElementById('assess-thumb-input');
+                                                        input && input.click();
+                                                    }
+                                                }}
+                                            >
+                                                <Plus size={16} /> Upload File
+                                            </label>
                                         )}
                                     </div>
                                         

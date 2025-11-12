@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users } from 'lucide-react';
+import React, { useEffect, useState,useRef } from 'react';
+import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, Filter, ChevronDown} from 'lucide-react';
+import { RiDeleteBinFill } from 'react-icons/ri';
+import { GoX } from 'react-icons/go';
 import './GlobalAssessments.css'
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchGlobalAssessments, createGlobalAssessment, updateGlobalAssessment, deleteGlobalAssessment, getGlobalAssessmentById, uploadAssessmentFile } from '../../../store/slices/globalAssessmentSlice'; 
@@ -30,7 +32,9 @@ const GlobalAssessments = () => {
     duration: '',            // NEW
     tags: [],                // NEW
     team: '',  
-    subteam:'',          // NEW    
+    subteam:'', 
+    Level: '',
+    noOfQuestions: 0,          // NEW    
     attempts: 1,             // NEW
     unlimited_attempts: false,
     percentage_to_pass: 0,   // NEW
@@ -56,10 +60,28 @@ const GlobalAssessments = () => {
     options: ['', ''],
     correct_option: '',
     file_url: '',
-    instructions: ''
+   
   }]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
-
+//filters
+const [showFilters, setShowFilters] = useState(false);
+  const [showBulkAction, setShowBulkAction] = useState(false);
+  const [filters, setFilters] = useState({
+    status: '',
+    search: ''
+  });
+  
+  const [tempFilters, setTempFilters] = useState({
+    status: '',
+    search: ''
+  });
+  const filterButtonRef = useRef(null);
+  const bulkButtonRef = useRef(null);
+  const filterPanelRef = useRef(null);
+  const bulkPanelRef = useRef(null);
+  const [filterPanelStyle, setFilterPanelStyle] = useState({ top: 0, left: 0 });
+  const [bulkPanelStyle, setBulkPanelStyle] = useState({ top: 0, left: 0 });
+  
   const {assessments, loading, pagination} = useSelector((state) => state.globalAssessments)
   const { user: authUser } = useSelector((state) => state.auth || { user: null });
   const [page, setPage] = useState(pagination?.page || 1);
@@ -93,7 +115,9 @@ const GlobalAssessments = () => {
       status: 'Saved',
       duration: '',            // NEW
       tags: [],                // NEW
-      team: '',                // NEW
+      team: '', 
+      Level: '',
+      noOfQuestions: 0,                 // NEW
       subteam: '',            // NEW
       attempts: 1,             // NEW
       unlimited_attempts: false,
@@ -148,6 +172,118 @@ const GlobalAssessments = () => {
 
   const clearSelection = () => setSelectedIds([]);
 
+  // Filter handlers
+    const handleFilterChange = (e) => {
+      const { name, value } = e.target;
+      setTempFilters(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    };
+    
+    // Update search term when filters change
+    useEffect(() => {
+      if (filters.search !== searchTerm) {
+        setSearchTerm(filters.search || '');
+      }
+    }, [filters.search]);
+
+    const updateFilterPanelPosition = () => {
+      const rect = filterButtonRef.current?.getBoundingClientRect();
+      if (rect) {
+        setFilterPanelStyle({
+          top: rect.bottom + window.scrollY + 8,
+          left: rect.left + window.scrollX,
+        });
+      }
+    };
+  const updateBulkPanelPosition = () => {
+    const rect = bulkButtonRef.current?.getBoundingClientRect();
+    if (rect) {
+      const panelWidth = bulkPanelRef.current?.offsetWidth || 0;
+      const fallbackLeft = rect.left + window.scrollX;
+      setBulkPanelStyle({
+        top: rect.bottom + window.scrollY + 8,
+        left: panelWidth ? rect.right + window.scrollX - panelWidth : fallbackLeft,
+      });
+    }
+  };
+
+    useEffect(() => {
+      const handleClickOutside = (event) => {
+        const target = event.target;
+        const filterBtn = filterButtonRef.current;
+        const bulkBtn = bulkButtonRef.current;
+        const filterPanel = filterPanelRef.current;
+        const bulkPanel = bulkPanelRef.current;
+  
+        if (
+          (showFilters || showBulkAction) &&
+          !(
+            (filterPanel && filterPanel.contains(target)) ||
+            (bulkPanel && bulkPanel.contains(target)) ||
+            (filterBtn && filterBtn.contains(target)) ||
+            (bulkBtn && bulkBtn.contains(target))
+          )
+        ) {
+          setShowFilters(false);
+          setShowBulkAction(false);
+        }
+      };
+  
+      document.addEventListener('mousedown', handleClickOutside);
+  
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }, [showFilters, showBulkAction]);
+  
+    useEffect(() => {
+        if (showFilters) {
+          updateFilterPanelPosition();
+        }
+        if (showBulkAction) {
+          updateBulkPanelPosition();
+        }
+      }, [showFilters, showBulkAction]);
+    
+      useEffect(() => {
+        const handleScrollOrResize = () => {
+          if (showFilters) {
+            updateFilterPanelPosition();
+          }
+          if (showBulkAction) {
+            updateBulkPanelPosition();
+          }
+        };
+    
+        window.addEventListener('scroll', handleScrollOrResize, true);
+        window.addEventListener('resize', handleScrollOrResize);
+    
+        return () => {
+          window.removeEventListener('scroll', handleScrollOrResize, true);
+          window.removeEventListener('resize', handleScrollOrResize);
+        };
+      }, [showFilters, showBulkAction]);
+    
+    const handleFilter = () => {
+      setFilters({
+        ...tempFilters,
+        search: searchTerm
+      });
+      setShowFilters(false);
+    };
+  
+    const resetFilters = () => {
+      const resetFilters = {
+        status: '',
+        search: ''
+      };
+      setTempFilters(resetFilters);
+      setFilters(resetFilters);
+      setSearchTerm('');
+    };
+  
   const bulkUpdateStatus = async (status) => {
     if (selectedIds.length === 0) return;
     try {
@@ -174,6 +310,7 @@ const GlobalAssessments = () => {
       console.error('Bulk delete failed', e);
     }
   };
+  const handleBulkDelete = bulkDelete;
 
   const handleEditAssessment = async (assessment) => {
     // Always fetch the latest populated assessment so questions are available
@@ -196,6 +333,8 @@ const GlobalAssessments = () => {
         tags: full.tags || [],
         team: full.team || '',
         subteam: full.subteam || '',
+        Level: full.Level || '',
+        noOfQuestions: full.noOfQuestions || 0,
         attempts: full.attempts ?? 1,
         unlimited_attempts: !!full.unlimited_attempts,
         percentage_to_pass: full.percentage_to_pass ?? 0,
@@ -232,14 +371,14 @@ const GlobalAssessments = () => {
               options: Array.isArray(q.options) && q.options.length ? q.options : [''],
               correct_option: Array.isArray(q.correct_option) ? q.correct_option : (Number.isInteger(q.correct_option) ? [q.correct_option] : []),
               file_url: q.file_url || '',
-              instructions: q.instructions || '',
+             
              
               total_points: Number.isFinite(q.total_points) ? q.total_points : 1,
             });
           });
           countSoFar += qs.length;
         });
-        setQuestions(flatQs.length ? flatQs : [{ type: '', question_text: '', options: [''], correct_option: '', file_url: '', instructions:'' }]);
+        setQuestions(flatQs.length ? flatQs : [{ type: '', question_text: '', options: [''], correct_option: '', file_url: '' }]);
       } else {
         const mappedQuestions = Array.isArray(full.questions)
           ? full.questions.map(q => ({
@@ -269,6 +408,8 @@ const GlobalAssessments = () => {
         tags: assessment.tags || [],
         team: assessment.team || '',
         subteam: assessment.subteam || '',
+        Level: assessment.Level || '',
+        noOfQuestions: assessment.noOfQuestions || 0,
         attempts: assessment.attempts ?? 1,
         unlimited_attempts: !!assessment.unlimited_attempts,
         percentage_to_pass: assessment.percentage_to_pass ?? 0,
@@ -289,7 +430,7 @@ const GlobalAssessments = () => {
         thumbnail: assessment.thumbnail_url || assessment.thumbnail || '',
         thumbnail_file: null,
       });
-      setQuestions([{ type: '', question_text: '', options: ['', ''], correct_option: '', file_url: '', shuffle_options: false }]);
+      setQuestions([{ type: '', question_text: '', options: ['', ''], correct_option: '', file_url: '' }]);
       setShowForm(true);
     }
   };
@@ -332,6 +473,8 @@ const GlobalAssessments = () => {
       duration: toMinutesNumber(formData.duration),
       team: formData.team,
       subteam: formData.subteam,
+      Level: formData.Level || '',
+      noOfQuestions: formData.noOfQuestions || 0,
       attempts: formData.attempts,
       unlimited_attempts: Boolean(formData.unlimited_attempts),
       percentage_to_pass: formData.percentage_to_pass,
@@ -409,6 +552,8 @@ const GlobalAssessments = () => {
         duration: formData.duration,
         team: formData.team,
         subteam: formData.subteam,
+        Level: formData.Level || '',
+        noOfQuestions: formData.noOfQuestions || 0,
         attempts: formData.attempts,
         unlimited_attempts: Boolean(formData.unlimited_attempts),
         percentage_to_pass: formData.percentage_to_pass,
@@ -644,7 +789,7 @@ const GlobalAssessments = () => {
       </div>
 
       {/* Toolbar */}
-      <div className="assess-toolbar">
+      {/* <div className="assess-toolbar">
         <div className="assess-search-container">
           <div className="assess-search-bar">
             <Search size={16} />
@@ -660,21 +805,149 @@ const GlobalAssessments = () => {
           <Plus size={16} />
           <span>Create Assessment</span>
         </button>
-      </div>
+      </div> */}
 
-      {selectedIds.length > 0 && (
+      {/* {selectedIds.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#f8fafc', margin: '8px 0' }}>
           <div style={{ color: '#0f172a' }}>
             <strong>{selectedIds.length}</strong> selected
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            {/* <button className="assess-btn-secondary" onClick={() => bulkUpdateStatus('Published')} disabled={loading}>Publish</button>
-            <button className="assess-btn-secondary" onClick={() => bulkUpdateStatus('Draft')} disabled={loading}>Move to Draft</button>*/}
+            <button className="assess-btn-secondary" onClick={() => bulkUpdateStatus('Published')} disabled={loading}>Publish</button>
+            <button className="assess-btn-secondary" onClick={() => bulkUpdateStatus('Draft')} disabled={loading}>Move to Draft</button>
             <button className="assess-btn-secondary" onClick={bulkDelete} disabled={loading} title="Delete selected">Delete</button> 
             <button className="assess-btn-secondary" onClick={clearSelection}>Clear</button>
           </div>
         </div>
-      )}
+      )} */}
+      
+      <div className="controls">
+        <div className="roles-search-bar">
+          <Search size={16} color="#6b7280" className="search-icon" />
+            <input
+              type="text"
+              name="search"
+              placeholder="Search Assessments"
+              className="search-input"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setFilters(prev => ({
+                  ...prev,
+                  search: e.target.value,
+                  status: prev.status
+                }));
+              }}
+            />
+        </div>
+
+        <div className="controls-right">
+          {/* <button className="control-btn" onClick={() => setShowFilters((prev) => !prev)}> */}
+          <button
+            ref={filterButtonRef}
+            className="control-btn"
+            onClick={() => {
+              setShowFilters(prev => {
+                const next = !prev;
+                if (next) {
+                  setShowBulkAction(false);
+                  updateFilterPanelPosition();
+                }
+                return next;
+              });
+            }}
+          >
+            <Filter size={16} />
+            Filter
+          </button>
+          {/* <button className="control-btn" onClick={() => setShowBulkAction((prev) => !prev)}> */}
+          <button
+            ref={bulkButtonRef}
+            className="control-btn"
+            onClick={() => {
+              setShowBulkAction(prev => {
+                const next = !prev;
+                if (next) {
+                  setShowFilters(false);
+                  updateBulkPanelPosition();
+                }
+                return next;
+              });
+            }}
+          >
+            Bulk Action <ChevronDown size={16} />
+          </button>
+          <button className="assess-btn-primary" onClick={handleAddAssessment}>
+            <Plus size={16} />
+            <span>Create Assessment</span>
+          </button>
+        </div>
+      </div>
+       {showFilters && (
+              // <div className="globalassessment-filter-panel">
+              <div
+                ref={filterPanelRef}
+                className="globalassessment-filter-panel"
+                style={{ top: filterPanelStyle.top, left: filterPanelStyle.left, position: 'absolute' }}
+              >
+              <span style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px", hover: { color: "#6b7280" } }} onClick={() => setShowFilters(false)}><GoX size={20} color="#6b7280" /></span>
+                <div className="filter-group">
+                  <label>Status</label>
+                  <select
+                    name="status"
+                    value={tempFilters?.status || ""}
+                    onChange={handleFilterChange}
+                  >
+                    <option value="">All</option>
+                    <option value="Saved">Saved</option>
+                    <option value="Draft">Draft</option>
+                    <option value="Published">Published</option>
+                  </select>
+                </div>
+      
+      
+                <div className="filter-actions">
+                  <button className="btn-primary" onClick={handleFilter}>
+                    Apply
+                  </button>
+                  <button className="reset-btn" onClick={resetFilters}>
+                    Clear
+                  </button>
+      
+      
+                </div>
+              </div>
+            )}
+            {showBulkAction && (
+              // <div className="globalassessment-bulk-action-panel">
+              <div
+                ref={bulkPanelRef}
+                className="globalassessment-bulk-action-panel"
+                style={{ top: bulkPanelStyle.top, left: bulkPanelStyle.left, position: 'absolute' }}
+              >
+                <div className="bulk-action-header">
+                  <label className="bulk-action-title">Items Selected: {selectedIds.length}</label>
+                  <GoX
+                    size={20}
+                    title="Close"
+                    aria-label="Close bulk action panel"
+                    onClick={() => setShowBulkAction(false)}
+                    className="bulk-action-close"
+                  />
+                </div>
+                <div className="bulk-action-actions">
+                  <button
+                    className="bulk-action-delete-btn"
+                    disabled={selectedIds.length === 0}
+                    onClick={() => handleBulkDelete(selectedIds)}
+                  >
+                    <RiDeleteBinFill size={16} color="#fff" />
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </div>
+            )}
+      
 
       {/* Assessment Table */}
       <div className="assess-table-section">
@@ -707,8 +980,20 @@ const GlobalAssessments = () => {
               </thead>
               <tbody>
                 {assessments
-                  .filter(a => a.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                               a.description?.toLowerCase().includes(searchTerm.toLowerCase()))
+                  // .filter(a => a.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                  //              a.description?.toLowerCase().includes(searchTerm.toLowerCase()))
+                  .filter(assessment => {
+                    // Apply search filter
+                    const matchesSearch = !filters.search || 
+                      assessment.title?.toLowerCase().includes(filters.search.toLowerCase()) ||
+                      assessment.description?.toLowerCase().includes(filters.search.toLowerCase());
+                    
+                    // Apply status filter
+                    const matchesStatus = !filters.status || 
+                      assessment.status?.toLowerCase() === filters.status.toLowerCase();
+                    
+                    return matchesSearch && matchesStatus;
+                  })
                   .map(assessment => (
                   <tr key={assessment.uuid || assessment._id || assessment.id} className="assess-table-row">
                     <td>

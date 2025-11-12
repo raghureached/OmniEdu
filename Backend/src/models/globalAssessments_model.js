@@ -30,6 +30,8 @@ const globalAssessmentsSchema = new mongoose.Schema({
   duration: { type: Number, default: 0, required: true, },                         // can set required: true if desired
   team: { type: mongoose.Schema.Types.ObjectId, ref: "Team" , required: true,},         // can set required: true if desired
   subteam: { type: mongoose.Schema.Types.ObjectId, ref: "SubTeam", required: true, },   // can set required: true if desired
+  Level: { type: String, default: '' },
+  noOfQuestions: { type: Number, default: 0 },
   attempts: { type: Number, default: 1, required: true, },
   unlimited_attempts: { type: Boolean, default: false, required: true, },
   percentage_to_pass: { type: Number, min: 0, max: 100, default: 0 , required: true,},

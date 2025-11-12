@@ -31,6 +31,7 @@ const {
   const {createSurvey, editSurvey, deleteSurvey, getSurveys, getSurvey} = require("../controllers/admin.controller/admin_Surveys");
 const { enhanceText, enhanceSurvey, enhanceAssessment, createQuestions } = require("../controllers/admin.controller/admin_AI");
 const { generateSurveyWithSections } = require("../controllers/admin.controller/admin_AI");
+const {addTeam,editTeam,addSubTeam,editSubTeam,deleteSubTeam,addUsersToGroup} = require("../controllers/admin.controller/admin_Groups");
 
 const router = require("express").Router();
 
@@ -88,6 +89,15 @@ router.route('/editGroup/:id').put(editGroup)
 router.route('/deleteGroup/:id').delete(deleteGroup)
 router.route('/deleteGroups').delete(deleteGroups)
 router.route('/deactivateGroups').put(deactivateGroups)
+router.route('/addUsersToGroup').post(addUsersToGroup)
+
+///////Team//////////
+router.route('/addTeam').post(addTeam)
+router.route('/addSubTeam').post(addSubTeam)
+router.route('/editTeam/:id').put(editTeam)
+router.route('/editSubTeam/:id').put(editSubTeam)
+router.route('/deleteSubTeam/:id').delete(deleteSubTeam)
+
 
 //////Learning Path////////
 

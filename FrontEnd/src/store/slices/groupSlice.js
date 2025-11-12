@@ -3,6 +3,71 @@
 ///////updated for teams and subteams
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
+import { createUser, fetchUsers } from './userSlice';
+
+const resolveId = (value) => {
+  if (!value) return null;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    return value._id || value.id || value.uuid || value.value || null;
+  }
+  return null;
+};
+
+const deriveAssignments = (user) => {
+  if (!user) return [];
+
+  const profile = user.profile || {};
+  const assignmentsArray = Array.isArray(profile.teams) && profile.teams.length
+    ? profile.teams
+    : [
+        {
+          team_id: profile.team_id,
+          sub_team_id: profile.sub_team_id,
+        },
+      ];
+
+  return assignmentsArray
+    .map((assignment) => ({
+      teamId: resolveId(assignment?.team_id),
+      subTeamId: resolveId(assignment?.sub_team_id),
+    }))
+    .filter(({ teamId }) => Boolean(teamId));
+};
+
+const buildMemberCountMaps = (users = []) => {
+  const teamCounts = {};
+  const subTeamCounts = {};
+
+  users.forEach((user) => {
+    deriveAssignments(user).forEach(({ teamId, subTeamId }) => {
+      teamCounts[teamId] = (teamCounts[teamId] || 0) + 1;
+      if (subTeamId) {
+        subTeamCounts[subTeamId] = (subTeamCounts[subTeamId] || 0) + 1;
+      }
+    });
+  });
+
+  return { teamCounts, subTeamCounts };
+};
+
+const applyMemberCountsToGroups = (state) => {
+  state.groups = state.groups.map((team) => {
+    const teamId = resolveId(team);
+    const normalizedSubTeams = Array.isArray(team?.subTeams)
+      ? team.subTeams.map((subTeam) => ({
+          ...subTeam,
+          membersCount: state.memberCountsBySubTeam[resolveId(subTeam)] || 0,
+        }))
+      : [];
+
+    return {
+      ...team,
+      membersCount: state.memberCountsByTeam[teamId] || 0,
+      subTeams: normalizedSubTeams,
+    };
+  });
+};
 
 export const fetchGroups = createAsyncThunk(
   "groups/fetchGroups",
@@ -133,6 +198,8 @@ const groupSlice = createSlice({
     pageSize: 10,
     filters: {},
     importSuccess: false,
+    memberCountsByTeam: {},
+    memberCountsBySubTeam: {},
   },
   reducers: {
     setGroupFilters: (state, action) => {
@@ -164,11 +231,22 @@ const groupSlice = createSlice({
       //   state.totalCount = action.payload.totalCount;
       // })
       .addCase(fetchGroups.fulfilled, (state, action) => {
-  state.loading = false;
-  state.groups = action.payload;   // this is the array of groups
-  state.totalCount = action.payload.length; // count them manually
-  console.log("groups in slice", action.payload)
-})
+        state.loading = false;
+        const groupsArray = Array.isArray(action.payload) ? action.payload : [];
+        state.groups = groupsArray.map((team) => ({
+          ...team,
+          membersCount: Number(team?.membersCount) || 0,
+          subTeams: Array.isArray(team?.subTeams)
+            ? team.subTeams.map((subTeam) => ({
+                ...subTeam,
+                membersCount: Number(subTeam?.membersCount) || 0,
+              }))
+            : [],
+        }));
+        state.totalCount = state.groups.length;
+        applyMemberCountsToGroups(state);
+        console.log("groups in slice", action.payload);
+      })
 
       .addCase(fetchGroups.rejected, (state, action) => {
         state.loading = false;
@@ -339,6 +417,21 @@ const groupSlice = createSlice({
       .addCase(importGroups.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || 'Failed to import groups';
+      })
+      .addCase(fetchUsers.fulfilled, (state, action) => {
+        const { teamCounts, subTeamCounts } = buildMemberCountMaps(action.payload || []);
+        state.memberCountsByTeam = teamCounts;
+        state.memberCountsBySubTeam = subTeamCounts;
+        applyMemberCountsToGroups(state);
+      })
+      .addCase(createUser.fulfilled, (state, action) => {
+        deriveAssignments(action.payload || {}).forEach(({ teamId, subTeamId }) => {
+          state.memberCountsByTeam[teamId] = (state.memberCountsByTeam[teamId] || 0) + 1;
+          if (subTeamId) {
+            state.memberCountsBySubTeam[subTeamId] = (state.memberCountsBySubTeam[subTeamId] || 0) + 1;
+          }
+        });
+        applyMemberCountsToGroups(state);
       });
   },
 });

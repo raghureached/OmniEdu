@@ -1,8 +1,8 @@
 import { ChevronRight } from 'lucide-react';
 import React from 'react';
 
-const Step1ContentSelection = ({
-  selectedContentType,
+const Step1ContentSelection = ({ 
+  selectedContentType, 
   setSelectedContentType,
   selectedItem,
   setSelectedItem,
@@ -14,6 +14,7 @@ const Step1ContentSelection = ({
   onNext,
   teams
 }) => {
+  
   const handleContentTypeSelect = (type) => {
     setSelectedContentType(type);
     setSelectedItem(null);
@@ -27,16 +28,15 @@ const Step1ContentSelection = ({
 
   const getItemMeta = (item) => {
     if (selectedContentType === 'Learning Path') {
-      return `${item.duration || 0} min • ${item.lessons.length || 0} resources`;
+      return `${item.duration || 0} min • ${item.elements || 0} elements`;
     } else if (selectedContentType === 'Assessment') {
-      // console.log(item.duration,item.questions)
-      return `${item.duration || 0} min • ${item.questions.length || 0} questions`;
+      return `${item.duration || 0} min • ${item.questions || 0} questions`;
     }
     return `${item.duration || 0} minutes`;
   };
 
   const getBadgeClass = () => {
-    switch (selectedContentType) {
+    switch(selectedContentType) {
       case 'Module': return 'module';
       case 'Assessment': return 'assessment';
       case 'Survey': return 'survey';
@@ -54,20 +54,20 @@ const Step1ContentSelection = ({
   return (
     <div className="assignment-section step-content active">
       <h2 className="section-title">Step 1: Select Content Type</h2>
-
+      
       <div className="form-group">
         <label className="required">Choose Content Type</label>
         <div className="radio-group">
-          <div
+          <div 
             className={`radio-option ${selectedContentType === 'Module' ? 'selected' : ''}`}
             onClick={() => handleContentTypeSelect('Module')}
           >
-            <input
-              type="radio"
-              name="contentType"
-              value="Module"
+            <input 
+              type="radio" 
+              name="contentType" 
+              value="Module" 
               checked={selectedContentType === 'Module'}
-              onChange={() => { }}
+              onChange={() => {}}
             />
             <div className="radio-option-content">
               <div className="radio-option-title">Module (Standalone Topic)</div>
@@ -75,16 +75,16 @@ const Step1ContentSelection = ({
             </div>
           </div>
 
-          <div
+          <div 
             className={`radio-option ${selectedContentType === 'Assessment' ? 'selected' : ''}`}
             onClick={() => handleContentTypeSelect('Assessment')}
           >
-            <input
-              type="radio"
-              name="contentType"
-              value="Assessment"
+            <input 
+              type="radio" 
+              name="contentType" 
+              value="Assessment" 
               checked={selectedContentType === 'Assessment'}
-              onChange={() => { }}
+              onChange={() => {}}
             />
             <div className="radio-option-content">
               <div className="radio-option-title">Assessment</div>
@@ -92,16 +92,16 @@ const Step1ContentSelection = ({
             </div>
           </div>
 
-          <div
+          <div 
             className={`radio-option ${selectedContentType === 'Survey' ? 'selected' : ''}`}
             onClick={() => handleContentTypeSelect('Survey')}
           >
-            <input
-              type="radio"
-              name="contentType"
-              value="Survey"
+            <input 
+              type="radio" 
+              name="contentType" 
+              value="Survey" 
               checked={selectedContentType === 'Survey'}
-              onChange={() => { }}
+              onChange={() => {}}
             />
             <div className="radio-option-content">
               <div className="radio-option-title">Survey</div>
@@ -109,16 +109,16 @@ const Step1ContentSelection = ({
             </div>
           </div>
 
-          <div
+          <div 
             className={`radio-option ${selectedContentType === 'Learning Path' ? 'selected' : ''}`}
             onClick={() => handleContentTypeSelect('Learning Path')}
           >
-            <input
-              type="radio"
-              name="contentType"
-              value="Learning Path"
+            <input 
+              type="radio" 
+              name="contentType" 
+              value="Learning Path" 
               checked={selectedContentType === 'Learning Path'}
-              onChange={() => { }}
+              onChange={() => {}}
             />
             <div className="radio-option-content">
               <div className="radio-option-title">Learning Path</div>
@@ -133,7 +133,7 @@ const Step1ContentSelection = ({
           <div className="form-group">
             <label>Filter Content</label>
             <div className="filter-row">
-              <select value={filterTeam} onChange={(e) => { setFilterTeam(e.target.value); setFilterSubTeam(''); }}>
+              <select value={filterTeam} onChange={(e) => setFilterTeam(e.target.value)}>
                 <option value="">All Teams</option>
                 {teams.map(team => (
                   <option key={team._id} value={team._id}>{team.name}</option>
@@ -141,29 +141,26 @@ const Step1ContentSelection = ({
               </select>
               <select value={filterSubTeam} onChange={(e) => setFilterSubTeam(e.target.value)}>
                 <option value="">All Sub-Teams</option>
-                {teams
-                  .find(team => team._id === filterTeam)
-                  ?.subTeams
-                  ?.map(sub => (
-                    <option key={sub._id} value={sub._id}>{sub.name}</option>
-                  ))}
+                {teams.filter(team => team._id === filterTeam).map(team => (
+                  <option key={team._id} value={team._id}>{team.name}</option>
+                ))}
               </select>
             </div>
           </div>
 
           <div className="form-group">
             <label className="required">Select Item to Assign</label>
-            <div className="help-text" style={{marginBottom:10}}>Only one item can be selected. To assign multiple items, create a Learning Path.</div>
+            <div className="help-text">Only one item can be selected. To assign multiple items, create a Learning Path.</div>
             <div className="items-list">
               {filteredItems.length > 0 ? (
                 filteredItems.map(item => (
-                  <div
-                    key={item._id}
+                  <div 
+                    key={item._id} 
                     className={`item-card ${selectedItem?._id === item._id ? 'selected' : ''}`}
                   >
-                    <input
-                      type="radio"
-                      name="contentItem"
+                    <input 
+                      type="radio" 
+                      name="contentItem" 
                       checked={selectedItem?._id === item._id}
                       onChange={() => handleItemSelect(item)}
                     />
@@ -186,12 +183,12 @@ const Step1ContentSelection = ({
       )}
 
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <button
-          className="btn-primary"
+        <button 
+          className="btn-primary" 
           onClick={onNext}
           disabled={!selectedContentType || !selectedItem}
         >
-          Next: Select Users <ChevronRight size={16} />
+          Next: Select Users <ChevronRight size={16}/>
         </button>
       </div>
     </div>
