@@ -213,62 +213,60 @@ const generateSurveyWithSections = async (req, res) => {
   try {
       const { title,description, noOfSections ,noOfQuestions } = req.body;
 
-      const prompt = `
-You are an expert survey designer. Create a survey with ${noOfSections} sections, each containing ${noOfQuestions} questions, based on the following details:
+      const prompt = `You are an expert survey designer. Create a survey with ${noOfSections} sections, each containing ${noOfQuestions} questions, based on the following details:
 
-Survey Title: ${title}
-Survey Description: ${description}
-Questions per Section: ${noOfQuestions}
-
-Section 1: Course Rating
-Section 2: Mentor Rating
-
-For each question, follow these guidelines:
-1. Create clear, focused questions about the course and mentor
-2. Include appropriate options (e.g., rating scales, multiple choice)
-3. Make questions appropriate for participants
-4. For rating questions, use consistent scales (e.g., 1-5)
-
-Return the survey in the following JSON format:
-{
-  "sections": [
+     Survey Title: ${title}
+     Survey Description: ${description}
+      
+      Instructions:
+    1.  Generate ${noOfSections} distinct section titles and descriptions based on the Survey Title and Survey Description.
+    2.  Each section must contain exactly ${noOfQuestions} questions.
+    3.  Each question must be clear, focused, and appropriate for participants.
+    4.  The question type must be either "Multiple Choice" or "Multiple Select".
+    5.  Every question must have a number of options between 2 and 5 (inclusive).
+    6.  For rating-style questions (e.g., satisfaction, quality), use a consistent 5-point scale (e.g., "5 - Highly Satisfied" to "1 - Highly Dissatisfied").
+    7.  Ensure the 'order' field is sequentially numbered across the entire survey (starting from 1).
+    8.  The section 'description' must contain an <h3> heading with the section title and a <p> tag with a brief explanation.
+      
+      Return the survey in the following JSON format:
       {
-          "description": "<h1>Course Rating</h1><p>Your feedback about the course content and structure</p>",
-          "questions": [
-              {
-                  "question_text": "How would you rate the course content?",
-                  "type": "Multiple Select",
-                  "options": ["5 - Excellent", "4 - Very Good", "3 - Good", "2 - Fair", "1 - Poor"],
-                  "order": 1
-              },
-              {
-                  "question_text": "How well did the course meet your expectations?",
-                  "type": "Multiple Choice",
-                  "options": ["Exceeded", "Met", "Partially Met", "Did Not Meet"],
-                  "order": 2
-              }
-          ]
-      },
-      {
-          "description": "<h1>Mentor Rating</h1><p>Your feedback about the mentor's performance</p>",
-          "questions": [
-              {
-                  "question_text": "How would you rate the mentor's knowledge of the subject?",
-                  "type": "Multiple Choice",
-                  "options": ["5 - Excellent", "4 - Very Good", "3 - Good", "2 - Fair", "1 - Poor"],
-                  "order": 3
-              },
-              {
-                  "question_text": "How effective was the mentor in explaining concepts?",
-                  "type": "Multiple Select",
-                  "options": ["5 - Excellent", "4 - Very Good", "3 - Good", "2 - Fair", "1 - Poor"],
-                  "order": 4
-              }
-          ]
-      }
-  ]
-}
-      `;
+        "sections": [
+            {
+                "description": "<h1>Course Rating</h1><p>Your feedback about the course content and structure</p>",
+                "questions": [
+                    {
+                        "question_text": "How would you rate the course content?",
+                        "type": "Multiple Select",
+                        "options": ["5 - Excellent", "4 - Very Good", "3 - Good", "2 - Fair", "1 - Poor"],
+                        "order": 1
+                    },
+                    {
+                        "question_text": "How well did the course meet your expectations?",
+                        "type": "Multiple Choice",
+                        "options": ["Exceeded", "Met", "Partially Met", "Did Not Meet"],
+                        "order": 2
+                    }
+                ]
+            },
+            {
+                "description": "<h1>Mentor Rating</h1><p>Your feedback about the mentor's performance</p>",
+                "questions": [
+                    {
+                        "question_text": "How would you rate the mentor's knowledge of the subject?",
+                        "type": "Multiple Choice",
+                        "options": ["5 - Excellent", "4 - Very Good", "3 - Good", "2 - Fair", "1 - Poor"],
+                        "order": 3
+                    },
+                    {
+                        "question_text": "How effective was the mentor in explaining concepts?",
+                        "type": "Multiple Select",
+                        "options": ["5 - Excellent", "4 - Very Good", "3 - Good", "2 - Fair", "1 - Poor"],
+                        "order": 4
+                    }
+                ]
+            }
+        ]
+      }`;
 
       const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",

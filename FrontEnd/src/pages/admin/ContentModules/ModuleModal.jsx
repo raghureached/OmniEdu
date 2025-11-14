@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 // import { createContent, enhanceText, updateContent } from '../../../store/slices/contentSlice';
 import CustomLoader2 from '../../../components/common/Loading/CustomLoader2';
 import ModulePreview from '../../../components/common/Preview/Preview';
-import api from '../../../services/api';
+import api from '../../../services/apiOld';
 import FullRichTextEditor from './RichText';
 import CustomError from '../../../components/common/Error/Error';
 import { GoBook, GoX } from 'react-icons/go';
@@ -60,7 +60,6 @@ const ModuleModal = ({
             try {
                 const response = await api.get('/api/admin/getGroups');
                 setTeams(response.data.data);
-                // console.log(response.data.data);
             } catch (error) {
                 console.error('Error fetching teams:', error);
             }
@@ -307,7 +306,7 @@ const ModuleModal = ({
                                     <input
                                         type="text"
                                         name="title"
-                                        value={newContent.title || ''}
+                                        value={newContent.title }
                                         onChange={handleInputChange}
                                         className="addOrg-form-input"
                                         placeholder="Enter module title"
@@ -327,7 +326,7 @@ const ModuleModal = ({
                                     </label>
                                     <textarea
                                         name="description"
-                                        value={newContent.description || ''}
+                                        value={newContent.description}
                                         onChange={handleInputChange}
                                         rows={4}
                                         className="addOrg-form-input"
@@ -804,7 +803,7 @@ const ModuleModal = ({
                                     </label>
                                     <select
                                         name="team"
-                                        value={newContent.team || ''}
+                                        value={newContent.team._id || newContent.team}
                                         onChange={handleInputChange}
                                         className="addOrg-form-input"
                                         required

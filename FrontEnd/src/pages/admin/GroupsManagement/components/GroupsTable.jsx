@@ -9,7 +9,10 @@ const GroupsTable = ({
   handleSelectAll,
   handleEditGroup,
   handleDeleteGroup,
-  onPreviewTeam,
+  onTogglePreview,
+  expandedTeamId,
+  renderExpandedContent,
+  onShowMembers,
   currentPage,
   totalPages,
   handlePageChange,
@@ -24,7 +27,7 @@ const GroupsTable = ({
     ) : (
       <div className="table-container">
      
-        <div className="table-header" style={{fontSize:'0.9rem',fontWeight:'600',color:'#020202'}}>
+        <div className="table-header" style={{fontSize:'0.9rem',fontWeight:'600',color:'#020202', gridTemplateColumns: "50px 250px 180px 180px 180px 40px 120px"}}>
           {/* 1: Select All */}
           <input
             className="col-select"
@@ -39,66 +42,85 @@ const GroupsTable = ({
           <div className="col-members">Members</div>
           {/* 4: Status */}
           <div className="col-status">Status</div>
-          <div></div>
+          <div className="col-spacer" aria-hidden="true"></div>
 
           {/* 5: Actions */}
           <div className="col-actions">Actions</div>
         </div>
 
-        {groups.map((group) => (
-          <div key={group.id} className="table-row">
-            {/* 1: Checkbox */}
-            <input
-              className="col-select"
-              type="checkbox"
-              checked={selectedGroups.includes(group.id)}
-              onChange={(e) => handleSelectGroup(e, group.id)}
-            />
+        {groups.map((group) => {
+          const isExpanded = expandedTeamId === group.id;
+          return (
+            <React.Fragment key={group.id}>
+              <div className="table-row" style={{gridTemplateColumns: "50px 250px 180px 180px 180px 40px 120px"}}>
+                {/* 1: Checkbox */}
+                <input
+                  className="col-select"
+                  type="checkbox"
+                  checked={selectedGroups.includes(group.id)}
+                  onChange={(e) => handleSelectGroup(e, group.id)}
+                />
 
-            {/* 2: Team name */}
-            <div className="col-team">{group.teamName}</div>
-            <div className="col-subteam">{group.subTeams.length}</div>
+                {/* 2: Team name */}
+                <div className="col-team" data-label="Team Name">{group.teamName}</div>
+                <div className="col-subteam" data-label="Sub Teams">{group.subTeams.length}</div>
 
-            {/* 3: Members */}
-            {/* <div>{group.subTeamName }</div> */}
+                {/* 3: Members */}
+                {/* <div>{group.subTeamName }</div> */}
 
-            {/* 4: Members */}
-            <div className="col-members">{group.membersCount || 0}</div>
-           
-            {/* 5: Status */}
-            <div className="col-status">
-              <span
-                className={`status-badge ${group.status.toLowerCase() === 'active' ? 'status-paid' : 'status-cancelled'}`}
-              >
-                {group.status.toLowerCase() === 'active' ? '✓ Active' : '✕ Inactive'}
-              </span>
-            </div>
-          <div></div>
+                {/* 4: Members */}
+                <button
+                  type="button"
+                  className="col-members members-link"
+                  data-label="Members"
+                  onClick={() => onShowMembers && onShowMembers(group)}
+                  style={{ textDecoration: 'underline', background: 'none', border: 'none', padding: 0, textAlign: 'center', cursor: 'pointer', fontWeight: '600',fontSize:'14px',color:'#434343' }}
+                >
+                  {group.membersCount || 0}
+                </button>
+               
+                {/* 5: Status */}
+                <div className="col-status" data-label="Status">
+                  <span
+                    className={`users-status-badge status-${group.status.toLowerCase()}`}
+                  >
+                  {group.status === 'Active' ? '✓ Active' : '✗ Inactive'}
+                  </span>
+                </div>
+               
+              <div className="col-spacer" aria-hidden="true"></div>
 
 
-            {/* 6: Actions */}
-            <div className="col-actions" style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-              <button
-                className="global-action-btn"
-                onClick={() => onPreviewTeam && onPreviewTeam(group)}
-                aria-label={`Preview team ${group.teamName}`}
-              >
-                <Eye size={16} />
-              </button>
-              <button
-                className="global-action-btn delete"
-                onClick={() => handleDeleteGroup(group.id)}
-              >
-                <Trash2 size={16} />
-              </button>
-              <button className="global-action-btn edit" onClick={() => {
-                handleEditGroup(group)
-              }}>
-                <Edit3 size={16} />
-              </button>
-            </div>
-          </div>
-        ))}
+                {/* 6: Actions */}
+                <div className="col-actions" data-label="Actions" style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+                  <button
+                    className={`global-action-btn ${isExpanded ? 'active' : ''}`}
+                    onClick={() => onTogglePreview && onTogglePreview(group)}
+                    aria-label={`Preview team ${group.teamName}`}
+                  >
+                    <Eye size={16} />
+                  </button>
+                  <button
+                    className="global-action-btn delete"
+                    onClick={() => handleDeleteGroup(group.id)}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                  <button className="global-action-btn edit" onClick={() => {
+                    handleEditGroup(group)
+                  }}>
+                    <Edit3 size={16} />
+                  </button>
+                </div>
+              </div>
+              {isExpanded && renderExpandedContent && (
+                <div className="expanded-content-wrapper">
+                  {renderExpandedContent(group)}
+                </div>
+              )}
+            </React.Fragment>
+          );
+        })}
         {/* Pagination aligned with OrganizationManagement */}
       <div className="pagination" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%',marginTop:'0px',borderTop:'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

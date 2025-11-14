@@ -9,7 +9,7 @@ import { fetchGroups } from '../../../store/slices/groupSlice';
 // import api from '../../../services/api';
 import QuestionsForm from './QuestionsForm';
 import LoadingScreen from '../../../components/common/Loading/Loading';
-import api from '../../../services/api';
+import api from '../../../services/apiOld';
 const GlobalAssessments = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');

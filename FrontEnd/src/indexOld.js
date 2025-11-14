@@ -8,18 +8,15 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import ErrorBoundary from './pages/ErrorBoundary';
 import './services/errorHandler';
-import { NotificationProvider } from './components/common/Notification/NotificationProvider';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
       <Provider store={store}>
-        <NotificationProvider>
-          <Router>
-            <App />
-          </Router>
-        </NotificationProvider>
+        <Router>
+          <App />
+        </Router>
       </Provider>
     </ErrorBoundary>
   </React.StrictMode>

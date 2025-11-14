@@ -103,7 +103,8 @@ const UsersManagement = () => {
 
   const getDepartments = async () => {
     try {
-      const res = await api.get("api/admin/getDepartments");
+      // const res = await api.get("api/admin/getDepartments");
+      const res = await api.get("api/admin/getGroups");
       console.log(res.data.data);
       setDepartments(res.data.data);
     } catch (error) {
@@ -118,6 +119,17 @@ const UsersManagement = () => {
 
     return () => clearTimeout(timeoutId);
   }, [dispatch, filters]);
+
+  useEffect(() => {
+    const desiredLimit = 6;
+    if ((filters?.limit ?? null) !== desiredLimit) {
+      dispatch(setFilters({
+        ...(filters || {}),
+        limit: desiredLimit,
+        page: filters?.page || 1,
+      }));
+    }
+  }, [dispatch, filters?.limit]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -185,67 +197,125 @@ const UsersManagement = () => {
   };
 
   const computeAssignments = (userData) => {
-      if (!userData) {
-        return [];
-      }
+    if (!userData) {
+      return [];
+    }
 
-      const profile = userData.profile || {};
-      const teamsArray = Array.isArray(profile.teams) ? profile.teams : [];
+    const profile = userData.profile || {};
+    const teamsArray = Array.isArray(profile.teams) ? profile.teams : [];
 
-      const mapped = teamsArray
-        .filter((assignment) => assignment?.team_id)
-        .map((assignment) => {
-          const rawTeam = assignment.team_id;
-          const teamId = typeof rawTeam === 'string' ? rawTeam : rawTeam?._id;
-          const teamMeta = typeof rawTeam === 'object'
-            ? rawTeam
-            : teams.find((teamItem) => teamItem._id === teamId);
-          const teamName = teamMeta?.name || 'Unknown Team';
+    const mapped = teamsArray
+      .filter((assignment) => assignment?.team_id)
+      .map((assignment) => {
+        const rawTeam = assignment.team_id;
+        const teamId = typeof rawTeam === 'string' ? rawTeam : rawTeam?._id;
+        const teamMeta = typeof rawTeam === 'object'
+          ? rawTeam
+          : teams.find((teamItem) => teamItem._id === teamId);
+        const teamName = teamMeta?.name || 'Unknown Team';
 
-          const rawSubTeam = assignment.sub_team_id;
-          const subTeamId = typeof rawSubTeam === 'string' ? rawSubTeam : rawSubTeam?._id;
-          const subTeamMeta = typeof rawSubTeam === 'object'
-            ? rawSubTeam
-            : teams
-                .find((teamItem) => teamItem._id === teamId)
-                ?.subTeams?.find((st) => st._id === subTeamId);
-          const subTeamName = subTeamMeta?.name || (subTeamId ? 'Unknown Subteam' : null);
-
-          return {
-            teamId: teamId || '',
-            subTeamId: subTeamId || null,
-            teamName,
-            subTeamName,
-          };
-        });
-
-      if (mapped.length === 0 && (profile.team_id || profile.sub_team_id)) {
-        const fallbackTeamRaw = profile.team_id;
-        const fallbackTeamId = typeof fallbackTeamRaw === 'string' ? fallbackTeamRaw : fallbackTeamRaw?._id;
-        const fallbackTeamMeta = typeof fallbackTeamRaw === 'object'
-          ? fallbackTeamRaw
-          : teams.find((teamItem) => teamItem._id === fallbackTeamId);
-        const fallbackTeamName = fallbackTeamMeta?.name || 'Unknown Team';
-
-        const fallbackSubTeamRaw = profile.sub_team_id;
-        const fallbackSubTeamId = typeof fallbackSubTeamRaw === 'string' ? fallbackSubTeamRaw : fallbackSubTeamRaw?._id;
-        const fallbackSubTeamMeta = typeof fallbackSubTeamRaw === 'object'
-          ? fallbackSubTeamRaw
+        const rawSubTeam = assignment.sub_team_id;
+        const subTeamId = typeof rawSubTeam === 'string' ? rawSubTeam : rawSubTeam?._id;
+        const subTeamMeta = typeof rawSubTeam === 'object'
+          ? rawSubTeam
           : teams
-              .find((teamItem) => teamItem._id === fallbackTeamId)
-              ?.subTeams?.find((st) => st._id === fallbackSubTeamId);
-        const fallbackSubTeamName = fallbackSubTeamMeta?.name || (fallbackSubTeamId ? 'Unknown Subteam' : null);
+            .find((teamItem) => teamItem._id === teamId)
+            ?.subTeams?.find((st) => st._id === subTeamId);
+        const subTeamName = subTeamMeta?.name || (subTeamId ? 'Unknown Subteam' : null);
 
-        mapped.push({
-          teamId: fallbackTeamId || '',
-          subTeamId: fallbackSubTeamId || null,
-          teamName: fallbackTeamName,
-          subTeamName: fallbackSubTeamName,
-        });
-      }
+        return {
+          teamId: teamId || '',
+          subTeamId: subTeamId || null,
+          teamName,
+          subTeamName,
+        };
+      });
 
-      return mapped;
-    };
+    if (mapped.length === 0 && (profile.team_id || profile.sub_team_id)) {
+      const fallbackTeamRaw = profile.team_id;
+      const fallbackTeamId = typeof fallbackTeamRaw === 'string' ? fallbackTeamRaw : fallbackTeamRaw?._id;
+      const fallbackTeamMeta = typeof fallbackTeamRaw === 'object'
+        ? fallbackTeamRaw
+        : teams.find((teamItem) => teamItem._id === fallbackTeamId);
+      const fallbackTeamName = fallbackTeamMeta?.name || 'Unknown Team';
+
+      const fallbackSubTeamRaw = profile.sub_team_id;
+      const fallbackSubTeamId = typeof fallbackSubTeamRaw === 'string' ? fallbackSubTeamRaw : fallbackSubTeamRaw?._id;
+      const fallbackSubTeamMeta = typeof fallbackSubTeamRaw === 'object'
+        ? fallbackSubTeamRaw
+        : teams
+          .find((teamItem) => teamItem._id === fallbackTeamId)
+          ?.subTeams?.find((st) => st._id === fallbackSubTeamId);
+      const fallbackSubTeamName = fallbackSubTeamMeta?.name || (fallbackSubTeamId ? 'Unknown Subteam' : null);
+
+      mapped.push({
+        teamId: fallbackTeamId || '',
+        subTeamId: fallbackSubTeamId || null,
+        teamName: fallbackTeamName,
+        subTeamName: fallbackSubTeamName,
+      });
+    }
+
+    return mapped;
+  };
+
+  const buildUserTagLabels = (userData) => {
+    if (!userData) return [];
+
+    const computed = computeAssignments(userData) || [];
+    if (computed.length) {
+      return computed.map(({ teamName, subTeamName }) => {
+        const label = [teamName, subTeamName].filter(Boolean).join(' • ');
+        return label || teamName || subTeamName || 'Team';
+      });
+    }
+
+    const tags = [];
+
+    if (Array.isArray(userData.teams) && userData.teams.length) {
+      userData.teams.forEach((item) => {
+        if (!item) return;
+
+        if (typeof item === 'string') {
+          tags.push(item);
+          return;
+        }
+
+        const inferredTeam = item?.name
+          || item?.teamName
+          || item?.team?.name
+          || item?.team_id?.name
+          || item?.team_id?.title;
+
+        const inferredSubTeam = item?.subTeamName
+          || item?.sub_team_name
+          || item?.subTeam?.name
+          || item?.sub_team_id?.name
+          || item?.sub_team_id?.title;
+
+        const label = [inferredTeam, inferredSubTeam].filter(Boolean).join(' • ');
+        if (label) {
+          tags.push(label);
+        } else if (inferredTeam || inferredSubTeam) {
+          tags.push(inferredTeam || inferredSubTeam);
+        }
+      });
+    }
+
+    if (tags.length) {
+      return tags;
+    }
+
+    const directTeam = userData.team || userData.department || userData.profile?.department;
+    const directSubTeam = userData.subTeam || userData.subteam;
+    const fallback = [directTeam, directSubTeam].filter(Boolean).join(' • ');
+
+    if (fallback) {
+      return [fallback];
+    }
+
+    return [];
+  };
 
 
   const handleExportUsers = () => {
@@ -295,239 +365,239 @@ const UsersManagement = () => {
   };
 
 
-    const openForm = (user = null) => {
-      console.log(user)
-      if (user) {
-        setEditMode(true);
-        setCurrentUser(user);
-        const roleValue = typeof user.global_role_id === 'string'
-          ? user.global_role_id
-          : user.global_role_id?._id || 'user';
-        const profile = user.profile || {};
-        const teamValue = typeof profile.team_id === 'string'
-          ? profile.team_id
-          : profile.team_id?._id || '';
-        const subTeamValue = typeof profile.sub_team_id === 'string'
-          ? profile.sub_team_id
-          : profile.sub_team_id?._id || '';
-        const normalizedAssignments = computeAssignments(user);
-        setTeamAssignments(normalizedAssignments);
-        setRemovedAssignments([]);
+  const openForm = (user = null) => {
+    console.log(user)
+    if (user) {
+      setEditMode(true);
+      setCurrentUser(user);
+      const roleValue = typeof user.global_role_id === 'string'
+        ? user.global_role_id
+        : user.global_role_id?._id || 'user';
+      const profile = user.profile || {};
+      const teamValue = typeof profile.team_id === 'string'
+        ? profile.team_id
+        : profile.team_id?._id || '';
+      const subTeamValue = typeof profile.sub_team_id === 'string'
+        ? profile.sub_team_id
+        : profile.sub_team_id?._id || '';
+      const normalizedAssignments = computeAssignments(user);
+      setTeamAssignments(normalizedAssignments);
+      setRemovedAssignments([]);
 
-        setFormData({
-          name: user.name || '',
-          employeeId: user.employeeId || '',
-          role: roleValue,
-          status: user.status || 'active',
-          team: '',
-          subteam: '',
-          department: user.department || '',
-          designation: user.designation || '',
-          email: user.email || '',
-          invite: Boolean(user.invite),
-        });
-      } else {
-        setEditMode(false);
-        setCurrentUser(null);
-        setTeamAssignments([]);
-        setRemovedAssignments([]);
-        setFormData({
-          name: '',
-          employeeId: '',
-          role: 'user',
-          status: 'active',
-          team: '',
-          subteam: '',
-          department: '',
-          designation: '',
-          email: '',
-          invite: false,
-        });
-      }
-      setShowForm(true);
-    };
-
-    const closeForm = () => {
-      setShowForm(false);
+      setFormData({
+        name: user.name || '',
+        employeeId: user.employeeId || '',
+        role: roleValue,
+        status: user.status || 'active',
+        team: '',
+        subteam: '',
+        department: user.department || '',
+        designation: user.designation || '',
+        email: user.email || '',
+        invite: Boolean(user.invite),
+      });
+    } else {
       setEditMode(false);
       setCurrentUser(null);
       setTeamAssignments([]);
       setRemovedAssignments([]);
-    };
-
-    const [formData, setFormData] = useState({
-      name: '',
-      employeeId: '',
-      role: '',
-      team: '',
-      subteam: '',
-      department: '',
-      designation: '',
-      email: '',
-      invite: false,
-    });
-
-    const handleFormChange = (e) => {
-      const { name, value, type, checked } = e.target;
-      const finalValue = type === 'checkbox' ? checked : value;
-
-      setFormData(prev => ({
-        ...prev,
-        [name]: finalValue,
-        ...(name === 'team' ? { subteam: '' } : {}),
-      }));
-    };
-
-    const handleRemoveAssignment = (index) => {
-      setTeamAssignments(prevAssignments => {
-        const removed = prevAssignments[index];
-        if (!removed) return prevAssignments;
-
-        setRemovedAssignments(prevRemoved => {
-          const exists = prevRemoved.some(
-            (assignment) => assignment.teamId === removed.teamId && (assignment.subTeamId || null) === (removed.subTeamId || null)
-          );
-          if (exists) {
-            return prevRemoved;
-          }
-          return [...prevRemoved, removed];
-        });
-
-        return prevAssignments.filter((_, idx) => idx !== index);
+      setFormData({
+        name: '',
+        employeeId: '',
+        role: 'user',
+        status: 'active',
+        team: '',
+        subteam: '',
+        department: '',
+        designation: '',
+        email: '',
+        invite: false,
       });
-    };
+    }
+    setShowForm(true);
+  };
 
-    const handleSubmit = async (e) => {
-      e.preventDefault();
+  const closeForm = () => {
+    setShowForm(false);
+    setEditMode(false);
+    setCurrentUser(null);
+    setTeamAssignments([]);
+    setRemovedAssignments([]);
+  };
 
-      if (editMode && currentUser) {
-        try {
-          console.log(formData)
-          const targetId = currentUser.uuid || currentUser.id || currentUser._id;
-          const submissionData = { ...formData };
-          if (!submissionData.team) {
-            delete submissionData.team;
-            delete submissionData.subteam;
-          }
+  const [formData, setFormData] = useState({
+    name: '',
+    employeeId: '',
+    role: '',
+    team: '',
+    subteam: '',
+    department: '',
+    designation: '',
+    email: '',
+    invite: false,
+  });
 
-          const removedForPayload = removedAssignments
-            .filter((assignment) => assignment?.teamId)
-            .map(({ teamId, subTeamId }) => ({
-              teamId,
-              subTeamId: subTeamId || null,
-            }));
+  const handleFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    const finalValue = type === 'checkbox' ? checked : value;
 
-          if (removedForPayload.length) {
-            submissionData.removedAssignments = removedForPayload;
-          }
+    setFormData(prev => ({
+      ...prev,
+      [name]: finalValue,
+      ...(name === 'team' ? { subteam: '' } : {}),
+    }));
+  };
 
-          await dispatch(updateUser({ id: targetId, userData: submissionData }));
-          closeForm();
-        } catch (error) {
-          console.error('Error updating user:', error);
+  const handleRemoveAssignment = (index) => {
+    setTeamAssignments(prevAssignments => {
+      const removed = prevAssignments[index];
+      if (!removed) return prevAssignments;
+
+      setRemovedAssignments(prevRemoved => {
+        const exists = prevRemoved.some(
+          (assignment) => assignment.teamId === removed.teamId && (assignment.subTeamId || null) === (removed.subTeamId || null)
+        );
+        if (exists) {
+          return prevRemoved;
         }
-      } else {
-        try {
-          console.log(formData)
-          await dispatch(createUser(formData));
-          closeForm();
-        } catch (error) {
-          console.error('Error creating user:', error);
-        }
-      }
-    };
+        return [...prevRemoved, removed];
+      });
 
-    const openPreview = (user) => {
-      if (!user) return;
-      setPreviewUser(user);
-      setPreviewAssignments(computeAssignments(user));
-      setPreviewOpen(true);
-    };
+      return prevAssignments.filter((_, idx) => idx !== index);
+    });
+  };
 
-    const closePreview = () => {
-      setPreviewOpen(false);
-      setPreviewUser(null);
-      setPreviewAssignments([]);
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    const handleBulkAssignToGroup = async () => {
-      if (!assignTeamId) {
-        alert('Please select a team');
-        return;
-      }
+    if (editMode && currentUser) {
       try {
-        await dispatch(addUsersToGroup({ team_id: assignTeamId, sub_team_id: assignSubTeamId || null, userIds: selectedItems })).unwrap();
-        // Refresh users and reset
-        setAssignTeamOpen(false);
-        setShowBulkAction(false);
-        setSelectedItems([]);
-        setAssignTeamId('');
-        setAssignSubTeamId('');
-        dispatch(fetchUsers(filters));
-        alert('Users assigned to the selected team successfully');
-      } catch (err) {
-        console.error(err);
-        alert('Failed to assign users to team');
-      }
-    };
-
-    const handleDelete = (userId) => {
-      if (window.confirm('Are you sure you want to delete this user?')) {
-        dispatch(deleteUser(userId));
-      }
-    };
-
-    const handleBulkAction = async (action) => {
-      if (selectedItems.length === 0) {
-        alert('Please select at least one user');
-        return;
-      }
-      if (action === 'delete') {
-        if (window.confirm(`Are you sure you want to delete ${selectedItems.length} users?`)) {
-          try {
-            await dispatch(bulkDeleteUsers(selectedItems)).unwrap();
-            setSelectedItems([]);
-            setShowBulkAction(false);
-            setShowFilters(false);
-          } catch (error) {
-            console.error('Failed to delete users:', error);
-            alert('Failed to delete selected users. Please try again.');
-          }
+        console.log(formData)
+        const targetId = currentUser.uuid || currentUser.id || currentUser._id;
+        const submissionData = { ...formData };
+        if (!submissionData.team) {
+          delete submissionData.team;
+          delete submissionData.subteam;
         }
-      } else if (action === 'deactivate') {
+
+        const removedForPayload = removedAssignments
+          .filter((assignment) => assignment?.teamId)
+          .map(({ teamId, subTeamId }) => ({
+            teamId,
+            subTeamId: subTeamId || null,
+          }));
+
+        if (removedForPayload.length) {
+          submissionData.removedAssignments = removedForPayload;
+        }
+
+        await dispatch(updateUser({ id: targetId, userData: submissionData }));
+        closeForm();
+      } catch (error) {
+        console.error('Error updating user:', error);
+      }
+    } else {
+      try {
+        console.log(formData)
+        await dispatch(createUser(formData));
+        closeForm();
+      } catch (error) {
+        console.error('Error creating user:', error);
+      }
+    }
+  };
+
+  const openPreview = (user) => {
+    if (!user) return;
+    setPreviewUser(user);
+    setPreviewAssignments(computeAssignments(user));
+    setPreviewOpen(true);
+  };
+
+  const closePreview = () => {
+    setPreviewOpen(false);
+    setPreviewUser(null);
+    setPreviewAssignments([]);
+  };
+
+  const handleBulkAssignToGroup = async () => {
+    if (!assignTeamId) {
+      alert('Please select a team');
+      return;
+    }
+    try {
+      await dispatch(addUsersToGroup({ team_id: assignTeamId, sub_team_id: assignSubTeamId || null, userIds: selectedItems })).unwrap();
+      // Refresh users and reset
+      setAssignTeamOpen(false);
+      setShowBulkAction(false);
+      setSelectedItems([]);
+      setAssignTeamId('');
+      setAssignSubTeamId('');
+      dispatch(fetchUsers(filters));
+      alert('Users assigned to the selected team successfully');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to assign users to team');
+    }
+  };
+
+  const handleDelete = (userId) => {
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      dispatch(deleteUser(userId));
+    }
+  };
+
+  const handleBulkAction = async (action) => {
+    if (selectedItems.length === 0) {
+      alert('Please select at least one user');
+      return;
+    }
+    if (action === 'delete') {
+      if (window.confirm(`Are you sure you want to delete ${selectedItems.length} users?`)) {
         try {
-          const requests = selectedItems
-            .map((userId) => {
-              const targetUser = users?.find((user) => resolveUserId(user) === userId);
-              const currentStatusRaw = typeof targetUser?.status === 'string'
-                ? targetUser?.status
-                : targetUser?.status?.name || targetUser?.status?.label;
-              if (currentStatusRaw?.toLowerCase() === 'inactive') {
-                return null;
-              }
-              return dispatch(updateUser({ id: userId, userData: { status: 'inactive' } })).unwrap();
-            })
-            .filter(Boolean);
-
-          if (requests.length === 0) {
-            alert('Selected users are already inactive.');
-            return;
-          }
-
-          await Promise.all(requests);
-          alert('Selected users deactivated successfully');
+          await dispatch(bulkDeleteUsers(selectedItems)).unwrap();
           setSelectedItems([]);
           setShowBulkAction(false);
           setShowFilters(false);
-          dispatch(fetchUsers(filters));
         } catch (error) {
-          console.error('Failed to deactivate users:', error);
-          alert('Failed to deactivate selected users. Please try again.');
+          console.error('Failed to delete users:', error);
+          alert('Failed to delete selected users. Please try again.');
         }
       }
-    };
+    } else if (action === 'deactivate') {
+      try {
+        const requests = selectedItems
+          .map((userId) => {
+            const targetUser = users?.find((user) => resolveUserId(user) === userId);
+            const currentStatusRaw = typeof targetUser?.status === 'string'
+              ? targetUser?.status
+              : targetUser?.status?.name || targetUser?.status?.label;
+            if (currentStatusRaw?.toLowerCase() === 'inactive') {
+              return null;
+            }
+            return dispatch(updateUser({ id: userId, userData: { status: 'inactive' } })).unwrap();
+          })
+          .filter(Boolean);
 
-    const toggleFilters = () => {
+        if (requests.length === 0) {
+          alert('Selected users are already inactive.');
+          return;
+        }
+
+        await Promise.all(requests);
+        alert('Selected users deactivated successfully');
+        setSelectedItems([]);
+        setShowBulkAction(false);
+        setShowFilters(false);
+        dispatch(fetchUsers(filters));
+      } catch (error) {
+        console.error('Failed to deactivate users:', error);
+        alert('Failed to deactivate selected users. Please try again.');
+      }
+    }
+  };
+
+  const toggleFilters = () => {
     setShowFilters((prev) => {
       const next = !prev;
       if (next) {
@@ -548,18 +618,60 @@ const UsersManagement = () => {
   };
 
 
-    const handleSelectAll = (e) => {
+  const handlePageChange = (newPage) => {
+    if (!newPage || newPage === filters.page) return;
+    if (newPage < 1) return;
+
+    const limitValue = filters?.limit || 6;
+    const maxPages = Math.max(1, Math.ceil((users?.length || 0) / limitValue));
+    if (newPage > maxPages) return;
+
+    dispatch(setFilters({
+      ...filters,
+      page: newPage,
+    }));
+  };
+
+  // Pagination
+  const currentPage = filters.page || 1;
+  const itemsPerPage = filters.limit || 6;
+  const totalPages = Math.max(1, Math.ceil((users?.length || 0) / itemsPerPage));
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const paginatedUsers = Array.isArray(users)
+    ? users.slice(indexOfFirstItem, indexOfLastItem)
+    : [];
+  const currentPageUserIds = paginatedUsers
+    .map((user) => resolveUserId(user))
+    .filter(Boolean);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      dispatch(setFilters({
+        ...filters,
+        page: totalPages,
+      }));
+    }
+  }, [currentPage, totalPages, dispatch, filters]);
+
+  const handleSelectAll = (e) => {
     if (e.target.checked) {
-      const allIds = getSelectableUserIds();
-      setSelectedItems(allIds);
-      const shouldShowBulk = allIds.length > 0;
-      setShowBulkAction(shouldShowBulk);
-      if (shouldShowBulk) {
-        setShowFilters(false);
-      }
+      setSelectedItems((prev) => {
+        const combined = new Set(prev);
+        currentPageUserIds.forEach((id) => combined.add(id));
+        const next = Array.from(combined);
+        setShowBulkAction(next.length > 0);
+        if (next.length > 0) {
+          setShowFilters(false);
+        }
+        return next;
+      });
     } else {
-      setSelectedItems([]);
-      setShowBulkAction(false);
+      setSelectedItems((prev) => {
+        const next = prev.filter((id) => !currentPageUserIds.includes(id));
+        setShowBulkAction(next.length > 0);
+        return next;
+      });
     }
   };
 
@@ -585,41 +697,29 @@ const UsersManagement = () => {
     }
   };
 
-    const handlePageChange = (newPage) => {
-      if (!newPage || newPage === filters.page) return;
-      if (newPage < 1) return;
+  // console.log(users)
+  // Available roles
+  // const roles = [
+  //   { value: 'user', label: 'User' },
+  //   { value: 'admin', label: 'Admin' },
+  //   { value: 'manager', label: 'Manager' },
+  //   { value: 'instructor', label: 'Instructor' }
+  // ];
 
-      dispatch(setFilters({
-        ...filters,
-        page: newPage,
-      }));
-    };
+  // // Available teams
+  // const teams = [
+  //   { value: 'tech', label: 'Tech' },
+  //   { value: 'hr', label: 'HR' },
+  //   { value: 'marketing', label: 'Marketing' },
+  //   { value: 'sales', label: 'Sales' },
+  //   { value: 'support', label: 'Support' }
+  // ];
 
-    // Pagination
-    const currentPage = filters.page || 1;
-    const itemsPerPage = filters.limit || 10;
-    const totalPages = Math.ceil((users?.length || 0) / itemsPerPage);
-    // console.log(users)
-    // Available roles
-    // const roles = [
-    //   { value: 'user', label: 'User' },
-    //   { value: 'admin', label: 'Admin' },
-    //   { value: 'manager', label: 'Manager' },
-    //   { value: 'instructor', label: 'Instructor' }
-    // ];
+  if (loading) {
+    return <LoadingScreen text={"Loading users..."} />;
+  }
 
-    // // Available teams
-    // const teams = [
-    //   { value: 'tech', label: 'Tech' },
-    //   { value: 'hr', label: 'HR' },
-    //   { value: 'marketing', label: 'Marketing' },
-    //   { value: 'sales', label: 'Sales' },
-    //   { value: 'support', label: 'Support' }
-    // ];
-
-    if (loading) {
-      return <LoadingScreen text={"Loading users..."} />;
-    }
+  const allSelected = currentPageUserIds.length > 0 && currentPageUserIds.every((id) => selectedItems.includes(id));
   //  if(creating)
   //  {
   //   return <LoadingScreen text={"Creating user..."} />;
@@ -633,90 +733,91 @@ const UsersManagement = () => {
   //   return <LoadingScreen text={"Deleting user..."} />;
   //  }
 
-    return (
-      <div className="main-content">
-        <div className="page-content">
-          <div className="page-header">
-            {/* <h1 className="page-title">Users Management</h1> */}
+  return (
+    <div className="main-content">
+      <div className="page-content">
+        <div className="page-header">
+          {/* <h1 className="page-title">Users Management</h1> */}
 
-          </div>
+        </div>
 
 
-          {/* Search and Filter Controls */}
-          <div className="controls">
-            <form onSubmit={handleSearch} className="roles-search-bar">
-              <Search className="search-icon" size={18} />
-              <input
-                type="text"
-                placeholder="Search users..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  dispatch(setFilters({
-                    ...filters,
-                    search: e.target.value
-                  }));
-                }}
-              />
-              {searchTerm && (
-                <button
-                  type="button"
-                  onClick={clearSearch}
-                  className="clear-search"
+        {/* Search and Filter Controls */}
+        <div className="controls">
+          <form onSubmit={handleSearch} className="roles-search-bar">
+            <Search className="search-icon" size={18} />
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                dispatch(setFilters({
+                  ...filters,
+                  search: e.target.value
+                }));
+              }}
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="clear-search"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </form>
+
+          <div className="controls-right" style={{ position: 'relative' }}>
+            <button
+              className="control-btn" style={{ padding: '12px 12px' }}
+              onClick={toggleFilters}
+            >
+              <Filter size={16} />
+              Filter
+            </button>
+            <button className="control-btn" style={{ padding: '12px 12px' }}>
+              Import <Import size={16} color="#6b7280" />
+            </button>
+            <button
+              className="control-btn"
+              style={{ padding: '12px 12px' }}
+              onClick={handleExportUsers}
+            >
+              Export <Share size={16} color="#6b7280" />
+            </button>
+
+
+            {showFilters && (
+              <div className="filter-panel" style={{ right: "-8px", top: '49px' }}>
+                <span
+                  style={{
+                    cursor: "pointer",
+                    position: "absolute",
+                    right: "10px",
+                    top: "10px"
+                  }}
+                  onClick={() => setShowFilters(false)}
                 >
-                  <X size={16} />
-                </button>
-              )}
-            </form>
+                  {/* <X size={20} color="#6b7280" /> */}
+                </span>
 
-            <div className="controls-right" style={{ position: 'relative' }}>
-              <button className="control-btn" style={{padding: '12px 12px'}}>
-                Import <Import size={16} color="#6b7280" />
-              </button>
-              <button
-                className="control-btn"
-                style={{padding: '12px 12px'}}
-                onClick={handleExportUsers}
-              >
-                Export <Share size={16} color="#6b7280" />
-              </button>
-              <button
-                className="control-btn" style={{padding: '12px 12px'}}
-                onClick={toggleFilters}
-              >
-                <Filter size={16} />
-                Filter
-              </button>
-
-              {showFilters && (
-                <div className="filter-panel" style={{ right: "-8px", top: '49px' }}>
-                  <span
-                    style={{
-                      cursor: "pointer",
-                      position: "absolute",
-                      right: "10px",
-                      top: "10px"
-                    }}
-                    onClick={() => setShowFilters(false)}
+                <div className="filter-group">
+                  <label>Status</label>
+                  <select
+                    name="status"
+                    value={tempFilters.status || ''}
+                    onChange={handleFilterChange}
                   >
-                    {/* <X size={20} color="#6b7280" /> */}
-                  </span>
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    {/* <option value="pending">Pending</option> */}
+                  </select>
+                </div>
 
-                  <div className="filter-group">
-                    <label>Status</label>
-                    <select
-                      name="status"
-                      value={tempFilters.status || ''}
-                      onChange={handleFilterChange}
-                    >
-                      <option value="">All Status</option>
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                      {/* <option value="pending">Pending</option> */}
-                    </select>
-                  </div>
-
-                  {/* <div className="filter-group">
+                {/* <div className="filter-group">
                     <label>Role</label>
                     <select
                       name="role"
@@ -732,193 +833,200 @@ const UsersManagement = () => {
                     </select>
                   </div> */}
 
-                 
 
-                  <div className="filter-actions">
-                    <button
-                      className="btn-primary"
-                      onClick={handleFilter}
-                      style={{ marginRight: '8px' }}
-                    >
-                      Apply
-                    </button>
-                    <button
-                      className="reset-btn"
-                      onClick={resetFilters}
-                    >
-                      Clear
-                    </button>
-                  </div>
-                </div>
-              )}
-              <button
-                className="control-btn"
-                onClick={toggleBulkAction}
-              >
-                {/* <Filter size={16} /> */}
-                <span>Bulk Actions</span>
-                <ChevronDown size={16} />
-              </button>
 
-              {showBulkAction && (
-                <div className="bulk-action-panel" style={{ top: '50px', right: '-50px' }}>
-                  <div className="bulk-action-header">
-                    <label className="bulk-action-title">Items Selected: {selectedItems.length}</label>
-                  </div>
-                  <div className="bulk-action-actions" style={{ display: 'flex', gap: 8, flexDirection: 'row', alignItems: 'center' }}>
-                    <button
-                      className="bulk-action-btn"
-                      disabled={selectedItems.length === 0}
-                      onClick={() => handleBulkAction('deactivate')} style={{backgroundColor: '#9e9e9e'}}
-                    >
-                      Deactivate
-                    </button>
-                    <button
-                      className="bulk-action-delete-btn"
-                      disabled={selectedItems.length === 0}
-                      onClick={() => handleBulkAction('delete')}
-                    >
-                      <RiDeleteBinFill size={16} color="#fff" /> Delete
-                    </button>
-                    
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' ,justifyContent: 'center'}}>
-                      <button
-                        className="btn-primary"
-                        disabled={selectedItems.length === 0}
-                        onClick={() => {
-                          if (selectedItems.length === 0) {
-                            return;
-                          }
-                          setShowBulkAction(false);
-                          setAssignTeamOpen(true);
-                        }}
-                      >
-                        Assign to Team
-                      </button>
-                    </div>
+                <div className="filter-actions">
+                  <button
+                    className="btn-primary"
+                    onClick={handleFilter}
+                    style={{ marginRight: '8px' }}
+                  >
+                    Apply
+                  </button>
+                  <button
+                    className="reset-btn"
+                    onClick={resetFilters}
+                  >
+                    Clear
+                  </button>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
             <button
-              className="btn-primary"
-              onClick={() => openForm()}
+              className="control-btn"
+              onClick={toggleBulkAction}
             >
-              <Plus size={18} />
-              Add User
+              {/* <Filter size={16} /> */}
+              <span>Bulk Actions</span>
+              <ChevronDown size={16} />
+            </button>
+
+            {showBulkAction && (
+              <div className="bulk-action-panel" style={{ top: '50px', right: '-50px' }}>
+                <div className="bulk-action-header">
+                  <label className="bulk-action-title">Items Selected: {selectedItems.length}</label>
+                </div>
+                <div className="bulk-action-actions" style={{ display: 'flex', gap: 8, flexDirection: 'row', alignItems: 'center' }}>
+                  {/* <button
+                    className="bulk-action-btn"
+                    disabled={selectedItems.length === 0}
+                    onClick={() => handleBulkAction('deactivate')} style={{ backgroundColor: '#9e9e9e' }}
+                  >
+                    Deactivate
+                  </button> */}
+                  <button
+                    className="bulk-action-delete-btn"
+                    disabled={selectedItems.length === 0}
+                    onClick={() => handleBulkAction('delete')}
+                  >
+                    <RiDeleteBinFill size={16} color="#fff" /> Delete
+                  </button>
+
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
+                  <button
+                    className="btn-primary"
+                    disabled={selectedItems.length === 0}
+                    onClick={() => {
+                      if (selectedItems.length === 0) {
+                        return;
+                      }
+                      setShowBulkAction(false);
+                      setAssignTeamOpen(true);
+                    }}
+                  >
+                    Assign to Team
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          <button
+            className="btn-primary"
+            onClick={() => openForm()}
+          >
+            <Plus size={18} />
+            Add User
+          </button>
+        </div>
+
+        {/* Users Table */}
+        <div className="users-table-container">
+          <div className="users-table-header">
+            <div className="users-checkbox-cell">
+              <input
+                type="checkbox"
+                onChange={handleSelectAll}
+                checked={allSelected}
+              />
+            </div>
+            <div className="users-header-cell" style={{ justifySelf: 'flex-start', paddingLeft: '45px' }}>Name</div>
+            <div className="users-header-cell" style={{ justifySelf: 'flex-start' }}>Email</div>
+            <div className="users-header-cell">Role</div>
+            <div className="users-header-cell">Status</div>
+            <div className="users-header-cell">Actions</div>
+          </div>
+
+          {paginatedUsers.length ? (
+            paginatedUsers.map((user) => {
+              const statusLabel = getStatusLabel(user?.status);
+              const userId = resolveUserId(user) || user?._id;
+              const nameInitial = (user?.name || user?.email || '?').charAt(0).toUpperCase();
+              const tagLabels = buildUserTagLabels(user);
+
+              return (
+                <div className="users-table-row" key={userId}>
+                  <div className="users-checkbox-cell">
+                    <input
+                      type="checkbox"
+                      checked={selectedItems.includes(userId)}
+                      onChange={(e) => handleSelectItem(e, userId)}
+                    />
+                  </div>
+                  <div className="users-user-cell">
+                    <div>
+                      <div className="users-user-avatar">
+                        {nameInitial}
+                      </div>
+                    </div>
+
+                    <div className="users-user-info">
+                      <div className="users-user-name">{user?.name || '-'}</div>
+                    </div>
+                  </div>
+
+                  <div className="users-email-cell">{user?.email || '-'}</div>
+                  <div className="users-role-cell">
+                    <span className="users-role-badge">
+                      {typeof user?.global_role_id === 'string'
+                        ? user?.global_role_id
+                        : (user?.global_role_id?.name || user?.global_role_id?.title || '-')}
+                    </span>
+                  </div>
+                  <div className="users-status-cell">
+                    <span className={`users-status-badge status-${statusLabel.toLowerCase()}`}>
+                      {statusLabel === 'Active' ? '✓ Active' : '✗ Inactive'}
+                    </span>
+                  </div>
+                  <div className="users-actions-cell">
+                    <button
+                      className="global-action-btn view"
+                      onClick={() => openPreview(user)}
+                      title="View"
+                      type="button"
+                    >
+                      <Eye size={16} />
+                    </button>
+                    <button
+                      className="global-action-btn delete"
+                      onClick={() => handleDelete(userId)}
+                      title="Delete"
+                      type="button"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                    <button
+                      className="global-action-btn edit"
+                      onClick={() => openForm(user)}
+                      title="Edit"
+                      type="button"
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                  </div>
+
+                  {tagLabels.length ? (
+                    <div className="users-row-tags">
+                      {tagLabels.join(', ')}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })
+          ) : (
+            <div className="users-table-empty">No users found</div>
+          )}
+
+          {/* Pagination */}
+          <div className="users-pagination">
+            <button
+              type="button"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage <= 1}
+            >
+              Prev
+            </button>
+            <span>{`Page ${currentPage} of ${Math.max(1, totalPages)}`}</span>
+            <button
+              type="button"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+            >
+              Next
             </button>
           </div>
+        </div>
 
-          {/* Users Table */}
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>
-                    {(() => {
-                      const selectableUserIds = getSelectableUserIds();
-                      const allSelected = selectableUserIds.length > 0 && selectableUserIds.every((id) => selectedItems.includes(id));
-                      return (
-                        <input
-                          type="checkbox"
-                          onChange={handleSelectAll}
-                          checked={allSelected}
-                        />
-                      );
-                    })()}
-                  </th>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th style={{paddingLeft:"30px"}}>Status</th>
-                  <th style={{paddingLeft:"67px"}}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users?.map((user) => {
-                  const statusLabel = getStatusLabel(user?.status);
-                  return (
-                    <tr key={user?._id}>
-                      <td>
-                        <input
-                          type="checkbox"
-                          checked={selectedItems.includes(resolveUserId(user))}
-                          onChange={(e) => handleSelectItem(e, resolveUserId(user))}
-                        />
-                      </td>
-                      <td>
-                        <div className="user-info">
-                          <div>
-                            <div>{user?.name}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>{user?.email}</td>
-                      <td>
-                        <span className="role-badge">
-                          {typeof user?.global_role_id === 'string' ? user?.global_role_id : (user?.global_role_id?.name || user?.global_role_id?.title || '-')}
-                        </span>
-                      </td>
-                      {/* <td>{typeof user.profile?.team_id === 'string' ? user.profile?.team_id : (user.profile?.team_id?.name || user.profile?.team_id?.title || '-')}</td> */}
-                      <td>
-                        <span className={`status-badge status-${statusLabel.toLowerCase()}`}>
-                          {statusLabel}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="actions-cell">
-                          <button
-                            className="global-action-btn view"
-                            onClick={() => openPreview(user)}
-                          >
-                            <Eye size={16} />
-                          </button>
-                          <button
-                            className="global-action-btn delete"
-                            onClick={() => handleDelete(user.uuid)}
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                          <button
-                            className="global-action-btn edit"
-                            onClick={() => openForm(user)}
-                          >
-                            <Edit3 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-
-            {/* Pagination */}
-            <div className="pagination" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%',borderTop:'none',marginTop:'0px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <button
-                  type="button"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage <= 1}
-                  style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: currentPage <= 1 ? 'not-allowed' : 'pointer' }}
-                >
-                  Prev
-                </button>
-                <span style={{ color: '#0f172a' }}>
-                  {`Page ${currentPage} of ${Math.max(1, totalPages)}`}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage >= totalPages}
-                  style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer' }}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          </div>
-        
 
         <BulkAssignToTeam
           isOpen={assignTeamOpen}
@@ -1096,7 +1204,7 @@ const UsersManagement = () => {
                         className="addOrg-form-input"
                         value={formData.custom1}
                         onChange={handleFormChange}
-                        
+
                       />
                     </div>
                     <div className="addOrg-form-group">
@@ -1181,4 +1289,4 @@ const UsersManagement = () => {
   );
 }
 
-export default UsersManagement;
+export default UsersManagement; 

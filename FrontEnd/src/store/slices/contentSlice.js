@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import api from '../../services/api';
+import api from '../../services/apiOld';
 
 // Async thunks for content management
 export const fetchContent = createAsyncThunk(

@@ -86,7 +86,7 @@ function App() {
     }
   }, [isAuthenticated, role, navigate]);
   if (loading) {
-    return <LoadingScreen />
+    return <LoadingScreen text={"Please Wait..."}/>
   }
   return (
     <div className="App">

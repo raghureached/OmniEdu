@@ -1,12 +1,10 @@
 import axios from 'axios';
 import store from '../store';
 import { logout } from '../store/slices/authSlice';
-import { notifyError, notifyWarning } from '../utils/notification';
+import { toast } from 'react-toastify'; // Make sure you've installed react-toastify
 
 const production = false;
-// const production = process.env.REACT_APP_PROD === 'true';
 
-// console.log('process.env.prod', process.env.REACT_APP_PROD);
 const api = axios.create({
   baseURL: production 
     ? 'https://omniedu-server.onrender.com' 
@@ -16,7 +14,7 @@ const api = axios.create({
   },
   withCredentials: true,
 });
-//  console.log(api)
+
 // Prevent multiple redirects on 401 bursts
 let isHandling401 = false;
 
@@ -50,7 +48,7 @@ api.interceptors.response.use(
       }
 
       isHandling401 = true;
-      notifyError('Session expired. Please log in again.');
+      toast.error('Session expired. Please log in again.');
 
       try {
         store.dispatch(logout());
@@ -75,13 +73,13 @@ api.interceptors.response.use(
 
     // Handle other errors gracefully
     if (status >= 500) {
-      notifyError('Server error! Please try again later.');
+      toast.error('Server error! Please try again later.');
     } else if (status === 404) {
-      notifyWarning('Requested resource not found.');
+      toast.warning('Requested resource not found.');
     } else if (!status) {
-      notifyError('Network error! Please check your internet connection.');
+      toast.error('Network error! Please check your internet connection.');
     } else {
-      notifyError('Something went wrong! Please try again.');
+      toast.error('Something went wrong! Please try again.');
     }
 
     return Promise.reject(error);

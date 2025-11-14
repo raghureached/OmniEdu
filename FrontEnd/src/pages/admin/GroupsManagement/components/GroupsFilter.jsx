@@ -1,4 +1,4 @@
-import { ChevronDown, Import, Search, Share } from 'lucide-react';
+import { ChevronDown, Import, Search, Share,Filter } from 'lucide-react';
 import { GoX } from 'react-icons/go';
 import { RiDeleteBinFill } from 'react-icons/ri';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
@@ -169,19 +169,7 @@ const GroupsFilter = ({
         </div>
 
         <div className="controls-right">
-          <button
-            className="control-btn"
-            onClick={() => document.getElementById('import-groups')?.click()}
-          >
-            Import <Import size={16} color="#6b7280" />
-          </button>
-          <button
-            className="control-btn"
-            onClick={handleExportGroups}
-          >
-            Export <Share size={16} color="#6b7280" />
-          </button>
-          <button
+        <button
             ref={filterButtonRef}
             className="control-btn"
             onClick={() => {
@@ -195,8 +183,22 @@ const GroupsFilter = ({
               });
             }}
           >
+             <Filter size={16} />
             Filter
           </button>
+          <button
+            className="control-btn"
+            onClick={() => document.getElementById('import-groups')?.click()}
+          >
+            Import <Import size={16} color="#6b7280" />
+          </button>
+          <button
+            className="control-btn"
+            onClick={handleExportGroups}
+          >
+            Export <Share size={16} color="#6b7280" />
+          </button>
+         
           <button
             ref={bulkButtonRef}
             className="control-btn"

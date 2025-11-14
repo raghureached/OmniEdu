@@ -87,7 +87,7 @@ const addLearningPath = async (req, res) => {
 const getLearningPaths = async (req, res) => {
   try {
     // const orgId = req.user.orgId || "68bc0898fdb4a64d5a727a60";
-    const learningPath = await LearningPath.find({ organization_id: req.user.organization_id }).populate('lessons.id').lean();
+    const learningPath = await LearningPath.find({ organization_id: req.user.organization_id }).populate('lessons.id').lean().populate('team').populate('subteam')
     await logAdminActivity(req, "view", `Learning paths fetched successfully: ${learningPath.length}`);
     return res.status(200).json({
       isSuccess: true,

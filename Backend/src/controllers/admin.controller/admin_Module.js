@@ -113,7 +113,7 @@ const getModule = async (req, res) => {
 const getModuleById = async (req, res) => {
   try {
     const content = await OrganizationModule.findOne({ uuid: req.params.id }).populate("team").populate("created_by");
-    console.log(content)
+    // console.log(content)
     return res.status(200).json({ success: true, message: 'Module fetched successfully.', data: content });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to fetch module.', error: error.message });
@@ -247,7 +247,7 @@ const getModules = async (req, res) => {
     const skip = (page - 1) * limit;
     const content = await OrganizationModule.find({org_id:req.user.organization_id}).populate("team").skip(skip).limit(limit)
     const total = await OrganizationModule.countDocuments()
-    // await logGlobalAdminActivity(req,"Get Content","content", `Content fetched successfully ${content.title}`)
+    // console.log(content)
     return res.status(200).json({
       success: true,
       message: 'Modules fetched successfully.',

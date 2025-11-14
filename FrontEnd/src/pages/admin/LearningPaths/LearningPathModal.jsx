@@ -2,14 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import '../../globalAdmin/GlobalModuleManagement/GlobalModuleModal.css';
 import './LearningPathModal.css';
-import { ChevronLeft, ChevronRight, Plus, Trash2, GripVertical, Package, X, Eye } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, GripVertical, Package, X, Eye, EyeIcon } from 'lucide-react';
 import { GoX } from 'react-icons/go';
 import { adminfetchContent } from '../../../store/slices/adminModuleSlice';
 import { fetchSurveys } from '../../../store/slices/adminSurveySlice';
 import { fetchGlobalAssessments } from '../../../store/slices/adminAssessmentSlice';
 import { addLearningPath, editLearningPath } from '../../../store/slices/learningPathSlice';
 import LearningPathPreview from '../../../components/common/Preview/LearningPathPreview';
-import api from '../../../services/api';
+import api from '../../../services/apiOld';
+import { FiTrash2 } from 'react-icons/fi';
 
 const defaultForm = {
   title: '',
@@ -227,16 +228,16 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
   };
 
   const canProceed = () => {
-    // switch (currentStep) {
-    //   case 1:
-    //     return form.title.trim().length > 0 && form.description.trim().length > 0;
-    //   case 2:
-    //     return true; // cover image optional
-    //   case 3:
-    //     return true;
-    //   default:
-    //     return true;
-    // }  
+    switch (currentStep) {
+      case 1:
+        return form.title.trim().length > 0 && form.description.trim().length > 0;
+      case 2:
+        return true; // cover image optional
+      case 3:
+        return true;
+      default:
+        return true;
+    }  
     return true;
   };
   const enhanceTexthelper = async (title) => {
@@ -288,6 +289,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
     };
 
     dispatch(addLearningPath(payload));
+    onClose();
     // onSave(payload);
   };
   const handleEdit = (e) => {
@@ -298,18 +300,22 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
     const asmt = pathItems.filter(i => i.type === 'assessment').map(i => i.id);
     const surv = pathItems.filter(i => i.type === 'survey').map(i => i.id);
     // unified ordered lessons array
+    const teamId = form.team._id;
+    const subTeamId = form.subteam._id;
     const lessons = pathItems.map((it, index) => ({ id: it.id, uuid: it.uuid, type: it.type, title: it.title, order: index, ...(it.type === 'assessment' ? { questions: Number(it.questions) || undefined } : {}) }));
     const payload = {
       ...initialData,
       ...form,
+      team: teamId,
+      subteam: subTeamId,
       tags,
       lessons,
     };
     // console.log(payload);
     dispatch(editLearningPath({ uuid: initialData.uuid, ...payload }));
+    onClose();
     // onSave(payload);
   };
-
   const removeCover = () => setForm((p) => ({ ...p, thumbnail: null }));
 
   return (
@@ -388,7 +394,8 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                         {typeof form.thumbnail === 'string' ? form.thumbnail.split('/').pop() : form.thumbnail.name}
                       </span>
                       <div className="module-overlay__file-actions">
-                        <button type="button" className="module-overlay__btn-delete" onClick={removeCover}>Remove</button>
+                        <button type="button" className="module-overlay__btn-delete" > <EyeIcon size={16} />Preview</button>
+                        <button type="button" className="module-overlay__btn-delete" onClick={removeCover}> <FiTrash2 size={16} />Remove</button>
                       </div>
                     </div>
                   ) : (
@@ -531,7 +538,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                                       // console.log(x)
                                     } else {
                                       const newItem = { type: pickerType, id: x.id, uuid: x.uuid, title: x.title };
-                                      console.log(newItem)
+                                      // console.log(newItem)
                                       setPathItems(prev => [...prev, newItem]);
                                       setPickerOpen(false);
                                     }
@@ -674,19 +681,19 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                     <div>
                       <label className="module-overlay__form-label">Target Team/Sub Team <span className="module-overlay__required">*</span></label>
                       <div className="lp-grid-2">
-                        <select className="addOrg-form-input" name="team" value={form.team || initialData?.team} onChange={handleChange} style={{ width: '100%' }}>
+                        <select className="addOrg-form-input" name="team" value={form.team._id || initialData?.team} onChange={handleChange} style={{ width: '100%' }}>
                           <option value="">Select a Team</option>
                           {teams.map((team) => (
-                            <option key={team.id} value={team.id}>
+                            <option key={team.id} value={team._id}>
                               {team.name}
                             </option>
                           ))}
                         </select>
-                        <select className="addOrg-form-input" name="subteam" value={form.subteam || initialData?.subteam} onChange={handleChange} style={{ width: '100%' }}>
+                        <select className="addOrg-form-input" name="subteam" value={form.subteam._id || initialData?.subteam} onChange={handleChange} style={{ width: '100%' }}>
                           <option value="">Select a Sub-team</option>
-                          {teams.filter((team) => team.id === form.team || team._id === initialData?.team).map((subteam) => (
+                          {teams.filter((team) => team.id === form.team._id || team._id === initialData?.team).map((subteam) => (
                             subteam.subTeams.map((subteam) => (
-                              <option key={subteam.id} value={subteam.id}>
+                              <option key={subteam.id} value={subteam._id}>
                                 {subteam.name}
                               </option>
                             ))

@@ -11,7 +11,7 @@ import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import { adminfetchContent } from '../../../store/slices/adminModuleSlice';
 import { fetchUsers } from '../../../store/slices/userSlice';
-import api from '../../../services/api';
+import api from '../../../services/apiOld';
 import { admincreateAssignment } from '../../../store/slices/adminAssignmnetSlice';
 import { getLearningPaths } from '../../../store/slices/learningPathSlice';
 const GlobalCreateAssignment = () => {

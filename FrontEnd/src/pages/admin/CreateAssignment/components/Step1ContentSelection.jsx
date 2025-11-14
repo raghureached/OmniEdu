@@ -1,5 +1,5 @@
 import { ChevronRight } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
 
 const Step1ContentSelection = ({
   selectedContentType,
@@ -14,6 +14,7 @@ const Step1ContentSelection = ({
   onNext,
   teams
 }) => {
+  const [noOfQuestions, setNoOfQuestions] = useState(1);
   const handleContentTypeSelect = (type) => {
     setSelectedContentType(type);
     setSelectedItem(null);
@@ -23,6 +24,9 @@ const Step1ContentSelection = ({
 
   const handleItemSelect = (item) => {
     setSelectedItem(item);
+    // if(selectedContentType === 'Assessment'){
+    //   setShowQuestions(true)
+    // }
   };
 
   const getItemMeta = (item) => {
@@ -153,7 +157,7 @@ const Step1ContentSelection = ({
 
           <div className="form-group">
             <label className="required">Select Item to Assign</label>
-            <div className="help-text" style={{marginBottom:10}}>Only one item can be selected. To assign multiple items, create a Learning Path.</div>
+            <div className="help-text" style={{ marginBottom: 10 }}>Only one item can be selected. To assign multiple items, create a Learning Path.</div>
             <div className="items-list">
               {filteredItems.length > 0 ? (
                 filteredItems.map(item => (
@@ -171,6 +175,36 @@ const Step1ContentSelection = ({
                       <div className="item-title">{item.title}</div>
                       <div className="item-meta">{getItemMeta(item)}</div>
                     </label>
+                    <div style={{ display: "flex", gap: "10px", alignItems: "center", justifyContent: "center", marginRight: 10 }}>
+                      {selectedContentType === 'Assessment' && <span>
+                        <input
+                          type="number"
+                          value={noOfQuestions}
+                          min={1}
+                          max={Number(item.questions.length)}
+                          onChange={(e) => {
+                            const max = Number(item.questions?.length || 1);
+                            const min = 1;
+                            let val = parseInt(e.target.value, 10);
+                            if (isNaN(val)) val = min;
+                            if (val > max) val = max;
+                            if (val < min) val = min;
+                            setNoOfQuestions(val);
+                          }}
+                          onBlur={(e) => {
+                            const max = Number(item.questions?.length || 1);
+                            const min = 1;
+                            let val = parseInt(e.target.value, 10);
+                            if (isNaN(val)) val = min;
+                            if (val > max) val = max;
+                            if (val < min) val = min;
+                            if (val !== noOfQuestions) setNoOfQuestions(val);
+                          }}
+                          step={1}
+                          style={{ width: "50px" }}
+                        /> questions
+                      </span>}
+                    </div>
                     <span className={`item-badge ${getBadgeClass()}`}>{selectedContentType}</span>
                   </div>
                 ))

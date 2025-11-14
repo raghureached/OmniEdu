@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { adminfetchContent, admindeleteContent, admincreateContent, adminupdateContent, adminbulkDeleteContent } from '../../../store/slices/adminModuleSlice';
 import "./ModuleManagement.css"
 import { useNavigate } from 'react-router-dom';
-import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X, Filter } from 'lucide-react';
+import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X, Filter, Plus } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading'
 import { RiDeleteBinFill } from "react-icons/ri";
 import { FiEdit3 } from "react-icons/fi";
@@ -27,6 +27,7 @@ const ModuleManagement = () => {
   const [selectedItems, setSelectedItems] = useState([]);
   // const [showFilters, setShowFilters] = useState(false);
   // console.log(error)
+  console.log(items)
   const [filters, setFilters] = useState({
     status: ''
   });
@@ -97,13 +98,13 @@ const ModuleManagement = () => {
 
   // Filter the content based on search term and filters
   const filteredContent = items?.filter((item) => {
-    const matchesSearch = !filters.search || 
+    const matchesSearch = !filters.search ||
       (item.title?.toLowerCase().includes(filters.search.toLowerCase()) ||
-       item.description?.toLowerCase().includes(filters.search.toLowerCase()));
-    
+        item.description?.toLowerCase().includes(filters.search.toLowerCase()));
+
     const matchesType = contentType === "all" || item.type === contentType;
     const matchesStatus = !filters.status || item.status === filters.status;
-    
+
     return matchesSearch && matchesType && matchesStatus;
   }) || [];
 
@@ -176,6 +177,7 @@ const ModuleManagement = () => {
   };
   const openEditModal = (content) => {
     setEditContentId(content.uuid)
+    // console.log(content)
     setNewContent({
       title: content.title,
       primaryFile: content.primaryFile,
@@ -361,54 +363,54 @@ const ModuleManagement = () => {
             }}
           />
           <div style={{ display: "flex", gap: "10px" }}>
-          <button
-            ref={filterButtonRef}
-            className="control-btn"
-            onClick={() => {
-              setShowFilters(prev => {
-                const next = !prev;
-                if (next) {
-                  setShowBulkAction(false);
-                }
-                return next;
-              });
-            }}
-          >
-            <Filter size={16} />
-            Filter
-          </button>
-          {showFilters && (
-            <div ref={filterPanelRef} className="adminmodule-filter-panel">
-              <span 
-                style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px" }} 
-                onClick={() => setShowFilters(false)}
-              >
-                <GoX size={20} color="#6b7280" />
-              </span>
-              <div className="filter-group">
-                <label>Status</label>
-                <select
-                  name="status"
-                  value={tempFilters?.status || ""}
-                  onChange={handleFilterChange}
+            <button
+              ref={filterButtonRef}
+              className="control-btn"
+              onClick={() => {
+                setShowFilters(prev => {
+                  const next = !prev;
+                  if (next) {
+                    setShowBulkAction(false);
+                  }
+                  return next;
+                });
+              }}
+            >
+              <Filter size={16} />
+              Filter
+            </button>
+            {showFilters && (
+              <div ref={filterPanelRef} className="adminmodule-filter-panel">
+                <span
+                  style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px" }}
+                  onClick={() => setShowFilters(false)}
                 >
-                  <option value="">All</option>
-                  <option value="Saved">Saved</option>
-                  <option value="Draft">Draft</option>
-                  <option value="Published">Published</option>
-                 
-                </select>
+                  <GoX size={20} color="#6b7280" />
+                </span>
+                <div className="filter-group">
+                  <label>Status</label>
+                  <select
+                    name="status"
+                    value={tempFilters?.status || ""}
+                    onChange={handleFilterChange}
+                  >
+                    <option value="">All</option>
+                    <option value="Saved">Saved</option>
+                    <option value="Draft">Draft</option>
+                    <option value="Published">Published</option>
+
+                  </select>
+                </div>
+                <div className="filter-actions">
+                  <button className="btn-primary" onClick={handleFilter}>
+                    Apply
+                  </button>
+                  <button className="reset-btn" onClick={resetFilters}>
+                    Clear
+                  </button>
+                </div>
               </div>
-              <div className="filter-actions">
-                <button className="btn-primary" onClick={handleFilter}>
-                  Apply
-                </button>
-                <button className="reset-btn" onClick={resetFilters}>
-                  Clear
-                </button>
-              </div>
-            </div>
-          )}
+            )}
             {/* <button className="control-btn" style={{ color: "#6b7280", border: "1px solid #6b7280" }} onClick={() => openDraftModal()}> Drafts</button> */}
             <button
               ref={bulkButtonRef}
@@ -435,7 +437,7 @@ const ModuleManagement = () => {
                     className="bulk-action-close"
                   />
                 </div>
-                <div className="bulk-action-actions" style={{ display: "flex", justifyContent:"center" }}>
+                <div className="bulk-action-actions" style={{ display: "flex", justifyContent: "center" }}>
                   <button
                     className="bulk-action-delete-btn"
                     disabled={selectedItems.length === 0}
@@ -455,113 +457,129 @@ const ModuleManagement = () => {
 
       {showModal && <ModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading} handleRichInputChange={handleRichInputChange} error={error} />}
       {showEditModal && <ModuleModal showModal={showEditModal} setShowModal={setShowEditModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} showEditModal={showEditModal} setShowEditModal={setShowEditModal} editContentId={editContentId} handleRichInputChange={handleRichInputChange} error={error} />}
-      <div className="table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th><input type="checkbox" onChange={(e) => handleSelectAll(e)} checked={selectedItems.length === currentContent.length} /></th>
-              <th>Title</th>
-              <th>Credits</th>
-              <th>Status</th>
-              <th>Team</th>
-              <th>Created Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentContent.map((content) => (
-              <tr key={content.id}>
-                <td><input type="checkbox" onChange={(e) => handleSelectItem(e, content.uuid)} checked={selectedItems.includes(content.uuid)} /></td>
-                <td>
-                  <div className="assess-cell-content">
-                    <div className="assess-title-container">
-                      <h4 className="assess-title">{content.title}</h4>
-                      <p className="assess-description">{content.description || "No description provided"}</p>
-                      {Array.isArray(content.tags) && content.tags.length > 0 && (
-                        <div className="assess-tags">
-                          {content.tags.map((t, idx) => (
-                            <span key={`${content.id}-tag-${idx}`} className="assess-classification">{t}</span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </td>
-                <td>{content.credits}</td>
-                <td>
-                  <span className={` ${content.status === 'Published' ? 'published' : content.status === 'Draft' ? 'draft' : 'saved'} assess-status-badge`}>
-                    {content.status === 'Published' ? `✓ ${content.status}` : content.status === 'Draft' ? 'Draft' : 'Saved'}
-                  </span>
-                </td>
-                <td>{content.team?.name || "All"}</td>
-                <td>
-                  <div className="assess-date-info"><Calendar size={14} />
-                    <span>{content.createdAt ? new Date(content.createdAt).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    }) : ""}</span>
-                  </div>
-                </td>
-                <td>
-                  <div style={{ display: "flex", gap: "10px" }}>
-                    <button
-                      className="global-action-btn delete"
-                      onClick={() => handleDeleteContent(content.uuid)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                    <button className="global-action-btn edit" onClick={() => {
-                      setEditContentId(content.uuid)
-                      openEditModal(content);
-                    }}>
-                      <Edit3 size={16} />
-                    </button>
-                  </div>
-                </td>
+      {currentContent.length === 0 ? (
+        <div className='assess-table-section'>
+          <div className='assess-table-container'>
+        <div className="assess-empty-state">
+          <div className="assess-empty-icon" style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
+            <FileText size={48} />
+          </div>
+          <h3>No modules found</h3>
+          <p>Get started by creating your first module</p>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <button className="assess-btn-primary" onClick={handleOpenModal} >
+              <Plus size={16} />
+              Create Module
+            </button>
+          </div>
+        </div>
+      </div>
+      </div>
+      ) : (
+        <div className="table-container">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th><input type="checkbox" onChange={(e) => handleSelectAll(e)} checked={selectedItems.length === currentContent.length} /></th>
+                <th>Title</th>
+                <th>Credits</th>
+                <th>Status</th>
+                <th>Team</th>
+                <th>Created Date</th>
+                <th>Actions</th>
               </tr>
-            ))}
-
-          {currentContent.length === 0 && (
-            <tr>
-              <td colSpan="6" className="no-results">
-                No Modules found.
-              </td>
-            </tr>
-          )}
-
-          {filteredContent.length > 0 && (
-            <tr>
-              <td colSpan={7}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage <= 1}
-                      style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: currentPage <= 1 ? 'not-allowed' : 'pointer' }}
-                    >
-                      Prev
-                    </button>
-                    <span style={{ color: '#0f172a' }}>
-                      {`Page ${currentPage} of ${Math.max(1, totalPages)}`}
+            </thead>
+            <tbody>
+              {currentContent.map((content) => (
+                <tr key={content.id}>
+                  <td><input type="checkbox" onChange={(e) => handleSelectItem(e, content.uuid)} checked={selectedItems.includes(content.uuid)} /></td>
+                  <td>
+                    <div className="assess-cell-content">
+                      <div className="assess-title-container">
+                        <h4 className="assess-title">{content.title}</h4>
+                        <p className="assess-description">{content.description || "No description provided"}</p>
+                        {Array.isArray(content.tags) && content.tags.length > 0 && (
+                          <div className="assess-tags">
+                            {content.tags.slice(0, 4).map((t, idx) => (
+                              <span key={`${content.id}-tag-${idx}`} className="assess-classification">{t}</span>
+                            ))}
+                            {content.tags.length > 4 && (
+                              <span className="assess-classification">+ {content.tags.length - 4}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td>{content.credits}</td>
+                  <td>
+                    <span className={` ${content.status === 'Published' ? 'published' : content.status === 'Draft' ? 'draft' : 'saved'} assess-status-badge`}>
+                      {content.status === 'Published' ? `✓ ${content.status}` : content.status === 'Draft' ? 'Draft' : 'Saved'}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={currentPage >= totalPages}
-                      style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer' }}
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+                  </td>
+                  <td>{content.team?.name || "All"}</td>
+                  <td>
+                    <div className="assess-date-info"><Calendar size={14} />
+                      <span>{content.createdAt ? new Date(content.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      }) : ""}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <button
+                        className="global-action-btn delete"
+                        onClick={() => handleDeleteContent(content.uuid)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                      <button className="global-action-btn edit" onClick={() => {
+                        setEditContentId(content.uuid)
+                        openEditModal(content);
+                      }}>
+                        <Edit3 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+
+              {filteredContent.length > 0 && (
+                <tr>
+                  <td colSpan={7}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <button
+                          type="button"
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                          disabled={currentPage <= 1}
+                          style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: currentPage <= 1 ? 'not-allowed' : 'pointer' }}
+                        >
+                          Prev
+                        </button>
+                        <span style={{ color: '#0f172a' }}>
+                          {`Page ${currentPage} of ${Math.max(1, totalPages)}`}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                          disabled={currentPage >= totalPages}
+                          style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer' }}
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+        </div>
+      )}
       {showDraftModal && (
         <div
           style={{
@@ -678,7 +696,7 @@ const ModuleManagement = () => {
           </div>
         </div>
       )}
-          
+
     </div>
   );
 };

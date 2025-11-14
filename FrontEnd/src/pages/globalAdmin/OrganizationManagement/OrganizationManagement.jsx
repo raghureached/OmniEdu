@@ -22,7 +22,7 @@ import {
   clearFilters,
   deleteOrganizations,
 } from "../../../store/slices/organizationSlice";
-import api from "../../../services/api";
+import api from "../../../services/apiOld";
 import { useNavigate } from "react-router-dom";
 import AddOrganizationFormModal from "./AddOrganizationModal";
 import OrganizationDetails from "./OrganizationDetails";

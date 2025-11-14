@@ -19,6 +19,7 @@ import userDashboardConfigReducer from './slices/userDashboardConfigSlice'
 import adminModuleReducer from './slices/adminModuleSlice'
 import adminMessageReducer from './slices/adminMessageSlice'
 import learningPathReducer from './slices/learningPathSlice'
+
 const store = configureStore({
   reducer: {
     auth: authReducer,

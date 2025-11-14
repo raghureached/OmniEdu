@@ -19,7 +19,7 @@ import {
 // import api from '../../../services/api';
 import QuestionsForm from './QuestionsForm-survey';
 import LoadingScreen from '../../../components/common/Loading/Loading';
-import api from '../../../services/api';
+import api from '../../../services/apiOld';
 const GlobalSurveys = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');

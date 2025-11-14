@@ -9,7 +9,7 @@ import { fetchGroups } from '../../../store/slices/groupSlice';
 // import api from '../../../services/api';
 import QuestionsForm from './QuestionsForm';
 import LoadingScreen from '../../../components/common/Loading/Loading';
-import api from '../../../services/api';
+import api from '../../../services/apiOld';
 const AdminAssessments = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
@@ -946,15 +946,17 @@ const AdminAssessments = () => {
         <div className="assess-table-container">
           {assessments.length === 0 ? (
             <div className="assess-empty-state">
-              <div className="assess-empty-icon">
+              <div className="assess-empty-icon" style={{display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center"}}>
                 <FileText size={48} />
               </div>
               <h3>No assessments found</h3>
               <p>Get started by creating your first assessment</p>
-              <button className="assess-btn-primary" style={{ marginLeft: "36%" }} onClick={handleAddAssessment} >
+              <div style={{display:"flex",justifyContent:"center",alignItems:"center"}}>
+                <button className="assess-btn-primary" onClick={handleAddAssessment} >
                 <Plus size={16} />
                 Create Assessment
               </button>
+              </div>
             </div>
           ) : (
             <table className="assess-table">
@@ -1000,9 +1002,12 @@ const AdminAssessments = () => {
                             <p className="assess-description">{assessment.description || "No description provided"}</p>
                             {Array.isArray(assessment.tags) && assessment.tags.length > 0 && (
                               <div className="assess-tags">
-                                {assessment.tags.map((t, idx) => (
+                                {assessment.tags.slice(0, 4).map((t, idx) => (
                                   <span key={`${assessment.id}-tag-${idx}`} className="assess-classification">{t}</span>
                                 ))}
+                                {assessment.tags.length > 4 && (
+                                  <span className="assess-classification">+ {assessment.tags.length - 4}</span>
+                                )}
                               </div>
                             )}
                           </div>

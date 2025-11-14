@@ -2,12 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Preview.css';
 import { GoBook } from 'react-icons/go';
-import { RiDeleteBin2Fill } from 'react-icons/ri';
-import { EyeIcon, Plus, ThumbsUp, ThumbsDown, Send, Play, Pause, Volume2, VolumeX, Maximize, Minimize, ChevronLast, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useSelector } from 'react-redux';
 import { useDispatch } from 'react-redux';
 import { setSelectedPath } from '../../../store/slices/learningPathSlice';
 import LearningPath from '../../LearningPath/LearningPath';
+import { ChevronRight } from 'lucide-react';
 
 const LearningPathPreview = ({ isOpen, onClose, data }) => {
     console.log(data)
@@ -18,24 +16,49 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
     const [showPath, setShowPath] = useState(false);
     const [modalContent, setModalContent] = useState(null);
     const objectUrlRef = useRef(null);
-    useEffect(() => () => {
-        if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
-    }, []);
-
-    const title = data?.title || 'Untitled Module';
+    const [previewUrl, setPreviewUrl] = useState(null);
+ const title = data?.title || 'Untitled Module';
     const category = data?.category || 'Uncategorized';
     const trainingType = data?.trainingType || '—';
-    const teamName = data?.team || '—';
+    const teamName = data?.team.name || '—';
+    const subteamName = data?.subteam.name || '—';
     const durationMins = data.duration
     const credits = data?.credits ?? 0;
     const badges = data?.badges ?? 0;
     const stars = data?.stars ?? 0;
-    const tags = Array.isArray(data?.tags) ? data.tags : data.tagsText.split(',')|| [];
+    const tags = Array.isArray(data?.tags) ? data.tags : data.tagsText.split(',') || [];
     const prerequisitesArr = Array.isArray(data?.prerequisites) ? data.prerequisites : [];
     const description = data?.description || 'No overview provided.';
     const outcomes = Array.isArray(data?.learningOutcomes) ? data.learningOutcomes : [];
     const thumbnail = data?.thumbnail || '';
+    console.log(thumbnail)
     const lessons = Array.isArray(data?.lessons) ? data.lessons : [];
+    // Revoke any object URL on unmount
+    useEffect(() => () => {
+        if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    }, []);
+
+    // Generate a temporary URL when thumbnail is a File/Blob
+    useEffect(() => {
+        // clear previous object URL if any
+        if (objectUrlRef.current) {
+            URL.revokeObjectURL(objectUrlRef.current);
+            objectUrlRef.current = null;
+        }
+        if (!thumbnail) {
+            setPreviewUrl(null);
+            return;
+        }
+        if (thumbnail instanceof File || thumbnail instanceof Blob) {
+            const url = URL.createObjectURL(thumbnail);
+            objectUrlRef.current = url;
+            setPreviewUrl(url);
+        } else {
+            setPreviewUrl(null);
+        }
+    }, [thumbnail]);
+
+   
     // const {selectedPath} = useSelector((state) => state.learningPath);
 
     const open = typeof isOpen === 'boolean' ? isOpen : true;
@@ -45,9 +68,9 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
     };
 
     const handleTabChange = (tab) => {
-        if(tab === 'resources'){
+        if (tab === 'resources') {
             setShowPath(true);
-        }else{
+        } else {
             setShowPath(false);
         }
         setActiveTab(tab);
@@ -57,12 +80,22 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
         dispatch(setSelectedPath(data));
         setShowPath(true);
     }
+    // Normalize URL from various shapes
+    const getURl = (value) => {
+        if (!value) return '';
+        if (typeof value === 'string') return value;          // absolute/relative/data URL
+        if (typeof value === 'object') {
+            if (typeof value.url === 'string') return value.url;
+            if (typeof value.path === 'string') return value.path;
+        }
+        return '';
+    };
 
     if (!open) return null;
 
     return (
         <div className="module-preview-overlay" onClick={handleClose}>
-            <div className="module-preview-container" style={{maxWidth: activeTab === 'resources' ? '100%' : '1100px'}} onClick={(e) => e.stopPropagation()}>
+            <div className="module-preview-container" style={{ maxWidth: activeTab === 'resources' ? '100%' : '1100px' }} onClick={(e) => e.stopPropagation()}>
                 <div className="module-preview-header">
                     <div className="module-preview-header-left">
                         <div className="module-preview-header-icon"><GoBook size={24} color="#5570f1" /></div>
@@ -78,7 +111,7 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
                             onClick={() => handleTabChange('preview')}
                             role="tab"
                             aria-selected={activeTab === 'preview'}
-                            style={{width:"120px"}}
+                            style={{ width: "120px" }}
                         >
                             Preview
                         </button>
@@ -88,14 +121,14 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
                             onClick={() => handleTabChange('resources')}
                             role="tab"
                             aria-selected={activeTab === 'resources'}
-                            style={{width:"120px"}}
+                            style={{ width: "120px" }}
                         >
                             Resources
                         </button>
                     </div>
                     <button type="button" className="module-preview-close-btn" onClick={handleClose} aria-label="Close preview">✕</button>
                 </div>
-                <div className="global-preview-wrap" style={{maxWidth: activeTab === 'resources' ? '100%' : '100%'}}>
+                <div className="global-preview-wrap" style={{ maxWidth: activeTab === 'resources' ? '100%' : '100%' }}>
                     <div className="global-preview-panel">
                         <div className="global-preview-content">
                             {!showPath && activeTab === 'preview' && (
@@ -115,7 +148,7 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
                                                     </div>
                                                     <div>
                                                         <strong className="global-preview-meta-label">Target Team/Sub Team</strong>
-                                                        <span className="global-preview-meta-value">{teamName}</span>
+                                                        <span className="global-preview-meta-value">{teamName}/{subteamName}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -167,7 +200,19 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
                                         <div className="global-preview-right-col-content">
                                             <div className="global-preview-image-card">
                                                 {thumbnail ? (
-                                                    <img src={thumbnail} alt="Module thumbnail" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'cover', borderRadius: '10px' }} />
+                                                    previewUrl ? (
+                                                        <img
+                                                            src={previewUrl}
+                                                            alt="Module thumbnail"
+                                                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'cover', borderRadius: '10px' }}
+                                                        />
+                                                    ) : (
+                                                        <img
+                                                            src={getURl(thumbnail)}
+                                                            alt="Module thumbnail"
+                                                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'cover', borderRadius: '10px' }}
+                                                        />
+                                                    )
                                                 ) : (
                                                     <span>Module Thumbnail</span>
                                                 )}
@@ -176,15 +221,15 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
                                             <div className="global-preview-details">
                                                 <div className="global-preview-card">
                                                     <h3>Overview</h3>
-                                                    <p style={{color:"#0f1724",fontWeight:"400"}}>{description}</p>
+                                                    <p style={{ color: "#0f1724", fontWeight: "400" }}>{description}</p>
                                                 </div>
-                                              
+
                                                 <div className="global-preview-card">
                                                     <h3>What you'll learn</h3>
                                                     {outcomes.length ? (
                                                         <ul className="global-preview-learn-list">
                                                             {outcomes.map((o, idx) => (
-                                                                <li key={idx} style={{fontWeight:"400"}}>✅ {o}</li>
+                                                                <li key={idx} style={{ fontWeight: "400" }}>✅ {o}</li>
                                                             ))}
                                                         </ul>
                                                     ) : (
@@ -201,8 +246,8 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
                                             {/* <button className="global-preview-btn global-preview-btn-ghost" onClick={handleSaveDraft}>
                                                 Save Draft
                                             </button> */}
-                                            <button type="button" className="btn-primary" onClick={()=>handlePreview()}>
-                                                Next (Learning Path) <ChevronRight size={16} /> 
+                                            <button type="button" className="btn-primary" onClick={() => handlePreview()}>
+                                                Next (Learning Path) <ChevronRight size={16} />
                                             </button>
                                         </div>
                                     </div>
@@ -236,11 +281,11 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
                                     </div>
                                 )}
                                 {modalContent.body?.kind === 'image' && (
-                                    <div style={{ display:'flex',justifyContent:'center' }}>
-                                        <img src={modalContent.body.url} alt={modalContent.title} style={{ maxWidth:'100%', maxHeight:'70vh', borderRadius: 8 }} />
+                                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                        <img src={modalContent.body.url} alt={modalContent.title} style={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: 8 }} />
                                     </div>
                                 )}
-                                {modalContent.body && ['pdf','image'].indexOf(modalContent.body.kind) === -1 && (
+                                {modalContent.body && ['pdf', 'image'].indexOf(modalContent.body.kind) === -1 && (
                                     <div>
                                         <p className="global-preview-no-preview">Preview not available for this file type.</p>
                                         <p>

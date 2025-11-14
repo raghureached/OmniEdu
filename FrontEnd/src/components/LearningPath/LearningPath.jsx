@@ -250,10 +250,12 @@ const LearningPath = ({ courseData: propCourseData, embedded = false }) => {
                             style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 12px', cursor: 'pointer', borderRadius: '8px', transition: 'background-color 0.2s', backgroundColor: activeLesson?.id === section.id ? '#eff6ff' : 'transparent' }}
                             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = activeLesson?.id === section.id ? '#eff6ff' : '#f9fafb')}
                             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = activeLesson?.id === section.id ? '#eff6ff' : 'transparent')}>
+                            
                             <div style={{ flex: 1 }}>
+                                {/* {getTypeIcon(section.type)} */}
                                 <div style={{ fontSize: '14px', fontWeight: '600', color: '#111827', marginBottom: '6px' }}>{section.title}</div>
                                 <div style={{ fontSize: '12px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span>{section.type}</span>
+                                    {getTypeIcon(section.type)}<span style={{border:"1px solid #e5e7eb",padding:"3px 6px",borderRadius:"10px",fontSize:"12px",fontWeight:"500",backgroundColor:"#f9fafb"}}>{section.type}</span>
                                     {completedSet.has(section.id) && <CheckCircle size={14} color="#10b981" />}
                                 </div>
                             </div>
@@ -262,11 +264,6 @@ const LearningPath = ({ courseData: propCourseData, embedded = false }) => {
                 ))}
 
             </div>
-            {/* {loadingContent && (
-                <div style={{ flex: 1, overflowY: 'auto', backgroundColor: '#f8f9fa' ,display:'flex',justifyContent:'center',alignItems:'center'}}>
-                    <CustomLoader text='Loading content'/>
-                </div>
-            )} */}
             {activeLesson?.type === 'Module' && (
                 <div style={{ flex: 1, overflowY: 'auto', backgroundColor: '#f8f9fa' }}>
                     <ModulePreview

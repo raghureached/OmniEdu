@@ -137,7 +137,9 @@ const ModulePreview = ({ isOpen, onClose, data,embedded }) => {
     const title = data?.title || 'Untitled Module';
     const category = data?.category || 'Uncategorized';
     const trainingType = data?.trainingType || '—';
+    // console.log(data)
     const teamName = data?.team?.name || '—';
+    // const subTeamName = data?.subTeam?.name || '—';
     const durationMins = data?.duration || null;
     const credits = data?.credits ?? 0;
     const badges = data?.badges ?? 0;
@@ -220,140 +222,6 @@ const ModulePreview = ({ isOpen, onClose, data,embedded }) => {
 
     if (!open) return null;
 
-    // const VideoPlayer = ({ src, poster }) => {
-    //     const videoRef = useRef(null);
-    //     const containerRef = useRef(null);
-    //     const [isPlaying, setIsPlaying] = useState(false);
-    //     const [duration, setDuration] = useState(0);
-    //     const [current, setCurrent] = useState(0);
-    //     const [isMuted, setIsMuted] = useState(false);
-    //     const [volume, setVolume] = useState(1);
-    //     const [speed, setSpeed] = useState(1);
-    //     const [fs, setFs] = useState(false);
-
-    //     const fmt = (s) => {
-    //         if (!Number.isFinite(s)) return '0:00';
-    //         const m = Math.floor(s / 60);
-    //         const sec = Math.floor(s % 60).toString().padStart(2, '0');
-    //         return `${m}:${sec}`;
-    //     };
-
-    //     const onLoaded = () => {
-    //         const v = videoRef.current;
-    //         if (!v) return;
-    //         setDuration(v.duration || 0);
-    //     };
-
-    //     const onTime = () => {
-    //         const v = videoRef.current;
-    //         if (!v) return;
-    //         setCurrent(v.currentTime || 0);
-    //     };
-
-    //     const togglePlay = () => {
-    //         const v = videoRef.current;
-    //         if (!v) return;
-    //         if (v.paused) { v.play(); setIsPlaying(true); } else { v.pause(); setIsPlaying(false); }
-    //     };
-
-    //     const onSeek = (e) => {
-    //         const v = videoRef.current;
-    //         if (!v) return;
-    //         const val = Number(e.target.value);
-    //         v.currentTime = val;
-    //         setCurrent(val);
-    //     };
-
-    //     const toggleMute = () => {
-    //         const v = videoRef.current; if (!v) return;
-    //         const next = !isMuted; setIsMuted(next); v.muted = next; if (next && volume > 0) { /* keep volume */ };
-    //     };
-
-    //     const onVolume = (e) => {
-    //         const v = videoRef.current; if (!v) return;
-    //         const val = Number(e.target.value);
-    //         setVolume(val);
-    //         v.volume = val;
-    //         if (val === 0) { setIsMuted(true); v.muted = true; } else if (isMuted) { setIsMuted(false); v.muted = false; }
-    //     };
-
-    //     const cycleSpeed = () => {
-    //         const steps = [0.75, 1, 1.25, 1.5];
-    //         const idx = steps.indexOf(speed);
-    //         const next = steps[(idx + 1) % steps.length];
-    //         setSpeed(next);
-    //         const v = videoRef.current; if (v) v.playbackRate = next;
-    //     };
-
-    //     const toggleFs = async () => {
-    //         const el = containerRef.current;
-    //         try {
-    //             if (!document.fullscreenElement && el?.requestFullscreen) {
-    //                 await el.requestFullscreen();
-    //                 setFs(true);
-    //             } else if (document.exitFullscreen) {
-    //                 await document.exitFullscreen();
-    //                 setFs(false);
-    //             }
-    //         } catch {}
-    //     };
-
-    //     return (
-    //         <div className="video-player" ref={containerRef}>
-    //             <video
-    //                 ref={videoRef}
-    //                 src={src}
-    //                 poster={poster}
-    //                 onLoadedMetadata={onLoaded}
-    //                 onTimeUpdate={onTime}
-    //                 preload="metadata"
-    //                 playsInline
-    //                 style={{ width: '100%', display: 'block', borderRadius: 8 }}
-    //             />
-    //             <div className="video-controls">
-    //                 <div className="vc-left">
-    //                     <button className="vc-btn" onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}>
-    //                         {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-    //                     </button>
-    //                     <div className="vc-time">{fmt(current)} / {fmt(duration)}</div>
-    //                 </div>
-    //                 <div className="vc-center">
-    //                     <input
-    //                         className="vc-seek"
-    //                         type="range"
-    //                         min={0}
-    //                         max={Math.max(0, duration)}
-    //                         step="0.1"
-    //                         value={Math.min(current, duration || 0)}
-    //                         onChange={onSeek}
-    //                         aria-label="Seek"
-    //                     />
-    //                 </div>
-    //                 <div className="vc-right">
-    //                     <button className="vc-btn" onClick={toggleMute} aria-label={isMuted ? 'Unmute' : 'Mute'}>
-    //                         {isMuted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
-    //                     </button>
-    //                     <input
-    //                         className="vc-volume"
-    //                         type="range"
-    //                         min={0}
-    //                         max={1}
-    //                         step="0.01"
-    //                         value={isMuted ? 0 : volume}
-    //                         onChange={onVolume}
-    //                         aria-label="Volume"
-    //                     />
-    //                     <button className="vc-btn vc-speed" onClick={cycleSpeed} aria-label="Speed">
-    //                         {speed.toFixed(2).replace(/\.00$/, '')}x
-    //                     </button>
-    //                     <button className="vc-btn" onClick={toggleFs} aria-label={fs ? 'Exit Fullscreen' : 'Enter Fullscreen'}>
-    //                         {fs ? <Minimize size={16} /> : <Maximize size={16} />}
-    //                     </button>
-    //                 </div>
-    //             </div>
-    //         </div>
-    //     );
-    // };
 
     return (
         <div className={embedded ? 'module-preview-overlay-embedded' : 'module-preview-overlay'} onClick={handleClose}>
