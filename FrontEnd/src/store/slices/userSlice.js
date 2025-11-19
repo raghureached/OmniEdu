@@ -8,7 +8,10 @@ export const fetchUsers = createAsyncThunk(
     try {
       const response = await api.get('/api/admin/getUsers', { params: filters })
       // console.log(response.data)
-      return response.data.data;
+      return {
+        users: response.data.data,
+        pagination: response.data.pagination,
+      };
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -143,7 +146,15 @@ const userSlice = createSlice({
     error: null,
     currentPage: 1,
     pageSize: 10,
-    filters: {},
+    totalPages: 1,
+    hasMore: false,
+    filters: {
+      status: '',
+      role: '',
+      search: '',
+      page: 1,
+      limit: 6,
+    },
     selectedUsers: [],
     importSuccess: false,
     exportSuccess: false,
@@ -183,8 +194,9 @@ const userSlice = createSlice({
       state.filters = {
         status: '',
         role: '',
-      
-        search: ''
+        search: '',
+        page: 1,
+        limit: state.pageSize || 6,
       };
     },
   },
@@ -197,8 +209,39 @@ const userSlice = createSlice({
       })
       .addCase(fetchUsers.fulfilled, (state, action) => {
         state.loading = false;
-        state.users = action.payload;
-        state.totalCount = action.payload.length;
+        const payload = action.payload || {};
+        const users = Array.isArray(payload.users) ? payload.users : [];
+        const pagination = payload.pagination || {};
+        const requestParams = action.meta?.arg || {};
+
+        state.users = users;
+
+        const resolvedLimit = typeof pagination.limit === 'number'
+          ? pagination.limit
+          : (typeof requestParams.limit === 'number' ? requestParams.limit : state.pageSize || users.length || 6);
+        state.pageSize = resolvedLimit || state.pageSize;
+
+        const resolvedPage = typeof pagination.page === 'number'
+          ? pagination.page
+          : (typeof requestParams.page === 'number' ? requestParams.page : state.currentPage || 1);
+        state.currentPage = resolvedPage;
+
+        const hasMore = typeof pagination.hasMore === 'boolean'
+          ? pagination.hasMore
+          : (users.length >= state.pageSize && users.length > 0);
+        state.hasMore = hasMore;
+
+        const derivedTotal = typeof pagination.total === 'number'
+          ? pagination.total
+          : (hasMore
+            ? (resolvedPage * state.pageSize) + 1
+            : ((resolvedPage - 1) * state.pageSize) + users.length);
+        state.totalCount = derivedTotal;
+
+        const resolvedTotalPages = typeof pagination.totalPages === 'number' && pagination.totalPages > 0
+          ? pagination.totalPages
+          : (hasMore ? resolvedPage + 1 : Math.max(1, Math.ceil(state.totalCount / state.pageSize)));
+        state.totalPages = resolvedTotalPages;
       })
       .addCase(fetchUsers.rejected, (state, action) => {
         state.loading = false;

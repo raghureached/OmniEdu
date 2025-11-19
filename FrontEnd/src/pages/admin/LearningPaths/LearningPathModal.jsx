@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import '../../globalAdmin/GlobalModuleManagement/GlobalModuleModal.css';
 import './LearningPathModal.css';
-import { ChevronLeft, ChevronRight, Plus, Trash2, GripVertical, Package, X, Eye, EyeIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, GripVertical, Package, X, Eye, EyeIcon, Check, CheckCircle, Info } from 'lucide-react';
 import { GoX } from 'react-icons/go';
 import { adminfetchContent } from '../../../store/slices/adminModuleSlice';
 import { fetchSurveys } from '../../../store/slices/adminSurveySlice';
@@ -43,6 +43,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
     dispatch(fetchSurveys());
   }, [])
   const [form, setForm] = useState(defaultForm);
+  const [aiHelpOpen, setAiHelpOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
   const { items: contentItems = [] } = useSelector((state) => state.content || {});
@@ -213,7 +214,6 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
   }, [initialData, isOpen]);
 
   if (!isOpen) return null;
-
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
     if (type === 'checkbox') {
@@ -237,13 +237,13 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
         return true;
       default:
         return true;
-    }  
+    }
     return true;
   };
   const enhanceTexthelper = async (title) => {
     try {
       setAiProcessing(true);
-      const response = await api.post('/api/admin/enhanceSurvey', { title });
+      const response = await api.post('/api/admin/enhanceText', { title });
       setTags(response.data.data.tags);
       setForm({ ...form, title: response.data.data.title, description: response.data.data.description, tagsText: response.data.data.tags.join(', ') });
     } catch (error) {
@@ -345,12 +345,44 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                   <label className="module-overlay__form-label">Title <span className="module-overlay__required">*</span></label>
                   <input className="addOrg-form-input" type="text" name="title" value={form.title} onChange={handleChange} placeholder="Enter learning path name" autoComplete="off" required style={{ width: '100%' }} />
                 </div>
-                <button type='button' className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(form.title)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
+                
                 <div className="module-overlay__form-group">
                   <label className="module-overlay__form-label">Description <span className="module-overlay__required">*</span></label>
                   <textarea className="addOrg-form-input" name="description" value={form.description} onChange={handleChange} placeholder="Enter detailed description" rows={4} style={{ width: '100%' }} />
                 </div>
+                <button
+                  type="button"
+                  className="survey-assess-btn-link"
+                  onClick={() => setAiHelpOpen(prev => !prev)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4f46e5', background: 'transparent' }}
+                  aria-expanded={aiHelpOpen}
+                  aria-controls="ai-help-panel"
+                >
+                  <Info size={16} /> How create with ai works
+                </button>
+                <button type='button' className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(form.title)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
+                {aiHelpOpen && (
+                  <div
+                    id="ai-help-panel"
+                    style={{
+                      width: '70%',
+                      margin: '0 auto 12px',
+                      background: '#eef2ff',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: 8,
+                      padding: '10px 12px',
+                      color: '#1f2937',
+                      fontSize: 14
+                    }}
+                  >
+                    <div style={{ fontWeight: 600, marginBottom: 6 }}>Create with AI – How it works</div>
+                    <ul style={{ marginLeft: 16, listStyle: 'disc' }}>
+                      <li>Fill <strong>Title</strong> and <strong>Description</strong>. These are required to enable the button.</li>
 
+                      <li>Click <strong>“Create with AI ✨”</strong>And wait for a moment, You get enhanced title,description,tags and learning outcomes</li>
+                    </ul>
+                  </div>
+                )}
 
 
                 <div className="module-overlay__form-group">
@@ -506,7 +538,8 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                           {itemsByType[pickerType]
                             .filter(x => !pickerSearch || (x.title || '').toLowerCase().includes(pickerSearch.toLowerCase()))
                             .map(x => {
-                              const isSelected = pathItems.some(it => it.type === pickerType && it.id === x.id);
+                              const isSelected = pathItems.some(it => it.id === x.id || it.uuid === x.uuid);
+                              // console.log(isSelected)
                               return (
                                 <button
                                   key={x.id}
@@ -540,6 +573,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                                       const newItem = { type: pickerType, id: x.id, uuid: x.uuid, title: x.title };
                                       // console.log(newItem)
                                       setPathItems(prev => [...prev, newItem]);
+                                      // console.log(newItem)
                                       setPickerOpen(false);
                                     }
                                   }}
@@ -551,7 +585,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                                   {pickerType === 'assessment' && typeof x.totalQuestions !== 'undefined' && (
                                     <span className="lp-picker-meta" style={{ marginLeft: 'auto', fontSize: 12, color: '#64748b' }}>{x.totalQuestions} Qs</span>
                                   )}
-                                  {isSelected && <span className="lp-picker-status">(Selected)</span>}
+                                  {isSelected && <span className=""><CheckCircle size={16} style={{ color: "green" }} /></span>}
                                 </button>
                               );
                             })}
@@ -691,13 +725,24 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                         </select>
                         <select className="addOrg-form-input" name="subteam" value={form.subteam._id || initialData?.subteam} onChange={handleChange} style={{ width: '100%' }}>
                           <option value="">Select a Sub-team</option>
-                          {teams.filter((team) => team.id === form.team._id || team._id === initialData?.team).map((subteam) => (
-                            subteam.subTeams.map((subteam) => (
-                              <option key={subteam.id} value={subteam._id}>
-                                {subteam.name}
-                              </option>
+                          {initialData?.team.length > 0 ?
+                            teams.filter((team) => team._id === initialData?.team).map((subteam) => (
+                              subteam.subTeams.map((subteam) => (
+                                <option key={subteam.id} value={subteam._id}>
+                                  {subteam.name}
+                                </option>
+                              ))
                             ))
-                          ))}
+
+                            :
+                            teams.filter((team) => team.id === form.team).map((subteam) => (
+                              subteam.subTeams.map((subteam) => (
+                                <option key={subteam.id} value={subteam._id}>
+                                  {subteam.name}
+                                </option>
+                              ))
+                            ))
+                          }
                         </select>
                       </div>
                     </div>
@@ -821,7 +866,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                       order: index,
                       ...(it.type === 'assessment' ? { questions: Number(it.questions) || undefined } : {})
                     }));
-                    const payload = { ...form,duration: form.duration || initialData?.duration || 0, tags, lessons };
+                    const payload = { ...form, duration: form.duration || initialData?.duration || 0, tags, lessons };
                     // console.log(payload);
                     setPreviewData(payload);
                     setPreview(true);

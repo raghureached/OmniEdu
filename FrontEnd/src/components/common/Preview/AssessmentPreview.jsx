@@ -6,7 +6,7 @@ import { RiDeleteBin2Fill } from 'react-icons/ri';
 import { EyeIcon, Plus, ThumbsUp, ThumbsDown, Send, Play, Pause, Volume2, VolumeX, Maximize, Minimize, ChevronLast, ChevronLeft, ChevronRight, FileText, Check } from 'lucide-react';
 import AssessmentQuiz from '../../Assessments/Assessment';
 const AssessmentPreview = ({ isOpen, onClose, data, embedded }) => {
-    console.log("data in Assessment in main preview", data)
+    // console.log("data in Assessment in main preview", data)
     const navigate = useNavigate();
     const [showQuiz, setShowQuiz] = useState(false);
     const [activeTab, setActiveTab] = useState('preview');
@@ -310,20 +310,12 @@ const AssessmentPreview = ({ isOpen, onClose, data, embedded }) => {
                                             </div>
 
                                             <div className="global-preview-small-row">
-
-
                                                 <div className="global-preview-card">
-                                                    <h3>Tags</h3>
-                                                    <div className="global-preview-tags-wrap">
-                                                        {tags.length ? (
-                                                            tags.map((t, idx) => (
-                                                                <div key={idx} className="global-preview-tag">{t}</div>
-                                                            ))
-                                                        ) : (
-                                                            <div className="global-preview-tag">No tags</div>
-                                                        )}
-                                                    </div>
+                                                    <h3>Overview</h3>
+                                                    <p>{description.slice(0, 250)}{description.length > 250 ? '...' : ''}</p>
                                                 </div>
+
+                                                
                                                 {/* <div className="global-preview-card">
                                                     <h3>Number of Questions : {data.questions.length}</h3>
                                                     <h3>Attempts : {data.attempts}</h3>
@@ -341,11 +333,23 @@ const AssessmentPreview = ({ isOpen, onClose, data, embedded }) => {
                                                 )}
                                             </div>
 
-                                            <div className="global-preview-details">
+                                            <div className="global-preview-details" style={{width:"100%"}}>
                                                 <div className="global-preview-card">
-                                                    <h3>Overview</h3>
-                                                    <p>{description}</p>
+                                                    <h3>Tags</h3>
+                                                    <div className="global-preview-tags-wrap">
+                                                        {tags.length ? (
+                                                            tags.slice(0, 3).map((t, idx) => (
+                                                                <div key={idx} className="global-preview-tag">{t}</div>
+                                                            ))
+                                                        ) : (
+                                                            <div className="global-preview-tag">No tags</div>
+                                                        )}
+                                                        {tags.length > 3 && (
+                                                            <div className="global-preview-tag">+{tags.length - 3} more</div>
+                                                        )}
+                                                    </div>
                                                 </div>
+                                                
 
 
 

@@ -195,7 +195,7 @@ const groupSlice = createSlice({
     loading: false,
     error: null,
     currentPage: 1,
-    pageSize: 10,
+    pageSize: 20,
     filters: {},
     importSuccess: false,
     memberCountsByTeam: {},
@@ -419,7 +419,13 @@ const groupSlice = createSlice({
         state.error = action.payload?.message || 'Failed to import groups';
       })
       .addCase(fetchUsers.fulfilled, (state, action) => {
-        const { teamCounts, subTeamCounts } = buildMemberCountMaps(action.payload || []);
+        const payload = action.payload || {};
+        const users = Array.isArray(payload.users)
+          ? payload.users
+          : Array.isArray(payload)
+            ? payload
+            : [];
+        const { teamCounts, subTeamCounts } = buildMemberCountMaps(users);
         state.memberCountsByTeam = teamCounts;
         state.memberCountsBySubTeam = subTeamCounts;
         applyMemberCountsToGroups(state);

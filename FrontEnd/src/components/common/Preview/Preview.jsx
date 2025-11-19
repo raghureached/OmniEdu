@@ -313,17 +313,10 @@ const ModulePreview = ({ isOpen, onClose, data,embedded }) => {
                                                     )}
                                                 </div>
 
+                                                
                                                 <div className="global-preview-card">
-                                                    <h3>Tags</h3>
-                                                    <div className="global-preview-tags-wrap">
-                                                        {tags.length ? (
-                                                            tags.map((t, idx) => (
-                                                                <div key={idx} className="global-preview-tag">{t}</div>
-                                                            ))
-                                                        ) : (
-                                                            <div className="global-preview-tag">No tags</div>
-                                                        )}
-                                                    </div>
+                                                    <h3>Overview</h3>
+                                                    <p style={{color:"#0f1724",fontWeight:"400"}}>{description.slice(0, 250)}...</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -338,27 +331,41 @@ const ModulePreview = ({ isOpen, onClose, data,embedded }) => {
                                             </div>
 
                                             <div className="global-preview-details">
-                                                <div className="global-preview-card">
-                                                    <h3>Overview</h3>
-                                                    <p style={{color:"#0f1724",fontWeight:"400"}}>{description}</p>
+                                                
+                                                <div className="global-preview-card" style={{height:"fit-content"}}>
+                                                    <h3>Tags</h3>
+                                                    <div className="global-preview-tags-wrap">
+                                                        {tags.length ? (
+                                                            
+                                                            tags.slice(0, 3).map((t, idx) => (
+                                                                <div key={idx} className="global-preview-tag">{t}</div>
+                                                            ))
+                                                        ) : (
+                                                            <div className="global-preview-tag">No tags</div>
+                                                        )}
+                                                        {tags.length > 3 && (
+                                                            <span className="global-preview-tag">+{tags.length - 3} more</span>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                              
-                                                <div className="global-preview-card">
+                                                <div className="global-preview-card" style={{height:"fit-content"}}>
                                                     <h3>What you'll learn</h3>
                                                     {outcomes.length ? (
                                                         <ul className="global-preview-learn-list">
-                                                            {outcomes.map((o, idx) => (
+                                                            {outcomes.slice(0, 2).map((o, idx) => (
                                                                 <li key={idx} style={{fontWeight:"400"}}>✅ {o}</li>
                                                             ))}
                                                         </ul>
                                                     ) : (
                                                         <p className="global-preview-prereq">No learning outcomes provided.</p>
                                                     )}
+                                                    {outcomes.length > 2 && (
+                                                        <span className="global-preview-tag">+{outcomes.length - 2} more</span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-
                                     <div className="global-preview-actions">
                                         <div></div>
                                         <div className="global-preview-actions-buttons">

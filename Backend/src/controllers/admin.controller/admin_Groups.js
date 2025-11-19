@@ -226,23 +226,69 @@ const addGroup = async (req, res) => {
       });
     }
   };
+  // const addTeam = async (req, res) => {
+  //   try {
+  //     const { teamName, status } = req.body;
+  //     const team = await Team.create({ name: teamName, status:status.toLowerCase()==="active" ? "Active" : "Inactive",organization_id: req.user.organization_id });
+  //     return res.status(201).json({
+  //       isSuccess: true,
+  //       message: "Team added successfully",
+  //       data: { team }
+  //     });
+  //   } catch (error) {
+  //     return res.status(500).json({
+  //       isSuccess: false,
+  //       message: "Failed to add team",
+  //       error: error.message
+  //     });
+  //   }
+  // };
   const addTeam = async (req, res) => {
-    try {
-      const { teamName, status } = req.body;
-      const team = await Team.create({ name: teamName, status:status.toLowerCase()==="active" ? "Active" : "Inactive",organization_id: req.user.organization_id });
-      return res.status(201).json({
-        isSuccess: true,
-        message: "Team added successfully",
-        data: { team }
-      });
-    } catch (error) {
-      return res.status(500).json({
+  try {
+    const { teamName, status } = req.body;
+
+    if (!teamName || !status) {
+      return res.status(400).json({
         isSuccess: false,
-        message: "Failed to add team",
-        error: error.message
+        message: "teamName and status are required",
+        
       });
     }
-  };
+
+    // 🔍 Check if team already exists within same organization
+    const existingTeam = await Team.findOne({
+      name: teamName,
+      organization_id: req.user.organization_id
+    });
+
+    if (existingTeam) {
+      return res.status(400).json({
+        isSuccess: false,
+        message: "Team with this name already exists",
+      });
+    }
+
+    const team = await Team.create({
+      name: teamName,
+      status: status.toLowerCase() === "active" ? "Active" : "Inactive",
+      organization_id: req.user.organization_id,
+      created_by: req.user._id,
+    });
+
+    return res.status(201).json({
+      isSuccess: true,
+      message: "Team added successfully",
+      data: { team },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      isSuccess: false,
+      message: "Failed to add team",
+      error: error.message,
+    });
+  }
+};
+
   const editTeam = async(req,res) =>{
     try {
       const { teamName, status } = req.body;

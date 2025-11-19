@@ -34,7 +34,6 @@ const addLearningPath = async (req, res) => {
 
     const normalizedLessons = Array.isArray(lessons)
       ? lessons.map((l) => ({
-
         id: l.id,
         type: (l.type || '').toLowerCase(),
         model: typeToModel[(l.type || '').toLowerCase()],

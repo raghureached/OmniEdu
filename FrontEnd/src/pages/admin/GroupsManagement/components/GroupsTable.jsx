@@ -1,4 +1,4 @@
-import { Edit3, Trash2, Eye } from 'lucide-react';
+import { Edit3, Trash2, Eye, Plus } from 'lucide-react';
 import React from 'react';
 
 const GroupsTable = ({
@@ -13,10 +13,11 @@ const GroupsTable = ({
   expandedTeamId,
   renderExpandedContent,
   onShowMembers,
+  onAddSubTeam,
   currentPage,
   totalPages,
   handlePageChange,
-}) => {
+  }) => {
   // console.log(groups)
   return (
     <>
@@ -93,7 +94,7 @@ const GroupsTable = ({
 
                 {/* 6: Actions */}
                 <div className="col-actions" data-label="Actions" style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-                  <button
+                <button
                     className={`global-action-btn ${isExpanded ? 'active' : ''}`}
                     onClick={() => onTogglePreview && onTogglePreview(group)}
                     aria-label={`Preview team ${group.teamName}`}
@@ -101,16 +102,24 @@ const GroupsTable = ({
                     <Eye size={16} />
                   </button>
                   <button
-                    className="global-action-btn delete"
-                    onClick={() => handleDeleteGroup(group.id)}
+                    className="global-action-btn"
+                    onClick={() => onAddSubTeam && onAddSubTeam(group)}
+                    aria-label={`Add subteam to ${group.teamName}`}
                   >
-                    <Trash2 size={16} />
+                    <Plus size={16} />
                   </button>
                   <button className="global-action-btn edit" onClick={() => {
                     handleEditGroup(group)
                   }}>
                     <Edit3 size={16} />
                   </button>
+                  <button
+                    className="global-action-btn delete"
+                    onClick={() => handleDeleteGroup(group.id)}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                 
                 </div>
               </div>
               {isExpanded && renderExpandedContent && (

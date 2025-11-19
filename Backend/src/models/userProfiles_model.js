@@ -49,6 +49,11 @@ const userProfileSchema = new mongoose.Schema(
     employee_id: {
       type: String,
     },
+    custom1: {
+      type: String,
+      default: null,
+      trim: true,
+    },
   },
   {
     timestamps: true,

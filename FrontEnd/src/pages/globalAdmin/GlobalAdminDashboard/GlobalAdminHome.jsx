@@ -135,17 +135,17 @@ const GlobalAdminHome = () => {
 
           <div className="admin-welcome-description">
             <p>
-              Manage your organization's learning content, track user progress, and create engaging educational experiences.
+              Manage your learning content, track organization progress, and create engaging educational experiences.
             </p>
           </div>
         </div>
 
         {/* Message Board (from Global Admin) */}
-        <div className="admin-message-card">
+        {/* <div className="admin-message-card">
           <div className="admin-message-card-header">
             <h2 className="admin-message-card-title">Message Board</h2>
-          </div>
-          <div className="admin-message-card-body">
+          </div> */}
+          {/* <div className="admin-message-card-body">
             {loading ? (
               <div className="admin-message-loading">Loading messages...</div>
             ) : (
@@ -169,8 +169,8 @@ const GlobalAdminHome = () => {
                 )}
               </>
             )}
-          </div>
-        </div>
+          </div> */}
+        {/* </div>   */}
 
 
 

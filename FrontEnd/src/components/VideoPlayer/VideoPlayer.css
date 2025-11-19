@@ -1,0 +1,152 @@
+.videoP-player {
+  background: #000;
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.videoP-video {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #000;
+}
+
+  .vc-btn {
+    appearance: none;
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    font-size: 12px;
+    transition: background 0.18s ease, transform 0.12s ease, border-color 0.18s ease;
+  }
+  .vc-btn:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.25); }
+  .vc-btn:active { transform: translateY(1px); }
+
+
+.videoP-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.videoP-left,
+.videoP-center,
+.videoP-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* .videoP-left { min-width: 180px; } */
+.videoP-center { flex: 1; }
+.videoP-right { min-width: 220px; justify-content: flex-end; gap: 10px; margin-left: auto; }
+
+.videoP-time {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.videoP-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: inherit;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.videoP-btn svg { stroke: currentColor; }
+
+.videoP-btn:hover { background: rgba(255, 255, 255, 0.12); }
+.videoP-btn:active { opacity: 0.8; }
+
+.videoP-speed {
+  min-width: 42px;
+  padding: 0 6px;
+  font-size: 12px;
+}
+
+.videoP-seek {
+  -webkit-appearance: none;
+  cursor: pointer;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  outline: none;
+}
+
+.videoP-seek:hover { background: rgba(255, 255, 255, 0.35); }
+
+.videoP-seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  margin-top: -5px;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.15);
+}
+
+.videoP-seek::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border: none;
+  border-radius: 50%;
+}
+
+.videoP-seek::-webkit-slider-runnable-track {
+  height: 4px;
+  background: linear-gradient(to right, #fff 0 var(--val, 0%), rgba(255,255,255,0.25) var(--val, 0%) 100%);
+  border-radius: 999px;
+}
+
+.videoP-volume {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 96px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+}
+
+.videoP-volume::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  margin-top: -4px;
+}
+
+.videoP-volume::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border: none;
+  border-radius: 50%;
+}

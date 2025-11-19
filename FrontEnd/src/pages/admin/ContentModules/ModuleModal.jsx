@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, EyeIcon, Loader, Plus, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, EyeIcon, Info, Loader, Plus, X } from 'lucide-react';
 import './ModuleModal.css';
 import { RiDeleteBin2Fill } from 'react-icons/ri';
 import { useDispatch, useSelector } from 'react-redux';
@@ -10,7 +10,7 @@ import api from '../../../services/apiOld';
 import FullRichTextEditor from './RichText';
 import CustomError from '../../../components/common/Error/Error';
 import { GoBook, GoX } from 'react-icons/go';
-import { admincreateContent, adminupdateContent,enhanceText } from '../../../store/slices/adminModuleSlice';
+import { admincreateContent, adminupdateContent, enhanceText } from '../../../store/slices/adminModuleSlice';
 const categories = [
     "Cyber Security",
     // "POSH (Prevention of Sexual Harassment)",
@@ -34,6 +34,7 @@ const ModuleModal = ({
     showModal, setShowModal, newContent, handleInputChange, showEditModal, setShowEditModal, editContentId, drafts, setDrafts, handleRichInputChange, error
 }) => {
     const [currentStep, setCurrentStep] = useState(1);
+    const [aiHelpOpen, setAiHelpOpen] = useState(false);
     const [learningOutcomes, setLearningOutcomes] = useState(newContent.learningOutcomes || ['']);
     const [tags, setTags] = useState(newContent.tags || []);
     const [tagInput, setTagInput] = useState('');
@@ -54,6 +55,33 @@ const ModuleModal = ({
         } catch (e) {
             return false;
         }
+    };
+
+    // Normalize well-known providers (e.g., YouTube) for embedding
+    const normalizeExternalUrl = (url) => {
+        const normalizeYouTube = (raw) => {
+            try {
+                const u = new URL(raw);
+                const host = u.hostname.replace(/^www\./, '');
+                // Short link: youtu.be/<id>
+                if (host === 'youtu.be') {
+                    const id = u.pathname.replace(/^\//, '');
+                    return id ? `https://www.youtube.com/embed/${id}` : raw;
+                }
+                // Standard watch URL: youtube.com/watch?v=<id>
+                if ((host === 'youtube.com' || host === 'm.youtube.com') && u.pathname === '/watch') {
+                    const id = u.searchParams.get('v');
+                    if (id) return `https://www.youtube.com/embed/${id}`;
+                }
+                // Already an embed URL
+                if ((host === 'youtube.com' || host === 'm.youtube.com') && u.pathname.startsWith('/embed/')) {
+                    return raw;
+                }
+            } catch (_) {}
+            return raw;
+        };
+        // Extend here for other providers if needed
+        return normalizeYouTube(url);
     };
     useEffect(() => {
         const fetchTeams = async () => {
@@ -138,7 +166,7 @@ const ModuleModal = ({
             case 2:
                 return contentType === "Upload File" ? newContent.primaryFile : newContent.externalResource || newContent.richText;
             case 3:
-                return newContent.duration && newContent.category && newContent.trainingType 
+                return newContent.duration && newContent.category && newContent.trainingType
             default:
                 return true;
         }
@@ -215,7 +243,7 @@ const ModuleModal = ({
     const closeFilePreview = () => {
         setFilePreview((prev) => {
             if (prev.isBlob && prev.url) {
-                try { URL.revokeObjectURL(prev.url); } catch (_) {}
+                try { URL.revokeObjectURL(prev.url); } catch (_) { }
             }
             return { open: false, url: null, name: '', type: '', isBlob: false };
         });
@@ -306,7 +334,7 @@ const ModuleModal = ({
                                     <input
                                         type="text"
                                         name="title"
-                                        value={newContent.title }
+                                        value={newContent.title}
                                         onChange={handleInputChange}
                                         className="addOrg-form-input"
                                         placeholder="Enter module title"
@@ -338,14 +366,45 @@ const ModuleModal = ({
 
 
                                 </div>
+                                <button
+                                    type="button"
+                                    className="survey-assess-btn-link"
+                                    onClick={() => setAiHelpOpen(prev => !prev)}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4f46e5', background: 'transparent' }}
+                                    aria-expanded={aiHelpOpen}
+                                    aria-controls="ai-help-panel"
+                                >
+                                    <Info size={16} /> How create with ai works
+                                </button>
                                 <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(newContent.title, newContent.description)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
-
+                                {aiHelpOpen && (
+                                        <div
+                                            id="ai-help-panel"
+                                            style={{
+                                                width: '70%',
+                                                margin: '0 auto 12px',
+                                                background: '#eef2ff',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: 8,
+                                                padding: '10px 12px',
+                                                color: '#1f2937',
+                                                fontSize: 14
+                                            }}
+                                        >
+                                            <div style={{ fontWeight: 600, marginBottom: 6 }}>Create with AI – How it works</div>
+                                            <ul style={{ marginLeft: 16, listStyle: 'disc' }}>
+                                                <li>Fill <strong>Title</strong> and <strong>Description</strong>. These are required to enable the button.</li>
+                                                
+                                                <li>Click <strong>“Create with AI ✨”</strong>And wait for a moment, You get enhanced title,description,tags and learning outcomes</li>
+                                            </ul>
+                                        </div>
+                                    )}
                             </div>
 
-                            <div className="module-overlay__form-group" style={{marginTop:'20px'}}>
+                            <div className="module-overlay__form-group" style={{ marginTop: '20px' }}>
                                 <label className="module-overlay__form-label">
-                                    <span style={{display:'flex',alignItems:'center',gap:'5px'}}>Learning Outcomes <span className="module-overlay__required">*</span>
-                                    {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}</span>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Learning Outcomes <span className="module-overlay__required">*</span>
+                                        {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}</span>
                                 </label>
                                 <div className="module-overlay__learning-outcomes" >
                                     {learningOutcomes?.map((outcome, index) => (
@@ -386,8 +445,8 @@ const ModuleModal = ({
 
                             <div className="module-overlay__form-group">
                                 <label className="module-overlay__form-label">
-                                    <span style={{display:'flex',alignItems:'center',gap:'5px'}}>Tags<span className='module-overlay__required'>*</span>
-                                    {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}</span>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Tags<span className='module-overlay__required'>*</span>
+                                        {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}</span>
                                 </label>
                                 <input
                                     type="text"
@@ -432,7 +491,7 @@ const ModuleModal = ({
                                 />
                             </div>
 
-                            
+
 
                             <div className="module-overlay__form-group">
                                 <label className="module-overlay__form-label">Thumbnail</label>
@@ -602,14 +661,17 @@ const ModuleModal = ({
                                     <FullRichTextEditor value={newContent.richText || ''} onChange={handleRichInputChange} />
 
                                     <label className="module-overlay__form-label" style={{ marginTop: '20px' }}>External Resource</label>
-                                    <span style={{ display: 'flex', alignItems: 'center' ,gap:'10px'}}>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <input
                                             type="text"
                                             name="externalResource"
                                             value={newContent.externalResource || ''}
-                                            onChange={handleInputChange}
+                                            onChange={(e) => {
+                                                const normalized = normalizeExternalUrl(e.target.value);
+                                                handleInputChange({ target: { name: 'externalResource', value: normalized } });
+                                            }}
                                             className="addOrg-form-input"
-                                            placeholder="Add external resource URL"
+                                            placeholder="Add external resource URL (YouTube links auto-convert to embed)"
                                             style={{ width: '100%' }}
                                         />
                                         {isValidUrl && (
@@ -844,10 +906,10 @@ const ModuleModal = ({
                                     />
                                     Allow learners submissions
                                 </label>
-                                <p style={{ fontSize: '12px', color: '#666',marginLeft:"30px" }}>Allow learners to submit their work for grading and feedback.
+                                <p style={{ fontSize: '12px', color: '#666', marginLeft: "30px" }}>Allow learners to submit their work for grading and feedback.
                                     Please enable this if you have an additional file.
                                 </p>
-                                <div className="module-overlay__form-group" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' ,marginTop:"120px"}}>
+                                <div className="module-overlay__form-group" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: "120px" }}>
                                     {/* <button className='btn-primary' onClick={handleSaveDraft} disabled={editContentId}>Save Draft</button> */}
                                 </div>
                             </div>
@@ -907,7 +969,7 @@ const ModuleModal = ({
                         </button>
 
                         <div className="module-overlay__action-buttons" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                                    {currentStep===totalSteps && <button className='btn-secondary' onClick={() => setPreview(true)} disabled={!canProceed()} ><EyeIcon size={16} /> Preview</button>}
+                            {currentStep === totalSteps && <button className='btn-secondary' onClick={() => setPreview(true)} disabled={!canProceed()} ><EyeIcon size={16} /> Preview</button>}
 
                             <button className="btn-secondary" onClick={() => setShowModal(false)} aria-label="Cancel " disabled={uploading}>
                                 Cancel

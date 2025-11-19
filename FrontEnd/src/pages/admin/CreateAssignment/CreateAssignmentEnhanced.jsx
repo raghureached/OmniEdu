@@ -96,7 +96,6 @@ const CreateAssignmentEnhanced = () => {
   const goToStep = (step) => {
     if (validateStep(currentStep)) {
       setCurrentStep(step);
-      window.scrollTo(0, 0);
     }
   };
 
@@ -232,8 +231,28 @@ const CreateAssignmentEnhanced = () => {
     setCustomIntervalUnit('days');
     setElementSchedules([]);
     setEnforceOrder(false);
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const containers = ['.cae-scope', '.main-content', '.container'];
+    containers.forEach(sel => {
+      const el = document.querySelector(sel);
+      if (el) {
+        if (typeof el.scrollTo === 'function') el.scrollTo({ top: 0, behavior: 'smooth' });
+        el.scrollTop = 0;
+      }
+    });
   };
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const containers = ['.cae-scope', '.main-content', '.container'];
+    containers.forEach(sel => {
+      const el = document.querySelector(sel);
+      if (el) {
+        if (typeof el.scrollTo === 'function') el.scrollTo({ top: 0, behavior: 'smooth' });
+        el.scrollTop = 0;
+      }
+    });
+  }, [currentStep]);
 
   if (loading) {
     return <LoadingScreen text="Fetching Users..." />;
@@ -242,10 +261,10 @@ const CreateAssignmentEnhanced = () => {
   return (
     <div className="cae-scope container">
       {/* Page Header */}
-      <div className="page-header">
-        <h1>Assignment Manager</h1>
-        <p>Assign learning content to users with customizable schedules and reminders</p>
-      </div>
+        {/* <div className="page-header">
+          <h1>Assignment Manager</h1>
+          <p>Assign learning content to users with customizable schedules and reminders</p>
+        </div> */}
 
       {/* Progress Steps */}
       <div className="progress-steps">
@@ -361,7 +380,7 @@ const CreateAssignmentEnhanced = () => {
         </div>
 
         {/* Right Column: Summary Panel */}
-        <SummaryPanel
+        {/* <SummaryPanel
           selectedContentType={selectedContentType}
           selectedItem={selectedItem}
           userMode={userMode}
@@ -376,7 +395,7 @@ const CreateAssignmentEnhanced = () => {
           recurringInterval={recurringInterval}
           customIntervalValue={customIntervalValue}
           customIntervalUnit={customIntervalUnit}
-        />
+        /> */}
       </div>
     </div>
   );

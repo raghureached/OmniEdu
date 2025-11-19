@@ -122,6 +122,7 @@ const LearningPaths = () => {
   const handleEditPath = (path) => {
     setIsModalOpen(true)
     setEditingPath(path)
+    // console.log(path)
   }
   const filteredPaths = learningPaths.filter(path => {
     const matchesName = path.title.toLowerCase().includes(nameSearch.toLowerCase());

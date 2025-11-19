@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Search,
   Filter,
@@ -33,6 +33,7 @@ import {
   deselectAllUsers
 } from '../../../store/slices/userSlice';
 import { addUsersToGroup } from '../../../store/slices/userSlice';
+import { createTeam, createSubTeam } from '../../../store/slices/groupSlice';
 import api from '../../../services/api';
 import { useNavigate } from 'react-router-dom';
 import './UsersManagement.css';
@@ -41,14 +42,26 @@ import LoadingScreen from '../../../components/common/Loading/Loading';
 import { GoX } from 'react-icons/go';
 import UserPreview from './components/UserPreview';
 import BulkAssignToTeam from './components/BulkAssignToTeam';
+import * as XLSX from 'xlsx';
 
 const UsersManagement = () => {
   const dispatch = useDispatch();
-  const { users, loading, error, filters } = useSelector((state) => ({
+  const {
+    users,
+    loading,
+    error,
+    filters,
+    totalCount,
+    currentPage: currentPageState,
+    pageSize: pageSizeState,
+  } = useSelector((state) => ({
     users: state.users.users,
     loading: state.users.loading,
     error: state.users.error,
-    filters: state.users.filters || {}
+    filters: state.users.filters || {},
+    totalCount: state.users.totalCount || 0,
+    currentPage: state.users.currentPage || 1,
+    pageSize: state.users.pageSize || 6,
   }));
 
   const resolveUserId = (user) => user?.uuid || user?._id || user?.id || '';
@@ -62,6 +75,8 @@ const UsersManagement = () => {
   const [assignTeamOpen, setAssignTeamOpen] = useState(false);
   const [assignTeamId, setAssignTeamId] = useState('');
   const [assignSubTeamId, setAssignSubTeamId] = useState('');
+  const [assignTargetIds, setAssignTargetIds] = useState([]);
+  const [assignOrigin, setAssignOrigin] = useState(null);
   const [teamAssignments, setTeamAssignments] = useState([]);
   const [removedAssignments, setRemovedAssignments] = useState([]);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -76,6 +91,8 @@ const UsersManagement = () => {
   const [roles, setRoles] = useState([]);
   const [teams, setTeams] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -121,7 +138,7 @@ const UsersManagement = () => {
   }, [dispatch, filters]);
 
   useEffect(() => {
-    const desiredLimit = 6;
+    const desiredLimit = 100;
     if ((filters?.limit ?? null) !== desiredLimit) {
       dispatch(setFilters({
         ...(filters || {}),
@@ -318,50 +335,345 @@ const UsersManagement = () => {
   };
 
 
-  const handleExportUsers = () => {
-    if (!Array.isArray(users) || users.length === 0) {
-      alert('No users available to export.');
+  const resolveTeamIdentifier = (team) => team?._id || team?.uuid || team?.id || team?.value || '';
+  const resolveSubTeamIdentifier = (subTeam) => subTeam?._id || subTeam?.uuid || subTeam?.id || subTeam?.value || '';
+  const toTrimmedString = (value) => {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    return String(value).trim();
+  };
+
+  const findRoleIdByName = (roleName) => {
+    if (!roleName) return null;
+    const target = roleName.trim().toLowerCase();
+    const matched = roles.find((roleItem) => {
+      const label = roleItem?.name || roleItem?.title || roleItem?.label || roleItem?.value;
+      return label && label.toString().trim().toLowerCase() === target;
+    });
+    return matched ? (matched._id || matched.id || matched.uuid || matched.value) : null;
+  };
+
+  const handleImportButtonClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleImportUsers = async (event) => {
+    const file = event?.target?.files?.[0];
+    if (!file) {
       return;
     }
 
-    const rows = users.map((user) => {
-      const assignments = computeAssignments(user);
-      const teamNames = assignments.map((assignment) => assignment.teamName).filter(Boolean);
-      const subTeamNames = assignments.map((assignment) => assignment.subTeamName).filter(Boolean);
+    setIsImporting(true);
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+        alert('No sheets found in the selected file.');
+        return;
+      }
+
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+      if (!Array.isArray(rawRows) || rawRows.length === 0) {
+        alert('The selected file does not contain any data to import.');
+        return;
+      }
+
+      const normalizeRow = (row) => {
+        const normalized = {};
+        Object.entries(row || {}).forEach(([key, value]) => {
+          if (!key) return;
+          normalized[key.toString().trim().toLowerCase()] = value;
+        });
+        return normalized;
+      };
+
+      const getValue = (normalizedRow, keys) => {
+        for (const key of keys) {
+          const lookupKey = key.trim().toLowerCase();
+          if (Object.prototype.hasOwnProperty.call(normalizedRow, lookupKey)) {
+            return normalizedRow[lookupKey];
+          }
+        }
+        return '';
+      };
+
+      const teamLookup = new Map();
+      const subTeamLookup = new Map();
+
+      const registerTeam = (teamObj) => {
+        const identifier = resolveTeamIdentifier(teamObj);
+        const nameKey = toTrimmedString(teamObj?.name || teamObj?.teamName).toLowerCase();
+        if (nameKey) {
+          teamLookup.set(nameKey, teamObj);
+        }
+        if (identifier && Array.isArray(teamObj?.subTeams)) {
+          teamObj.subTeams.forEach((subTeam) => {
+            const subKey = `${identifier}::${toTrimmedString(subTeam?.name || subTeam?.subTeamName).toLowerCase()}`;
+            if (subKey.endsWith('::')) return;
+            subTeamLookup.set(subKey, subTeam);
+          });
+        }
+      };
+
+      teams.forEach((team) => registerTeam(team));
+
+      const ensureTeamByName = async (teamName) => {
+        const normalizedName = teamName.trim();
+        const lookupKey = normalizedName.toLowerCase();
+        if (teamLookup.has(lookupKey)) {
+          return teamLookup.get(lookupKey);
+        }
+
+        const payload = { teamName: normalizedName, status: 'Active' };
+        const created = await dispatch(createTeam(payload)).unwrap();
+        const createdTeam = created?.team || created;
+        if (!createdTeam) {
+          throw new Error(`Failed to create team "${normalizedName}"`);
+        }
+        const normalizedTeam = {
+          ...createdTeam,
+          name: createdTeam.name || normalizedName,
+          subTeams: Array.isArray(createdTeam.subTeams) ? createdTeam.subTeams : [],
+        };
+        registerTeam(normalizedTeam);
+        setTeams((prev) => {
+          const exists = prev.some((teamItem) => resolveTeamIdentifier(teamItem) === resolveTeamIdentifier(normalizedTeam));
+          if (exists) return prev;
+          return [...prev, normalizedTeam];
+        });
+        setDepartments((prev) => {
+          const exists = prev.some((teamItem) => resolveTeamIdentifier(teamItem) === resolveTeamIdentifier(normalizedTeam));
+          if (exists) return prev;
+          return [...prev, normalizedTeam];
+        });
+        return normalizedTeam;
+      };
+
+      const ensureSubTeamByName = async (teamObj, subTeamName) => {
+        const teamId = resolveTeamIdentifier(teamObj);
+        if (!teamId) {
+          throw new Error(`Missing identifier for team "${teamObj?.name || teamObj?.teamName || subTeamName}"`);
+        }
+        const normalizedName = subTeamName.trim();
+        const key = `${teamId}::${normalizedName.toLowerCase()}`;
+        if (subTeamLookup.has(key)) {
+          return subTeamLookup.get(key);
+        }
+
+        const existing = Array.isArray(teamObj?.subTeams)
+          ? teamObj.subTeams.find((sub) => toTrimmedString(sub?.name || sub?.subTeamName).toLowerCase() === normalizedName.toLowerCase())
+          : null;
+        if (existing) {
+          subTeamLookup.set(key, existing);
+          return existing;
+        }
+
+        const payload = { subTeamName: normalizedName, team_id: teamId };
+        const created = await dispatch(createSubTeam(payload)).unwrap();
+        const createdSubTeam = created?.subTeam || created?.team || created;
+        if (!createdSubTeam) {
+          throw new Error(`Failed to create sub team "${normalizedName}" for team "${teamObj?.name || teamObj?.teamName}"`);
+        }
+        const normalizedSubTeam = {
+          ...createdSubTeam,
+          name: createdSubTeam.name || normalizedName,
+        };
+        subTeamLookup.set(key, normalizedSubTeam);
+        teamObj.subTeams = Array.isArray(teamObj.subTeams)
+          ? [...teamObj.subTeams, normalizedSubTeam]
+          : [normalizedSubTeam];
+        setTeams((prev) => prev.map((teamItem) => {
+          if (resolveTeamIdentifier(teamItem) !== teamId) {
+            return teamItem;
+          }
+          const existingSubs = Array.isArray(teamItem.subTeams) ? teamItem.subTeams : [];
+          const alreadyPresent = existingSubs.some((subItem) => resolveSubTeamIdentifier(subItem) === resolveSubTeamIdentifier(normalizedSubTeam));
+          if (alreadyPresent) {
+            return teamItem;
+          }
+          return {
+            ...teamItem,
+            subTeams: [...existingSubs, normalizedSubTeam],
+          };
+        }));
+        return normalizedSubTeam;
+      };
+
+      let successCount = 0;
+      const errors = [];
+
+      for (let index = 0; index < rawRows.length; index += 1) {
+        const rowNumber = index + 2; // account for header row
+        const normalizedRow = normalizeRow(rawRows[index]);
+
+        const name = toTrimmedString(getValue(normalizedRow, ['name']));
+        const email = toTrimmedString(getValue(normalizedRow, ['email']));
+        const designation = toTrimmedString(getValue(normalizedRow, ['designation']));
+        const teamName = toTrimmedString(getValue(normalizedRow, ['team', 'team name']));
+        const subTeamName = toTrimmedString(getValue(normalizedRow, ['sub team', 'subteam', 'sub team name']));
+        let roleName = toTrimmedString(getValue(normalizedRow, ['role']));
+        const custom1 = toTrimmedString(getValue(normalizedRow, ['custom 1', 'custom1']));
+
+        if (!name || !email) {
+          errors.push(`Row ${rowNumber}: Name and Email are required.`);
+          continue;
+        }
+
+        if (!roleName) {
+          roleName = 'General User';
+        }
+
+        const roleId = findRoleIdByName(roleName);
+        if (!roleId) {
+          errors.push(`Row ${rowNumber}: Role "${roleName}" not found.`);
+          continue;
+        }
+
+        let teamId = '';
+        let subTeamId = '';
+
+        try {
+          if (teamName) {
+            const teamObj = await ensureTeamByName(teamName);
+            teamId = resolveTeamIdentifier(teamObj);
+
+            if (subTeamName) {
+              const subTeamObj = await ensureSubTeamByName(teamObj, subTeamName);
+              subTeamId = resolveSubTeamIdentifier(subTeamObj);
+            }
+          }
+        } catch (teamError) {
+          errors.push(`Row ${rowNumber}: ${teamError?.message || 'Failed to process team/subteam.'}`);
+          continue;
+        }
+
+        const payload = {
+          name,
+          email,
+          designation,
+          team: teamId || undefined,
+          subteam: subTeamId || undefined,
+          role: roleId,
+          custom1,
+          invite: false,
+        };
+
+        try {
+          await dispatch(createUser(payload)).unwrap();
+          successCount += 1;
+        } catch (creationError) {
+          const message = creationError?.message || creationError?.error || 'Failed to create user.';
+          errors.push(`Row ${rowNumber}: ${message}`);
+        }
+      }
+
+      if (successCount > 0) {
+        dispatch(fetchUsers(filters));
+        getTeams();
+      }
+
+      if (errors.length) {
+        console.error('Import completed with errors:', errors);
+        alert(`Import finished. Success: ${successCount}. Failed: ${errors.length}. Check console for details.`);
+      } else {
+        alert(`Import finished successfully. Imported ${successCount} user(s).`);
+      }
+    } catch (error) {
+      console.error('Failed to import users:', error);
+      alert('Failed to import users. Please verify the file format and try again.');
+    } finally {
+      if (event?.target) {
+        // allow re-uploading the same file
+        event.target.value = '';
+      }
+      setIsImporting(false);
+    }
+  };
+
+
+  const handleExportUsers = () => {
+    // Get users to export - selected users if any, otherwise all users
+    const usersToExport = selectedItems.length > 0 
+      ? users.filter(user => selectedItems.includes(resolveUserId(user)))
+      : users;
+
+    console.log('Selected Items:', selectedItems);
+    console.log('Users to export:', usersToExport);
+
+    if (!Array.isArray(usersToExport) || usersToExport.length === 0) {
+      alert(selectedItems.length > 0 
+        ? 'No selected users found to export. Please make sure you have selected users using the checkboxes.' 
+        : 'No users available to export.');
+      return;
+    }
+
+    // Process each user's data for export
+    const rows = usersToExport.map((user) => {
+      const assignments = computeAssignments(user || {});
+      const teamNames = assignments.map(a => a.teamName).filter(Boolean);
+      const subTeamNames = assignments.map(a => a.subTeamName).filter(Boolean);
 
       return {
-        Name: user?.name || '',
-        Email: user?.email || '',
-        Role: typeof user?.global_role_id === 'string'
+        name: user?.name || '',
+        email: user?.email || '',
+        designation: user?.designation || '',
+        role: typeof user?.global_role_id === 'string'
           ? user.global_role_id
           : user?.global_role_id?.name || user?.global_role_id?.title || '',
-        Team: teamNames.join(', '),
-        Subteam: subTeamNames.join(', '),
+        team: teamNames.join(', '),
+        subteam: subTeamNames.join(', ')
       };
     });
 
-    const headers = Object.keys(rows[0]);
-    const escape = (value) => {
-      const stringValue = value ?? '';
-      const normalized = typeof stringValue === 'string' ? stringValue : String(stringValue);
-      const escaped = normalized.replace(/"/g, '""');
-      return `"${escaped}"`;
+    // Define CSV headers in the desired order
+    const headers = ['name', 'email', 'designation', 'role', 'team', 'subteam'];
+    const headerLabels = ['Name', 'Email', 'Designation', 'Role', 'Team', 'Subteam'];
+
+    // Helper function to escape CSV values
+    const escapeCsvValue = (value) => {
+      if (value === null || value === undefined) return '';
+      const stringValue = String(value);
+      // Escape quotes and wrap in quotes if contains comma, newline, or quote
+      const needsQuotes = /[,\n"]/.test(stringValue);
+      const escaped = stringValue.replace(/"/g, '""');
+      return needsQuotes ? `"${escaped}"` : escaped;
     };
 
-    const csvLines = [
-      headers.join(','),
-      ...rows.map((row) => headers.map((header) => escape(row[header])).join(',')),
-    ];
+    // Generate CSV content
+    const csvContent = [
+      headerLabels.join(','),
+      ...rows.map(row => 
+        headers.map(field => escapeCsvValue(row[field] || '')).join(',')
+      )
+    ].join('\n');
 
-    const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `users_export_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    try {
+      // Create and trigger download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `users_export_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      // Clear selected items after successful export
+      if (selectedItems.length > 0) {
+        setSelectedItems([]);
+      }
+    } catch (error) {
+      console.error('Error during export:', error);
+      alert('An error occurred while exporting. Please try again.');
+    }
   };
 
 
@@ -385,16 +697,17 @@ const UsersManagement = () => {
       setRemovedAssignments([]);
 
       setFormData({
+        ...initialFormData,
         name: user.name || '',
-        employeeId: user.employeeId || '',
+        employeeId: profile.employee_id || user.employeeId || '',
         role: roleValue,
-        status: user.status || 'active',
         team: '',
         subteam: '',
         department: user.department || '',
-        designation: user.designation || '',
+        designation: profile.designation || user.designation || '',
         email: user.email || '',
         invite: Boolean(user.invite),
+        custom1: profile.custom1 || user.custom1 || '',
       });
     } else {
       setEditMode(false);
@@ -402,16 +715,8 @@ const UsersManagement = () => {
       setTeamAssignments([]);
       setRemovedAssignments([]);
       setFormData({
-        name: '',
-        employeeId: '',
+        ...initialFormData,
         role: 'user',
-        status: 'active',
-        team: '',
-        subteam: '',
-        department: '',
-        designation: '',
-        email: '',
-        invite: false,
       });
     }
     setShowForm(true);
@@ -423,9 +728,10 @@ const UsersManagement = () => {
     setCurrentUser(null);
     setTeamAssignments([]);
     setRemovedAssignments([]);
+    setFormData(initialFormData);
   };
 
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     name: '',
     employeeId: '',
     role: '',
@@ -435,7 +741,10 @@ const UsersManagement = () => {
     designation: '',
     email: '',
     invite: false,
-  });
+    custom1: '',
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
 
   const handleFormChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -520,21 +829,61 @@ const UsersManagement = () => {
     setPreviewAssignments([]);
   };
 
+  const openAssignToTeamModal = (targetIds = [], origin = null) => {
+    if (!Array.isArray(targetIds) || targetIds.length === 0) {
+      return;
+    }
+    setAssignTargetIds(targetIds);
+    setAssignOrigin(origin);
+    setAssignTeamId('');
+    setAssignSubTeamId('');
+    setAssignTeamOpen(true);
+  };
+
+  const handleAssignToTeam = (userId) => {
+    if (!userId) {
+      return;
+    }
+    openAssignToTeamModal([userId], 'single');
+  };
+
+  const handleOpenAssignForSelected = () => {
+    if (selectedItems.length === 0) {
+      return;
+    }
+    setShowBulkAction(false);
+    openAssignToTeamModal(selectedItems, 'bulk');
+  };
+
   const handleBulkAssignToGroup = async () => {
     if (!assignTeamId) {
       alert('Please select a team');
       return;
     }
+
+    if (!assignTargetIds.length) {
+      alert('No users selected for assignment');
+      return;
+    }
+
+    const targetIds = assignTargetIds;
+    const isBulkAssignment = assignOrigin === 'bulk';
+
     try {
-      await dispatch(addUsersToGroup({ team_id: assignTeamId, sub_team_id: assignSubTeamId || null, userIds: selectedItems })).unwrap();
-      // Refresh users and reset
+      await dispatch(addUsersToGroup({ team_id: assignTeamId, sub_team_id: assignSubTeamId || null, userIds: targetIds })).unwrap();
       setAssignTeamOpen(false);
-      setShowBulkAction(false);
-      setSelectedItems([]);
       setAssignTeamId('');
       setAssignSubTeamId('');
+      setAssignTargetIds([]);
+      setAssignOrigin(null);
+
+      if (isBulkAssignment) {
+        setShowBulkAction(false);
+        setSelectedItems([]);
+      }
+
       dispatch(fetchUsers(filters));
-      alert('Users assigned to the selected team successfully');
+      alert(targetIds.length > 1 ? 'Users assigned to the selected team successfully' : 'User assigned to the selected team successfully');
     } catch (err) {
       console.error(err);
       alert('Failed to assign users to team');
@@ -618,41 +967,34 @@ const UsersManagement = () => {
   };
 
 
-  const handlePageChange = (newPage) => {
-    if (!newPage || newPage === filters.page) return;
-    if (newPage < 1) return;
+  const currentPage = filters.page || currentPageState || 1;
+  const itemsPerPage = filters.limit || pageSizeState || 6;
+  const totalPages = Math.max(1, Math.ceil((totalCount || 0) / itemsPerPage));
+  const paginatedUsers = Array.isArray(users) ? users : [];
+  const currentPageUserIds = paginatedUsers
+    .map((user) => resolveUserId(user))
+    .filter(Boolean);
 
-    const limitValue = filters?.limit || 6;
-    const maxPages = Math.max(1, Math.ceil((users?.length || 0) / limitValue));
-    if (newPage > maxPages) return;
+  const handlePageChange = (newPage) => {
+    if (!newPage || newPage === currentPage) return;
+    if (newPage < 1 || newPage > totalPages) return;
 
     dispatch(setFilters({
       ...filters,
       page: newPage,
+      limit: itemsPerPage,
     }));
   };
-
-  // Pagination
-  const currentPage = filters.page || 1;
-  const itemsPerPage = filters.limit || 6;
-  const totalPages = Math.max(1, Math.ceil((users?.length || 0) / itemsPerPage));
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const paginatedUsers = Array.isArray(users)
-    ? users.slice(indexOfFirstItem, indexOfLastItem)
-    : [];
-  const currentPageUserIds = paginatedUsers
-    .map((user) => resolveUserId(user))
-    .filter(Boolean);
 
   useEffect(() => {
     if (currentPage > totalPages) {
       dispatch(setFilters({
         ...filters,
         page: totalPages,
+        limit: itemsPerPage,
       }));
     }
-  }, [currentPage, totalPages, dispatch, filters]);
+  }, [currentPage, totalPages, dispatch, filters, itemsPerPage]);
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
@@ -660,7 +1002,7 @@ const UsersManagement = () => {
         const combined = new Set(prev);
         currentPageUserIds.forEach((id) => combined.add(id));
         const next = Array.from(combined);
-        setShowBulkAction(next.length > 0);
+        //setShowBulkAction(next.length > 0);
         if (next.length > 0) {
           setShowFilters(false);
         }
@@ -684,14 +1026,14 @@ const UsersManagement = () => {
           return prev;
         }
         const next = [...prev, userId];
-        setShowBulkAction(true);
+        // setShowBulkAction(true);
         setShowFilters(false);
         return next;
       });
     } else {
       setSelectedItems((prev) => {
         const next = prev.filter((id) => id !== userId);
-        setShowBulkAction(next.length > 0);
+        // setShowBulkAction(next.length > 0);
         return next;
       });
     }
@@ -754,7 +1096,8 @@ const UsersManagement = () => {
                 setSearchTerm(e.target.value);
                 dispatch(setFilters({
                   ...filters,
-                  search: e.target.value
+                  search: e.target.value,
+                  page: 1,
                 }));
               }}
             />
@@ -771,32 +1114,47 @@ const UsersManagement = () => {
 
           <div className="controls-right" style={{ position: 'relative' }}>
             <button
-              className="control-btn" style={{ padding: '12px 12px' }}
+              className="control-btn"
+              style={{ padding: '12px 12px' }}
               onClick={toggleFilters}
+              type="button"
             >
               <Filter size={16} />
               Filter
             </button>
-            <button className="control-btn" style={{ padding: '12px 12px' }}>
-              Import <Import size={16} color="#6b7280" />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,.xlsx"
+              style={{ display: 'none' }}
+              onChange={handleImportUsers}
+            />
+            <button
+              className="control-btn"
+              style={{ padding: '12px 12px' }}
+              onClick={handleImportButtonClick}
+              disabled={isImporting}
+              type="button"
+            >
+              {isImporting ? 'Importing…' : 'Import'} <Import size={16} color="#6b7280" />
             </button>
             <button
               className="control-btn"
               style={{ padding: '12px 12px' }}
               onClick={handleExportUsers}
+              type="button"
             >
               Export <Share size={16} color="#6b7280" />
             </button>
 
-
             {showFilters && (
-              <div className="filter-panel" style={{ right: "-8px", top: '49px' }}>
+              <div className="filter-panel" style={{ right: '-8px', top: '49px' }}>
                 <span
                   style={{
-                    cursor: "pointer",
-                    position: "absolute",
-                    right: "10px",
-                    top: "10px"
+                    cursor: 'pointer',
+                    position: 'absolute',
+                    right: '10px',
+                    top: '10px',
                   }}
                   onClick={() => setShowFilters(false)}
                 >
@@ -833,19 +1191,19 @@ const UsersManagement = () => {
                     </select>
                   </div> */}
 
-
-
                 <div className="filter-actions">
                   <button
                     className="btn-primary"
                     onClick={handleFilter}
                     style={{ marginRight: '8px' }}
+                    type="button"
                   >
                     Apply
                   </button>
                   <button
                     className="reset-btn"
                     onClick={resetFilters}
+                    type="button"
                   >
                     Clear
                   </button>
@@ -855,6 +1213,7 @@ const UsersManagement = () => {
             <button
               className="control-btn"
               onClick={toggleBulkAction}
+              type="button"
             >
               {/* <Filter size={16} /> */}
               <span>Bulk Actions</span>
@@ -881,19 +1240,12 @@ const UsersManagement = () => {
                   >
                     <RiDeleteBinFill size={16} color="#fff" /> Delete
                   </button>
-
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
                   <button
                     className="btn-primary"
                     disabled={selectedItems.length === 0}
-                    onClick={() => {
-                      if (selectedItems.length === 0) {
-                        return;
-                      }
-                      setShowBulkAction(false);
-                      setAssignTeamOpen(true);
-                    }}
+                    onClick={handleOpenAssignForSelected}
                   >
                     Assign to Team
                   </button>
@@ -904,6 +1256,7 @@ const UsersManagement = () => {
           <button
             className="btn-primary"
             onClick={() => openForm()}
+            type="button"
           >
             <Plus size={18} />
             Add User
@@ -922,6 +1275,7 @@ const UsersManagement = () => {
             </div>
             <div className="users-header-cell" style={{ justifySelf: 'flex-start', paddingLeft: '45px' }}>Name</div>
             <div className="users-header-cell" style={{ justifySelf: 'flex-start' }}>Email</div>
+            <div className="users-header-cell" style={{ justifySelf: 'flex-start' }}>Designation</div>
             <div className="users-header-cell">Role</div>
             <div className="users-header-cell">Status</div>
             <div className="users-header-cell">Actions</div>
@@ -933,6 +1287,16 @@ const UsersManagement = () => {
               const userId = resolveUserId(user) || user?._id;
               const nameInitial = (user?.name || user?.email || '?').charAt(0).toUpperCase();
               const tagLabels = buildUserTagLabels(user);
+              const rawDesignation = user?.profile?.designation;
+              const normalizedDesignation = typeof rawDesignation === 'string' && rawDesignation.trim()
+                ? rawDesignation.trim()
+                : '-';
+              const designationCellClass = normalizedDesignation === '-'
+                ? 'users-designation-cell users-designation-cell--empty'
+                : 'users-designation-cell';
+              // const MAX_VISIBLE_TAGS = 1;
+              // const visibleTags = tagLabels.slice(0, MAX_VISIBLE_TAGS);
+              // const hiddenCount = Math.max(0, tagLabels.length - MAX_VISIBLE_TAGS);
 
               return (
                 <div className="users-table-row" key={userId}>
@@ -954,8 +1318,9 @@ const UsersManagement = () => {
                       <div className="users-user-name">{user?.name || '-'}</div>
                     </div>
                   </div>
-
+   
                   <div className="users-email-cell">{user?.email || '-'}</div>
+                  <div className={designationCellClass}>{normalizedDesignation}</div>
                   <div className="users-role-cell">
                     <span className="users-role-badge">
                       {typeof user?.global_role_id === 'string'
@@ -963,6 +1328,7 @@ const UsersManagement = () => {
                         : (user?.global_role_id?.name || user?.global_role_id?.title || '-')}
                     </span>
                   </div>
+                 
                   <div className="users-status-cell">
                     <span className={`users-status-badge status-${statusLabel.toLowerCase()}`}>
                       {statusLabel === 'Active' ? '✓ Active' : '✗ Inactive'}
@@ -978,12 +1344,12 @@ const UsersManagement = () => {
                       <Eye size={16} />
                     </button>
                     <button
-                      className="global-action-btn delete"
-                      onClick={() => handleDelete(userId)}
-                      title="Delete"
+                      className="global-action-btn"
+                      onClick={() => handleAssignToTeam(userId)}
+                      title="Assign to Team"
                       type="button"
                     >
-                      <Trash2 size={16} />
+                      <Plus size={16} />
                     </button>
                     <button
                       className="global-action-btn edit"
@@ -993,11 +1359,22 @@ const UsersManagement = () => {
                     >
                       <Edit3 size={16} />
                     </button>
+                    <button
+                      className="global-action-btn delete"
+                      onClick={() => handleDelete(userId)}
+                      title="Delete"
+                      type="button"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+
                   </div>
 
                   {tagLabels.length ? (
                     <div className="users-row-tags">
                       {tagLabels.join(', ')}
+                      {/* {visibleTags.join(', ')}
+                      {hiddenCount > 0 ? ` ...+${hiddenCount}` : ''} */}
                     </div>
                   ) : null}
                 </div>
@@ -1032,6 +1409,10 @@ const UsersManagement = () => {
           isOpen={assignTeamOpen}
           onClose={() => {
             setAssignTeamOpen(false);
+            setAssignTeamId('');
+            setAssignSubTeamId('');
+            setAssignTargetIds([]);
+            setAssignOrigin(null);
           }}
           teams={teams}
           assignTeamId={assignTeamId}
@@ -1042,8 +1423,8 @@ const UsersManagement = () => {
           }}
           onSubTeamChange={(subTeamId) => setAssignSubTeamId(subTeamId)}
           onApply={handleBulkAssignToGroup}
-          disableApply={selectedItems.length === 0 || !assignTeamId}
-          selectedCount={selectedItems.length}
+          disableApply={assignTargetIds.length === 0 || !assignTeamId}
+          selectedCount={assignTargetIds.length}
         />
 
         {/* Add/Edit User Modal */}
@@ -1100,6 +1481,32 @@ const UsersManagement = () => {
                         disabled={editMode}
                       />
                     </div>
+                  </div>
+
+                  <div className="addOrg-form-grid">
+
+                    <div className="addOrg-form-group">
+                      <label className="addOrg-form-label">Designation</label>
+                      <input
+                        type="text"
+                        name="designation"
+                        className="addOrg-form-input"
+                        value={formData.designation}
+                        onChange={handleFormChange}
+                      />
+                    </div>
+                    <div className="addOrg-form-group">
+                      <label className="addOrg-form-label">Employee ID</label>
+                      <input
+                        type="text"
+                        name="employeeId"
+                        className="addOrg-form-input"
+                        value={formData.employeeId}
+                        onChange={handleFormChange}
+                        disabled={editMode}
+                      />
+                    </div>
+
                   </div>
                   <div className="addOrg-form-grid">
                     <div className="addOrg-form-group">
@@ -1165,7 +1572,6 @@ const UsersManagement = () => {
                     </div>
                   )}
                   <div className="addOrg-form-grid">
-
                     <div className="addOrg-form-group">
                       <label className="addOrg-form-label">Role <span style={{ color: 'red' }}>*</span></label>
                       <select
@@ -1184,19 +1590,6 @@ const UsersManagement = () => {
                       </select>
                     </div>
                     <div className="addOrg-form-group">
-                      <label className="addOrg-form-label">Employee ID</label>
-                      <input
-                        type="text"
-                        name="employeeId"
-                        className="addOrg-form-input"
-                        value={formData.employeeId}
-                        onChange={handleFormChange}
-                      />
-                    </div>
-                  </div>
-                  <div className="addOrg-form-grid">
-
-                    <div className="addOrg-form-group">
                       <label className="addOrg-form-label">Custom 1</label>
                       <input
                         type="text"
@@ -1207,16 +1600,7 @@ const UsersManagement = () => {
 
                       />
                     </div>
-                    <div className="addOrg-form-group">
-                      <label className="addOrg-form-label">Custom 2</label>
-                      <input
-                        type="text"
-                        name="custom2"
-                        className="addOrg-form-input"
-                        value={formData.custom2}
-                        onChange={handleFormChange}
-                      />
-                    </div>
+
                   </div>
 
                   {/* <div className="addOrg-form-grid">

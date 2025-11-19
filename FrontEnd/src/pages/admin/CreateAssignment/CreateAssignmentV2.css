@@ -108,11 +108,11 @@
 }
 
 /* Main Content */
-.cae-scope .main-content {
+/* .cae-scope .main-content {
   display: grid;
   grid-template-columns: 1fr 320px;
   gap: 20px;
-}
+} */
 
 .cae-scope .assignment-section {
   background: white;
@@ -149,7 +149,7 @@
 /* Radio Group */
 .cae-scope .radio-group {
   display: flex;
-  flex-direction: column;
+  /* flex-direction: column; */
   gap: 12px;
 }
 
@@ -182,6 +182,7 @@
 }
 
 .cae-scope .radio-option-content {
+  width: 210px;
   flex: 1;
 }
 
@@ -199,8 +200,9 @@
 
 /* Filter Row */
 .cae-scope .filter-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 15px;
   margin-bottom: 20px;
 }

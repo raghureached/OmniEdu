@@ -195,10 +195,10 @@
     display: grid;
     grid-template-columns: 1fr;
     gap: 16px; /* tighter to fit without scroll */
+    flex: 1;            /* fill remaining vertical space */
+    min-height: 0;      /* allow grid to shrink within flex parent */
+    overflow: auto;     /* scroll within content area */
     padding: 14px; /* reduce padding to save space */
-    flex: 1;           /* take remaining height */
-    overflow: auto;  /* no inner scrollbar */
-    min-height: 0;
   }
 
   /* Make each tab pane fill available height and push actions to bottom */
@@ -216,7 +216,7 @@
   /* Module preview layout */
   .global-preview-preview-grid {
     display: grid;
-    grid-template-columns: 540px 1fr; /* slightly narrower left column */
+    grid-template-columns: 1fr 1fr; /* equal halves */
     gap: 16px;
     align-items: stretch;
   }
@@ -322,6 +322,8 @@
   .global-preview-right-col-content {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
     gap: 16px;
   }
   
@@ -484,10 +486,10 @@
     display: inline-block;
     background: var(--global-preview-soft);
     color: var(--global-preview-accent);
-    padding: 8px 14px; /* larger tags */
+    padding: 6px 12px; /* larger tags */
     border-radius: 999px;
     border: 1px solid #dbeafe; /* match Add Org subtle border */
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
     line-height: 1;
   }
@@ -495,6 +497,10 @@
   
   /* Actions */
   .global-preview-actions {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -502,8 +508,9 @@
     border-top: 1px solid #eef2f8;
     margin-top: 12px;
     gap: 12px;
-    /* No positioning; stays at bottom naturally due to flex layout */
     background: var(--global-preview-card);
+    z-index: 5;                 /* keep above content */
+    box-shadow: 0 -4px 12px rgba(2,6,23,0.05); /* subtle separation */
   }
   
   .global-preview-actions-buttons {

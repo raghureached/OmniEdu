@@ -26,6 +26,7 @@
     max-width: var(--global-preview-max-w);
     /* margin: 0 auto;   */
     height: 100%; /* fill modal height */
+    overflow: hidden; /* prevent outer scrollbar; inner content scrolls */
   }
   
   .global-preview-panel {
@@ -36,10 +37,22 @@
     display: flex;
     flex-direction: column;
     min-height: 0; /* allow children to size */
-    overflow: auto; /* no inner scrollbar */
+    overflow: hidden; /* move scrolling to content area so sticky footer works */
   }
   
-  /* Progress */
+  /* Ensure outer overlay/container don't scroll; only inner content scrolls */
+.module-preview-overlay,
+.module-preview-overlay-embedded {
+  overflow: hidden;
+}
+.module-preview-container {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+/* Progress */
   .global-preview-progress-wrap {
     padding: 16px 20px;
     border-bottom: 1px solid #eef2f8;
@@ -95,15 +108,15 @@
     border-bottom: 3px solid var(--global-preview-accent);
   }
   
-  /* Main content */
+  /* Main content (scroll area) */
   .global-preview-content {
     display: grid;
     grid-template-columns: 1fr;
     gap: 16px; /* tighter to fit without scroll */
+    flex: 1;            /* fill remaining vertical space */
+    min-height: 0;      /* allow grid to shrink within flex parent */
+    overflow: auto;     /* scroll within content area */
     padding: 14px; /* reduce padding to save space */
-    flex: 1;           /* take remaining height */
-    overflow: auto;  /* no inner scrollbar */
-    min-height: 0;
   }
 
   /* Make each tab pane fill available height and push actions to bottom */
@@ -120,11 +133,12 @@
   
   /* Module preview layout */
   .global-preview-preview-grid {
-    display: grid;
-    grid-template-columns: 540px 1fr; /* slightly narrower left column */
-    gap: 16px;
-    align-items: stretch;
-  }
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* divides into equal halves */
+  gap: 16px;
+  align-items: stretch;
+}
+
   
   /* Left column */
   .global-preview-left-col {
@@ -227,6 +241,8 @@
   .global-preview-right-col-content {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
     gap: 16px;
   }
   
@@ -246,8 +262,8 @@
   
   /* Details */
   .global-preview-details {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 16px;
     flex-grow: 1;
   }
@@ -389,10 +405,10 @@
     display: inline-block;
     background: var(--global-preview-soft);
     color: var(--global-preview-accent);
-    padding: 8px 14px; /* larger tags */
+    padding: 6px 12px; /* larger tags */
     border-radius: 999px;
     border: 1px solid #dbeafe; /* match Add Org subtle border */
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
     line-height: 1;
   }
@@ -400,6 +416,10 @@
   
   /* Actions */
   .global-preview-actions {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -407,8 +427,9 @@
     border-top: 1px solid #eef2f8;
     margin-top: 12px;
     gap: 12px;
-    /* No positioning; stays at bottom naturally due to flex layout */
     background: var(--global-preview-card);
+    z-index: 5;                 /* keep above content */
+    box-shadow: 0 -4px 12px rgba(2,6,23,0.05); /* subtle separation */
   }
   
   .global-preview-actions-buttons {
@@ -884,9 +905,9 @@
     left: 0;
     right: 0;
     bottom: 0;
-    display: grid;
-    grid-template-columns: auto 1fr auto;
+    display: flex;
     align-items: center;
+    flex-direction: column  ;
     gap: 10px;
     padding: 10px;
     background: linear-gradient(180deg, rgba(2,6,23,0.0) 0%, rgba(2,6,23,0.65) 60%);
@@ -898,24 +919,6 @@
     align-items: center;
     gap: 10px;
   }
-
-  .vc-btn {
-    appearance: none;
-    background: rgba(255,255,255,0.1);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 8px;
-    padding: 6px 10px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-weight: 700;
-    font-size: 12px;
-    transition: background 0.18s ease, transform 0.12s ease, border-color 0.18s ease;
-  }
-  .vc-btn:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.25); }
-  .vc-btn:active { transform: translateY(1px); }
 
   .vc-time {
     font-weight: 700;

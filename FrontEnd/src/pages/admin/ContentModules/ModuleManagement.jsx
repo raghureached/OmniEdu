@@ -482,10 +482,10 @@ const ModuleManagement = () => {
               <tr>
                 <th><input type="checkbox" onChange={(e) => handleSelectAll(e)} checked={selectedItems.length === currentContent.length} /></th>
                 <th>Title</th>
-                <th>Credits</th>
+                {/* <th>Credits</th> */}
                 <th>Status</th>
                 <th>Team</th>
-                <th>Created Date</th>
+                <th>Date Created</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -511,7 +511,7 @@ const ModuleManagement = () => {
                       </div>
                     </div>
                   </td>
-                  <td>{content.credits}</td>
+                  {/* <td>{content.credits}</td> */}
                   <td>
                     <span className={` ${content.status === 'Published' ? 'published' : content.status === 'Draft' ? 'draft' : 'saved'} assess-status-badge`}>
                       {content.status === 'Published' ? `✓ ${content.status}` : content.status === 'Draft' ? 'Draft' : 'Saved'}

@@ -36,7 +36,7 @@ const LearningPathSchema = new mongoose.Schema(
           type: { type: String, enum: ["module", "assessment", "survey"], required: true },
           title: { type: String },
           order: { type: Number },
-          uuid: { type: String },
+          uuid: { type: String ,required:true},
         }
       ],
   

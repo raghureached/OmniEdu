@@ -180,7 +180,7 @@ const Step2UserSelection = ({
                         const teamsArr = user?.profile?.teams || [];
                         if (!teamsArr.length) return null;
                         const labels = teamsArr.map(t => `${t.team_id?.name || ''}${t.sub_team_id ? ` • ${t.sub_team_id.name}` : ''}`);
-                        return <div className="user-team">{labels.join(', ')}</div>;
+                        return <div className="user-team">{labels.join('/ ')}</div>;
                       })()}
                     </div>
                   </div>

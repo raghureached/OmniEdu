@@ -20,6 +20,7 @@ const addUser = async (req, res) => {
       designation,
       team,
       subteam,
+      custom1,
       status,
       invitation,
       department_id
@@ -59,7 +60,8 @@ const addUser = async (req, res) => {
       department_id,
       organization_id: req.user.organization_id,
       employee_id: empId,
-      teams: teamArr
+      teams: teamArr,
+      custom1,
     }], { session });
     
     // ✅ Commit both if all good
@@ -106,7 +108,18 @@ const addUser = async (req, res) => {
 
 const editUser = async (req, res) => {
   try {
-    const { name, email, password, role, team, subteam, removedAssignments, status } = req.body;
+    const {
+      name,
+      email,
+      password,
+      role,
+      team,
+      subteam,
+      removedAssignments,
+      status,
+      designation,
+      custom1,
+    } = req.body;
 
     const updatePayload = {
       name,
@@ -145,8 +158,18 @@ const editUser = async (req, res) => {
       });
 
     const profileUpdate = {
-      $set: { organization_roles_id: role },
+      $set: {
+        organization_roles_id: role,
+      },
     };
+
+    if (typeof designation !== 'undefined') {
+      profileUpdate.$set.designation = designation;
+    }
+
+    if (typeof custom1 !== 'undefined') {
+      profileUpdate.$set.custom1 = custom1;
+    }
 
     if (membership) {
       profileUpdate.$addToSet = { teams: membership };

@@ -66,7 +66,7 @@ const GroupsFilter = ({
 
     if (hasSelection) {
       bulkOpenedAutomaticallyRef.current = true;
-      setShowBulkAction(true);
+      // setShowBulkAction(true);
       setShowFilters(false);
       updateBulkPanelPosition();
     } else if (bulkOpenedAutomaticallyRef.current) {

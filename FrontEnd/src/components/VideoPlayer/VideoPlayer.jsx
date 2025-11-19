@@ -1,6 +1,6 @@
 import { Maximize, Minimize, Pause, Play, Volume2, VolumeX } from "lucide-react";
 import React from "react";
-
+import "./VideoPlayer.css";
 const VideoPlayer = ({ src, poster }) => {
         const videoRef = React.useRef(null);
         const containerRef = React.useRef(null);
@@ -111,7 +111,7 @@ const VideoPlayer = ({ src, poster }) => {
 
         return (
             <div
-                className="video-player"
+                className="videoP-player"
                 ref={containerRef}
                 style={{
                     width: fs ? '100vw' : '100%',
@@ -125,6 +125,7 @@ const VideoPlayer = ({ src, poster }) => {
                 }}
             >
                 <video
+                    className="videoP-video"
                     ref={videoRef}
                     src={src}
                     poster={poster}
@@ -142,7 +143,7 @@ const VideoPlayer = ({ src, poster }) => {
                     }}
                 />
                 <div
-                    className="video-controls"
+                    className="videoP-controls"
                     style={fs ? {
                         position: 'absolute',
                         left: 0,
@@ -153,15 +154,16 @@ const VideoPlayer = ({ src, poster }) => {
                         color: '#fff'
                     } : undefined}
                 >
-                    <div className="vc-left">
+                    <div className="videoP-left">
                         <button className="vc-btn" onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}>
-                            {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                            {isPlaying ? <Pause size={16} color="white"/> : <Play size={16} color="white"/>}
                         </button>
-                        <div className="vc-time">{fmt(current)} / {fmt(duration)}</div>
+                        <div className="videoP-time">{fmt(current)} / {fmt(duration)}</div>
                     </div>
-                    <div className="vc-center">
+                    <div className="videoP-center">
                         <input
-                            className="vc-seek"
+                            className="videoP-seek"
+                            
                             type="range"
                             min={0}
                             max={Math.max(0, duration)}
@@ -171,12 +173,12 @@ const VideoPlayer = ({ src, poster }) => {
                             aria-label="Seek"
                         />
                     </div>
-                    <div className="vc-right">
+                    <div className="videoP-right">
                         <button className="vc-btn" onClick={toggleMute} aria-label={isMuted ? 'Unmute' : 'Mute'}>
                             {isMuted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
                         </button>
                         <input
-                            className="vc-volume"
+                            className="videoP-volume"
                             type="range"
                             min={0}
                             max={1}
@@ -185,7 +187,7 @@ const VideoPlayer = ({ src, poster }) => {
                             onChange={onVolume}
                             aria-label="Volume"
                         />
-                        <button className="vc-btn vc-speed" onClick={cycleSpeed} aria-label="Speed">
+                        <button className="videoP-btn videoP-speed" onClick={cycleSpeed} aria-label="Speed">
                             {speed.toFixed(2).replace(/\.00$/, '')}x
                         </button>
                         <button className="vc-btn" onClick={toggleFs} aria-label={fs ? 'Exit Fullscreen' : 'Enter Fullscreen'}>

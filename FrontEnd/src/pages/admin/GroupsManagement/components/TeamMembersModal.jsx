@@ -1,17 +1,58 @@
-import React from 'react';
-import { Users } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Search, Users } from 'lucide-react';
 import { GoX } from 'react-icons/go';
 
+const membersPerPage = 100;
+
 const TeamMembersModal = ({ isOpen, onClose, team, members = [] }) => {
-  if (!isOpen || !team) {
-    return null;
-  }
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const handleOverlayClick = (event) => {
     if (event.target.classList.contains('addOrg-modal-overlay')) {
       onClose && onClose();
     }
   };
+
+  useEffect(() => {
+    setSearchTerm('');
+    setCurrentPage(1);
+  }, [isOpen, team]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const filteredMembers = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    if (!normalizedSearch) {
+      return members;
+    }
+
+    return members.filter((member) => {
+      const name = (member.name || member.fullName || '').toLowerCase();
+      const email = (member.email || '').toLowerCase();
+
+      return name.includes(normalizedSearch) || email.includes(normalizedSearch);
+    });
+  }, [members, searchTerm]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredMembers.length / membersPerPage));
+
+  useEffect(() => {
+    setCurrentPage((prevPage) => Math.min(prevPage, totalPages));
+  }, [totalPages]);
+
+  const activePage = Math.min(currentPage, totalPages);
+  const paginatedMembers = useMemo(() => {
+    const startIndex = (activePage - 1) * membersPerPage;
+    return filteredMembers.slice(startIndex, startIndex + membersPerPage);
+  }, [filteredMembers, activePage]);
+
+  if (!isOpen || !team) {
+    return null;
+  }
 
   return (
     <div className="addOrg-modal-overlay" onClick={handleOverlayClick}>
@@ -42,24 +83,102 @@ const TeamMembersModal = ({ isOpen, onClose, team, members = [] }) => {
         </div>
 
         <div className="addOrg-form-section" style={{ padding: 24 }}>
+          {members.length > 0 && (
+            <div className="table-toolbar" style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+              <div className="roles-search-bar" style={{ flex: 1, maxWidth: 320 }}>
+                <Search size={16} color="#6b7280" className="search-icon" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Search members"
+                  style={{ width: '100%' }}
+                />
+              </div>
+            </div>
+          )}
+
           {members.length === 0 ? (
             <div style={{ textAlign: 'center', color: '#64748b' }}>No members found for this team.</div>
+          ) : filteredMembers.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#64748b' }}>No members match your search.</div>
           ) : (
-            <div className="table-container" style={{ marginTop: 12 }}>
-              <div className="table-header" style={{ gridTemplateColumns: ' 1fr  1fr' }}>
-                <div className="col-team">Name</div>
-                <div className="col-team">Email</div>
-                {/* <div className="col-team">Team</div> */}
-              </div>
-
-              {members.map((member) => (
-                <div key={member.id || member._id} className="table-row" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                  <div className="col-team">{member.name || member.fullName || '—'}</div>
-                  <div className="col-team">{member.email || '—'}</div>
-                  {/* <div className="col-team">{team.teamName || team.name || '—'}</div> */}
+            <>
+              <div className="table-container">
+                <div className="table-header" style={{ gridTemplateColumns: ' 1fr 1fr' }}>
+                  <div className="col-team">Name</div>
+                  <div className="col-team">Email</div>
+                  {/* <div className="col-team">Team</div> */}
                 </div>
-              ))}
-            </div>
+
+                {paginatedMembers.map((member) => (
+                  <div key={member.id || member._id} className="table-row" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                    <div className="col-team">{member.name || member.fullName || '—'}</div>
+                    <div className="col-team">{member.email || '—'}</div>
+                     {/* <div className="col-team">{team.teamName || team.name || '—'}</div> */}
+                  </div>
+                ))}
+
+                <div
+                  className="table-footer"
+                  style={{
+                    padding: '12px 24px',
+                    borderTop: '1px solid #e5e7eb',
+                    display: 'flex',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <div
+                    className="pagination"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '100%',
+                      borderTop: 'none',
+                      padding:"0px",
+                      marginTop:"0px"
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                        disabled={activePage === 1}
+                        style={{
+                          padding: '6px 10px',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: 6,
+                          background: '#fff',
+                          color: '#0f172a',
+                          cursor: activePage === 1 ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        Prev
+                      </button>
+
+                      <span style={{ color: '#0f172a' }}>{`Page ${activePage} of ${totalPages}`}</span>
+
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                        disabled={activePage === totalPages}
+                        style={{
+                          padding: '6px 10px',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: 6,
+                          background: '#fff',
+                          color: '#0f172a',
+                          cursor: activePage === totalPages ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>
