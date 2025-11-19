@@ -5,18 +5,19 @@ import { notifyError, notifyWarning } from '../utils/notification';
 console.log(process.env.REACT_APP_PROD)
 // const production = false;
 const production = process.env.REACT_APP_PROD === "prod";
-
+console.log(production)
+const baseURL = production 
+    ? 'https://omniedu-server.onrender.com' 
+    : 'http://localhost:5003';
+console.log(baseURL)
 // console.log('process.env.prod', process.env.REACT_APP_PROD);
 const api = axios.create({
-  baseURL: production 
-    ? 'https://omniedu-server.onrender.com' 
-    : 'http://localhost:5003',
+  baseURL: baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: true,
 });
- console.log(api)
 // Prevent multiple redirects on 401 bursts
 let isHandling401 = false;
 

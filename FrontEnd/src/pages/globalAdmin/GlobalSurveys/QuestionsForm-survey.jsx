@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FileText, Plus, X, Upload, Copy, Eye, Info, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
-import api from '../../../services/apiOld.js';
+import api from '../../../services/api.js';
 import './QuestionsForm-survey.css';
 import '../GlobalAssessments/QuestionsForm.css';
 import RichText from './RichTextSurvey.jsx';

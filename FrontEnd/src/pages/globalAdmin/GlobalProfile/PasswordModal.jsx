@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import api from '../../../services/apiOld';
+import api from '../../../services/api';
 import CustomLoader from '../../../components/common/Loading/CustomLoader';
 
 const PasswordChangeModal = ({ isOpen, onClose }) => {

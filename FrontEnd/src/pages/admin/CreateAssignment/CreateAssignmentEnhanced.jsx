@@ -8,7 +8,7 @@ import { fetchSurveys } from '../../../store/slices/adminSurveySlice';
 import { fetchUsers } from '../../../store/slices/userSlice';
 import { getLearningPaths } from '../../../store/slices/learningPathSlice';
 import { admincreateAssignment } from '../../../store/slices/adminAssignmnetSlice';
-import api from '../../../services/apiOld';
+import api from '../../../services/api';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 
 // Import step components

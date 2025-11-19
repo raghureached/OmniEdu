@@ -99,7 +99,7 @@
 
 // src/store/slices/surveySlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import api from "../../services/apiOld";
+import api from "../../services/api";
 
 // Thunks
 export const fetchSurveys = createAsyncThunk(

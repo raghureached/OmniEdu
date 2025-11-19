@@ -9,7 +9,7 @@ import { fetchSurveys } from '../../../store/slices/adminSurveySlice';
 import { fetchGlobalAssessments } from '../../../store/slices/adminAssessmentSlice';
 import { addLearningPath, editLearningPath } from '../../../store/slices/learningPathSlice';
 import LearningPathPreview from '../../../components/common/Preview/LearningPathPreview';
-import api from '../../../services/apiOld';
+import api from '../../../services/api';
 import { FiTrash2 } from 'react-icons/fi';
 
 const defaultForm = {

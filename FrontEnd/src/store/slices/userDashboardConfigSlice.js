@@ -1,5 +1,5 @@
 import { createSlice,createAsyncThunk } from "@reduxjs/toolkit";
-import api from "../../services/apiOld";
+import api from "../../services/api";
 
 export const fetchUserDashboardPermissions = createAsyncThunk(
     "userDashboardConfig/fetchUserDashboardPermissions",

@@ -26,11 +26,7 @@ import {
   deleteUser,
   bulkDeleteUsers,
   setFilters,
-  clearFilters,
-  selectUser,
-  deselectUser,
-  selectAllUsers,
-  deselectAllUsers
+  clearFilters
 } from '../../../store/slices/userSlice';
 import { addUsersToGroup } from '../../../store/slices/userSlice';
 import { createTeam, createSubTeam } from '../../../store/slices/groupSlice';

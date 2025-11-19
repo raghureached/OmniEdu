@@ -2,7 +2,7 @@
 
 ///////updated for teams and subteams
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import api from '../../services/apiOld';
+import api from '../../services/api';
 import { createUser, fetchUsers } from './userSlice';
 
 const resolveId = (value) => {

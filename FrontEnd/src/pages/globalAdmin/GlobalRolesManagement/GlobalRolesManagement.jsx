@@ -8,7 +8,7 @@ import {
   updateOrgRole,
 } from "../../../store/slices/roleSlice";
 import './GlobalRolesManagement.css'
-import api from "../../../services/apiOld";
+import api from "../../../services/api";
 import CustomLoader from "../../../components/common/Loading/CustomLoader";
 import { RiDeleteBinFill } from "react-icons/ri";
 import { FiEdit3 } from "react-icons/fi";
