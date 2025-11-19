@@ -2,9 +2,9 @@ import axios from 'axios';
 import store from '../store';
 import { logout } from '../store/slices/authSlice';
 import { notifyError, notifyWarning } from '../utils/notification';
-
-const production = false;
-// const production = process.env.REACT_APP_PROD === 'true';
+console.log(process.env.REACT_APP_PROD)
+// const production = false;
+const production = process.env.REACT_APP_PROD === "prod";
 
 // console.log('process.env.prod', process.env.REACT_APP_PROD);
 const api = axios.create({
@@ -16,7 +16,7 @@ const api = axios.create({
   },
   withCredentials: true,
 });
-//  console.log(api)
+ console.log(api)
 // Prevent multiple redirects on 401 bursts
 let isHandling401 = false;
 
