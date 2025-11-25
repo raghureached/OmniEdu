@@ -20,6 +20,7 @@ import {
 import QuestionsForm from './QuestionsForm-survey';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import api from '../../../services/api';
+import { notifyError, notifySuccess } from '../../../utils/notification';
 const AdminSurveys = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
@@ -264,10 +265,15 @@ const AdminSurveys = () => {
         itemsToDelete.map(id => dispatch(deleteSurvey(id)).unwrap().catch(() => null))
       );
       clearSelection();
+      notifySuccess("Surveys deleted successfully");
       setShowBulkAction(false);
       dispatch(fetchSurveys({ page, limit }));
     } catch (e) {
       console.error('Bulk delete failed', e);
+      notifyError("Failed to delete surveys",{
+        message: e.message,
+        title: "Failed to delete surveys"
+      });
     }
   };
 
@@ -470,7 +476,15 @@ const AdminSurveys = () => {
     };
     //  console.log(sections )
     try {
-      await dispatch(createSurvey(payload)).unwrap();
+      const res = await dispatch(createSurvey(payload));
+      if(createSurvey.fulfilled.match(res)){
+        notifySuccess("Survey created successfully");
+      }else{
+        notifyError("Failed to create survey",{
+          message: res.payload.message,
+          title: "Failed to create survey"
+        });
+      }
       setShowForm(false);
       dispatch(fetchSurveys({ page, limit }));
     } catch (err) {
@@ -576,7 +590,15 @@ const AdminSurveys = () => {
       return;
     }
     try {
-      await dispatch(updateSurvey({ uuid: id, data })).unwrap();
+      const res = await dispatch(updateSurvey({ uuid: id, data }));
+      if(updateSurvey.fulfilled.match(res)){
+        notifySuccess("Survey updated successfully");
+      }else{
+        notifyError("Failed to update survey",{
+          message: res.payload.message,
+          title: "Failed to update survey"
+        });
+      }
       setShowForm(false);
       dispatch(fetchSurveys({ page, limit }));
     } catch (err) {
@@ -724,7 +746,15 @@ const AdminSurveys = () => {
 
   const handleDeleteAssessment = async (id) => {
     try {
-      await dispatch(deleteSurvey(id)).unwrap();
+      const res = await dispatch(deleteSurvey(id));
+      if(deleteSurvey.fulfilled.match(res)){
+        notifySuccess("Survey deleted successfully");
+      }else{
+        notifyError("Failed to delete survey",{
+          message: res.payload.message,
+          title: "Failed to delete survey"
+        });
+      }
       dispatch(fetchSurveys({ page, limit }));
     } catch (err) {
       console.error('Failed to delete assessment:', err?.response?.data || err.message);

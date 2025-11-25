@@ -62,6 +62,7 @@ import Globalusers from './pages/globalAdmin/Users/Globalusers';
 import GlobalSurveys from './pages/globalAdmin/GlobalSurveys/GlobalAssessments-survey';
 import LearningPath from './components/LearningPath/LearningPath';
 import CreateAssignmentEnhanced from './pages/admin/CreateAssignment/CreateAssignmentEnhanced';
+import ModuleView from './pages/user/ModuleView/ModuleView';
 function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -110,6 +111,7 @@ function App() {
             <Route path="assigned" element={<Assigned />} />
             <Route path="additional" element={<Additional />} />
             <Route path="mandatory" element={<Mandatory />} />
+            <Route path="module/:moduleId" element={<ModuleView />} />
           </Route>
           <Route path="/admin/*" element={<AdminLayout />}>
             <Route index element={<AdminHome />} />

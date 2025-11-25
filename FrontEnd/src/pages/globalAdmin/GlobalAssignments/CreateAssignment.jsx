@@ -9,10 +9,11 @@ import { fetchOrganizations } from '../../../store/slices/organizationSlice';
 import { fetchSurveys, updateSurvey, getSurveyById } from '../../../store/slices/surveySlice';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading';
+import { useNotification } from '../../../components/common/Notification/NotificationProvider.jsx';
 
 const GlobalCreateAssignment = () => {
     const dispatch = useDispatch();
-
+    const { showNotification } = useNotification();
     useEffect(() => {
         dispatch(fetchContent());
         dispatch(fetchGlobalAssessments());
@@ -72,34 +73,45 @@ const GlobalCreateAssignment = () => {
         formData.orgIds = selectedOrgs;
         try {
             // Create the assignment first
-            await dispatch(createGlobalAssignment(formData)).unwrap();
-
-            // Publish the content if it's an Assessment or Survey
-            if (formData.contentId) {
-                if (formData.contentType === 'Assessment') {
-                    const id = formData.contentId; // uuid
-                    await dispatch(updateGlobalAssessment({ id, data: { status: 'Published' } })).unwrap();
-                    // Optionally refresh assessments list
-                    dispatch(fetchGlobalAssessments());
-                } else if (formData.contentType === 'Survey') {
-                    const id = formData.contentId; // uuid
-                    // First fetch the current survey data
-                    const currentSurvey = await dispatch(getSurveyById(id)).unwrap();
-                    // Update with published status while keeping other fields
-                    await dispatch(updateSurvey({
-                        uuid: id,
-                        data: {
-                            ...currentSurvey,
-                            status: 'Published'
-                        }
-                    })).unwrap();
-                    // Optionally refresh surveys list
-                    dispatch(fetchSurveys());
-                }
+            const res = await dispatch(createGlobalAssignment(formData));
+            if(createGlobalAssignment.fulfilled.match(res)){
+              showNotification({
+                type: "success",
+                message: "Assignment created successfully",
+                title: "Assignment Created"
+              });
             }
+            // Publish the content if it's an Assessment or Survey
+            // if (formData.contentId) {
+            //     if (formData.contentType === 'Assessment') {
+            //         const id = formData.contentId; // uuid
+            //         await dispatch(updateGlobalAssessment({ id, data: { status: 'Published' } })).unwrap();
+            //         // Optionally refresh assessments list
+            //         dispatch(fetchGlobalAssessments());
+            //     } else if (formData.contentType === 'Survey') {
+            //         const id = formData.contentId; // uuid
+            //         // First fetch the current survey data
+            //         const currentSurvey = await dispatch(getSurveyById(id)).unwrap();
+            //         // Update with published status while keeping other fields
+            //         await dispatch(updateSurvey({
+            //             uuid: id,
+            //             data: {
+            //                 ...currentSurvey,
+            //                 status: 'Published'
+            //             }
+            //         })).unwrap();
+            //         // Optionally refresh surveys list
+            //         dispatch(fetchSurveys());
+            //     }
+            // }
         } catch (err) {
             // swallow here; existing slice handles error state
-            console.error('Create assignment or publish failed', err);
+            // console.error('Create assignment or publish failed', err);
+            showNotification({
+              type: "error",
+              message: err?.message,
+              title: "Assignment Creation Failed"
+            });
         }
         setFormData({
             contentType: '',
@@ -401,7 +413,7 @@ const GlobalCreateAssignment = () => {
                                 {/* <h2>Dates</h2>   */}
                                 <div style={{ display: "flex", gap: "30px", alignItems: "center" }}>
                                     <div className="global-assign-date-field">
-                                        <label>Assign On:</label>
+                                        <label>Assign On:<span style={{ color: "red" }}>*</span></label>
                                         <input
                                             type="text"
                                             readOnly
@@ -423,7 +435,7 @@ const GlobalCreateAssignment = () => {
                                     </div>
 
                                     <div className="global-assign-date-field">
-                                        <label>Assign Time:</label>
+                                        <label>Assign Time:<span style={{ color: "red" }}>*</span></label>
                                         <input
                                             type="time"
                                             name="assignTime"
@@ -436,7 +448,7 @@ const GlobalCreateAssignment = () => {
                                 </div>
                                 <div style={{ display: "flex", gap: "30px", alignItems: "center" }}>
                                 <div className="global-assign-date-field">
-                                        <label>Due Date:</label>
+                                        <label>Due Date:<span style={{ color: "red" }}>*</span></label>
                                         <input
                                             type="text"
                                             readOnly
@@ -461,7 +473,7 @@ const GlobalCreateAssignment = () => {
                                     </div>
 
                                     <div className="global-assign-date-field">
-                                        <label>Due Time:</label>
+                                        <label>Due Time:<span style={{ color: "red" }}>*</span></label>
                                         <input
                                             type="time"
                                             name="dueTime"
@@ -507,7 +519,7 @@ const GlobalCreateAssignment = () => {
                                     <button type="button" className="btn-secondary" onClick={() => setCurrentStep(1)}>
                                         Cancel
                                     </button>
-                                    <button type="button" className="btn-primary" onClick={handleSubmit}>
+                                    <button type="button" className="btn-primary" onClick={handleSubmit} disabled={!formData.contentId || !formData.assignDate || !formData.dueDate}>
                                         Create Assignment
                                     </button>
                                 </div>

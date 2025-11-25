@@ -35,13 +35,14 @@ const addModule = async (req, res) => {
     const primaryFile = req.uploadedFiles?.primaryFile?.[0]?.url;
     const additionalFile = req.uploadedFiles?.additionalFile?.[0]?.url;
     const thumbnail = req.uploadedFiles?.thumbnail?.[0]?.url;
-    const { title,trainingType,team,category,submissionEnabled,feedbackEnabled,instructions, badges,stars,credits,description,externalResource, pushable_to_orgs, tags, duration,learningOutcomes,prerequisites,richText } = req.body;
+    const { title,trainingType,team,subteam,category,submissionEnabled,feedbackEnabled,instructions, badges,stars,credits,description,externalResource, pushable_to_orgs, tags, duration,learningOutcomes,prerequisites,richText } = req.body;
     const created_by = req.user?._id || null;
     const newModule = new OrganizationModule({
       title,
       description,
       trainingType,
       team,
+      subteam,
       category,
       submissionEnabled,
       feedbackEnabled,
@@ -112,7 +113,7 @@ const getModule = async (req, res) => {
 
 const getModuleById = async (req, res) => {
   try {
-    const content = await OrganizationModule.findOne({ uuid: req.params.id }).populate("team").populate("created_by");
+    const content = await OrganizationModule.findOne({ uuid: req.params.id }).populate("created_by");
     // console.log(content)
     return res.status(200).json({ success: true, message: 'Module fetched successfully.', data: content });
   } catch (error) {
@@ -134,6 +135,7 @@ const editModule = async (req, res) => {
       title,
       trainingType,
       team,
+      subteam,
       category,
       submissionEnabled,
       feedbackEnabled,
@@ -159,6 +161,7 @@ const editModule = async (req, res) => {
       title,
       trainingType,
       team,
+      subteam,
       category,
       submissionEnabled,
       feedbackEnabled,
@@ -245,7 +248,7 @@ const getModules = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = 50;
     const skip = (page - 1) * limit;
-    const content = await OrganizationModule.find({org_id:req.user.organization_id}).populate("team").skip(skip).limit(limit)
+    const content = await OrganizationModule.find({org_id:req.user.organization_id}).skip(skip).limit(limit)
     const total = await OrganizationModule.countDocuments()
     // console.log(content)
     return res.status(200).json({

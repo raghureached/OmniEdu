@@ -80,6 +80,15 @@ const createAssignment = async (req, res) => {
             const assignment = await GlobalAssignment.create([assignmentData], { session });
             assignments.push(assignment[0]);
         }
+        if (contentType === "Module") {
+            content = await GlobalModule.findOneAndUpdate({ uuid: contentId },{status:"Published"}, { session });
+        } else if (contentType === "Assessment") {
+            content = await GlobalAssessment.findOneAndUpdate({ uuid: contentId }, {status:"Published"}, { session });
+        } else if (contentType === "Survey") {
+            content = await Surveys.findOneAndUpdate({ uuid: contentId }, {status:"Published"}, { session });
+        }
+
+        
 
         await session.commitTransaction();
 

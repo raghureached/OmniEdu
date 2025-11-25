@@ -17,6 +17,7 @@ import Step2UserSelection from './components/Step2UserSelection';
 import Step3ScheduleSettings from './components/Step3ScheduleSettings';
 import Step4ReviewConfirm from './components/Step4ReviewConfirm';
 import SummaryPanel from './components/SummaryPanel';
+import { notifyError, notifySuccess } from '../../../utils/notification';
 
 const CreateAssignmentEnhanced = () => {
   const dispatch = useDispatch();
@@ -56,6 +57,7 @@ const CreateAssignmentEnhanced = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [filterTeam, setFilterTeam] = useState('');
   const [filterSubTeam, setFilterSubTeam] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
 
   // Step 2: User Selection
   const [userMode, setUserMode] = useState('individual');
@@ -75,7 +77,7 @@ const CreateAssignmentEnhanced = () => {
   const [customIntervalUnit, setCustomIntervalUnit] = useState('days');
   const [elementSchedules, setElementSchedules] = useState([]);
   const [enforceOrder, setEnforceOrder] = useState(false);
-
+  const [creating,setCreating] = useState(false);
   // Get content items based on selected type
   const getContentItems = () => {
     switch (selectedContentType) {
@@ -168,6 +170,7 @@ const CreateAssignmentEnhanced = () => {
 
   const handleConfirm = async () => {
     try {
+      setCreating(true);
       // Normalize element schedules: keep only entries with at least one date, and convert to ISO
       const normalizedElementSchedules = Array.isArray(elementSchedules)
         ? elementSchedules
@@ -198,15 +201,26 @@ const CreateAssignmentEnhanced = () => {
         enforceOrder: selectedContentType === 'Learning Path' ? enforceOrder : false
       };
       // console.log(payload)
-      await dispatch(admincreateAssignment(payload)).unwrap();
-      
-      alert('✓ Assignment created successfully!\n\nUsers will be notified according to your settings.');
+      const res = await dispatch(admincreateAssignment(payload))
+      if(admincreateAssignment.fulfilled.match(res)){
+        notifySuccess("Assignment created successfully");
+      }else{
+        notifyError("Failed to create assignment",{
+          message: res.payload.message,
+          title: "Failed to create assignment"
+        });
+      }
+      setCreating(false);      
+      // alert('✓ Assignment created successfully!\n\nUsers will be notified according to your settings.');
       
       // Reset form
       resetForm();
     } catch (err) {
       console.error('Create assignment failed', err);
-      alert('Failed to create assignment. Please try again.');
+      notifyError("Failed to create assignment",{
+        message: err.message,
+        title: "Failed to create assignment"
+      });
     }
   };
 
@@ -253,7 +267,9 @@ const CreateAssignmentEnhanced = () => {
       }
     });
   }, [currentStep]);
-
+  if(creating){
+    return <LoadingScreen text="Creating Assignment..." />;
+  }
   if (loading) {
     return <LoadingScreen text="Fetching Users..." />;
   }
@@ -297,7 +313,9 @@ const CreateAssignmentEnhanced = () => {
               selectedItem={selectedItem}
               setSelectedItem={setSelectedItem}
               filterTeam={filterTeam}
+              filterCategory={filterCategory}
               setFilterTeam={setFilterTeam}
+              setFilterCategory={setFilterCategory}
               filterSubTeam={filterSubTeam}
               setFilterSubTeam={setFilterSubTeam}
               contentItems={getContentItems()}

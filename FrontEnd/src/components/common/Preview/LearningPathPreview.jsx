@@ -7,7 +7,7 @@ import { setSelectedPath } from '../../../store/slices/learningPathSlice';
 import LearningPath from '../../LearningPath/LearningPath';
 import { ChevronRight } from 'lucide-react';
 
-const LearningPathPreview = ({ isOpen, onClose, data }) => {
+const LearningPathPreview = ({ isOpen, onClose, data,teams }) => {
     console.log(data)
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -255,7 +255,7 @@ const LearningPathPreview = ({ isOpen, onClose, data }) => {
                             )}
                             {showPath && (
                                 <div className="global-preview-tab-pane" style={{ padding: 0 }}>
-                                    <LearningPath courseData={data} embedded />
+                                    <LearningPath courseData={data} embedded teams={teams}/>
                                 </div>
                             )}
                         </div>

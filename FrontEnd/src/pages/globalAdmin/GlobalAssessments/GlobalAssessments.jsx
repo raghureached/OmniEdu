@@ -5,54 +5,43 @@ import { GoX } from 'react-icons/go';
 import './GlobalAssessments.css'
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchGlobalAssessments, createGlobalAssessment, updateGlobalAssessment, deleteGlobalAssessment, getGlobalAssessmentById, uploadAssessmentFile } from '../../../store/slices/globalAssessmentSlice'; 
-import { fetchGroups } from '../../../store/slices/groupSlice'; 
-// import api from '../../../services/api';
 import QuestionsForm from './QuestionsForm';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import api from '../../../services/api';
+import { useNotification } from '../../../components/common/Notification/NotificationProvider.jsx';
 const GlobalAssessments = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [currentAssessment, setCurrentAssessment] = useState(null);
-  // Bulk selection state
   const [selectedIds, setSelectedIds] = useState([]);
  const [groups,setGroups] = useState([])
-  // const [formData, setFormData] = useState({
-  //   title: '',
-  //   description: '',
-  //   classification: '',
-  //   status: 'Draft',
-  //   date: ''
-  // });
+ const {showNotification} = useNotification()
+ 
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     status: '',
-    duration: '',            // NEW
-    tags: [],                // NEW
+    duration: '',            
+    tags: [],                
     team: '',  
     subteam:'', 
     Level: '',
-    noOfQuestions: 0,          // NEW    
-    attempts: 1,             // NEW
+    noOfQuestions: 0,          
+    attempts: 1,             
     unlimited_attempts: false,
-    percentage_to_pass: 0,   // NEW
+    percentage_to_pass: 0,   
     instructions: '',
     display_answers: 'AfterAssessment',
-    // Newly added fields for assessments
     credits: 0,
     stars: 0,
     badges: 0,
     category: '',
     feedbackEnabled: false,
    
-    // Shuffle controls
     shuffle_questions: false,
     shuffle_options: false,
-    // Assessment thumbnail (UI preview + server URL)
     thumbnail: '',
-    // thumbnail_file: null,
   });
   const [questions, setQuestions] = useState([{
     type: '',
@@ -105,8 +94,6 @@ const [showFilters, setShowFilters] = useState(false);
     fetchGroups(); // fetch teams/subteams
   }, []);
 
-  // const { groups } = useSelector(state => state.groups); 
-  // console.log("groups in assessments: ",groups)
   const handleAddAssessment = () => {
     setCurrentAssessment(null);
     setFormData({
@@ -302,12 +289,20 @@ const [showFilters, setShowFilters] = useState(false);
     if (!window.confirm(`Delete ${selectedIds.length} assessment(s)? This cannot be undone.`)) return;
     try {
       await Promise.all(
-        selectedIds.map(id => dispatch(deleteGlobalAssessment(id)).unwrap().catch(() => null))
+        selectedIds.map(id => dispatch(deleteGlobalAssessment(id)).catch(() => null))
       );
       clearSelection();
       dispatch(fetchGlobalAssessments({ page, limit }));
+      showNotification({
+        type: "success",
+        message: "Assessments deleted successfully",
+      });
     } catch (e) {
       console.error('Bulk delete failed', e);
+      showNotification({
+        type: "error",
+        message: "Failed to delete assessments",
+      });
     }
   };
   const handleBulkDelete = bulkDelete;
@@ -398,7 +393,7 @@ const [showFilters, setShowFilters] = useState(false);
       setShowForm(true);
     } catch (e) {
       // Fallback to given assessment if API fails
-      console.error('Failed to fetch populated assessment. Using table data.', e);
+      // console.error('Failed to fetch populated assessment. Using table data.', e);
       setCurrentAssessment(assessment);
       setFormData({
         title: assessment.title || '',
@@ -520,12 +515,23 @@ const [showFilters, setShowFilters] = useState(false);
     };
 
     try {
-      console.log("payload",payload)
-      await dispatch(createGlobalAssessment(payload)).unwrap();
+      // console.log("payload",payload)
+      const response = await dispatch(createGlobalAssessment(payload));
+      if(createGlobalAssessment.fulfilled.match(response)){
+        showNotification({
+          type: "success",
+          message: "Assessment created successfully",
+          title: "Assessment Created"
+        });
+      }
       setShowForm(false);
       dispatch(fetchGlobalAssessments({ page, limit }));
     } catch (err) {
-      console.error('Failed to create assessment:', err?.response?.data || err.message);
+      showNotification({
+        type: "error",
+        message: "Failed to create assessment",
+        title: "Assessment Creation Failed"
+      });
     }
   };
 
@@ -541,7 +547,11 @@ const [showFilters, setShowFilters] = useState(false);
           }
         }
       } catch (thumbErr) {
-        console.error('Thumbnail upload failed', thumbErr?.response?.data || thumbErr.message);
+        showNotification({
+          type: "error",
+          message: "Failed to upload thumbnail",
+          title: "Thumbnail Upload Failed"
+        });
       }
 
       const data = {
@@ -609,11 +619,22 @@ const [showFilters, setShowFilters] = useState(false);
 
       const id = currentAssessment?.uuid || currentAssessment?._id || currentAssessment?.id;
       try {
-        await dispatch(updateGlobalAssessment({ id, data })).unwrap();
+       const res = await dispatch(updateGlobalAssessment({ id, data }));
+       if(updateGlobalAssessment.fulfilled.match(res)){
+        showNotification({
+          type: "success",
+          message: "Assessment updated successfully",
+          title: "Assessment Updated"
+        });
+       }
         setShowForm(false);
         dispatch(fetchGlobalAssessments({ page, limit }));
       } catch (err) {
-        console.error('Failed to update assessment:', err?.response?.data || err.message);
+        showNotification({
+          type: "error",
+          message: "Failed to update assessment",
+          title: "Assessment Update Failed"
+        });
       }
     };
 
@@ -744,11 +765,22 @@ const [showFilters, setShowFilters] = useState(false);
   };
 
   const handleDeleteAssessment = async (id) => {
+    const confirm = window.confirm('Are you sure you want to delete this assessment?');
+    if (!confirm) return;
     try {
-      await dispatch(deleteGlobalAssessment(id)).unwrap();
+      await dispatch(deleteGlobalAssessment(id));
+      showNotification({
+        type: "success",
+        message: "Assessment deleted successfully",
+        title: "Assessment Deleted"
+      });
       dispatch(fetchGlobalAssessments({ page, limit }));
     } catch (err) {
-      console.error('Failed to delete assessment:', err?.response?.data || err.message);
+      showNotification({
+        type: "error",
+        message: "Failed to delete assessment",
+        title: "Assessment Deletion Failed"
+      });
     }
   };
 
@@ -1008,10 +1040,14 @@ const [showFilters, setShowFilters] = useState(false);
                           <p className="assess-description">{assessment.description || "No description provided"}</p>
                           {Array.isArray(assessment.tags) && assessment.tags.length > 0 && (
                             <div className="assess-tags">
-                              {assessment.tags.map((t, idx) => (
+                              {assessment.tags.slice(0,3).map((t, idx) => (
                                 <span key={`${assessment.id}-tag-${idx}`} className="assess-classification">{t}</span>
                               ))}
+                              {assessment.tags.length > 3 && (
+                              <span className="assess-classification">+ {assessment.tags.length - 3} more</span>
+                            )}
                             </div>
+                            
                           )}
                         </div>
                       </div>
@@ -1050,13 +1086,6 @@ const [showFilters, setShowFilters] = useState(false);
                     </td>
                     <td>
                       <div className="assess-actions">
-                      <button 
-                          className="assess-action-btn delete" 
-                          onClick={() => handleDeleteAssessment(assessment.uuid)}
-                          title="Delete Assessment"
-                        >
-                          <Trash2 size={14} />
-                        </button>
                         <button 
                           className="assess-action-btn edit" 
                           onClick={() => handleEditAssessment(assessment)}
@@ -1064,6 +1093,14 @@ const [showFilters, setShowFilters] = useState(false);
                         >
                           <Edit3 size={14} />
                         </button>
+                      <button 
+                          className="assess-action-btn delete" 
+                          onClick={() => handleDeleteAssessment(assessment.uuid)}
+                          title="Delete Assessment"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        
                        
                       </div>
                     </td>

@@ -3,6 +3,9 @@ const Team = require("../../models/teams_model");
 const UserProfile = require("../../models/userProfiles_model");
 const UserContentProgress = require("../../models/userContentProgress_model");
 const LearningPath = require("../../models/learningPath_model");
+const OrganizationAssessments = require("../../models/organizationAssessments_model");
+const Module = require("../../models/moduleOrganization_model");
+const OrganizationSurveys = require("../../models/organizationSurveys_model");
 // If you also track user progress
 // const Progress = require("../models/progress.model");
 
@@ -185,6 +188,20 @@ const createAssignment = async (req, res) => {
         await UserContentProgress.bulkWrite(ops, { ordered: false });
       }
     }
+    try{
+      console.log("assignment",assignment)
+    if(content_type === "LearningPath"){
+      await LearningPath.updateOne({ _id: assignment.contentId }, {status:"Published"});
+    }else if(content_type === "OrganizationModule"){
+      await Module.updateOne({ _id: assignment.contentId }, {status:"Published"});
+    }else if(content_type === "OrganizationAssessments"){
+      await OrganizationAssessments.updateOne({ _id: assignment.contentId }, {status:"Published"});
+    }else if(content_type === "OrganizationSurvey"){
+      await OrganizationSurveys.updateOne({ _id: assignment.contentId }, {status:"Published"});
+    }
+  }catch(error){
+    console.log(error)
+  }
     return res.status(201).json({
       isSuccess: true,
       message: "Assignment created successfully",

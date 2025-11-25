@@ -13,6 +13,7 @@ import { useSelector } from 'react-redux';
 import { toast, ToastContainer } from "react-toastify";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
+import { categories } from '../../../utils/constants.js';
 const QuestionsForm = ({
     currentAssessment,
     formData,
@@ -81,7 +82,7 @@ const QuestionsForm = ({
     // Section helpers and actions removed
 
     // Categories for Category select. Replace with API/Redux source if available.
-    const categories = useRef(['General', 'Quiz', 'Exam', 'Practice']).current;
+    // const categories = useRef(['General', 'Quiz', 'Exam', 'Practice']).current;
 
     // Derive sub-teams for the selected team
     const selectedTeam = groups.find(t => String(t._id) === String(formData.team));

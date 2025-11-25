@@ -52,13 +52,15 @@ const addContent = async (req, res) => {
     const primaryFile = req.uploadedFiles?.primaryFile?.[0]?.url;
     const additionalFile = req.uploadedFiles?.additionalFile?.[0]?.url;
     const thumbnail = req.uploadedFiles?.thumbnail?.[0]?.url;
-    const { title,trainingType,team,category,submissionEnabled,feedbackEnabled,instructions, badges,stars,credits,description,externalResource, pushable_to_orgs, tags, duration,learningOutcomes,prerequisites,richText } = req.body;
+    // console.log(req.body)
+    const { title,trainingType,team,subteam,category,submissionEnabled,feedbackEnabled,instructions, badges,stars,credits,description,externalResource, pushable_to_orgs, tags, duration,learningOutcomes,prerequisites,richText } = req.body;
     const created_by = req.user?._id || null;
     const newModule = new GlobalModule({
       title,
       description,
       trainingType,
       team,
+      subteam,
       category,
       submissionEnabled,
       feedbackEnabled,
@@ -101,7 +103,7 @@ const getContent = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = 50;
     const skip = (page - 1) * limit;
-    const content = await GlobalModule.find().populate("team").skip(skip).limit(limit)
+    const content = await GlobalModule.find().skip(skip).limit(limit)
     const total = await GlobalModule.countDocuments()
     // await logGlobalAdminActivity(req,"Get Content","content", `Content fetched successfully ${content.title}`)
     return res.status(200).json({
@@ -150,6 +152,7 @@ const editContent = async (req, res) => {
       title,
       trainingType,
       team,
+      subteam,
       category,
       submissionEnabled,
       feedbackEnabled,
@@ -166,7 +169,7 @@ const editContent = async (req, res) => {
       learningOutcomes,
       prerequisites
     } = req.body;
-    // console.log(req.uploadedFiles)
+    // console.log(req.body)
     // 🧩 Extract uploaded file URLs safely
     const uploadedFiles = req.uploadedFiles || {};
     const primaryFileUrl = uploadedFiles.primaryFile?.[0]?.url || null;
@@ -178,6 +181,7 @@ const editContent = async (req, res) => {
       title,
       trainingType,
       team,
+      subteam,
       category,
       submissionEnabled,
       feedbackEnabled,

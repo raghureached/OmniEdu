@@ -11,17 +11,8 @@ import FullRichTextEditor from './RichText';
 import CustomError from '../../../components/common/Error/Error';
 import { GoBook, GoX } from 'react-icons/go';
 import { admincreateContent, adminupdateContent, enhanceText } from '../../../store/slices/adminModuleSlice';
-const categories = [
-    "Cyber Security",
-    // "POSH (Prevention of Sexual Harassment)",
-    "Compliance & Regulations",
-    "Safety & Health",
-    "Technical Skills",
-    "Soft Skills",
-    "Leadership & Management",
-    "Product Knowledge",
-    "Process & Procedures",
-];
+import { categories } from '../../../utils/constants';
+import { notifyError, notifySuccess } from '../../../utils/notification';
 const trainingTypes = [
     "Mandatory Training",
     "Continuous Learning",
@@ -77,7 +68,7 @@ const ModuleModal = ({
                 if ((host === 'youtube.com' || host === 'm.youtube.com') && u.pathname.startsWith('/embed/')) {
                     return raw;
                 }
-            } catch (_) {}
+            } catch (_) { }
             return raw;
         };
         // Extend here for other providers if needed
@@ -139,6 +130,15 @@ const ModuleModal = ({
             handleInputChange({ target: { name: 'learningOutcomes', value: res.payload.learningOutcomes } });
             setLearningOutcomes(res.payload.learningOutcomes)
             setTags(res.payload.tags)
+            notifySuccess("Name,Description,Tags and Learning Outcomes enhanced successfully",{
+                // message: "Text enhanced successfully",
+                title: "Text created successfully"
+            })
+        }).catch((err) => {
+            notifyError("Failed to create with AI",{
+                message: err.message,
+                title: "Failed to create with AI"
+            })
         }).finally(() => {
             setAiProcessing(false)
         })
@@ -155,6 +155,11 @@ const ModuleModal = ({
         setGeneratingImage(true)
         dispatch(generateImage({ title, description })).then((res) => {
             handleInputChange({ target: { name: 'thumbnail', value: res.payload.thumbnail } });
+        }).catch((err) => {
+            notifyError("Failed to generate image",{
+                message: err.message,
+                title: "Failed to generate image"
+            })
         }).finally(() => {
             setGeneratingImage(false)
         })
@@ -166,7 +171,7 @@ const ModuleModal = ({
             case 2:
                 return contentType === "Upload File" ? newContent.primaryFile : newContent.externalResource || newContent.richText;
             case 3:
-                return newContent.duration && newContent.category && newContent.trainingType
+                return newContent.duration && newContent.category 
             default:
                 return true;
         }
@@ -205,19 +210,37 @@ const ModuleModal = ({
                 status: "Draft",
                 createdDate: new Date().toISOString(),
             };
-            dispatch(admincreateContent(moduleData)).then(() => {
-                // setShowModal(false);
-            });
+            const res = await dispatch(admincreateContent(moduleData));
+            if(admincreateContent.fulfilled.match(res)){
+                notifySuccess("Module created successfully");
+                setShowModal(false);
+            }else{
+                notifyError("Failed to create module",{
+                    message: res.payload.message,
+                    title: "Failed to create module"
+                });
+            }
         } catch (err) {
-            console.error("Error uploading content:", err);
-            alert("Upload failed");
+            // console.error("Error creating module:", err);
+            notifyError("Failed to create module",{
+                message: err.message,
+                title: "Failed to create module"
+            });
         } finally {
 
         }
     };
-    const handleEditContent = () => {
-        dispatch(adminupdateContent({ id: editContentId, updatedData: newContent }));
-        setShowEditModal(false);
+    const handleEditContent = async () => {
+        const res = await dispatch(adminupdateContent({ id: editContentId, updatedData: newContent }));
+        if(adminupdateContent.fulfilled.match(res)){
+            notifySuccess("Module updated successfully");
+            setShowEditModal(false);
+        }else{
+            notifyError("Failed to update module",{
+                message: res.payload.message,
+                title: "Failed to update module"
+            });
+        }
     };
     /* File Preview (Modal) */
     const getFileType = (file, url) => {
@@ -378,27 +401,27 @@ const ModuleModal = ({
                                 </button>
                                 <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(newContent.title, newContent.description)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
                                 {aiHelpOpen && (
-                                        <div
-                                            id="ai-help-panel"
-                                            style={{
-                                                width: '70%',
-                                                margin: '0 auto 12px',
-                                                background: '#eef2ff',
-                                                border: '1px solid #e2e8f0',
-                                                borderRadius: 8,
-                                                padding: '10px 12px',
-                                                color: '#1f2937',
-                                                fontSize: 14
-                                            }}
-                                        >
-                                            <div style={{ fontWeight: 600, marginBottom: 6 }}>Create with AI – How it works</div>
-                                            <ul style={{ marginLeft: 16, listStyle: 'disc' }}>
-                                                <li>Fill <strong>Title</strong> and <strong>Description</strong>. These are required to enable the button.</li>
-                                                
-                                                <li>Click <strong>“Create with AI ✨”</strong>And wait for a moment, You get enhanced title,description,tags and learning outcomes</li>
-                                            </ul>
-                                        </div>
-                                    )}
+                                    <div
+                                        id="ai-help-panel"
+                                        style={{
+                                            width: '70%',
+                                            margin: '0 auto 12px',
+                                            background: '#eef2ff',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: 8,
+                                            padding: '10px 12px',
+                                            color: '#1f2937',
+                                            fontSize: 14
+                                        }}
+                                    >
+                                        <div style={{ fontWeight: 600, marginBottom: 6 }}>Create with AI – How it works</div>
+                                        <ul style={{ marginLeft: 16, listStyle: 'disc' }}>
+                                            <li>Fill <strong>Title</strong> and <strong>Description</strong>. These are required to enable the button.</li>
+
+                                            <li>Click <strong>“Create with AI ✨”</strong>And wait for a moment, You get enhanced title,description,tags and learning outcomes</li>
+                                        </ul>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="module-overlay__form-group" style={{ marginTop: '20px' }}>
@@ -840,28 +863,11 @@ const ModuleModal = ({
                                     </select>
                                 </div>
                                 <div className="module-overlay__form-group" >
-                                    <label className="module-overlay__form-label">
-                                        Training Type <span className="module-overlay__required">*</span>
-                                    </label>
-                                    <select
-                                        name="trainingType"
-                                        value={newContent.trainingType || ''}
-                                        onChange={handleInputChange}
-                                        className="addOrg-form-input"
-                                        required
-                                        style={{ width: '250px' }}
-                                    >
-                                        <option value="">Select Training Type</option>
-                                        {trainingTypes.map((type) => (
-                                            <option key={type} value={type}>
-                                                {type}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    
                                 </div>
                                 <div className="module-overlay__form-group">
                                     <label className="module-overlay__form-label">
-                                        Target Team/Sub Team <span className="module-overlay__required">*</span>
+                                        Target Team <span className="module-overlay__required">*</span>
                                     </label>
                                     <select
                                         name="team"
@@ -871,13 +877,35 @@ const ModuleModal = ({
                                         required
                                         style={{ width: '250px' }}
                                     >
-                                        <option value="">Select Team/Sub Team</option>
+                                        <option value="">Select Sub Team</option>
                                         {teams?.map((team) => (
                                             <option key={team._id} value={team._id}>
                                                 {team.name}
                                             </option>
                                         ))}
                                     </select>
+
+                                </div>
+                                <div className="module-overlay__form-group">
+                                    <label className="module-overlay__form-label">
+                                        Target Sub Team <span className="module-overlay__required">*</span>
+                                    </label>
+                                    <select value={newContent.subteam || ""} 
+                                        name="subteam"
+                                        onChange={handleInputChange}
+                                        className="addOrg-form-input"
+                                        required
+                                        style={{width:"200px"}}>
+
+                                        <option value="">All Sub-Teams</option>
+                                        {teams
+                                            .find(team => team._id === newContent.team)
+                                            ?.subTeams
+                                            ?.map(sub => (
+                                                <option key={sub._id} value={sub._id}>{sub.name}</option>
+                                            ))}
+                                    </select>
+
                                 </div>
                             </div>
 
@@ -898,10 +926,10 @@ const ModuleModal = ({
                                 <label className="module-overlay__form-label module-overlay__checkbox">
                                     <input
                                         type="checkbox"
-                                        name="submissionsEnabled"
-                                        checked={!!newContent.submissionsEnabled}
+                                        name="submissionEnabled"
+                                        checked={!!newContent.submissionEnabled}
                                         onChange={(e) =>
-                                            handleInputChange({ target: { name: 'submissionsEnabled', value: e.target.checked } })
+                                            handleInputChange({ target: { name: 'submissionEnabled', value: e.target.checked } })
                                         }
                                     />
                                     Allow learners submissions
@@ -917,7 +945,7 @@ const ModuleModal = ({
                     )}
 
                 </div>
-                {preview && <ModulePreview data={newContent} onClose={() => setPreview(false)} />}
+                {preview && <ModulePreview data={newContent} teams={teams} onClose={() => setPreview(false)} />}
 
                 {filePreview.open && (
                     <div className="addOrg-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="filePreviewTitle">

@@ -322,8 +322,8 @@
   .global-preview-right-col-content {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    /* align-items: center; */
+    /* justify-content: center; */
     gap: 16px;
   }
   
@@ -342,13 +342,13 @@
   }
   
   /* Details */
-  .global-preview-details {
+  /* .global-preview-details {
     display: grid;
     grid-template-columns: 1fr;
     gap: 16px;
     flex-grow: 1;
   }
-  
+   */
   .global-preview-card {
     background: var(--global-preview-card);
     border-radius: 10px;
@@ -497,7 +497,7 @@
   
   /* Actions */
   .global-preview-actions {
-    position: sticky;
+    /* position: sticky; */
     bottom: 0;
     left: 0;
     right: 0;

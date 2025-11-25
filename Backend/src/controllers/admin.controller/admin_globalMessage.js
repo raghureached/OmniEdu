@@ -34,7 +34,7 @@ const getGlobalAdminMessages = async (req, res) => {
     // Resolve to organization UUID (messages are stored with organization uuid)
     let orgDoc = null;
     // Try by uuid first
-    const orgByUuid = await Organization.findOne({ uuid: candidate }).select("_id uuid");
+    const orgByUuid = await Organization.findById(req.user.organization_id).select("_id uuid");
     if (orgByUuid) {
       orgDoc = orgByUuid;
     } else if (mongoose.isValidObjectId(candidate)) {
@@ -49,9 +49,7 @@ const getGlobalAdminMessages = async (req, res) => {
       });
     }
 
-    // Query using uuid, and also fallback to candidate and _id string in case older records used them
-    const idVariants = [orgDoc.uuid, String(orgDoc._id), candidate].filter(Boolean);
-    const query = { organization_id: { $in: idVariants }, status: "active" };
+    const query = { organization_id: req.user.organization_id, status: "active" };
 
     const messages = await ForAdminMessage.find(query)
       .skip(skip)

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchRoles,
@@ -9,16 +9,14 @@ import {
 } from "../../../store/slices/roleSlice";
 import './GlobalRolesManagement.css'
 import api from "../../../services/api";
-import CustomLoader from "../../../components/common/Loading/CustomLoader";
-import { RiDeleteBinFill } from "react-icons/ri";
-import { FiEdit3 } from "react-icons/fi";
 import { Edit3, Search, Trash2 } from "lucide-react";
 import LoadingScreen from "../../../components/common/Loading/Loading";
 import { GoOrganization, GoTrash, GoX } from "react-icons/go";
+import {useNotification} from "../../../components/common/Notification/NotificationProvider";
 
 const GlobalRolesManagement = () => {
   const dispatch = useDispatch();
-  const { globalRoles, orgRoles, loading } = useSelector((state) => state.roles);
+  const { globalRoles, orgRoles, loading ,error} = useSelector((state) => state.roles);
   const [availablePermissions, setAvailablePermissions] = useState([]); // sections + permissions
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -31,6 +29,7 @@ const GlobalRolesManagement = () => {
   const [permissions, setPermissions] = useState([]);
   const [organization, setOrganization] = useState(null)
   const { organizations } = useSelector(state => state.organizations);
+  const { showNotification } = useNotification();
 
   useEffect(() => {
     dispatch(fetchRoles("global"));
@@ -66,9 +65,25 @@ const GlobalRolesManagement = () => {
     setShowForm(true);
   };
 
-  const handleDeleteRole = (roleId) => {
+  const handleDeleteRole = async (roleId) => {
     if (window.confirm("Are you sure you want to delete this role?")) {
-      dispatch(deleteRole({ _id: roleId, isGlobalAdmin: true }));
+      const resultAction = await dispatch(deleteRole({ _id: roleId, isGlobalAdmin: true }));
+
+      if(deleteRole.fulfilled.match(resultAction)){
+        showNotification({
+          type: "success",
+          title: "Role deleted successfully",
+          message: "Role deleted successfully",
+          duration: 5000,
+        });
+      }else{
+        showNotification({
+          type: "error",
+          title: "Role deletion failed",
+          message: error,
+          duration: 5000,
+        });
+      }
     }
   };
 
@@ -95,18 +110,33 @@ const GlobalRolesManagement = () => {
   const handleSelectCurrentOrg = (orgId) => {
     setCurrentOrg((prev) => (prev === orgId ? null : orgId));
   }
-  const handleToggleRole = (orgId,roleId) => {
-    dispatch(
+  const handleToggleRole = async(orgId,roleId) => {
+    const resultAction = await dispatch(
       updateOrgRole({
         id: roleId,
         orgId:currentOrg,
       })
     );
+    
+    if(updateOrgRole.fulfilled.match(resultAction)){
+      showNotification({
+        type: "success",
+        title: `Role updated for ${organizations.find((org) => org.uuid === currentOrg).name.slice(0, 7)}...`,
+        message: "Role updated successfully",
+        duration: 5000,
+      });
+    }else{
+      showNotification({
+        type: "error",
+        title: "Role update failed",
+        message: resultAction.payload.message,
+        duration: 5000,
+      });
+    }
   };
 
-  const handleSaveRole = (e) => {
+  const handleSaveRole = async (e) => {
     e.preventDefault();
-
     const roleData = {
       name: formData.name,
       description: formData.description,
@@ -115,14 +145,43 @@ const GlobalRolesManagement = () => {
     };
 
     if (currentRole) {
-      dispatch(
-        updateRole({
-          id: currentRole.uuid,
-          roleData,
-        })
-      );
+    const resultAction = await dispatch(updateRole({
+      id: currentRole.uuid,
+      roleData,
+    }));
+      
+      if(updateRole.fulfilled.match(resultAction)){
+        showNotification({
+          type: "success",
+          title: "Role updated successfully",
+          message: "Role updated successfully",
+          duration: 5000,
+        });
+      }else{
+        showNotification({
+          type: "error",
+          title: "Role update failed",
+          message: error,
+          duration: 5000,
+        });
+      }
     } else {
-      dispatch(createRole({ roleData }));
+    const resultAction = await dispatch(createRole({ roleData }));
+      if(createRole.fulfilled.match(resultAction)){
+        showNotification({
+          type: "success",
+          title: "Role created successfully",
+          message: "Role created successfully",
+          duration: 5000,
+        });
+      }else{
+        showNotification({
+          type: "error",
+          title: "Role creation failed",
+          message: resultAction.payload.message,
+          duration: 5000,
+        });
+      }
     }
     setFormData({ name: "", description: "" });
     setPermissions([]);
@@ -324,17 +383,18 @@ const GlobalRolesManagement = () => {
                     </td>
                     {currentOrg === "global" || currentOrg === null ? <td className="roles-action-cell">
                       <button
-                        className="global-action-btn delete"
-                        onClick={() => handleDeleteRole(role.uuid)}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                      <button
                         className="global-action-btn edit"
                         onClick={() => handleEditRole(role)}
                       >
                       <Edit3 size={14} />
                       </button>
+                      <button
+                        className="global-action-btn delete"
+                        onClick={() => handleDeleteRole(role.uuid)}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                      
                     </td> : 
                     <td className="roles-action-cell">
                     <div key={role._id} className="permission-item">

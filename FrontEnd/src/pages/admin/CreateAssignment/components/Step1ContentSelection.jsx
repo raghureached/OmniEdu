@@ -1,5 +1,6 @@
 import { ChevronRight } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { categories } from '../../../../utils/constants';
 
 const Step1ContentSelection = ({
   selectedContentType,
@@ -12,6 +13,8 @@ const Step1ContentSelection = ({
   setFilterSubTeam,
   contentItems,
   onNext,
+  filterCategory,
+  setFilterCategory,
   teams
 }) => {
   const [noOfQuestions, setNoOfQuestions] = useState(1);
@@ -64,8 +67,11 @@ const Step1ContentSelection = ({
     if (filterTeam && item.team !== filterTeam) return false;
     if (filterSubTeam && item.subteam !== filterSubTeam) return false;
     if (searchTerm && !String(item.title || '').toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    if (filterCategory && item.category !== filterCategory) return false;
     return true;
   });
+  
+  
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
   const safePage = Math.min(currentPage, totalPages);
@@ -75,6 +81,7 @@ const Step1ContentSelection = ({
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, filterTeam, filterSubTeam, selectedContentType]);
+  
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -193,22 +200,15 @@ const Step1ContentSelection = ({
                       <option key={sub._id} value={sub._id}>{sub.name}</option>
                     ))}
                 </select>
-                <select value={filterSubTeam} onChange={(e) => setFilterSubTeam(e.target.value)}>
+                <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
                   <option value="">Category</option>
-                  {teams
-                    .find(team => team._id === filterTeam)
-                    ?.subTeams
-                    ?.map(sub => (
-                      <option key={sub._id} value={sub._id}>{sub.name}</option>
-                    ))}
+                  {categories.map(category => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
                 </select>
               </div>
-
-
             </div>
-
           </div>
-
           <div className="form-group">
             <label className="required">Select Item to Assign</label>
             <div className="help-text" style={{ marginBottom: 10 }}>Only one item can be selected. To assign multiple items, create a Learning Path.</div>
@@ -287,7 +287,6 @@ const Step1ContentSelection = ({
                 </div>
               )}
             </div>
-
             {filteredItems.length > 0 && Math.ceil(filteredItems.length / pageSize) > 1 && (
               <div className="pagination-controls" style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
                 <button

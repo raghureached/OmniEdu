@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import './Preview.css';
 import { GoBook } from 'react-icons/go';
 import { RiDeleteBin2Fill } from 'react-icons/ri';
-import { EyeIcon, Plus, ThumbsUp, ThumbsDown, Send, Play, Pause, Volume2, VolumeX, Maximize, Minimize, ChevronLast, ChevronLeft, ChevronRight } from 'lucide-react';
+import { EyeIcon, Plus, ThumbsUp, ThumbsDown, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 import VideoPlayer from '../../VideoPlayer/VideoPlayer';
 
-const ModulePreview = ({ isOpen, onClose, data,embedded }) => {
-    console.log(data)
+const ModulePreview = ({ isOpen, onClose, data,embedded,teams }) => {
+    // console.log(data)
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('preview');
     const [showModal, setShowModal] = useState(false);
@@ -15,9 +15,21 @@ const ModulePreview = ({ isOpen, onClose, data,embedded }) => {
     const [submission,setSubmission] = useState(null);
     const objectUrlRef = useRef(null);
     const primaryUrlRef = useRef(null);
+    const [teamName,setTeamName] = useState('');
+    const [subteamName,setSubteamName] = useState('');
     const [feedbackReaction, setFeedbackReaction] = useState(null); // 'like' | 'dislike' | null
     const [feedbackComment, setFeedbackComment] = useState('');
-    // Initialize from incoming data
+    useEffect(() => {
+            if (data.team) {
+                const team = teams.find((team) => team.id === data.team);
+                console.log(team)
+                setTeamName(team.name);
+            }
+            if (data.subteam) {
+                const subteam = teams.find((team) => team.id === data.team).subTeams.find((subteam) => subteam._id === data.subteam);
+                setSubteamName(subteam.name);
+            }
+        }, [data]);
     useEffect(() => {
         if (!data) return;
         const inferType = (url) => {
@@ -38,7 +50,7 @@ const ModulePreview = ({ isOpen, onClose, data,embedded }) => {
                 return 'File';
             }
         };
-
+        
         const list = [];
         if (data.additionalFile) {
             list.push({
@@ -138,7 +150,8 @@ const ModulePreview = ({ isOpen, onClose, data,embedded }) => {
     const category = data?.category || 'Uncategorized';
     const trainingType = data?.trainingType || '—';
     // console.log(data)
-    const teamName = data?.team?.name || '—';
+    const team = data?.team || '—';
+    const subteam = data?.subteam || '—';
     // const subTeamName = data?.subTeam?.name || '—';
     const durationMins = data?.duration || null;
     const credits = data?.credits ?? 0;
@@ -273,13 +286,13 @@ const ModulePreview = ({ isOpen, onClose, data,embedded }) => {
                                                     Training Category: {category}
                                                 </div>
                                                 <div className="global-preview-meta-row">
-                                                    <div>
+                                                    {/* <div>
                                                         <strong className="global-preview-meta-label">Training Type</strong>
                                                         <span className="global-preview-meta-value">{trainingType}</span>
-                                                    </div>
+                                                    </div> */}
                                                     <div>
                                                         <strong className="global-preview-meta-label">Target Team/Sub Team</strong>
-                                                        <span className="global-preview-meta-value">{teamName}</span>
+                                                        <span className="global-preview-meta-value">{teamName || '-'}/{subteamName || '-'}</span>
                                                     </div>
                                                 </div>
                                             </div>

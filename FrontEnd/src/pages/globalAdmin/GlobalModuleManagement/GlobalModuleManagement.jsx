@@ -6,10 +6,9 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X, Filter } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading'
 import { RiDeleteBinFill } from "react-icons/ri";
-import { FiEdit3 } from "react-icons/fi";
 import GlobalModuleModal from './GlobalModuleModal';
 import { GoX } from 'react-icons/go';
-
+import { useNotification } from '../../../components/common/Notification/NotificationProvider.jsx';
 
 const GlobalModuleManagement = () => {
   const dispatch = useDispatch();
@@ -21,12 +20,9 @@ const GlobalModuleManagement = () => {
   const [editContentId, setEditContentId] = useState(null);
   const [showDraftModal, setShowDraftModal] = useState(false);
   const [draftContent, setDraftContent] = useState([]);
-  const [selectAll, setSelectAll] = useState(false);
   const [showBulkAction, setShowBulkAction] = useState(false);
   const [selectedItems, setSelectedItems] = useState([]);
-
-  //newly added 
-  // const [showFilters, setShowFilters] = useState(false);
+  const {showNotification} = useNotification()
   const [filters, setFilters] = useState({
     status: ''
   });
@@ -48,6 +44,7 @@ const GlobalModuleManagement = () => {
     stars: 0,
     badges: 0,
     team: "",
+    subteam: "",
     category: "",
     trainingType: "",
     instructions: "",
@@ -64,7 +61,18 @@ const GlobalModuleManagement = () => {
 
   const handleDeleteContent = (contentId) => {
     if (window.confirm("Are you sure you want to delete this content?")) {
-      dispatch(deleteContent(contentId));
+      const deleteRes = dispatch(deleteContent(contentId));
+      deleteRes.then(() => {
+        showNotification({
+          type: "success",
+          message: "Module deleted successfully",
+        });
+      }).catch((error) => {
+        showNotification({
+          type: "error",
+          message: "Failed to delete module",
+        });
+      });
     }
   };
 
@@ -149,32 +157,6 @@ const GlobalModuleManagement = () => {
     const draft = JSON.parse(drafts).find((draft) => draft.title === title);
     return draft;
   };
-  const handleAddContent = async () => {
-
-    setUploading(true);
-
-    try {
-      // Build FormData
-      const formData = new FormData();
-      const moduleData = {
-        ...newContent,
-        id: Date.now(), // temporary id
-        status: "Draft",
-        createdDate: new Date().toISOString(),
-      };
-
-      // console.log(moduleData)
-      // ✅ Dispatch or API call with formData
-      dispatch(createContent(moduleData))
-
-    } catch (err) {
-      setUploading(false)
-      console.error("Error uploading content:", err);
-      alert("Upload failed");
-    } finally {
-      setUploading(false);
-    }
-  };
   const openEditModal = (content) => {
     setEditContentId(content.uuid)
     setNewContent({
@@ -191,6 +173,7 @@ const GlobalModuleManagement = () => {
       stars: content.stars || 0,
       badges: content.badges || 0,
       team: content.team || "",
+      subteam: content.subteam || "",
       category: content.category || "",
       trainingType: content.trainingType || "",
       instructions: content.instructions || "",
@@ -236,6 +219,7 @@ const GlobalModuleManagement = () => {
       stars: 0,
       badges: 0,
       team: "",
+      subteam: "",
       category: "",
       trainingType: "",
       instructions: "",
@@ -456,7 +440,7 @@ const GlobalModuleManagement = () => {
         </div>
       </div>
 
-      {showModal && <GlobalModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading} handleRichInputChange={handleRichInputChange} error={error} />}
+      {showModal && <GlobalModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange}uploading={uploading} setUploading={setUploading} handleRichInputChange={handleRichInputChange} error={error} />}
       {showEditModal && <GlobalModuleModal showModal={showEditModal} setShowModal={setShowEditModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} showEditModal={showEditModal} setShowEditModal={setShowEditModal} editContentId={editContentId} handleRichInputChange={handleRichInputChange} error={error} />}
       <div className="table-container">
         <table className="data-table">
@@ -466,8 +450,8 @@ const GlobalModuleManagement = () => {
               <th>Title</th>
               <th>Credits</th>
               <th>Status</th>
-              <th>Team</th>
-              <th>Created Date</th>
+              {/* <th>Team</th> */}
+              <th>Date Created</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -482,10 +466,14 @@ const GlobalModuleManagement = () => {
                       <p className="assess-description">{content.description || "No description provided"}</p>
                       {Array.isArray(content.tags) && content.tags.length > 0 && (
                         <div className="assess-tags">
-                          {content.tags.map((t, idx) => (
+                          {content.tags.slice(0, 3).map((t, idx) => (
                             <span key={`${content.id}-tag-${idx}`} className="assess-classification">{t}</span>
                           ))}
+                          {content.tags.length > 3 && (
+                          <span className="assess-classification">+ {content.tags.length - 3} more</span>
+                        )}
                         </div>
+                        
                       )}
                     </div>
                   </div>
@@ -493,10 +481,10 @@ const GlobalModuleManagement = () => {
                 <td>{content.credits}</td>
                 <td>
                   <span className={` ${content.status === 'Published' ? 'published' : content.status === 'Draft' ? 'draft' : 'saved'} assess-status-badge`}>
-                    {content.status === 'Published' ? `✓ ${content.status}` : content.status === 'Draft' ? 'Draft' : 'Saved'}
+                    {content.status === 'Published' ? `${content.status}` : content.status === 'Draft' ? 'Draft' : 'Saved'}
                   </span>
                 </td>
-                <td>{content.team?.name || "All"}</td>
+                {/* <td>{content.team?.name || "All"}</td> */}
                 <td>
                   <div className="assess-date-info"><Calendar size={14} />
                     <span>{content.createdAt ? new Date(content.createdAt).toLocaleDateString('en-US', {
@@ -508,17 +496,18 @@ const GlobalModuleManagement = () => {
                 </td>
                 <td>
                   <div style={{ display: "flex", gap: "10px" }}>
-                    <button
-                      className="global-action-btn delete"
-                      onClick={() => handleDeleteContent(content.uuid)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    
                     <button className="global-action-btn edit" onClick={() => {
                       setEditContentId(content.uuid)
                       openEditModal(content);
                     }}>
                       <Edit3 size={16} />
+                    </button>
+                    <button
+                      className="global-action-btn delete"
+                      onClick={() => handleDeleteContent(content.uuid)}
+                    >
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </td>

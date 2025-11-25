@@ -2,12 +2,12 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
 
 // Async thunks for message management
-export const fetchMessage = createAsyncThunk(
+export const fetchMessages = createAsyncThunk(
   'message/fetchMessage',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/admin/message');
-      return response.data;
+      const response = await api.get('api/user/getMessages');
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -49,15 +49,15 @@ const messageSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchMessage.pending, (state) => {
+      .addCase(fetchMessages.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchMessage.fulfilled, (state, action) => {
+      .addCase(fetchMessages.fulfilled, (state, action) => {
         state.loading = false;
         state.currentMessage = action.payload;
       })
-      .addCase(fetchMessage.rejected, (state, action) => {
+      .addCase(fetchMessages.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

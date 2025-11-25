@@ -11,6 +11,10 @@ import { addLearningPath, editLearningPath } from '../../../store/slices/learnin
 import LearningPathPreview from '../../../components/common/Preview/LearningPathPreview';
 import api from '../../../services/api';
 import { FiTrash2 } from 'react-icons/fi';
+import { categories } from '../../../utils/constants';
+import { notifyError, notifySuccess } from '../../../utils/notification';
+import CustomLoader from '../../../components/common/Loading/CustomLoader';
+import CustomLoader2 from '../../../components/common/Loading/CustomLoader2';
 
 const defaultForm = {
   title: '',
@@ -246,8 +250,16 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
       const response = await api.post('/api/admin/enhanceText', { title });
       setTags(response.data.data.tags);
       setForm({ ...form, title: response.data.data.title, description: response.data.data.description, tagsText: response.data.data.tags.join(', ') });
+      notifySuccess("Tags, Title and Description enhanced successfully",{
+        message: "Tags, Title and Description enhanced successfully",
+        title: "Tags, Title and Description enhanced successfully"
+      });
     } catch (error) {
-      console.error('Error enhancing text:', error);
+      // console.error('Error enhancing text:', error);
+      notifyError("Failed to enhance text",{
+        message: error.message,
+        title: "Failed to enhance text"
+      });
     } finally {
       setAiProcessing(false);
     }
@@ -273,7 +285,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault();
     if (!form.title.trim()) return;
     // derive arrays by type from ordered pathItems to keep consistency
@@ -288,11 +300,22 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
       lessons,
     };
 
-    dispatch(addLearningPath(payload));
+    const res = await dispatch(addLearningPath(payload));
+    if(addLearningPath.fulfilled.match(res)){
+      notifySuccess("Learning Path created successfully",{
+        message: "Learning Path created successfully",
+        title: "Learning Path created successfully"
+      });
+    }else{
+      notifyError("Failed to create Learning Path",{
+        message: res.payload.message,
+        title: "Failed to create Learning Path"
+      });
+    }
     onClose();
     // onSave(payload);
   };
-  const handleEdit = (e) => {
+  const handleEdit = async (e) => {
     e.preventDefault();
     if (!form.title.trim()) return;
     // derive arrays by type from ordered pathItems to keep consistency
@@ -312,7 +335,18 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
       lessons,
     };
     // console.log(payload);
-    dispatch(editLearningPath({ uuid: initialData.uuid, ...payload }));
+    const res = await dispatch(editLearningPath({ uuid: initialData.uuid, ...payload }));
+    if(editLearningPath.fulfilled.match(res)){
+      notifySuccess("Learning Path updated successfully",{
+        message: "Learning Path updated successfully",
+        title: "Learning Path updated successfully"
+      });
+    }else{
+      notifyError("Failed to update Learning Path",{
+        message: res.payload.message,
+        title: "Failed to update Learning Path"
+      });
+    }
     onClose();
     // onSave(payload);
   };
@@ -342,13 +376,13 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
             {currentStep === 1 && (
               <div className="module-overlay__step">
                 <div className="module-overlay__form-group">
-                  <label className="module-overlay__form-label">Title <span className="module-overlay__required">*</span></label>
-                  <input className="addOrg-form-input" type="text" name="title" value={form.title} onChange={handleChange} placeholder="Enter learning path name" autoComplete="off" required style={{ width: '100%' }} />
+                  <label className="module-overlay__form-label"><span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Title <span className="module-overlay__required">*</span><span>{aiProcessing && <CustomLoader2 size={16} text={'Loading...'} />}</span></span></label>
+                  <input className="addOrg-form-input" type="text" name="title" value={form.title} onChange={handleChange} placeholder="Enter learning path name" autoComplete="off" required style={{ width: '100%' }}  disabled={aiProcessing}/>
                 </div>
                 
                 <div className="module-overlay__form-group">
-                  <label className="module-overlay__form-label">Description <span className="module-overlay__required">*</span></label>
-                  <textarea className="addOrg-form-input" name="description" value={form.description} onChange={handleChange} placeholder="Enter detailed description" rows={4} style={{ width: '100%' }} />
+                  <label className="module-overlay__form-label"><span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Description <span className="module-overlay__required">*</span><span>{aiProcessing && <CustomLoader2 size={16} text={'Loading...'} />}</span></span></label>
+                  <textarea className="addOrg-form-input" name="description" value={form.description} onChange={handleChange} placeholder="Enter detailed description" rows={4} style={{ width: '100%' }} disabled={aiProcessing}/>
                 </div>
                 <button
                   type="button"
@@ -386,7 +420,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
 
 
                 <div className="module-overlay__form-group">
-                  <label className="module-overlay__form-label">Tags<span className="module-overlay__required">*</span></label>
+                  <label className="module-overlay__form-label"><span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Tags<span className="module-overlay__required">*</span><span>{aiProcessing && <CustomLoader2 size={16} text={'Loading...'} />}</span></span></label>
                   <input
                     type="text"
                     value={tagInput}
@@ -396,6 +430,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                     placeholder="Type a tag and press Enter or comma"
                     autoComplete="off"
                     style={{ width: '100%' }}
+                    disabled={aiProcessing}
                   />
                   <div className="module-overlay__tags-container">
                     {tags.map((tag, index) => (
@@ -414,8 +449,8 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                   </div>
                 </div>
                 <div className="module-overlay__form-group">
-                  <label className="module-overlay__form-label">Prerequisites<span className="module-overlay__required">*</span></label>
-                  <input className="addOrg-form-input" type="text" name="prerequisite" value={form.prerequisite} onChange={handleChange} placeholder="Enter prerequisites" autoComplete="off" style={{ width: '100%' }} />
+                  <label className="module-overlay__form-label"><span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Prerequisites<span className="module-overlay__required">*</span></span></label>
+                  <input className="addOrg-form-input" type="text" name="prerequisite" value={form.prerequisite} onChange={handleChange} placeholder="Enter prerequisites" autoComplete="off" style={{ width: '100%' }} disabled={aiProcessing}/>
                 </div>
                 <div className="module-overlay__form-group">
                   <label className="module-overlay__form-label">Thumbnail<span className="module-overlay__required">*</span></label>
@@ -696,25 +731,17 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                       <label className="module-overlay__form-label">Category <span className="module-overlay__required">*</span></label>
                       <select className="addOrg-form-input" name="category" value={form.category} onChange={handleChange} style={{ width: '100%' }}>
                         <option value="">Select Category</option>
-                        <option value="technical">Technical Skills</option>
-                        <option value="soft">Soft Skills</option>
-                        <option value="compliance">Compliance</option>
-                        <option value="leadership">Leadership</option>
+                        {categories.map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
                       </select>
                     </div>
+                    
                     <div>
-                      <label className="module-overlay__form-label">Training Type <span className="module-overlay__required">*</span></label>
-                      <select className="addOrg-form-input" name="trainingType" value={form.trainingType} onChange={handleChange} style={{ width: '100%' }}>
-                        <option value="">Select Training Type</option>
-                        <option value="Mandatory Training">Mandatory Training</option>
-                        <option value="Continuous Learning">Continuous Learning</option>
-                        <option value="Micro Learning/Learning Byte">Micro Learning/Learning Byte</option>
-                        <option value="Initial/Onboarding Training">Initial/Onboarding Training</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="module-overlay__form-label">Target Team/Sub Team <span className="module-overlay__required">*</span></label>
-                      <div className="lp-grid-2">
+                      <label className="module-overlay__form-label">Target Team<span className="module-overlay__required">*</span></label>
+                      <div >
                         <select className="addOrg-form-input" name="team" value={form.team._id || initialData?.team} onChange={handleChange} style={{ width: '100%' }}>
                           <option value="">Select a Team</option>
                           {teams.map((team) => (
@@ -723,6 +750,12 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                             </option>
                           ))}
                         </select>
+                      </div>
+                      
+                    </div>
+                    <div>
+                      <label className="module-overlay__form-label">Target Sub Team<span className="module-overlay__required">*</span></label>
+
                         <select className="addOrg-form-input" name="subteam" value={form.subteam._id || initialData?.subteam} onChange={handleChange} style={{ width: '100%' }}>
                           <option value="">Select a Sub-team</option>
                           {initialData?.team.length > 0 ?
@@ -745,7 +778,6 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                           }
                         </select>
                       </div>
-                    </div>
                   </div>
                 </div>
 
@@ -843,7 +875,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
               </div>
             );
           })()}
-          {preview && <LearningPathPreview isOpen={preview} onClose={() => setPreview(false)} data={previewData} />}
+          {preview && <LearningPathPreview isOpen={preview} onClose={() => setPreview(false)} data={previewData} teams={teams} />}
           {/* FOOTER */}
           <div className="module-overlay__footer" style={{ padding: '10px' }}>
             <div className="module-overlay__step-navigation">

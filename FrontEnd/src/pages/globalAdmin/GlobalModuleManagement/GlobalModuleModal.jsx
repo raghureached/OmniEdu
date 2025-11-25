@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, EyeIcon, Loader, Plus, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, EyeIcon, Info, Loader, Plus, X } from 'lucide-react';
 import './GlobalModuleModal.css';
 import { RiDeleteBin2Fill } from 'react-icons/ri';
 import { useDispatch, useSelector } from 'react-redux';
@@ -8,30 +8,16 @@ import CustomLoader2 from '../../../components/common/Loading/CustomLoader2';
 import ModulePreview from '../../../components/common/Preview/Preview';
 import api from '../../../services/api';
 import FullRichTextEditor from './RichText';
-import CustomError from '../../../components/common/Error/Error';
 import { GoBook, GoX } from 'react-icons/go';
-const categories = [
-    "Cyber Security",
-    // "POSH (Prevention of Sexual Harassment)",
-    "Compliance & Regulations",
-    "Safety & Health",
-    "Technical Skills",
-    "Soft Skills",
-    "Leadership & Management",
-    "Product Knowledge",
-    "Process & Procedures",
-];
-const trainingTypes = [
-    "Mandatory Training",
-    "Continuous Learning",
-    "Micro Learning/Learning Byte",
-    "Initial/Onboarding Training",
-];
+import {categories} from '../../../utils/constants.js';
+import {useNotification} from '../../../components/common/Notification/NotificationProvider.jsx'
+import { notifyError, notifySuccess } from '../../../utils/notification.js';
 
 
 const GlobalModuleModal = ({
     showModal, setShowModal, newContent, handleInputChange, showEditModal, setShowEditModal, editContentId, drafts, setDrafts, handleRichInputChange, error
 }) => {
+    // console.log(newContent)
     const [currentStep, setCurrentStep] = useState(1);
     const [learningOutcomes, setLearningOutcomes] = useState(newContent.learningOutcomes || ['']);
     const [tags, setTags] = useState(newContent.tags || []);
@@ -45,7 +31,10 @@ const GlobalModuleModal = ({
     const [teams, setTeams] = useState([]);
     const [aiProcessing, setAiProcessing] = useState(false);
     const [generatingImage, setGeneratingImage] = useState(false);
+    const [aiHelpOpen, setAiHelpOpen] = useState(false);
     const [filePreview, setFilePreview] = useState({ open: false, url: null, name: '', type: '', isBlob: false });
+    const {showNotification} = useNotification()
+    const [subteams, setSubteams] = useState([])
     const validateUrl = (url) => {
         try {
             const _url = new URL(url);
@@ -66,6 +55,7 @@ const GlobalModuleModal = ({
         };
         fetchTeams();
     }, []);
+    
     // Run URL validation when externalResource changes
     useEffect(() => {
         setShowIframe(false); // hide iframe whenever URL changes
@@ -113,8 +103,12 @@ const GlobalModuleModal = ({
             handleInputChange({ target: { name: 'learningOutcomes', value: res.payload.learningOutcomes } });
             setLearningOutcomes(res.payload.learningOutcomes)
             setTags(res.payload.tags)
+        }).catch((err) => {
+            console.log(err)
+            notifyError("Failed to enhance text")
         }).finally(() => {
             setAiProcessing(false)
+            notifySuccess("Title, description, tags and learning outcomes created!")
         })
     }
     const generateImage = (title, description) => {
@@ -130,6 +124,9 @@ const GlobalModuleModal = ({
         dispatch(generateImage({ title, description })).then((res) => {
             // console.log(res)
             handleInputChange({ target: { name: 'thumbnail', value: res.payload.thumbnail } });
+        }).catch((err) => {
+            console.log(err)
+            notifyError("Failed to generate image")
         }).finally(() => {
             setGeneratingImage(false)
         })
@@ -141,7 +138,7 @@ const GlobalModuleModal = ({
             case 2:
                 return contentType === "Upload File" ? newContent.primaryFile : newContent.externalResource || newContent.richText;
             case 3:
-                return newContent.duration && newContent.category && newContent.team && newContent.trainingType 
+                return newContent.duration && newContent.category && newContent.team 
             default:
                 return true;
         }
@@ -184,21 +181,76 @@ const GlobalModuleModal = ({
 
             // console.log(moduleData)
             // ✅ Dispatch or API call with formData
-            dispatch(createContent(moduleData)).then(() => {
-                setShowModal(false);
-            });
+            const res = await dispatch(createContent(moduleData))
+            if(createContent.fulfilled.match(res)) {
+                showNotification({
+                    type: "success",
+                    title: "Module added successfully",
+                    message: "Module added successfully",
+                    duration: 5000,
+                })
+                setShowModal(false)
+            }else{
+                showNotification({
+                    type: "error",
+                    title: "Failed to add Module",
+                    message: "Failed to add Module",
+                    duration: 5000,
+                })
+            }
         } catch (err) {
-            console.error("Error uploading content:", err);
-            alert("Upload failed");
-        } finally {
-
+            // console.error("Error uploading content:", err);
+            showNotification({
+                type: "error",
+                title: "Failed to add Module",
+                message: "Failed to add Module",
+                duration: 5000,
+            })
         }
     };
-    const handleEditContent = () => {
-        dispatch(updateContent({ id: editContentId, updatedData: newContent }));
-        setShowEditModal(false);
-        // setEditContentId(null);
-        // setNewContent({});
+    const normalizeExternalUrl = (url) => {
+        const normalizeYouTube = (raw) => {
+            try {
+                const u = new URL(raw);
+                const host = u.hostname.replace(/^www\./, '');
+                // Short link: youtu.be/<id>
+                if (host === 'youtu.be') {
+                    const id = u.pathname.replace(/^\//, '');
+                    return id ? `https://www.youtube.com/embed/${id}` : raw;
+                }
+                // Standard watch URL: youtube.com/watch?v=<id>
+                if ((host === 'youtube.com' || host === 'm.youtube.com') && u.pathname === '/watch') {
+                    const id = u.searchParams.get('v');
+                    if (id) return `https://www.youtube.com/embed/${id}`;
+                }
+                // Already an embed URL
+                if ((host === 'youtube.com' || host === 'm.youtube.com') && u.pathname.startsWith('/embed/')) {
+                    return raw;
+                }
+            } catch (_) { }
+            return raw;
+        };
+        // Extend here for other providers if needed
+        return normalizeYouTube(url);
+    };
+    const handleEditContent = async() => {
+        const res = await dispatch(updateContent({ id: editContentId, updatedData: newContent }));
+        if(updateContent.fulfilled.match(res)) {
+            showNotification({
+                type: "success",
+                title: "Module updated successfully",
+                message: "Module updated successfully",
+                duration: 5000,
+            })
+            setShowEditModal(false)
+        }else{
+            showNotification({
+                type: "error",
+                title: "Failed to update Module",
+                message: "Failed to update Module",
+                duration: 5000,
+            })
+        }
     };
     /* File Preview (Modal) */
     const getFileType = (file, url) => {
@@ -220,6 +272,7 @@ const GlobalModuleModal = ({
         const type = getFileType(file, url);
         setFilePreview({ open: true, url, name, type, isBlob: !isUrl });
     };
+
 
     const closeFilePreview = () => {
         setFilePreview((prev) => {
@@ -346,11 +399,42 @@ const GlobalModuleModal = ({
                                         style={{ width: '100%' }}
                                         disabled={aiProcessing}
                                     />
-
-
                                 </div>
 
                             </div>
+                            <button
+                                    type="button"
+                                    className="survey-assess-btn-link"
+                                    onClick={() => setAiHelpOpen(prev => !prev)}
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4f46e5', background: 'transparent' }}
+                                    aria-expanded={aiHelpOpen}
+                                    aria-controls="ai-help-panel"
+                                >
+                                    <Info size={16} /> How create with ai works
+                                </button>
+                            <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(newContent.title, newContent.description)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
+                            {aiHelpOpen && (
+                                    <div
+                                        id="ai-help-panel"
+                                        style={{
+                                            width: '70%',
+                                            margin: '0 auto 12px',
+                                            background: '#eef2ff',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: 8,
+                                            padding: '10px 12px',
+                                            color: '#1f2937',
+                                            fontSize: 14
+                                        }}
+                                    >
+                                        <div style={{ fontWeight: 600, marginBottom: 6 }}>Create with AI – How it works</div>
+                                        <ul style={{ marginLeft: 16, listStyle: 'disc' }}>
+                                            <li>Fill <strong>Title</strong> and <strong>Description</strong>. These are required to enable the button.</li>
+
+                                            <li>Click <strong>“Create with AI ✨”</strong>And wait for a moment, You get enhanced title,description,tags and learning outcomes</li>
+                                        </ul>
+                                    </div>
+                                )}
 
                             <div className="module-overlay__form-group">
                                 <label className="module-overlay__form-label">
@@ -442,7 +526,6 @@ const GlobalModuleModal = ({
                                 />
                             </div>
 
-                            <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(newContent.title, newContent.description)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
 
                             <div className="module-overlay__form-group">
                                 <label className="module-overlay__form-label">Thumbnail</label>
@@ -619,7 +702,10 @@ const GlobalModuleModal = ({
                                             type="text"
                                             name="externalResource"
                                             value={newContent.externalResource || ''}
-                                            onChange={handleInputChange}
+                                            onChange={(e) => {
+                                                const normalized = normalizeExternalUrl(e.target.value);
+                                                handleInputChange({ target: { name: 'externalResource', value: normalized } });
+                                            }}
                                             className="addOrg-form-input"
                                             placeholder="Add external resource URL"
                                             style={{ width: '100%' }}
@@ -632,7 +718,7 @@ const GlobalModuleModal = ({
                                                 aria-expanded={showIframe}
                                                 aria-controls="externalResourceIframe"
                                             >
-                                                {showIframe ? 'Hide Resource' : 'View Resource'}
+                                                {showIframe ? 'Hide' : 'Preview'}
                                             </button>
                                         )}
                                     </span>
@@ -789,26 +875,7 @@ const GlobalModuleModal = ({
                                         ))}
                                     </select>
                                 </div>
-                                <div className="module-overlay__form-group" >
-                                    <label className="module-overlay__form-label">
-                                        Training Type <span className="module-overlay__required">*</span>
-                                    </label>
-                                    <select
-                                        name="trainingType"
-                                        value={newContent.trainingType || ''}
-                                        onChange={handleInputChange}
-                                        className="addOrg-form-input"
-                                        required
-                                        style={{ width: '250px' }}
-                                    >
-                                        <option value="">Select Training Type</option>
-                                        {trainingTypes.map((type) => (
-                                            <option key={type} value={type}>
-                                                {type}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+                                
                                 <div className="module-overlay__form-group">
                                     <label className="module-overlay__form-label">
                                         Target Team <span className="module-overlay__required">*</span>
@@ -825,6 +892,26 @@ const GlobalModuleModal = ({
                                         {teams?.map((team) => (
                                             <option key={team._id} value={team._id}>
                                                 {team.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="module-overlay__form-group">
+                                    <label className="module-overlay__form-label">
+                                        Sub Team <span className="module-overlay__required">*</span>
+                                    </label>
+                                    <select
+                                        name="subteam"
+                                        value={newContent.subteam || ''}
+                                        onChange={handleInputChange}
+                                        className="addOrg-form-input"
+                                        required
+                                        style={{ width: '250px' }}
+                                    >
+                                        <option value="">Select Sub Team</option>
+                                        {teams.filter(team => team._id === newContent.team)[0]?.subTeams?.map((subteam) => (
+                                            <option key={subteam._id} value={subteam._id}>
+                                                {subteam.name}
                                             </option>
                                         ))}
                                     </select>
@@ -848,10 +935,10 @@ const GlobalModuleModal = ({
                                 <label className="module-overlay__form-label module-overlay__checkbox">
                                     <input
                                         type="checkbox"
-                                        name="submissionsEnabled"
-                                        checked={!!newContent.submissionsEnabled}
+                                        name="submissionEnabled"
+                                        checked={!!newContent.submissionEnabled}
                                         onChange={(e) =>
-                                            handleInputChange({ target: { name: 'submissionsEnabled', value: e.target.checked } })
+                                            handleInputChange({ target: { name: 'submissionEnabled', value: e.target.checked } })
                                         }
                                     />
                                     Allow learners submissions
@@ -860,15 +947,14 @@ const GlobalModuleModal = ({
                                     Please enable this if you have an additional file.
                                 </p>
                                 <div className="module-overlay__form-group" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' ,marginTop:"120px"}}>
-                                    <button className='btn-primary' onClick={handleSaveDraft} disabled={editContentId}>Save Draft</button>
-                                    <button className='btn-secondary' onClick={() => setPreview(true)} disabled={!canProceed()} >Preview</button>
+                                    {/* <button className='btn-primary' onClick={handleSaveDraft} disabled={editContentId}>Save Draft</button> */}
                                 </div>
                             </div>
                         </div>
                     )}
 
                 </div>
-                {preview && <ModulePreview data={newContent} onClose={() => setPreview(false)} />}
+                {preview && <ModulePreview data={newContent} teams={teams} onClose={() => setPreview(false)} />}
 
                 {filePreview.open && (
                     <div className="addOrg-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="filePreviewTitle">
@@ -920,9 +1006,12 @@ const GlobalModuleModal = ({
                         </button>
 
                         <div className="module-overlay__action-buttons" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                    {currentStep === totalSteps && <button className='btn-secondary' onClick={() => setPreview(true)} disabled={!canProceed()} ><EyeIcon size={16} />Preview</button>}
+
                             <button className="btn-secondary" onClick={() => setShowModal(false)} aria-label="Cancel " disabled={uploading}>
                                 Cancel
                             </button>
+
                             {currentStep < totalSteps ? (
                                 <button
                                     type="button"

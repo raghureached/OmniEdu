@@ -138,7 +138,7 @@ const AddOrganizationModal = ({
               <p className="addOrg-header-subtitle">
                 {editMode ? "Update organization details" : "Create a new organization profile"}
               </p>
-              {error && <CustomError  error={error} />}
+              {/* {error && <CustomError  error={error} />} */}
             </div>
           </div>
           <button 
@@ -179,7 +179,7 @@ const AddOrganizationModal = ({
                 <input
                   type="email"
                   name="email"
-                  placeholder="Contact@company.com"
+                  placeholder="contact@company.com"
                   value={formData.email}
                   onChange={handleInputChange}
                   className="addOrg-form-input"
@@ -287,7 +287,7 @@ const AddOrganizationModal = ({
                 <label className="addOrg-form-label">
                   Company Logo<span className="addOrg-required">*</span>
                 </label>
-                <p className="addOrg-upload-desc">Upload your company logo (PNG, JPG  )</p>
+                <p className="addOrg-upload-desc">Upload your company logo (PNG, JPG, JPEG)</p>
               </div>
               <div className="addOrg-upload-container">
                 {logoToPreview ? (
@@ -352,9 +352,9 @@ const AddOrganizationModal = ({
                   </label>
                   <p className="addOrg-upload-desc">
                     {key === "invoice"
-                      ? "Upload invoice document (PDF). Required."
+                      ? "Upload invoice document (PDF)"
                       : key === "receipt"
-                        ? "Upload payment receipt document (PDF). Required."
+                        ? "Upload payment receipt document (PDF)"
                         : "Additional document"}
                   </p>
                 </div>

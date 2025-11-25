@@ -87,15 +87,6 @@ opacity: 0.6;
 cursor: not-allowed;
 }
 
-.published{
-background-color: #5570F1;
-color: white;
-padding: 2px 8px;
-border-radius: 12px;
-font-size: 12px;
-font-weight: 500;
-display: inline-block;
-}
 .global-content-header-info h1.global-content-page-title {
 font-size: 2rem;
 font-weight: 700;
@@ -138,13 +129,6 @@ align-items: center;
 justify-content: center;
 color: #5570f1;
 }
-
-.global-content-stat-icon.published {
-background: #f0fdf4;
-border-color: #bbf7d0;
-color: #16a34a;
-}
-
 .global-content-stat-info {
 display: flex;
 flex-direction: column;

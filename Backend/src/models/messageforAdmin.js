@@ -10,13 +10,17 @@ const forAdminMessageSchema = new mongoose.Schema(
       index:true
     },
     organization_id: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
       required: true,
       ref: "Organization",
     },
     message_text: {
       type: String,
       required: true,
+    },
+    send_users: {
+      type: Boolean,
+      default: false,
     },
     status: {
       type: String,

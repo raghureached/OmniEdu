@@ -10,7 +10,7 @@
 /* Sidebar Styles */
 .user_sidebar {
   width: 240px;
-  background-color: #111827; /* Updated darker blue color */
+  background-color: #ffffff; /* Updated darker blue color */
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
@@ -31,7 +31,7 @@
 
 .user_sidebar_header h3 {
   margin: 0;
-  color: white;
+  color: rgb(0, 0, 0);
   font-size: 1.5rem;
   font-weight: 600;
 }
@@ -68,7 +68,7 @@
   display: flex;
   align-items: center;
   padding: 0.75rem 1.5rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(0, 0, 0, 0.8);
   text-decoration: none;
   font-weight: 500;
   transition: all 0.2s;
@@ -77,13 +77,13 @@
 
 .user_sidebar_menu a:hover {
   background-color: rgba(255, 255, 255, 0.1);
-  color: white;
+    color: rgb(4, 43, 216);
   border-left-color: var(--primary-color);
 }
 
 .user_sidebar_menu a.user_link_active {
   background-color: rgba(255, 255, 255, 0.15);
-  color: white;
+  color: rgb(0, 0, 0);
   border-left-color: var(--primary-color);
   font-weight: 600;
 }
@@ -92,7 +92,8 @@
   padding: 0.5rem 1.5rem;
   font-size: 1rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
+    color: rgba(0, 0, 0, 0.5);
+
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -122,7 +123,10 @@
   margin-right: 0.75rem;
   min-width: 20px;
 }
-
+.user_sidebar a svg:hover{
+  background-color: #5570F1;
+    
+}
 .user_sidebar_footer {
   padding: 1rem 0.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -150,7 +154,8 @@
 
 /* Content Area Styles */
 .user_content_header {
-  background-color: #111827; /* Match sidebar color */
+    background-color: #ffffff;
+
   padding: 0 2rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
@@ -176,7 +181,8 @@
   margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
-  color: white; /* Updated to match sidebar */
+    color: rgb(0, 0, 0);
+
 }
 
 .user_content_body {
@@ -191,12 +197,14 @@
   align-items: center;
   gap: 10px;
   height: 100%;
+  color:#000000;
 }
 
 .user_logo {
-  display: flex;
+   display: flex;
   align-items: center;
   justify-content: center;
+  color:black;
 }
 
 /* .user_logo_small {
@@ -215,7 +223,7 @@
 .user_menu_toggle {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.8);
+  color: #5570F1;
   cursor: pointer;
   padding: 0.25rem;
   border-radius: 0.25rem;
@@ -247,7 +255,8 @@
 .user_notification_icon {
   position: relative;
   cursor: pointer;
-  color: white;
+    color: rgb(0, 0, 0);
+
 }
 
 .user_notification_badge {

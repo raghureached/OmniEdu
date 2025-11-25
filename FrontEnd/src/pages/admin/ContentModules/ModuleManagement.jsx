@@ -10,6 +10,7 @@ import { FiEdit3 } from "react-icons/fi";
 import ModuleModal from './ModuleModal';
 import { GoX } from 'react-icons/go';
 import { toast } from 'react-toastify';
+import { notifyError, notifySuccess } from '../../../utils/notification';
 
 
 const ModuleManagement = () => {
@@ -49,6 +50,7 @@ const ModuleManagement = () => {
     stars: 0,
     badges: 0,
     team: "",
+    subteam: "",
     category: "",
     trainingType: "",
     instructions: "",
@@ -63,9 +65,17 @@ const ModuleManagement = () => {
     dispatch(adminfetchContent());
   }, [dispatch]);
 
-  const handleDeleteContent = (contentId) => {
+  const handleDeleteContent = async (contentId) => {
     if (window.confirm("Are you sure you want to delete this content?")) {
-      dispatch(admindeleteContent(contentId));
+      const res = await dispatch(admindeleteContent(contentId));
+      if(admindeleteContent.fulfilled.match(res)){
+        notifySuccess("Content deleted successfully");
+      }else{
+        notifyError("Failed to delete content",{
+          message: res.payload.message,
+          title: "Failed to delete content"
+        });
+      }
     }
   };
 
@@ -135,12 +145,8 @@ const ModuleManagement = () => {
   const handleRichInputChange = (e) => {
     setNewContent(prev => ({ ...prev, richText: e }));
   };
-
   const handleOpenContent = (contentId) => {
     navigate(`/global-admin/module/${contentId}`);
-  };
-  const handleFileClick = (file) => {
-    window.open(file)
   };
   const openDraftModal = () => {
     const drafts = JSON.parse(localStorage.getItem('drafts'));
@@ -177,7 +183,6 @@ const ModuleManagement = () => {
   };
   const openEditModal = (content) => {
     setEditContentId(content.uuid)
-    // console.log(content)
     setNewContent({
       title: content.title,
       primaryFile: content.primaryFile,
@@ -192,6 +197,7 @@ const ModuleManagement = () => {
       stars: content.stars || 0,
       badges: content.badges || 0,
       team: content.team || "",
+      subteam: content.subteam || "",
       category: content.category || "",
       trainingType: content.trainingType || "",
       instructions: content.instructions || "",
@@ -208,16 +214,30 @@ const ModuleManagement = () => {
     setNewContent(JSON.parse(drafts));
     // setShowModal(true);
   }
-  const handleBulkDelete = (ids) => {
+  const handleBulkDelete = async (ids) => {
     if (ids.length === 0) {
       alert("Please select at least one module to delete.")
       return;
     }
     if (window.confirm("Are you sure you want to delete these modules?")) {
       try {
-        dispatch(adminbulkDeleteContent(ids));
+        const res = await dispatch(adminbulkDeleteContent(ids));
+        if(adminbulkDeleteContent.fulfilled.match(res)){
+          notifySuccess("Modules deleted successfully",{
+            message: "Modules deleted successfully",
+            title: "Modules deleted successfully"
+          });
+        }else{
+          notifyError("Failed to delete modules",{
+            message: res.payload.message,
+            title: "Failed to delete modules"
+          });
+        }
       } catch (error) {
-        console.error(error);
+        notifyError("Failed to delete modules",{
+          message: error.message,
+          title: "Failed to delete modules"
+        });
       }
     }
   }
@@ -237,6 +257,7 @@ const ModuleManagement = () => {
       stars: 0,
       badges: 0,
       team: "",
+      subteam: "",
       category: "",
       trainingType: "",
       instructions: "",
@@ -287,7 +308,6 @@ const ModuleManagement = () => {
       const bulkBtn = bulkButtonRef.current;
       const filterPanel = filterPanelRef.current;
       const bulkPanel = bulkPanelRef.current;
-
       if (
         (showFilters || showBulkAction) &&
         !(
@@ -301,17 +321,11 @@ const ModuleManagement = () => {
         setShowBulkAction(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showFilters, showBulkAction]);
-  // if (loading && !uploading) {
-  //   return <LoadingScreen text={"Loading Global Content..."} />
-  // }
-  // const modules = items?.filter(item => item.type === "module") || [];
 
   if (loading) {
     return <LoadingScreen text={"Loading Content..."} />
@@ -411,7 +425,6 @@ const ModuleManagement = () => {
                 </div>
               </div>
             )}
-            {/* <button className="control-btn" style={{ color: "#6b7280", border: "1px solid #6b7280" }} onClick={() => openDraftModal()}> Drafts</button> */}
             <button
               ref={bulkButtonRef}
               className="control-btn"
@@ -482,7 +495,6 @@ const ModuleManagement = () => {
               <tr>
                 <th><input type="checkbox" onChange={(e) => handleSelectAll(e)} checked={selectedItems.length === currentContent.length} /></th>
                 <th>Title</th>
-                {/* <th>Credits</th> */}
                 <th>Status</th>
                 <th>Team</th>
                 <th>Date Created</th>
@@ -511,10 +523,9 @@ const ModuleManagement = () => {
                       </div>
                     </div>
                   </td>
-                  {/* <td>{content.credits}</td> */}
                   <td>
                     <span className={` ${content.status === 'Published' ? 'published' : content.status === 'Draft' ? 'draft' : 'saved'} assess-status-badge`}>
-                      {content.status === 'Published' ? `✓ ${content.status}` : content.status === 'Draft' ? 'Draft' : 'Saved'}
+                      {content.status === 'Published' ? `${content.status}` : content.status === 'Draft' ? 'Draft' : 'Saved'}
                     </span>
                   </td>
                   <td>{content.team?.name || "All"}</td>
@@ -545,7 +556,6 @@ const ModuleManagement = () => {
                   </td>
                 </tr>
               ))}
-
               {filteredContent.length > 0 && (
                 <tr>
                   <td colSpan={7}>
@@ -577,7 +587,6 @@ const ModuleManagement = () => {
               )}
             </tbody>
           </table>
-
         </div>
       )}
       {showDraftModal && (
@@ -696,7 +705,6 @@ const ModuleManagement = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };

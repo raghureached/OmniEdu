@@ -8,7 +8,7 @@ const normalizeRole = (role) => {
   const r = String(role).toLowerCase().replace(/[^a-z]/g, '');
   if (r === 'globaladmin') return 'GlobalAdmin';
   if (r === 'administrator') return 'Administrator';
-  if (r === 'user') return 'User';
+  if (r === 'generaluser') return 'User';
   return null;
 };
 

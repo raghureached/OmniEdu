@@ -1,4 +1,5 @@
 const ForUserAssignment = require("../../models/forUserAssigments_model");
+const UserContentProgress = require("../../models/userContentProgress_model");
 
 const getUserAssignments = async (req, res) => {
   try {
@@ -10,22 +11,27 @@ const getUserAssignments = async (req, res) => {
     }
 
     // Filters from query params (optional)
-    const { status, type } = req.query;
-
-    const query = { assigned_users: { $in: [req.user._id] } };
-    if (status) query.status = status; // if you track status
-    if (type) query.assign_type = type; // filter by type (module, survey...)
-
-    const assignments = await ForUserAssignment.find(query)
-      .populate("organization_id", "name logo_url") // show org info
-      .populate("created_by", "name email") // who created
-      .lean();
+    const enrolled = await UserContentProgress.find({ user_id: req.user._id })
+  .populate({
+    path: "assignment_id",
+    select: "uuid name title description assign_type contentId assign_on due_date created_by",
+    populate: [
+      {
+        path: "contentId", // this is resolved using refPath: assign_type
+        select:
+          "title description duration tags team subteam category status thumbnail credits stars badges uuid",
+      },
+      { path: "created_by", select: "name email" },
+    ],
+  })
+  .lean();
+    
 
     return res.status(200).json({
       isSuccess: true,
       message: "Assignments fetched successfully",
-      count: assignments.length,
-      data: assignments,
+      count: enrolled.length,
+      data: enrolled,
     });
   } catch (error) {
     return res.status(500).json({

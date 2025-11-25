@@ -35,6 +35,11 @@ const GlobalModuleSchema = new mongoose.Schema(
       ref: "Team",
       default: null,
     },
+    subteam: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SubTeam",
+      default: null,
+    },
     category: {
       type: String,
       default: null,
@@ -102,8 +107,8 @@ const GlobalModuleSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Published", "Saved"],
-      default: "Saved",
+      enum: ["Published", "Saved","Draft"],
+      default: "Draft",
     },
   },
   {

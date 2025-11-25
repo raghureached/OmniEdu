@@ -55,14 +55,13 @@
   align-items: start;
 }
 .lp-grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  justify-content: space-between;
   gap: 16px;
   align-items: start;
 }
 .lp-grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   gap: 12px;
 }
 
@@ -121,13 +120,13 @@
 }
 
 /* Responsive stacking similar to module modal */
-@media (max-width: 1024px) {
+/* @media (max-width: 1024px) {
   .lp-grid-4 { grid-template-columns: repeat(2, 1fr); }
   .lp-grid-3 { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 640px) {
   .lp-grid-4, .lp-grid-3, .lp-grid-2 { grid-template-columns: 1fr; }
-}
+} */
 
 /* Step 2 Builder */
 .lp-main-card {

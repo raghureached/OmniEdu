@@ -16,7 +16,7 @@ import AssessmentPreview from '../common/Preview/AssessmentPreview';
 import SurveyMainPreview from "../common/Preview/SurveyMainPreview"
 import CustomLoader from '../common/Loading/CustomLoader';
 
-const LearningPath = ({ courseData: propCourseData, embedded = false }) => {
+const LearningPath = ({ courseData: propCourseData, embedded = false ,teams}) => {
     // console.log(propCourseData)
     const [activeLesson, setActiveLesson] = useState(null);
     const [contentData, setContentData] = useState(null);
@@ -269,6 +269,7 @@ const LearningPath = ({ courseData: propCourseData, embedded = false }) => {
                     <ModulePreview
                         embedded={true}
                         data={{...contentData,learningOutcomes:contentData?.learning_outcomes}}
+                        teams={teams}
                     />  
                 </div>
             )}
@@ -277,12 +278,13 @@ const LearningPath = ({ courseData: propCourseData, embedded = false }) => {
                     <AssessmentPreview
                         embedded={true}
                         data={{...contentData,learningOutcomes:contentData?.learning_outcomes}}
+                        teams={teams}
                     />
                 </div>
             )}
             {activeLesson?.type === 'Survey' && (
                 <div style={{ flex: 1, overflowY: 'auto', backgroundColor: '#f8f9fa' }}>
-                    <SurveyMainPreview embedded={true} data={surveyPayload || contentData}/>
+                    <SurveyMainPreview embedded={true} data={surveyPayload || contentData} teams={teams}/>
                 </div>
             )}
             

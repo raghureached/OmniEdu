@@ -49,12 +49,13 @@ export const fetchMessagesForAdmin = createAsyncThunk(
 // Post a new message
 export const sendMessage = createAsyncThunk(
   'message/updateMessage',
-  async ({ messageText, orgId }, { rejectWithValue }) => {
+  async ({ messageText, orgId, sendUsers }, { rejectWithValue }) => {
     try {
-      console.log(messageText);
+      // console.log(messageText);
       const response = await api.post('/api/globalAdmin/setMessage', {
         message: messageText,
         orgId,
+        sendUsers,
       });
       return response.data.data; // assuming backend returns saved message object
     } catch (error) {

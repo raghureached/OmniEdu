@@ -1,17 +1,12 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
   Filter,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Loader,
-  X,
   Edit3,
   Trash2,
 } from "lucide-react";
 import { RiDeleteBinFill } from "react-icons/ri";
-import { FiEdit3 } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchOrganizations,
@@ -29,10 +24,12 @@ import OrganizationDetails from "./OrganizationDetails";
 import './OrganizationManagement.css'
 import LoadingScreen from "../../../components/common/Loading/Loading";
 import { GoX } from "react-icons/go";
+import {useNotification} from "../../../components/common/Notification/NotificationProvider"
+import { notifyError, notifySuccess } from "../../../utils/notification";
 
 const OrganizationManagement = () => {
   const dispatch = useDispatch();
-  const { organizations, loading, filters, error,creating,updating,deleting } = useSelector((state) => state.organizations);
+  const { organizations, loading, filters, error,creating,updating,deleting } = useSelector((state) => state.organizations);  
   const [plans, setPlans] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -44,6 +41,7 @@ const OrganizationManagement = () => {
   const [showOrgModal, setShowOrgModal] = useState(false);
   const [plan, setPlan] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const {showNotification} = useNotification()
   const [showBulkAction, setShowBulkAction] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
@@ -59,9 +57,6 @@ const OrganizationManagement = () => {
     end_date: "",
     adminRoleId: "",
   });
-  const navigate = useNavigate();
-
-
   // Fetch organizations whenever any filter changes (debounced)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -141,7 +136,7 @@ const OrganizationManagement = () => {
         setSelectedLogo(files[0]);
         setFormData((prev) => ({ ...prev, [name]: files[0] }));
       } else if (name === "documents") {
-        console.log("Documents selected:", files);
+        // console.log("Documents selected:", files);
         setFormData((prev) => ({ ...prev, [name]: files }));
       }
     } else {
@@ -153,19 +148,41 @@ const OrganizationManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log(formData);
+    // console.log(formData);
 
     if (editMode) {
       try {
         const resultAction = await dispatch(updateOrganization({ id: currentOrg.uuid, data: formData }));
         if (updateOrganization.fulfilled.match(resultAction)) {
+
           closeForm();
+          showNotification({
+            type: 'success',
+            title: 'Organization updated successfully',
+            message: 'Organization updated successfully',
+            duration: 5000,
+            dismissible: true,
+          });
         } else {
           // Handle errors here (optional)
-          alert(resultAction.payload?.message || 'Failed to update organization');
+          showNotification({
+            type: 'error',
+            title: 'Failed to update organization',
+            message: resultAction.payload?.message || 'Failed to update organization',
+            duration: 5000,
+            dismissible: true,
+          });
+          // alert(resultAction.payload?.message || 'Failed to update organization');
         }
       } catch (error) {
-        alert('Failed to update organization');
+        showNotification({
+          type: 'error',
+          title: 'Failed to update organization',
+          message: error || 'Failed to update organization',
+          duration: 5000,
+          dismissible: true,
+        });
+        // alert('Failed to update organization');
       }
     } else {
       if (!formData.invoice || !formData.receipt) {
@@ -182,13 +199,35 @@ const OrganizationManagement = () => {
       }
       try {
         const resultAction = await dispatch(createOrganization(formData));
+        
         if (createOrganization.fulfilled.match(resultAction)) {
           closeForm();
+          showNotification({
+            type: 'success',
+            title: 'Organization created successfully',
+            message: 'Organization created successfully',
+            duration: 5000,
+            dismissible: true,
+          });
         } else {
-          alert(resultAction.payload?.message || 'Failed to create organization');
+          showNotification({
+            type: 'error',
+            title: 'Failed to create organization',
+            message: resultAction.payload?.message || 'Failed to create organization',
+            duration: 5000,
+            dismissible: true,
+          });
+          // alert(resultAction.payload?.message || 'Failed to create organization');
         }
       } catch (error) {
-        alert('Failed to create organization');
+        showNotification({
+          type: 'error',
+          title: 'Failed to create organization',
+          message: error.message || 'Failed to create organization',
+          duration: 5000,
+          dismissible: true,
+        });
+        // alert('Failed to create organization');
       }
     }
   };
@@ -248,26 +287,63 @@ const OrganizationManagement = () => {
         : currentpages.map((org) => org.uuid)
     );
   };
-  const handleDeleteOrg = (id) => {
+  const handleDeleteOrg = async (id) => {
     if (window.confirm("Are you sure you want to delete this organization?")) {
       try {
-        dispatch(deleteOrganization(id));
+        const resultAction = await dispatch(deleteOrganization(id));
+        if(deleteOrganization.fulfilled.match(resultAction)){
+          notifySuccess('Organization deleted successfully', {
+            duration: 5000,
+            dismissible: true,
+            title: 'Organization deleted successfully',
+          });
+        }else{
+          notifyError(resultAction.payload?.message || 'Failed to delete organization', {
+            duration: 5000,
+            dismissible: true,
+            title: 'Failed to delete organization',
+            dismissible: true,
+          });
+        }
       } catch (error) {
-        console.error(error);
+        notifyError(error.message || 'Failed to delete organization', {
+          duration: 5000,
+          dismissible: true,
+          title: 'Failed to delete organization',
+        });
       }
     }
   }
 
-  const handleBulkDeleteOrg = (ids) => {
+  const handleBulkDeleteOrg = async (ids) => {
     if (ids.length === 0) {
       alert("Please select at least one organization to delete.")
       return;
     }
     if (window.confirm("Are you sure you want to delete these organizations?")) {
       try {
-        dispatch(deleteOrganizations(ids));
+        const resultAction = await dispatch(deleteOrganizations(ids));
+        if(deleteOrganizations.fulfilled.match(resultAction)){
+          // showNotification({
+          //   type: 'success',
+          notifySuccess('Organizations deleted successfully', {
+            duration: 5000,
+            dismissible: true,
+            title: 'Organizations deleted successfully',
+          });
+        }else{
+          notifyError(resultAction.payload?.message || 'Failed to delete organizations', {
+            duration: 5000,
+            dismissible: true,
+            title: 'Failed to delete organizations',
+          });
+        }
       } catch (error) {
-        console.error(error);
+        notifyError(error.message || 'Failed to delete organizations', {
+          duration: 5000,
+          dismissible: true,
+          title: 'Failed to delete organizations',
+        });
       }
     }
     setShowBulkAction(false);
@@ -463,17 +539,18 @@ const OrganizationManagement = () => {
 
                       <div className="actions-cell">
                         <button
-                          className="global-action-btn delete"
-                          onClick={() => handleDeleteOrg(org.uuid)}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                        <button
                           className="global-action-btn edit"
                           onClick={() => openForm(org)}
                         >
                           <Edit3 size={16} />
                         </button>
+                        <button
+                          className="global-action-btn delete"
+                          onClick={() => handleDeleteOrg(org.uuid)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                        
                       </div>
                     </div>
                   ))}

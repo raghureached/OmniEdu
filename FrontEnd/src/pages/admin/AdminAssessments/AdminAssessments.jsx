@@ -10,6 +10,7 @@ import { fetchGroups } from '../../../store/slices/groupSlice';
 import QuestionsForm from './QuestionsForm';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import api from '../../../services/api';
+import { notifyError, notifySuccess } from '../../../utils/notification';
 const AdminAssessments = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
@@ -526,7 +527,15 @@ const AdminAssessments = () => {
     };
 
     try {
-      await dispatch(createAssessment(payload)).unwrap();
+      const res = await dispatch(createAssessment(payload));
+      if(createAssessment.fulfilled.match(res)){
+        notifySuccess("Assessment created successfully");
+      }else{
+        notifyError("Failed to create assessment",{
+          message: res.payload.message,
+          title: "Failed to create assessment"
+        });
+      }
       setShowForm(false);
       dispatch(getAssessments({ page, limit }));
     } catch (err) {
@@ -604,8 +613,16 @@ const AdminAssessments = () => {
 
     const id = currentAssessment?.uuid || currentAssessment?._id || currentAssessment?.id;
     try {
-      await dispatch(editAssessment({ id, data })).unwrap();
+      const res = await dispatch(editAssessment({ id, data }));
       setShowForm(false);
+      if(editAssessment.fulfilled.match(res)){
+        notifySuccess("Assessment updated successfully");
+      }else{
+        notifyError("Failed to update assessment",{
+          message: res.payload.message,
+          title: "Failed to update assessment"
+        });
+      }
       dispatch(getAssessments({ page, limit }));
     } catch (err) {
       console.error('Failed to update assessment:', err?.response?.data || err.message);
@@ -740,7 +757,15 @@ const AdminAssessments = () => {
 
   const handleDeleteAssessment = async (id) => {
     try {
-      await dispatch(deleteAssessment(id)).unwrap();
+      const res = await dispatch(deleteAssessment(id));
+      if(deleteAssessment.fulfilled.match(res)){
+        notifySuccess("Assessment deleted successfully");
+      }else{
+        notifyError("Failed to delete assessment",{
+          message: res.payload.message,
+          title: "Failed to delete assessment"
+        });
+      }
       dispatch(getAssessments({ page, limit }));
     } catch (err) {
       console.error('Failed to delete assessment:', err?.response?.data || err.message);

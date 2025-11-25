@@ -182,7 +182,7 @@
 }
 
 .cae-scope .radio-option-content {
-  width: 210px;
+  /* width: 210px; */
   flex: 1;
 }
 

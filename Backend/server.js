@@ -14,12 +14,13 @@ const userRouter = require("./src/routes/user.routes");
 const cookieParser = require("cookie-parser");
 const { authenticate, authorize } = require("./src/middleware/auth_middleware");
 //MONGODB connection
+
+
 connectDB;
 
 app.use(helmetMiddleware); //before passing to the routes, securing the SITE using helmet
 app.use(corsMiddleware) //cors config...
 app.use(express.static('uploads'));
-
 app.use(express.json({ limit: "200mb" })); //to parse the json data upto 200mb(because at client meeting , client said upto 200mb)
 app.use(express.urlencoded({ extended: true, limit: "200mb" })); //same here as json
 app.use(cookieParser())
@@ -30,8 +31,8 @@ app.use((req, res, next) => {
   next(); //to pass into next function
 });
 // app.use(logActivity)
-
 const path = require('path');
+const { sendMail } = require("./src/utils/Emailer");
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/globalAdmin',authenticate,authorize(['GlobalAdmin']),globalAdminRouter)
@@ -44,4 +45,8 @@ app.use('/dev',devRouter)
 app.use('/api/user',authenticate,userRouter)
 app.listen(PORT, () => {
   console.log(`Server is running at PORT:${PORT}`);
+});
+app.get('/send-mail', async (req, res,next) => {
+  await sendMail("raghu071003@gmail.com","test","test","Hello");
+  res.send("Email sent successfully");
 });

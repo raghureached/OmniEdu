@@ -327,7 +327,7 @@ const Step3ScheduleSettings = ({
                     type="checkbox"
                     checked={enforceOrder}
                     onChange={(e) => setEnforceOrder(e.target.checked)}
-                    disabled={!!selectedItem?.enforceOrder}
+                    disabled={true}
                   />
                   Enforce path order (lock subsequent lessons until previous is available)
                 </label>
@@ -347,7 +347,7 @@ const Step3ScheduleSettings = ({
                               <label>Assign Date & Time</label>
                               <input
                                 type="datetime-local"
-                                value={sched.assign_on || ''}
+                                value={sched.assign_on || assignDate}
                                 onChange={(e) => updateElementSchedule(lessonId, 'assign_on', e.target.value)}
                               />
                             </div>
@@ -355,7 +355,7 @@ const Step3ScheduleSettings = ({
                               <label>Due Date & Time</label>
                               <input
                                 type="datetime-local"
-                                value={sched.due_date || ''}
+                                value={sched.due_date || dueDate}
                                 onChange={(e) => updateElementSchedule(lessonId, 'due_date', e.target.value)}
                                 />
                             </div>

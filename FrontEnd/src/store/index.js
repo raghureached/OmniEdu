@@ -19,6 +19,7 @@ import userDashboardConfigReducer from './slices/userDashboardConfigSlice'
 import adminModuleReducer from './slices/adminModuleSlice'
 import adminMessageReducer from './slices/adminMessageSlice'
 import learningPathReducer from './slices/learningPathSlice'
+import userAssignmentReducer from './slices/userAssignmentSlice'
 
 const store = configureStore({
   reducer: {
@@ -41,7 +42,8 @@ const store = configureStore({
     userDashboardConfig: userDashboardConfigReducer,
     adminModule: adminModuleReducer,
     adminMessages: adminMessageReducer,
-    learningPaths: learningPathReducer
+    learningPaths: learningPathReducer,
+    userAssignments: userAssignmentReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

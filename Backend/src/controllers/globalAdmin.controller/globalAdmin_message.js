@@ -1,16 +1,21 @@
 const { required } = require("joi");
 const ForAdminMessage = require("../../models/messageforAdmin");
 const {z} =require("zod");
+const User = require("../../models/users_model.js");
+// const Notification = require("../../models/notification_model.js");
 const { logGlobalAdminActivity } = require("./globalAdmin_activity");
+const ForUserMessage = require("../../models/messageForUser.js");
 
 const MessageSchema=z.object({
     message:z.string({required_error:"Message is required"}).min(1,"messge cannot be empty"),
     orgId:z.string({required_error:"OrgId is required"}).min(1,"orgId cannot be empty"),
     status: z.enum(["active", "inactive"]).optional(),
+    sendUsers:z.boolean().optional(),
 })
 const setMessage = async(req,res)=>{
     try {
         const parsed=MessageSchema.safeParse(req.body);
+        // console.log(req.body)
         if(!parsed.success){
             return res.status(400).json({
                 success:false,
@@ -18,18 +23,35 @@ const setMessage = async(req,res)=>{
                 error:parsed.error.errors
             })
         }
-        const {message,status,orgId} = parsed.data;
+        const {message,status,orgId,sendUsers} = parsed.data;
         // console.log(message,orgId)
         const messageSet = await ForAdminMessage.create({
             message_text:message,
             status,
+            send_users:sendUsers,
             organization_id:orgId,
-            created_by:"68bc1d953f117b638adf49dc"
+            created_by:req.user._id,
         })
+        if(sendUsers){
+                await ForUserMessage.create({ 
+                    message_text:message,
+                    status:status,
+                    organization_id:orgId,
+                    created_by:req.user._id,
+                    isGlobal:true
+                })
+            
+            await logGlobalAdminActivity(req,"Set Message","message","Message set successfully")
+            return res.status(201).json({
+                success:true,
+                message:"Message set successfully for users and admin",
+                data:messageSet
+            })
+        }
         await logGlobalAdminActivity(req,"Set Message","message","Message set successfully")
         return res.status(201).json({
             success:true,
-            message:"Message set successfully",
+            message:"Message set successfully for admin",
             data:messageSet
         })
     } catch (error) {

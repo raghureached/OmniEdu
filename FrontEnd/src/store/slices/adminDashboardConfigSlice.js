@@ -19,6 +19,9 @@ export const fetchAdminAllowedPermissions = createAsyncThunk(
     "adminDashboardConfig/fetchAdminAllowedPermissions",
     async (orgId, { rejectWithValue }) => {
         try {
+            if(!orgId || orgId === ""){
+                return rejectWithValue("Organization ID is required");
+            }
             // console.log(orgId)
             const response = await api.get(`api/globalAdmin/getAdminDashboardConfig/${orgId}`);
             // console.log(response.data.data)

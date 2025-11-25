@@ -20,6 +20,7 @@ import {
 import QuestionsForm from './QuestionsForm-survey';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import api from '../../../services/api';
+import { notifyError, notifySuccess } from '../../../utils/notification';
 const GlobalSurveys = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
@@ -471,11 +472,25 @@ const GlobalSurveys = () => {
     };
 //  console.log(sections )
     try {
-      await dispatch(createSurvey(payload)).unwrap();
-      setShowForm(false);
-      dispatch(fetchSurveys({ page, limit }));
+      const res = await dispatch(createSurvey(payload)).unwrap();
+      if(createSurvey.fulfilled.match(res)){
+        setShowForm(false);
+        notifySuccess('Survey created successfully');
+        dispatch(fetchSurveys({ page, limit }));
+      }
+      if(createSurvey.rejected.match(res)){
+        notifyError('Failed to create survey:', {
+          title: 'Failed to create survey',
+          message: res?.error?.message,
+          type: 'error',
+        });
+      }
     } catch (err) {
-      console.error('Failed to create assessment:', err?.response?.data || err.message);
+      notifyError('Failed to create survey:', {
+        title: 'Failed to create survey',
+        message: err?.response?.data || err.message,
+        type: 'error',
+      });
     }
   };
 
@@ -577,11 +592,25 @@ const GlobalSurveys = () => {
         return;
       }
       try {
-        await dispatch(updateSurvey({ uuid: id, data })).unwrap();
-        setShowForm(false);
-        dispatch(fetchSurveys({ page, limit }));
+        const res = await dispatch(updateSurvey({ uuid: id, data }));
+        if(updateSurvey.fulfilled.match(res)){
+          setShowForm(false);
+          notifySuccess('Survey updated successfully');
+          dispatch(fetchSurveys({ page, limit }));
+        }
+        if(updateSurvey.rejected.match(res)){
+          notifyError('Failed to update survey:', {
+            title: 'Failed to update survey',
+            message: res?.error?.message,
+            type: 'error',
+          });
+        }
       } catch (err) {
-        console.error('Failed to update assessment:', err?.response?.data || err.message);
+        notifyError('Failed to update survey:', {
+          title: 'Failed to update survey',
+          message: err?.response?.data || err.message,
+          type: 'error',
+        });
       }
     };
 
@@ -725,8 +754,20 @@ const GlobalSurveys = () => {
 
   const handleDeleteAssessment = async (id) => {
     try {
-      await dispatch(deleteSurvey(id)).unwrap();
-      dispatch(fetchSurveys({ page, limit }));
+      const confirm = window.confirm('Are you sure you want to delete this survey?');
+      if (!confirm) return;
+      const res = await dispatch(deleteSurvey(id));
+      if(deleteSurvey.fulfilled.match(res)){
+        notifySuccess('Survey deleted successfully');
+        dispatch(fetchSurveys({ page, limit }));
+      }
+      if(deleteSurvey.rejected.match(res)){
+        notifyError('Failed to delete survey:', {
+          title: 'Failed to delete survey',
+          message: res?.error?.message,
+          type: 'error',
+        });
+      }
     } catch (err) {
       console.error('Failed to delete assessment:', err?.response?.data || err.message);
     }
@@ -1053,9 +1094,12 @@ const GlobalSurveys = () => {
                           <p className="assess-description">{assessment.description || "No description provided"}</p>
                           {Array.isArray(assessment.tags) && assessment.tags.length > 0 && (
                             <div className="assess-tags">
-                              {assessment.tags.map((t, idx) => (
+                              {assessment.tags.slice(0,3).map((t, idx) => (
                                 <span key={`${assessment.id}-tag-${idx}`} className="assess-classification">{t}</span>
                               ))}
+                              {assessment.tags.length > 3 && (
+                                <span className="assess-classification">+ {assessment.tags.length - 3} more</span>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1084,13 +1128,6 @@ const GlobalSurveys = () => {
                     </td>
                     <td>
                       <div className="assess-actions">
-                      <button 
-                          className="assess-action-btn delete" 
-                          onClick={() => handleDeleteAssessment(assessment.uuid)}
-                          title="Delete Assessment"
-                        >
-                          <Trash2 size={14} />
-                        </button>
                         <button 
                           className="assess-action-btn edit" 
                           onClick={() => handleEditAssessment(assessment)}
@@ -1098,6 +1135,14 @@ const GlobalSurveys = () => {
                         >
                           <Edit3 size={14} />
                         </button>
+                      <button 
+                          className="assess-action-btn delete" 
+                          onClick={() => handleDeleteAssessment(assessment.uuid)}
+                          title="Delete Assessment"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        
                         
                       </div>
                     </td>

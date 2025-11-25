@@ -4,7 +4,8 @@ import { logout } from '../store/slices/authSlice';
 import { notifyError, notifyWarning } from '../utils/notification';
 console.log(process.env.REACT_APP_PROD)
 // const production = false;
-const production = process.env.REACT_APP_PROD === "prod";
+// const production = process.env.REACT_APP_PROD === "prod";
+const production = false;
 console.log(production)
 const baseURL = production 
     ? 'https://omniedu-server.onrender.com' 
@@ -81,9 +82,7 @@ api.interceptors.response.use(
       notifyWarning('Requested resource not found.');
     } else if (!status) {
       notifyError('Network error! Please check your internet connection.');
-    } else {
-      notifyError('Something went wrong! Please try again.');
-    }
+    } 
 
     return Promise.reject(error);
   }

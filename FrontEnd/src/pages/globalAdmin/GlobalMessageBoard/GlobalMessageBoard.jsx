@@ -5,11 +5,14 @@ import { fetchMessages, deleteMessage, sendMessage } from "../../../store/slices
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import CustomLoader from "../../../components/common/Loading/CustomLoader";
+import { useNotification } from "../../../components/common/Notification/NotificationProvider";
 
 const GlobalMessageBoard = () => {
   const [newMessage, setNewMessage] = useState("");
-  const [orgId,setOrgId] = useState(null)
+  const [orgId,setOrgId] = useState(null);
+  const [sendUsers,setSendUsers] = useState(false);
   const dispatch = useDispatch();
+  const {showNotification} = useNotification();
 
   const { currentMessages, loading,posting, error } = useSelector(
     (state) => state.globalMessage
@@ -17,31 +20,63 @@ const GlobalMessageBoard = () => {
   const {organizations} = useSelector((state) => state.organizations);
 
   useEffect(() => {
+    if(!orgId){
+      
+      return;
+    }
     dispatch(fetchMessages(orgId));
   }, [dispatch,orgId]);
 
-  const handlePostMessage = () => {
-  if (newMessage.trim() === "" || !orgId) {
-    toast.error("Please select an organization and write a message.");
+  const handlePostMessage = async () => {
+  if (newMessage.trim() === "" || !orgId || !orgId.trim()) {
+    showNotification({
+    type: "error",
+    title: "Message posting failed!",
+    message: "Please select an organization and write a message.",
+    duration: 5000,
+  });
     return;
   }
-  dispatch(sendMessage({ messageText: newMessage, orgId }));
-  setNewMessage("");
-  toast.success("Message posted!");
-};
+  const res = await dispatch(sendMessage({ messageText: newMessage, orgId, sendUsers }));
+  if(sendMessage.fulfilled.match(res)){
+    showNotification({
+    type: "success",
+    title: "Message posted!",
+    message: "Message posted successfully",
+    duration: 5000,
+  });
+  }
+  else{
+    showNotification({
+    type: "error",
+    title: "Message posting failed!",
+    message: "Message posting failed",
+    duration: 5000,
+  });
+}}
 
 
   const handleDeleteMessage = (id) => {
     // console.log(id)
     dispatch(deleteMessage(id));
-    toast.info("Message deleted");
+    showNotification({
+    type: "success",
+    title: "Message deleted!",
+    message: "Message deleted successfully",
+    duration: 5000,
+  });
   };
 
   const handleCopyMessage = (id) => {
     const msg = currentMessages.find((m) => m._id === id);
     if (msg) {
       navigator.clipboard.writeText(msg.message_text);
-      toast.success("Copied to clipboard!");
+      showNotification({
+      type: "success",
+      title: "Message copied!",
+      message: "Message copied to clipboard",
+      duration: 5000,
+    });
     }
   };
 
@@ -52,7 +87,7 @@ const GlobalMessageBoard = () => {
         <select className="message-board-select" onChange={(e) => setOrgId(e.target.value)} style={{width:"fit-content"}}>
         <option value="">Select an Organization</option>
         {organizations.map((org) => (
-          <option key={org._id} value={org.uuid}>
+          <option key={org._id} value={org._id}>
             {org.name}
           </option>
         ))}
@@ -66,6 +101,10 @@ const GlobalMessageBoard = () => {
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
         />
+        <div style={{display:"flex", flexDirection:"row", alignItems:"center",gap:"10px"}}>
+        <input type="checkbox" checked={sendUsers} id="sendUsers" onChange={(e) => setSendUsers(e.target.checked)} />
+        <label htmlFor="sendUsers">Send to Users</label>
+        </div>
         <button
           className="post-btn"
           onClick={handlePostMessage}
@@ -79,11 +118,14 @@ const GlobalMessageBoard = () => {
 
       {/* Messages */}
       {loading ? <CustomLoader text="Loading messages..." /> : <div className="messages-list">
-        {currentMessages?.length > 0 ? (
+        {currentMessages?.length > 0  && orgId  ? (
           currentMessages.map((msg) => (
             <div key={msg._id} className="message-card">
               {/* <div className="message-user">{msg.user || "You"}</div> */}
               <div className="message-text">{msg.message_text}</div>
+              <div className="message-time">
+                {msg.send_users ? "Sent to Users and Admin" : "Sent to Admin"}
+              </div>
               <div className="message-time">
                 {new Date(msg.createdAt).toLocaleDateString()}
               </div>
