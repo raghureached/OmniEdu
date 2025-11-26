@@ -8,7 +8,6 @@ import VideoPlayer from '../../../components/VideoPlayer/VideoPlayer';
 import api from '../../../services/api';
 
 const ModuleView = () => {
-    // console.log(data)
     const navigate = useNavigate();
     const [data, setData] = useState(null);
     const [activeTab, setActiveTab] = useState('preview');
@@ -17,19 +16,17 @@ const ModuleView = () => {
     const [submission, setSubmission] = useState(null);
     const objectUrlRef = useRef(null);
     const primaryUrlRef = useRef(null);
-    const [teamName, setTeamName] = useState('');
-    const [subteamName, setSubteamName] = useState('');
     const [feedbackReaction, setFeedbackReaction] = useState(null); // 'like' | 'dislike' | null
     const [feedbackComment, setFeedbackComment] = useState('');
     const { moduleId } = useParams();
     useEffect(() => {
         const fetchData = async () => {
             const response = await api.get(`/api/user/getModule/${moduleId}`);
-            console.log(response.data)
             setData(response.data);
         };
         fetchData();
     }, [moduleId]);
+
     useEffect(() => {
         if (!data) return;
         const inferType = (url) => {
@@ -73,7 +70,6 @@ const ModuleView = () => {
 
     }, [data]);
 
-    // Helpers
     const getFileExt = (nameOrUrl = '') => {
         const clean = String(nameOrUrl).split('?')[0].split('#')[0];
         const idx = clean.lastIndexOf('.');
@@ -118,7 +114,6 @@ const ModuleView = () => {
         return url ? { name, url, kind: guessKind(ext) } : null;
     };
 
-    // Dedicated normalizer for primaryFile using its own URL ref so we don't revoke submission preview URLs
     const normalizePrimaryResource = (res) => {
         if (!res) return null;
         if (typeof res === 'string') {
@@ -145,14 +140,11 @@ const ModuleView = () => {
         if (primaryUrlRef.current) URL.revokeObjectURL(primaryUrlRef.current);
     }, []);
 
-    // Derived display values with safe fallbacks
     const title = data?.title || 'Untitled Module';
     const category = data?.category || 'Uncategorized';
     const trainingType = data?.trainingType || '—';
-    // console.log(data)
     const team = data?.team || '—';
     const subteam = data?.subteam || '—';
-    // const subTeamName = data?.subTeam?.name || '—';
     const durationMins = data?.duration || null;
     const credits = data?.credits ?? 0;
     const badges = data?.badges ?? 0;
@@ -228,15 +220,9 @@ const ModuleView = () => {
 
 
     return (
-        <div className="module-preview-container" onClick={(e) => e.stopPropagation()}>
+        <div className="" onClick={(e) => e.stopPropagation()}>
             <div className="module-preview-header">
-                <div className="module-preview-header-left">
-                    {/* <div className="module-preview-header-icon"><GoBook size={24} color="#5570f1" /></div> */}
-                    <div>
-                        {/* <div className="module-preview-title">Module Preview</div> */}
-                        {/* <div className="module-preview-subtitle">Review details and resources before publishing</div> */}
-                    </div>
-                </div>
+                
                 <div className="module-preview-tabs" role="tablist" aria-label="Module sections">
                     <div className="assigned-header">
 
@@ -429,7 +415,6 @@ const ModuleView = () => {
                                             </div>
                                         </div>
                                     )}
-
                                     {additionalFile && (
                                         <div className="global-preview-card" style={{ marginTop: '10px', marginBottom: '10px' }}>
                                             <h3 className="global-preview-card-title">Additional Material</h3>
@@ -443,7 +428,6 @@ const ModuleView = () => {
                                             </div>
                                         </div>
                                     )}
-
                                 </div>
                                 {(data.submissionEnabled || data.submissionsEnabled) && <div className="global-preview-actions">
                                     <div>
@@ -557,7 +541,6 @@ const ModuleView = () => {
                     </div>
                 </div>
             </div>
-
             {showModal && (
                 <div className="global-preview-modal-backdrop" onClick={() => setShowModal(false)}>
                     <div className="global-preview-modal" onClick={(e) => e.stopPropagation()}>

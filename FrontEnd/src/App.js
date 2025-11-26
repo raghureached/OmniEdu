@@ -111,7 +111,6 @@ function App() {
             <Route path="assigned" element={<Assigned />} />
             <Route path="additional" element={<Additional />} />
             <Route path="mandatory" element={<Mandatory />} />
-            <Route path="module/:moduleId" element={<ModuleView />} />
           </Route>
           <Route path="/admin/*" element={<AdminLayout />}>
             <Route index element={<AdminHome />} />
@@ -154,6 +153,8 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<div>Page Not Found</div>} />
           <Route path='test' element={<LearningPath/>}/>
+          <Route path="module/:moduleId" element={<ModuleView />} />
+
         </Routes>
       </div>
   );

@@ -36,6 +36,6 @@ const userContentProgressSchema = new mongoose.Schema(
 
 userContentProgressSchema.index({ assignment_id: 1, user_id: 1 }, { unique: true });
 
-const UserContentProgress = mongoose.model("UserContentProgress", userContentProgressSchema);
+const   UserContentProgress = mongoose.model("UserContentProgress", userContentProgressSchema);
 
 module.exports = UserContentProgress;

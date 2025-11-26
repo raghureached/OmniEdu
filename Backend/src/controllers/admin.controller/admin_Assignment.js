@@ -189,7 +189,7 @@ const createAssignment = async (req, res) => {
       }
     }
     try{
-      console.log("assignment",assignment)
+      // console.log("assignment",assignment)
     if(content_type === "LearningPath"){
       await LearningPath.updateOne({ _id: assignment.contentId }, {status:"Published"});
     }else if(content_type === "OrganizationModule"){
