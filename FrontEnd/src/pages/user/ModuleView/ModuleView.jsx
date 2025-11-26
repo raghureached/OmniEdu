@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-// import './Preview.css';
+import './ModuleView.css';
 import { GoBook } from 'react-icons/go';
 import { RiDeleteBin2Fill } from 'react-icons/ri';
 import { EyeIcon, Plus, ThumbsUp, ThumbsDown, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 import VideoPlayer from '../../../components/VideoPlayer/VideoPlayer';
 import api from '../../../services/api';
+import LoadingScreen from '../../../components/common/Loading/Loading';
 
 const ModuleView = () => {
     const navigate = useNavigate();
@@ -18,13 +19,22 @@ const ModuleView = () => {
     const primaryUrlRef = useRef(null);
     const [feedbackReaction, setFeedbackReaction] = useState(null); // 'like' | 'dislike' | null
     const [feedbackComment, setFeedbackComment] = useState('');
+    const [loading, setLoading] = useState(false);
     const { moduleId } = useParams();
     useEffect(() => {
-        const fetchData = async () => {
-            const response = await api.get(`/api/user/getModule/${moduleId}`);
-            setData(response.data);
-        };
-        fetchData();
+        try {
+            setLoading(true);
+            const fetchData = async () => {
+                const response = await api.get(`/api/user/getModule/${moduleId}`);
+                setData(response.data);
+                setLoading(false);
+            };
+            fetchData();
+        } catch (error) {
+            setLoading(false);
+            console.error('Error fetching module data:', error);
+        }
+        
     }, [moduleId]);
 
     useEffect(() => {
@@ -217,98 +227,104 @@ const ModuleView = () => {
     };
 
     // Progress header removed; tabs moved to modal header
-
+    if(loading){
+        return <LoadingScreen text="Fetching module data..." />;
+    }
 
     return (
-        <div className="" onClick={(e) => e.stopPropagation()}>
+        <div >
             <div className="module-preview-header">
-                
-                <div className="module-preview-tabs" role="tablist" aria-label="Module sections">
-                    <div className="assigned-header">
 
-                        <div className="tabs">
-                            <button
-                                className={`tab-button ${activeTab === 'preview' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('preview')}
-                            >
-                                Preview 
-                            </button>
-                            <button
-                                className={`tab-button ${activeTab === 'resources' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('resources')}
-                            >
-                                Resources 
-                            </button>
-                        </div>
-                    </div>
-                </div>
             </div>
-            <div className="global-preview-wrap">
-                <div className="global-preview-panel">
+            <div className="user-mod-wrap">
+                <div className="user-mod-panel">
+                        <div className="assigned-header">
 
-                    <div className="global-preview-content">
+                            <div className="tabs">
+                                <button
+                                    className={`tab-button `}
+                                    onClick={() => window.history.back()}
+                                >
+                                   <span style={{display: 'flex', alignItems: 'center',textDecoration:"underline"}}><ChevronLeft size={20} /></span>
+                                </button>
+                                <button
+                                    className={`tab-button ${activeTab === 'preview' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('preview')}
+                                >
+                                    Preview
+                                </button>
+                                <button
+                                    className={`tab-button ${activeTab === 'resources' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('resources')}
+                                >
+                                    Resources
+                                </button>
+                            </div>
+                        </div>
+
+                    <div className="user-mod-content">
 
                         {activeTab === 'preview' && (
-                            <div className="global-preview-tab-pane">
-                                <div className="global-preview-preview-grid">
+                            <div className="user-mod-tab-pane">
+                                <div className="user-mod-preview-grid">
 
-                                    <div className="global-preview-left-col">
-                                        <div className="global-preview-title-row">
-                                            <div className="global-preview-module-title">{title}</div>
-                                            <div className="global-preview-training-category">
+                                    <div className="user-mod-left-col">
+                                        <div className="user-mod-title-row">
+                                            <div className="user-mod-module-title">{title}</div>
+                                            <div className="user-mod-training-category">
                                                 Training Category: {category}
                                             </div>
-                                            <div className="global-preview-meta-row">
+                                            <div className="user-mod-meta-row">
                                                 {/* <div>
-                                                        <strong className="global-preview-meta-label">Training Type</strong>
-                                                        <span className="global-preview-meta-value">{trainingType}</span>
+                                                        <strong className="user-mod-meta-label">Training Type</strong>
+                                                        <span className="user-mod-meta-value">{trainingType}</span>
                                                     </div> */}
                                                 <div>
-                                                    <strong className="global-preview-meta-label">Target Team/Sub Team</strong>
-                                                    <span className="global-preview-meta-value">{team.name || '-'}/{subteam.name || '-'}</span>
+                                                    <strong className="user-mod-meta-label">Target Team/Sub Team</strong>
+                                                    <span className="user-mod-meta-value">{team.name || '-'}/{subteam.name || '-'}</span>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="global-preview-stats-row">
-                                            <div className="global-preview-stat" data-tooltip="Total run-time of all videos and activities">
-                                                <span className="global-preview-icon">⏱</span>{durationMins ? `${durationMins} mins` : '—'}
+                                        <div className="user-mod-stats-row">
+                                            <div className="user-mod-stat" data-tooltip="Total run-time of all videos and activities">
+                                                <span className="user-mod-icon">⏱</span>{durationMins ? `${durationMins} mins` : '—'}
                                             </div>
-                                            <div className="global-preview-stat" data-tooltip="Credits awarded after completion">
-                                                <span className="global-preview-icon">🎓</span>{credits} Credit{Number(credits) === 1 ? '' : 's'}
+                                            <div className="user-mod-stat" data-tooltip="Credits awarded after completion">
+                                                <span className="user-mod-icon">🎓</span>{credits} Credit{Number(credits) === 1 ? '' : 's'}
                                             </div>
-                                            <div className="global-preview-stat" data-tooltip="Badges achievable in this module">
-                                                <span className="global-preview-icon">🏅</span>{badges} Badge{Number(badges) === 1 ? '' : 's'}
+                                            <div className="user-mod-stat" data-tooltip="Badges achievable in this module">
+                                                <span className="user-mod-icon">🏅</span>{badges} Badge{Number(badges) === 1 ? '' : 's'}
                                             </div>
-                                            <div className="global-preview-stat" data-tooltip="Stars achievable in this module">
-                                                <span className="global-preview-icon">⭐</span>{stars} Star{Number(stars) === 1 ? '' : 's'}
+                                            <div className="user-mod-stat" data-tooltip="Stars achievable in this module">
+                                                <span className="user-mod-icon">⭐</span>{stars} Star{Number(stars) === 1 ? '' : 's'}
                                             </div>
                                         </div>
 
-                                        <div className="global-preview-small-row">
-                                            <div className="global-preview-card">
+                                        <div className="user-mod-small-row">
+                                            <div className="user-mod-card">
                                                 <h3>Prerequisites</h3>
                                                 {prerequisitesArr.length ? (
-                                                    <ul className="global-preview-learn-list">
+                                                    <ul className="user-mod-learn-list">
                                                         {prerequisitesArr.map((p, idx) => (
                                                             <li key={idx}>• {p}</li>
                                                         ))}
                                                     </ul>
                                                 ) : (
-                                                    <p className="global-preview-prereq">Nil</p>
+                                                    <p className="user-mod-prereq">Nil</p>
                                                 )}
                                             </div>
 
 
-                                            <div className="global-preview-card">
+                                            <div className="user-mod-card">
                                                 <h3>Overview</h3>
                                                 <p style={{ color: "#0f1724", fontWeight: "400" }}>{description.slice(0, 250)}...</p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="global-preview-right-col-content">
-                                        <div className="global-preview-image-card">
+                                    <div className="user-mod-right-col-content">
+                                        <div className="user-mod-image-card">
                                             {thumbnail ? (
                                                 <img src={thumbnail} alt="Module thumbnail" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'cover', borderRadius: '10px' }} />
                                             ) : (
@@ -316,46 +332,46 @@ const ModuleView = () => {
                                             )}
                                         </div>
 
-                                        <div className="global-preview-details">
+                                        <div className="user-mod-details">
 
-                                            <div className="global-preview-card" style={{ height: "fit-content" }}>
+                                            <div className="user-mod-card" style={{ height: "fit-content" }}>
                                                 <h3>Tags</h3>
-                                                <div className="global-preview-tags-wrap">
+                                                <div className="user-mod-tags-wrap">
                                                     {tags.length ? (
 
                                                         tags.slice(0, 3).map((t, idx) => (
-                                                            <div key={idx} className="global-preview-tag">{t}</div>
+                                                            <div key={idx} className="user-mod-tag">{t}</div>
                                                         ))
                                                     ) : (
-                                                        <div className="global-preview-tag">No tags</div>
+                                                        <div className="user-mod-tag">No tags</div>
                                                     )}
                                                     {tags.length > 3 && (
-                                                        <span className="global-preview-tag">+{tags.length - 3} more</span>
+                                                        <span className="user-mod-tag">+{tags.length - 3} more</span>
                                                     )}
                                                 </div>
                                             </div>
-                                            <div className="global-preview-card" style={{ height: "fit-content" }}>
+                                            <div className="user-mod-card" style={{ height: "fit-content" }}>
                                                 <h3>What you'll learn</h3>
                                                 {outcomes.length ? (
-                                                    <ul className="global-preview-learn-list">
+                                                    <ul className="user-mod-learn-list">
                                                         {outcomes.slice(0, 2).map((o, idx) => (
                                                             <li key={idx} style={{ fontWeight: "400" }}>✅ {o}</li>
                                                         ))}
                                                     </ul>
                                                 ) : (
-                                                    <p className="global-preview-prereq">No learning outcomes provided.</p>
+                                                    <p className="user-mod-prereq">No learning outcomes provided.</p>
                                                 )}
                                                 {outcomes.length > 2 && (
-                                                    <span className="global-preview-tag">+{outcomes.length - 2} more</span>
+                                                    <span className="user-mod-tag">+{outcomes.length - 2} more</span>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="global-preview-actions">
+                                <div className="user-mod-actions">
                                     <div></div>
-                                    <div className="global-preview-actions-buttons">
-                                        {/* <button className="global-preview-btn global-preview-btn-ghost" onClick={handleSaveDraft}>
+                                    <div className="user-mod-actions-buttons">
+                                        {/* <button className="user-mod-btn user-mod-btn-ghost" onClick={handleSaveDraft}>
                                                 Save Draft
                                             </button> */}
                                         <button className="btn-primary" onClick={() => handleTabChange('resources')}>
@@ -367,23 +383,23 @@ const ModuleView = () => {
                         )}
 
                         {activeTab === 'resources' && (
-                            <div className="global-preview-tab-pane global-preview-resources-pane">
-                                <div className="global-preview-resources-content">
+                            <div className="user-mod-tab-pane user-mod-resources-pane">
+                                <div className="user-mod-resources-content">
 
                                     {data.instructions && (
-                                        <div className="global-preview-card global-preview-instructions-card">
-                                            <h3 className="global-preview-card-title">Description</h3>
+                                        <div className="user-mod-card user-mod-instructions-card">
+                                            <h3 className="user-mod-card-title">Description</h3>
                                             <div>
                                                 {data.instructions}
                                             </div>
                                         </div>
                                     )}
 
-                                    <div className="global-preview-card global-preview-primary-card">
-                                        <h3 className="global-preview-card-title">Primary Material</h3>
-                                        {/* <p className="global-preview-resource-meta">Content</p> */}
+                                    <div className="user-mod-card user-mod-primary-card">
+                                        <h3 className="user-mod-card-title">Primary Material</h3>
+                                        {/* <p className="user-mod-resource-meta">Content</p> */}
                                         {!primaryRes ? (
-                                            <div className="global-preview-richtext" dangerouslySetInnerHTML={{ __html: data.richText }} />
+                                            <div className="user-mod-richtext" dangerouslySetInnerHTML={{ __html: data.richText }} />
                                         ) : primaryRes.kind === 'video' ? (
                                             <VideoPlayer src={primaryRes.url} poster={thumbnail} theme="light" />
                                         ) : primaryRes.kind === 'image' ? (
@@ -391,22 +407,22 @@ const ModuleView = () => {
                                                 <img src={primaryRes.url} alt={primaryRes.name} style={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: 8 }} />
                                             </div>
                                         ) : primaryRes.kind === 'pdf' ? (
-                                            <div className="global-preview-iframe-container">
+                                            <div className="user-mod-iframe-container">
                                                 <iframe src={primaryRes.url} title={primaryRes.name} />
                                             </div>
                                         ) : (
                                             <div>
-                                                <p className="global-preview-no-preview">Preview not available for this file type.</p>
+                                                <p className="user-mod-no-preview">Preview not available for this file type.</p>
                                                 <p>
-                                                    <a href={primaryRes.url} target="_blank" rel="noopener noreferrer" className="global-preview-open-link">Open file</a>
+                                                    <a href={primaryRes.url} target="_blank" rel="noopener noreferrer" className="user-mod-open-link">Open file</a>
                                                 </p>
                                             </div>
                                         )}
                                     </div>
                                     {resource && (
-                                        <div className="global-preview-card">
-                                            <h3 className="global-preview-card-title" style={{ marginBottom: "15px" }}>Supplementary Material</h3>
-                                            <div className="global-preview-iframe-container">
+                                        <div className="user-mod-card">
+                                            <h3 className="user-mod-card-title" style={{ marginBottom: "15px" }}>Supplementary Material</h3>
+                                            <div className="user-mod-iframe-container">
                                                 {resourceKind === 'video' ? (
                                                     <VideoPlayer src={resource} poster={thumbnail} />
                                                 ) : (
@@ -416,22 +432,21 @@ const ModuleView = () => {
                                         </div>
                                     )}
                                     {additionalFile && (
-                                        <div className="global-preview-card" style={{ marginTop: '10px', marginBottom: '10px' }}>
-                                            <h3 className="global-preview-card-title">Additional Material</h3>
-                                            <div className="global-preview-resources-list">
-                                                <div className="global-preview-resource-item">
-                                                    <p className="global-preview-resource-name">{additionalFile.split('/').pop()}</p>
-                                                    <div className="global-preview-resource-actions">
-                                                        <button onClick={() => handlePreview(additionalFile)} className="global-preview-btn global-preview-btn-primary">Preview</button>
+                                        <div className="user-mod-card" style={{ marginTop: '10px', marginBottom: '10px' }}>
+                                            <h3 className="user-mod-card-title">Additional Material</h3>
+                                            <div className="user-mod-resources-list">
+                                                <div className="user-mod-resource-item">
+                                                    <p className="user-mod-resource-name">{additionalFile.split('/').pop()}</p>
+                                                    <div className="user-mod-resource-actions">
+                                                        <button onClick={() => handlePreview(additionalFile)} className="user-mod-btn user-mod-btn-primary">Preview</button>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     )}
-                                </div>
-                                {(data.submissionEnabled || data.submissionsEnabled) && <div className="global-preview-actions">
-                                    <div>
-                                        <h3 style={{ margin: "10px" }}>Submission <span className='module-overlay__required'>*</span></h3>
+                                    {(data.submissionEnabled || data.submissionsEnabled) && <div>
+                                    <div className="user-mod-card">
+                                        <h3 style={{ margin: "10px" }} className="user-mod-card-title">Submission <span className='module-overlay__required'>*</span></h3>
 
                                         <input
                                             type="file"
@@ -473,7 +488,7 @@ const ModuleView = () => {
                                     </div>
                                 </div>}
                                 {data.feedbackEnabled ? (
-                                    <div className="global-preview-card">
+                                    <div className="user-mod-card">
                                         <div className="feedback-header-row">
                                             <h3 className="feedback-title">Feedback</h3>
                                             <div className="feedback-actions">
@@ -517,16 +532,18 @@ const ModuleView = () => {
                                             </div>
                                         </div>
                                         {data.feedback && (
-                                            <div className="global-preview-iframe-container" style={{ marginTop: 8 }}>
+                                            <div className="user-mod-iframe-container" style={{ marginTop: 8 }}>
                                                 <iframe src={data.feedback} frameBorder="0" title="Feedback"></iframe>
                                             </div>
                                         )}
                                     </div>
                                 ) : null}
+                                </div>
+                                
 
-                                <div className="global-preview-actions">
+                                <div className="user-mod-actions">
                                     <div></div>
-                                    <div className="global-preview-actions-buttons" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                                    <div className="user-mod-actions-buttons" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
                                         <button className="btn-secondary" onClick={() => handleTabChange('preview')}>
                                             <span style={{ display: "flex", alignItems: "center", gap: 4 }}><ChevronLeft size={16} /> Previous</span>
                                         </button>
@@ -542,20 +559,20 @@ const ModuleView = () => {
                 </div>
             </div>
             {showModal && (
-                <div className="global-preview-modal-backdrop" onClick={() => setShowModal(false)}>
-                    <div className="global-preview-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="global-preview-modal-header">
-                            <div className="global-preview-modal-title">{modalContent.title}</div>
-                            <button className="global-preview-close-btn" onClick={() => setShowModal(false)}>
+                <div className="user-mod-modal-backdrop" onClick={() => setShowModal(false)}>
+                    <div className="user-mod-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="user-mod-modal-header">
+                            <div className="user-mod-modal-title">{modalContent.title}</div>
+                            <button className="user-mod-close-btn" onClick={() => setShowModal(false)}>
                                 ✕
                             </button>
                         </div>
-                        <div className="global-preview-modal-body">
-                            <p className="global-preview-modal-file-info">
+                        <div className="user-mod-modal-body">
+                            <p className="user-mod-modal-file-info">
                                 <strong>Previewing:</strong> {modalContent.body.name}
                             </p>
                             {modalContent.body?.kind === 'pdf' && (
-                                <div className="global-preview-iframe-container">
+                                <div className="user-mod-iframe-container">
                                     <iframe src={modalContent.body.url} title={modalContent.title} />
                                 </div>
                             )}
@@ -569,9 +586,9 @@ const ModuleView = () => {
                             )}
                             {modalContent.body && ['pdf', 'image', 'video'].indexOf(modalContent.body.kind) === -1 && (
                                 <div>
-                                    <p className="global-preview-no-preview">Preview not available for this file type.</p>
+                                    <p className="user-mod-no-preview">Preview not available for this file type.</p>
                                     <p>
-                                        <a href={modalContent.body.url} target="_blank" rel="noopener noreferrer" className="global-preview-open-link">Open file</a>
+                                        <a href={modalContent.body.url} target="_blank" rel="noopener noreferrer" className="user-mod-open-link">Open file</a>
                                     </p>
                                 </div>
                             )}

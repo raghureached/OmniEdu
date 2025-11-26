@@ -49,7 +49,7 @@ export const CourseCard = ({
   const buttonStatusFunc = (status) => {
     // console.log(data)
     if(status === "assigned") {
-        navigate(`/user/module/${data.uuid}`);
+        navigate(`/module/${data.uuid}`);
     }
     if(status === "in_progress") {
       
