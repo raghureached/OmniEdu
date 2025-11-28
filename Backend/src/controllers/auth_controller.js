@@ -168,8 +168,42 @@ const checkAuth = async (req, res) => {
     }
 }
 
+const changePassword = async (req, res) => {
+    try {
+        const { newPassword, email } = req.body;
+        let user;
+       
+        const globalAdmin = await GlobalAdmin.findOne({ email: email });
+        if (globalAdmin) {
+            user = globalAdmin;
+        } else {
+            user = await User.findOne({ email: email });
+        }
+
+        if (!user) {
+            return res.status(404).json({
+                isSuccess: false,
+                message: "User not found"
+            });
+        }
+        user.password = newPassword;
+        await user.save();
+        return res.status(200).json({
+            isSuccess: true,
+            message: "Password changed successfully"
+        });
+    } catch (error) {
+        return res.status(500).json({
+            isSuccess: false,
+            message: "Failed to change password",
+            error: error.message
+        })
+    }
+};
+
 module.exports = {
     login,
     logout,
+    changePassword,
     checkAuth
 }

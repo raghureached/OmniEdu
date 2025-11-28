@@ -43,10 +43,8 @@ app.use('/api/admin',authenticate,authorize(['Administrator']),adminRouter)
 app.use('/dev',devRouter)
 // app.use('/api/user',authenticate,authorize(['User']),userRouter)
 app.use('/api/user',authenticate,userRouter)
+app.post('/api/sendOtp', require('./src/controllers/OTP').sendOTP)
+app.post('/api/verifyOtp', require('./src/controllers/OTP').verifyOTP)
 app.listen(PORT, () => {
   console.log(`Server is running at PORT:${PORT}`);
-});
-app.get('/send-mail', async (req, res,next) => {
-  await sendMail("raghu071003@gmail.com","test","test","Hello");
-  res.send("Email sent successfully");
 });

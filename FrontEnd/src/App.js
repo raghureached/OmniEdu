@@ -68,6 +68,7 @@ import LearningPathView from './pages/user/LearningPathView/LearningPathView';
 import SurveyView from './pages/user/SurveyView/SurveyView';
 import Navbar from './components/layouts/Navbar/Navbar';
 import NavbarOnly from './components/layouts/NavbarOnly/NavbarOnly';
+import ChangePassword from './pages/auth/ChangePassword/ChangePassword';
 function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -116,6 +117,7 @@ function App() {
             <Route path="assigned" element={<Assigned />} />
             <Route path="additional" element={<Additional />} />
             <Route path="mandatory" element={<Mandatory />} />
+            <Route path="change-password" element={<ChangePassword />} />
           </Route>
           <Route path="/admin/*" element={<AdminLayout />}>
             <Route index element={<AdminHome />} />
@@ -134,6 +136,7 @@ function App() {
             <Route path="portal-library" element={<AdminPortalActivity />} />
             <Route path="profile" element={<AdminProfile />} />
             <Route path="activity-log" element={<AdminActivityLog />} />
+            <Route path="change-password" element={<ChangePassword />} />
           </Route>
           <Route path="/global-admin/*" element={<GlobalAdminLayout />}>
             <Route index element={<GlobalAdminHome/>} />
@@ -153,6 +156,7 @@ function App() {
             <Route path="help-center" element={<GlobalHelpCenter />} />
             <Route path="portal-library-admin" element={<GlobalPortalActivity />} />    
             <Route path="analytics-view" element={<AnalyticsView />} />
+            <Route path="change-password" element={<ChangePassword />} />
           </Route>
           <Route element={<NavbarOnly />}>
             <Route path="/module/:moduleId" element={<ModuleView />} />
@@ -168,6 +172,7 @@ function App() {
           </Route>
           
           <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/change-password" element={<ChangePassword />} />
           <Route path="*" element={<div>Page Not Found</div>} />
           <Route path='test' element={<LearningPath/>}/>
           

@@ -22,7 +22,7 @@ const addUser = async (req, res) => {
       subteam,
       custom1,
       status,
-      invitation,
+      invite,
       department_id
     } = req.body;
 
@@ -46,7 +46,7 @@ const addUser = async (req, res) => {
 
     const empId = `${orgName.name.substring(0, 3).toUpperCase()}-${new Date().getFullYear()}-${user[0].uuid.substring(0, 3).toUpperCase()}`;
     const teamArr = [];
-    if(team){
+    if (team) {
       teamArr.push({
         team_id: team,
         sub_team_id: subteam
@@ -63,11 +63,34 @@ const addUser = async (req, res) => {
       teams: teamArr,
       custom1,
     }], { session });
-    
+
     // ✅ Commit both if all good
     await session.commitTransaction();
     session.endSession();
     await logAdminActivity(req, "add", `User added successfully: ${name}`);
+    if (invite) {
+      await sendMail(
+        user[0].email,
+        "Welcome to OmniEdu – Your Account is Now Active!",
+        `Hello ${name},
+
+Great news! You’ve been officially added to the OmniEdu platform.
+
+Your login details are provided below:
+Email: ${email}
+Password: ${password}
+
+You can use these credentials to access your personalized learning dashboard, course modules, assessments, and more.
+
+🔐 Security Tip:  
+Please change your password after logging in for the first time.
+
+If you need any assistance, our support team is always here to help.
+
+We’re excited to have you with us.  
+Welcome aboard!`
+      );
+    }
 
     // Fetch created user + populated relations to match getUsers shape
     const createdUser = await User
@@ -89,7 +112,7 @@ const addUser = async (req, res) => {
 
   } catch (error) {
     console.log(error);
-    
+
     // ❌ Rollback everything if any step fails
     await session.abortTransaction();
     session.endSession();
@@ -516,6 +539,7 @@ const bulkDeleteUsers = async (req, res) => {
 
 const bcrypt = require("bcrypt");
 const logAdminActivity = require("./admin_activity");
+const { sendMail } = require("../../utils/Emailer");
 
 const bulkEditUsers = async (req, res) => {
   try {
