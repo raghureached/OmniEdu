@@ -63,6 +63,11 @@ import GlobalSurveys from './pages/globalAdmin/GlobalSurveys/GlobalAssessments-s
 import LearningPath from './components/LearningPath/LearningPath';
 import CreateAssignmentEnhanced from './pages/admin/CreateAssignment/CreateAssignmentEnhanced';
 import ModuleView from './pages/user/ModuleView/ModuleView';
+import AssessmentView from './pages/user/AssessmentView/AssessmentView';
+import LearningPathView from './pages/user/LearningPathView/LearningPathView';
+import SurveyView from './pages/user/SurveyView/SurveyView';
+import Navbar from './components/layouts/Navbar/Navbar';
+import NavbarOnly from './components/layouts/NavbarOnly/NavbarOnly';
 function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -148,12 +153,24 @@ function App() {
             <Route path="help-center" element={<GlobalHelpCenter />} />
             <Route path="portal-library-admin" element={<GlobalPortalActivity />} />    
             <Route path="analytics-view" element={<AnalyticsView />} />
-            
           </Route>
+          <Route element={<NavbarOnly />}>
+            <Route path="/module/:moduleId" element={<ModuleView />} />
+            <Route path="/module/:moduleId/:inProgress" element={<ModuleView />} />
+            <Route path='assessment/:assessmentId' element={<AssessmentView />} />
+            <Route path='assessment/:assessmentId/:inProgress' element={<AssessmentView />} />
+            <Route path='survey/:surveyId' element={<SurveyView />} />
+            <Route path='survey/:surveyId/:inProgress' element={<SurveyView />} />
+
+            <Route path='learningPath/:learningPathId' element={<LearningPathView />} />
+            <Route path='learningPath/:learningPathId/:inProgress' element={<LearningPathView />} />
+
+          </Route>
+          
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<div>Page Not Found</div>} />
           <Route path='test' element={<LearningPath/>}/>
-          <Route path="module/:moduleId" element={<ModuleView />} />
+          
 
         </Routes>
       </div>

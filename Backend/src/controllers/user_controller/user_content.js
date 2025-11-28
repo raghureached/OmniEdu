@@ -55,7 +55,7 @@ const getSurvey = async(req,res) =>{
 const getLearningPath = async(req,res)=>{
     try {
         const { learningPathId } = req.params;
-        const learningPath = await LearningPath.findOne({uuid:learningPathId}).populate("lessons.id").populate("team").populate("subteam");
+        const learningPath = await LearningPath.findOne({uuid:learningPathId}).populate("team").populate("subteam");
         if (!learningPath) {
             return res.status(404).json({ message: 'Learning Path not found' });
         }

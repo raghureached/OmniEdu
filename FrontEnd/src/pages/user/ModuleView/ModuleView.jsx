@@ -8,7 +8,8 @@ import VideoPlayer from '../../../components/VideoPlayer/VideoPlayer';
 import api from '../../../services/api';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 
-const ModuleView = () => {
+const ModuleView = ({id}) => {
+    // console.log(id)
     const navigate = useNavigate();
     const [data, setData] = useState(null);
     const [activeTab, setActiveTab] = useState('preview');
@@ -20,12 +21,18 @@ const ModuleView = () => {
     const [feedbackReaction, setFeedbackReaction] = useState(null); // 'like' | 'dislike' | null
     const [feedbackComment, setFeedbackComment] = useState('');
     const [loading, setLoading] = useState(false);
-    const { moduleId } = useParams();
+    const { moduleId, inProgress } = useParams();
+    useEffect(() => {
+        if(inProgress === "true" || inProgress){
+            setActiveTab('resources');
+        }
+    }, [inProgress]);
     useEffect(() => {
         try {
             setLoading(true);
+            const uuid = id || moduleId;
             const fetchData = async () => {
-                const response = await api.get(`/api/user/getModule/${moduleId}`);
+                const response = await api.get(`/api/user/getModule/${uuid}`);
                 setData(response.data);
                 setLoading(false);
             };
@@ -233,14 +240,11 @@ const ModuleView = () => {
 
     return (
         <div >
-            <div className="module-preview-header">
-
-            </div>
-            <div className="user-mod-wrap">
+            
+            <div className={` ${id ? 'user-mod-wrap-lp' : 'user-mod-wrap'}`} >
                 <div className="user-mod-panel">
                         <div className="assigned-header">
-
-                            <div className="tabs">
+                            {moduleId && <div className="tabs">
                                 <button
                                     className={`tab-button `}
                                     onClick={() => window.history.back()}
@@ -259,7 +263,21 @@ const ModuleView = () => {
                                 >
                                     Resources
                                 </button>
-                            </div>
+                            </div>}
+                            {id && <div className="tabs">
+                                {/* <button
+                                    className={`tab-button ${activeTab === 'preview' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('preview')}
+                                >
+                                    Preview
+                                </button>
+                                <button
+                                    className={`tab-button ${activeTab === 'resources' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('resources')}
+                                >
+                                    Resources
+                                </button> */}
+                            </div>}
                         </div>
 
                     <div className="user-mod-content">

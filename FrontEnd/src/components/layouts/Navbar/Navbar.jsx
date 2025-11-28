@@ -3,10 +3,10 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../../store/slices/authSlice';
 import { fetchNotifications, markNotificationAsRead } from '../../../store/slices/notificationSlice';
-import "./UserLayout.css";
+
 import { Menu, Home, BookOpen, CheckCircle, Award, Shield, BookCopy, Clock, User, HelpCircle, LogOut, Bell, X } from 'lucide-react';
 
-const UserLayout = () => {
+const Navbar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -138,93 +138,10 @@ const UserLayout = () => {
             </div>
           </div>
         </div>
-        
-        <ul className="user_sidebar_menu">
-          <li>
-            <Link to="/user/dashboard" className={isActive('/user/dashboard') ? 'user_link_active' : ''}>
-              <Home size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Dashboard</span>}
-            </Link>
-          </li>
-          <li>
-            <Link to="/user/learning-hub" className={isActive('/user/learning-hub') ? 'user_link_active' : ''}>
-              <BookOpen size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Learning Hub</span>}
-            </Link>
-          </li>
-          <li className="user_menu_section">
-            {!sidebarCollapsed && <div className="user_section_title">Training</div>}
-          </li>
-          <li>
-            <Link to="/user/assigned" className={isActive('/user/assigned') ? 'user_link_active' : ''}>
-              <CheckCircle size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Assigned</span>}
-            </Link>
-          </li>
-          <li>
-            <Link to="/user/additional" className={isActive('/user/additional') ? 'user_link_active' : ''}>
-              <Award size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Additional</span>}
-            </Link>
-          </li>
-          <li>
-            <Link to="/user/mandatory" className={isActive('/user/mandatory') ? 'user_link_active' : ''}>
-              <Shield size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Mandatory</span>}
-            </Link>
-          </li>
-          <li>
-            <Link to="/user/catalog" className={isActive('/user/catalog') ? 'user_link_active' : ''}>
-              <BookCopy size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Course Catalog</span>}
-            </Link>
-          </li>
-          <li className="user_menu_section">
-            {!sidebarCollapsed && <div className="user_section_title">Other</div>}
-          </li>
-          <li>
-            <Link to="/user/activity-history" className={isActive('/user/activity-history') ? 'user_link_active' : ''}>
-              <Clock size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Activity History</span>}
-            </Link>
-          </li>
-          <li>
-            <Link to="/user/profile" className={isActive('/user/profile') ? 'user_link_active' : ''}>
-              <User size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>User Profile</span>}
-            </Link>
-          </li>
-          <li>
-            <Link to="/user/help-center" className={isActive('/user/help-center') ? 'user_link_active' : ''}>
-              <HelpCircle size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Help Center</span>}
-            </Link>
-          </li>
-        </ul>
-        
-        <div className="user_sidebar_footer">
-          <button onClick={handleLogout} className="user_logout_btn">
-            <LogOut size={20} />
-            {!sidebarCollapsed && <span>Logout</span>}
-          </button>
-        </div>
       </nav>
       
       <main className={`user_content ${sidebarCollapsed ? 'user_content_expanded' : ''}`}>
         <header className="user_content_header">
-          <div className="user_header_left">
-            <h2>
-              {location.pathname.includes('/user/dashboard') && 'Dashboard'}
-              {location.pathname.includes('/user/learning-hub') && 'Learning Hub'}
-              {location.pathname.includes('/user/assigned') && 'Assigned Training'}
-              {location.pathname.includes('/user/additional') && 'Additional Training'}
-              {location.pathname.includes('/user/mandatory') && 'Mandatory Training'}
-              {location.pathname.includes('/user/catalog') && 'Course Catalog'}
-              {location.pathname.includes('/user/activity-history') && 'Activity History'}
-              {location.pathname.includes('/user/profile') && 'User Profile'}
-              {location.pathname.includes('/user/help-center') && 'Help Center'}
-            </h2>
-          </div>
           <div className="user_header_right">
             <div className="user_notification_container">
               <div className="user_notification_icon" onClick={toggleNotifications}>
@@ -292,12 +209,9 @@ const UserLayout = () => {
             </div>
           </div>
         </header>
-        <div className="user_content_body">
-          <Outlet />
-        </div>
       </main>
     </div>
   );
 };
 
-export default UserLayout;
+export default Navbar;

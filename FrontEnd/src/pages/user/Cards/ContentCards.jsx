@@ -10,6 +10,7 @@ export const CourseCard = ({
   progressPct = 0   ,
   contentType 
 }) => {
+  // console.log(data)
     const [previewModal, setPreviewModal] = useState(false);
     const navigate = useNavigate();
     const buttonStatus = {
@@ -48,17 +49,23 @@ export const CourseCard = ({
   };
   const buttonStatusFunc = (status) => {
     // console.log(data)
+    // console.log(contentType)
+    const type = contentType.toLowerCase().replace(/\s+/g, '');
+    if(!type){
+      return;
+    }
     if(status === "assigned") {
-        navigate(`/module/${data.uuid}`);
+      // console.log(type)
+        navigate(`/${type}/${data.uuid}`);
     }
     if(status === "in_progress") {
-      
+      navigate(`/${type}/${data.uuid}/true`);
     }
     if(status === "completed") {
-      
+      navigate(`/${type}/${data.uuid}/`);
     }
     if(status === "expired") {
-      
+      return ;
     }
   }
   // circular progress metrics
