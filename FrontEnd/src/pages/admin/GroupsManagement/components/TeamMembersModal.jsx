@@ -4,7 +4,10 @@ import { GoX } from 'react-icons/go';
 
 const membersPerPage = 100;
 
+
 const TeamMembersModal = ({ isOpen, onClose, team, members = [] }) => {
+  console.log("subteam in Team MEMBER MODEL",members)
+  console.log("groups in Team MEMBER MODEL",team)
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -23,21 +26,42 @@ const TeamMembersModal = ({ isOpen, onClose, team, members = [] }) => {
     setCurrentPage(1);
   }, [searchTerm]);
 
+  // Build a lookup of subteam id -> name from the provided team
+  const subTeamNameMap = useMemo(() => {
+    const map = new Map();
+    const subTeams = Array.isArray(team?.subTeams) ? team.subTeams : [];
+    subTeams.forEach((st) => {
+      const id = st?._id || st?.id || st?.uuid || null;
+      const name = st?.name || st?.subTeamName || st?.subteamName || st?.sub_team_name || '';
+      if (id) map.set(String(id), name || '');
+    });
+    return map;
+  }, [team]);
+
   const filteredMembers = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
+    const sorter = (a, b) => {
+      const aName = (a?.name || a?.fullName || '').toString().trim().toLowerCase();
+      const bName = (b?.name || b?.fullName || '').toString().trim().toLowerCase();
+      if (aName < bName) return  -1;
+      if (aName > bName) return  1;
+      return 0;
+    };
+
     if (!normalizedSearch) {
-      return members;
+      return [...members].sort(sorter);
     }
 
-    return members.filter((member) => {
-      const name = (member.name || member.fullName || '').toLowerCase();
-      const email = (member.email || '').toLowerCase();
-
-      return name.includes(normalizedSearch) || email.includes(normalizedSearch);
-    });
+    return members
+      .filter((member) => {
+        const name = (member.name || member.fullName || '').toLowerCase();
+        const email = (member.email || '').toLowerCase();
+        return name.includes(normalizedSearch) || email.includes(normalizedSearch);
+      })
+      .sort(sorter);
   }, [members, searchTerm]);
-
+ console.log('filteredMembers', filteredMembers)
   const totalPages = Math.max(1, Math.ceil(filteredMembers.length / membersPerPage));
 
   useEffect(() => {
@@ -105,19 +129,46 @@ const TeamMembersModal = ({ isOpen, onClose, team, members = [] }) => {
           ) : (
             <>
               <div className="table-container">
-                <div className="table-header" style={{ gridTemplateColumns: ' 1fr 1fr' }}>
+                <div className="table-header" style={{ gridTemplateColumns: '1fr 1.5fr 1fr 1fr' }}>
                   <div className="col-team">Name</div>
                   <div className="col-team">Email</div>
-                  {/* <div className="col-team">Team</div> */}
+                  <div className="col-team">Team</div>
+                  <div className="col-team">Subteams</div>
                 </div>
 
-                {paginatedMembers.map((member) => (
-                  <div key={member.id || member._id} className="table-row" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                    <div className="col-team">{member.name || member.fullName || '—'}</div>
-                    <div className="col-team">{member.email || '—'}</div>
-                     {/* <div className="col-team">{team.teamName || team.name || '—'}</div> */}
-                  </div>
-                ))}
+                {paginatedMembers.map((member) => {
+                  // Debug: Log the full member object to inspect its structure
+                  console.log('Member data:', member);
+                  
+                  // Extract subteam names from the nested structure
+                  
+                  // const subteamNames = teams
+                  //   .filter(st => st.members.some(m => m._id === member._id || m.id === member.id))
+                  //   .map(st => st.name)
+                  //   .join(', ');
+                  //   console.log('subteamNames', subteamNames)
+                   
+                  const toDisplayName = (val) => {
+                    const raw = (val ?? '').toString();
+                    if (!raw) return '';
+                    return subTeamNameMap.get(raw) || raw;
+                  };
+
+                  const subteamText = Array.isArray(member.subTeamNames)
+                    ? member.subTeamNames.map(toDisplayName).filter(Boolean).join(', ')
+                    : toDisplayName(member.subTeamName || '');
+
+                  return (
+                    <div key={member.id || member._id} className="table-row" style={{ gridTemplateColumns: '1fr 1.5fr 1fr 1fr' }}>
+                      <div className="col-team">{member.name || member.fullName || '—'}</div>
+                      <div className="col-team">{member.email || '—'}</div>
+                      <div className="col-team">{team.teamName || team.name || '—'}</div>
+                      <div className={`col-team ${!subteamText ? 'center-dash' : ''}`} title={subteamText}>
+                        {subteamText || '—'}
+                      </div>
+                    </div>
+                  );
+                })}
 
                 <div
                   className="table-footer"

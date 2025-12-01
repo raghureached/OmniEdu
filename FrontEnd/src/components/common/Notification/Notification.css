@@ -86,7 +86,7 @@
 
 .notification-action {
   margin-top: 8px;
-  align-self: flex-start;
+  align-self: center;
   padding: 6px 12px;
   border-radius: 10px;
   border: none;
@@ -108,19 +108,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: none;
-  border-radius: 50%;
+  /* width: 28px; */
+  /* height: 28px; */
+  /* border: none; */
+  /* border-radius: 50%; */
   background: transparent;
-  color: rgba(100, 116, 139, 0.9);
+  /* color: black; */
   cursor: pointer;
+  padding: 0px;
   transition: background 0.18s ease;
 }
 
 .notification-close:hover {
-  background: rgba(148, 163, 184, 0.14);
-  color: #0f172a;
+  /* background: rgba(148, 163, 184, 0.14); */
+  color: #F44337;
 }
 
 .notification-progress {

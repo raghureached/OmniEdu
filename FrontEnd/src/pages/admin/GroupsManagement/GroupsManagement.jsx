@@ -1,6 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { GoOrganization, GoX } from 'react-icons/go';
 import { useDispatch, useSelector } from 'react-redux';
+import { ChevronDown, Download, Plus, Eye, Edit3, Trash2, User, X as XIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import {
   fetchGroups,
   deleteGroup,
@@ -12,19 +15,22 @@ import {
   updateTeam,
   createSubTeam,
   updateSubTeam,
-  deleteSubTeam
+  deleteSubTeam,
+  deactivateGroupsBulk
 } from '../../../store/slices/groupSlice';
 import { fetchUsers } from '../../../store/slices/userSlice';
 import AdminForm from '../../../components/common/AdminForm/AdminForm';
 import GroupsTable from './components/GroupsTable';
 import TeamPreview from './components/TeamPreview';
 import TeamMembersModal from './components/TeamMembersModal';
+import api from '../../../services/api';
 import GroupsFilter from './components/GroupsFilter';
+import DeactivateModal from './DeactivateModal';
 // Reuse OrganizationManagement styles for consistent look & feel
 import '../../globalAdmin/OrganizationManagement/OrganizationManagement.css';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import { Users } from 'lucide-react';
-import { notifyError,notifyInfo,notifySuccess,notifyWarning } from '../../../utils/notification';
+import { notifyError, notifyInfo, notifySuccess, notifyWarning } from '../../../utils/notification';
 
 const GroupsManagement = () => {
   const dispatch = useDispatch();
@@ -33,7 +39,14 @@ const GroupsManagement = () => {
   const [showForm, setShowForm] = useState(false);
   const [currentGroup, setCurrentGroup] = useState(null);
   const [selectedGroups, setSelectedGroups] = useState([]);
-  const [selectAll, setSelectAll] = useState(false);
+  const [selectionScope, setSelectionScope] = useState('none'); // none | page | all | custom
+  // Gmail-style selection model
+  const [allSelected, setAllSelected] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]); // used when allSelected=false
+  const [excludedIds, setExcludedIds] = useState([]); // used when allSelected=true
+  const [selectedPageRef, setSelectedPageRef] = useState(null);
+  const [selectAllLoading, setSelectAllLoading] = useState(false);
+  const [allSelectionCount, setAllSelectionCount] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const [filterParams, setFilterParams] = useState({});
   const [formData, setFormData] = useState({});
@@ -41,11 +54,20 @@ const GroupsManagement = () => {
   const [membersModalOpen, setMembersModalOpen] = useState(false);
   const [membersModalTeam, setMembersModalTeam] = useState(null);
   const [membersModalUsers, setMembersModalUsers] = useState([]);
+
+  // Sorting (global, before pagination)
+  const [sortKey, setSortKey] = useState(''); // '', 'teamName', 'subTeams', 'members', 'status'
+  const [sortDir, setSortDir] = useState('asc'); // 'asc' | 'desc'
   const [subTeamModalOpen, setSubTeamModalOpen] = useState(false);
   const [subTeamModalTeam, setSubTeamModalTeam] = useState(null);
   const [subTeamModalTrigger, setSubTeamModalTrigger] = useState(null);
   const [subTeamEditData, setSubTeamEditData] = useState(null);
   const [subTeamEditTrigger, setSubTeamEditTrigger] = useState(null);
+  const [failedGroupRows, setFailedGroupRows] = useState([]);
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [teamsToDeactivate, setTeamsToDeactivate] = useState([]);
+
+
   const editMode = !!currentGroup;
 
   useEffect(() => {
@@ -194,13 +216,16 @@ const GroupsManagement = () => {
     const fullTeam = Array.isArray(groups)
       ? groups.find((item) => (item._id || item.id) === teamId)
       : groupLike;
+    console.log("fullteam", fullTeam)
 
     if (!fullTeam) return null;
 
     const resolvedTeamId = resolveIdentifier(fullTeam?._id ?? fullTeam?.id ?? teamId);
+    console.log("resolvedTeamId", resolvedTeamId)
     const teamDisplayName = fullTeam?.teamName || fullTeam?.name || groupLike.teamName || groupLike.name || '—';
-
+    console.log("teamDisplayName", teamDisplayName)
     const subTeamsArray = Array.isArray(fullTeam?.subTeams) ? fullTeam.subTeams : [];
+    console.log("subTeamsArray", subTeamsArray)
 
     const globalSubTeamLookup = new Map();
     if (Array.isArray(groups)) {
@@ -417,6 +442,7 @@ const GroupsManagement = () => {
     const dedupedMembers = Array.from(memberMap.values()).map((entry) => {
       const subTeamNames = entry.subTeams.map((subTeam) => {
         const resolved = resolveSubTeamMeta(subTeam.id, subTeam.name);
+        // console.log("dupped members",resolved.name)
         return resolved.name || '';
       });
 
@@ -437,23 +463,27 @@ const GroupsManagement = () => {
       },
       members: dedupedMembers,
       subTeams: subTeamsArray.map((subTeam) => ({
-        id: resolveIdentifier(subTeam?.uuid ?? subTeam?._id ?? subTeam?.id ?? subTeam),
+        id: subTeam._id,
         name:
           subTeam?.name ||
           subTeam?.subTeamName ||
           subTeam?.subteamName ||
           subTeam?.sub_team_name ||
           '',
-      })),
+      }
+      ))
+
     };
   };
 
   const handleShowMembers = (group) => {
     const result = buildTeamMemberData(group);
+    console.log("groups as input", group)
     if (!result) return;
 
     setMembersModalTeam(result.team);
     setMembersModalUsers(result.members);
+    // console.log('Members modal users:', result.members);
     setMembersModalOpen(true);
   };
 
@@ -477,309 +507,429 @@ const GroupsManagement = () => {
       dispatch(deleteGroup(groupId));
     }
   };
+  const handleBulkDelete = async () => {
+    // Derive actual selected group IDs using Gmail-style selection
+    const selectedGroupIds = allSelected
+      ? sortedGroups.map(g => g.id).filter(id => !excludedIds.includes(id))
+      : selectedIds;
+  
+    if (!selectedGroupIds.length) {
+      notifyWarning("Please select at least one group to delete");
+      return;
+    }
+  
+    if (!window.confirm(`Delete ${selectedGroupIds.length} selected group(s)?`)) return;
+  
+    for (const groupId of selectedGroupIds) {
+      await dispatch(deleteGroup(groupId));
+    }
+  
+    // Clear selection after delete
+    setAllSelected(false);
+    setSelectedIds([]);
+    setExcludedIds([]);
+    setSelectionScope('none');
+    setSelectedPageRef(null);
+    setAllSelectionCount(null);
+  
+    fetchGroupData();
+  };
+  
+  
+  //   if (selectedGroups.length === 0) {
+  //     alert('Please select at least one group to delete');
+  //     return;
+  //   }
 
-  const handleBulkDelete = () => {
-    if (selectedGroups.length === 0) {
-      alert('Please select at least one group to delete');
+  //   if (window.confirm(`Are you sure you want to delete ${selectedGroups.length} groups?`)) {
+  //     selectedGroups.forEach(groupId => {
+  //       dispatch(deleteGroup(groupId));
+  //     });
+  //     setSelectedGroups([]);
+  //     setSelectionScope('none');
+  //     setSelectedPageRef(null);
+  //     setAllSelectionCount(null);
+  //   }
+  // };
+  const handleBulkDeactivate = () => {
+    const selectedList = sortedGroups.filter(g => isRowSelected(g.id));
+
+    const activeTeams = selectedList.filter(
+      g => g.status?.toLowerCase() === "active"
+    );
+
+    if (activeTeams.length === 0) {
+      notifyWarning("No active teams selected.");
       return;
     }
 
-    if (window.confirm(`Are you sure you want to delete ${selectedGroups.length} groups?`)) {
-      selectedGroups.forEach(groupId => {
-        dispatch(deleteGroup(groupId));
-      });
-      setSelectedGroups([]);
-      setSelectAll(false);
+    setTeamsToDeactivate(activeTeams);
+    setShowDeactivateModal(true);
+  };
+  const confirmDeactivateTeams = async () => {
+    const ids = teamsToDeactivate.map(t => t.uuid);
+
+    try {
+      await dispatch(deactivateGroupsBulk(ids)).unwrap();
+
+      notifySuccess(`${ids.length} team(s) deactivated.`);
+      fetchGroupData();
+    } catch (err) {
+      notifyError("Failed to deactivate teams.");
     }
+
+    setShowDeactivateModal(false);
+    setTeamsToDeactivate([]);
+  };
+
+
+
+  const allowedPattern = /^[A-Za-z0-9\/\- ]+$/;
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "teamName") {
+      if (value === "" || allowedPattern.test(value)) {
+        setFormData(prev => ({ ...prev, [name]: value }));
+      } else {
+        // notifyError("Only letters, numbers, / and - are allowed in Team Name");
+        return;
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+  const exportFailedGroupsCSV = (rows) => {
+    if (!Array.isArray(rows) || rows.length === 0) return;
+
+    const headers = ["Team Name", "Subteam Name", "Reason"];
+
+    const escape = (val) => {
+      const str = String(val ?? "").replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const csvContent = [
+      headers.map(escape).join(","),
+      ...rows.map((r) =>
+        [
+          escape(r.teamName),
+          escape(r.subTeamName),
+          escape(r.reason)
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `failed_groups_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleImportGroups = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    const failedRows = [];
+    const created = [];
+    const updated = [];
+
     try {
-      const fileName = file.name || 'groups_import';
-      const extension = fileName.split('.').pop()?.toLowerCase();
-      if (!['csv', 'json'].includes(extension || '')) {
-        // alert('Upload a CSV or JSON file containing "Team Name" and "Subteam Name".');
-        notifyError('Upload a CSV or JSON file containing "Team Name" and "Subteam Name".')
+      const text = await file.text();
+      const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
+
+      if (!lines.length) {
+        notifyError("File is empty.");
         return;
       }
 
-      const rawContent = await file.text();
-      if (!rawContent.trim()) {
-        alert('The selected file is empty.');
+      // Parse CSV header
+      const header = lines.shift().split(",");
+      const colTeam = header.findIndex((h) => h.trim().toLowerCase() === "team name");
+      const colSub = header.findIndex((h) => h.trim().toLowerCase() === "subteam name");
+
+      if (colTeam === -1 || colSub === -1) {
+        notifyError('CSV must contain "Team Name" and "Subteam Name".');
         return;
       }
 
-      let rows = [];
-      let csvHeader = '';
+      // Parse rows
+      const parsedRows = lines.map((line) => {
+        const cols = line.split(",");
+        return {
+          teamName: (cols[colTeam] || "").trim(),
+          subTeamName: (cols[colSub] || "").trim(),
+        };
+      });
 
-      if (extension === 'json') {
-        try {
-          const parsed = JSON.parse(rawContent);
-          if (!Array.isArray(parsed)) {
-            alert('JSON file must contain an array of objects.');
-            return;
-          }
-          rows = parsed.map((entry) => ({
-            teamName: entry?.teamName || entry?.team_name || entry?.name || '',
-            subTeamName: entry?.subTeamName || entry?.sub_team_name || entry?.subteam || '',
-            original: entry,
-          }));
-        } catch (error) {
-          console.error('Invalid JSON import:', error);
-          alert('Unable to parse JSON file. Please verify its content.');
-          return;
-        }
-      } else {
-        const lines = rawContent.split(/\r?\n/);
-        const cleanedLines = lines.filter((line) => line.trim().length > 0);
-        if (!cleanedLines.length) {
-          alert('No data rows found in the CSV file.');
-          return;
-        }
-
-        csvHeader = cleanedLines.shift();
-        const headers = csvHeader.split(',').map((value) => value.trim().toLowerCase());
-        const teamIndex = headers.indexOf('team name');
-        const subTeamIndex = headers.indexOf('subteam name');
-
-        if (teamIndex === -1 || subTeamIndex === -1) {
-          // alert('CSV header must include "Team Name" and "Subteam Name" columns.');
-          notifyError('CSV header must include "Team Name" and "Subteam Name" columns.')
-          return;
-        }
-
-        rows = cleanedLines.map((line) => {
-          const values = line.split(',');
-          return {
-            teamName: values[teamIndex]?.trim() || '',
-            subTeamName: values[subTeamIndex]?.trim() || '',
-            originalLine: line,
-          };
-        });
-      }
-
-      if (!rows.length) {
-        alert('No valid rows found in the import file.');
-        return;
-      }
-
-      const existingTeams = new Set(
-        normalizedGroups
-          .map((group) => group.teamName?.trim().toLowerCase())
-          .filter(Boolean)
-      );
-
-      const uniqueTeams = new Set();
-      const validRows = [];
-      const skippedReasons = {
-        missingTeam: 0,
-        missingSubTeam: 0,
-        alreadyExists: 0,
-        duplicateInFile: 0,
-      };
-
-      rows.forEach((row) => {
-        const teamName = row.teamName?.trim();
-        const subTeamName = row.subTeamName?.trim();
-
-        if (!teamName) {
-          skippedReasons.missingTeam += 1;
-          return;
-        }
-
-        if (!subTeamName) {
-          skippedReasons.missingSubTeam += 1;
-          return;
-        }
-
-        const key = teamName.toLowerCase();
-
-        if (existingTeams.has(key)) {
-          skippedReasons.alreadyExists += 1;
-          return;
-        }
-
-        if (uniqueTeams.has(key)) {
-          skippedReasons.duplicateInFile += 1;
-          return;
-        }
-
-        uniqueTeams.add(key);
-        validRows.push({
-          teamName,
-          subTeamName,
-          original: row.original,
-          originalLine: row.originalLine,
-          key,
+      // Build lookup map from existing groups
+      const teamMap = new Map();
+      normalizedGroups.forEach((t) => {
+        teamMap.set(t.teamName.trim(), {
+          ...t,
+          subTeams: t.subTeams || [],
         });
       });
 
-      if (!validRows.length) {
-        const totalSkipped = Object.values(skippedReasons).reduce((sum, value) => sum + value, 0);
-        alert(
-          totalSkipped > 0
-            ? 'Import aborted: every row was invalid, duplicated, or already exists.'
-            : 'Import aborted: No valid team entries detected.'
+      // Process each CSV row
+      for (const row of parsedRows) {
+        const teamName = row.teamName.trim();
+        const subTeamName = row.subTeamName.trim();
+        // ❗ INSERT THIS BLOCK HERE
+        if (!allowedPattern.test(teamName)) {
+          failedRows.push({ teamName, subTeamName, reason: "Invalid team name characters" });
+          continue;
+        }
+        if (!allowedPattern.test(subTeamName)) {
+          failedRows.push({ teamName, subTeamName, reason: "Invalid subteam name characters" });
+          continue;
+        }
+        if (!teamName) {
+          failedRows.push({ teamName, subTeamName, reason: "Missing Team Name" });
+          continue;
+        }
+        if (!subTeamName) {
+          failedRows.push({ teamName, subTeamName, reason: "Missing Subteam Name" });
+          continue;
+        }
+
+        const existingTeam = teamMap.get(teamName);
+
+        // TEAM DOES NOT EXIST → CREATE
+        if (!existingTeam) {
+          try {
+            const teamRes = await dispatch(
+              createTeam({ teamName, status: "Active" })
+            ).unwrap();
+
+            const teamId = teamRes?.team?._id;
+            if (!teamId) throw new Error("Team created but no ID returned.");
+
+            await dispatch(
+              createSubTeam({ subTeamName, team_id: teamId })
+            ).unwrap();
+
+            created.push(`${teamName} → ${subTeamName}`);
+
+            teamMap.set(teamName, {
+              teamName,
+              id: teamId,
+              subTeams: [{ name: subTeamName }],
+            });
+          } catch (err) {
+            failedRows.push({
+              teamName,
+              subTeamName,
+              reason: "Failed to create team or subteam",
+            });
+          }
+          continue;
+        }
+
+        // TEAM EXISTS → Check subteam
+        const subExists = existingTeam.subTeams.some(
+          (st) => st.name.trim() === subTeamName
         );
-        return;
-      }
 
-      let createdCount = 0;
-      let failedCount = 0;
-      const failedRows = [];
+        if (subExists) {
+          failedRows.push({
+            teamName,
+            subTeamName,
+            reason: "Subteam already exists under this team",
+          });
+          continue;
+        }
 
-      for (const row of validRows) {
+        // SUBTEAM DOES NOT EXIST → CREATE SUBTEAM
         try {
-          const teamResponse = await dispatch(createTeam({
-            teamName: row.teamName,
-            status: 'Active',
-          })).unwrap();
+          await dispatch(
+            createSubTeam({
+              subTeamName,
+              team_id: existingTeam.id || existingTeam._id,
+            })
+          ).unwrap();
 
-          const teamData = teamResponse?.team || teamResponse || {};
-          const teamId = teamData._id || teamData.id;
+          updated.push(`${teamName} + ${subTeamName}`);
+          existingTeam.subTeams.push({ name: subTeamName });
 
-          if (!teamId) {
-            throw new Error('Missing team ID in response.');
-          }
-
-          await dispatch(createSubTeam({
-            subTeamName: row.subTeamName,
-            team_id: teamId,
-          })).unwrap();
-
-          createdCount += 1;
-          existingTeams.add(row.key);
-        } catch (creationError) {
-          const message = creationError?.message || creationError?.data?.message || creationError?.error || '';
-          const normalizedMessage = typeof message === 'string' ? message.toLowerCase() : '';
-          const isDuplicate = normalizedMessage.includes('already exists') || normalizedMessage.includes('duplicate');
-
-          if (isDuplicate) {
-            skippedReasons.alreadyExists += 1;
-            existingTeams.add(row.key);
-          } else {
-            console.error('Failed to create team/subteam from import row:', creationError);
-            failedCount += 1;
-            failedRows.push(row.teamName || '(unknown team)');
-          }
+        } catch (err) {
+          failedRows.push({
+            teamName,
+            subTeamName,
+            reason: "Failed to create subteam",
+          });
         }
       }
 
-      if (createdCount > 0) {
+      // Refresh groups
+      if (created.length || updated.length) {
         fetchGroupData();
       }
 
-      const skippedSummary = Object.entries(skippedReasons)
-        .filter(([, count]) => count > 0)
-        .map(([reason, count]) => `${count} ${reason.replace(/([A-Z])/g, ' $1').toLowerCase()} row${count > 1 ? 's' : ''}`);
+      // ---- FINAL RESULT HANDLING ----
+      setFailedGroupRows(failedRows);
 
-      const messages = [];
-      if (createdCount > 0) {
-        messages.push(`${createdCount} team${createdCount > 1 ? 's' : ''} created.`);
-      }
-      if (failedCount > 0) {
-        messages.push(`${failedCount} row${failedCount > 1 ? 's' : ''} failed during creation${failedRows.length ? ` (${failedRows.join(', ')})` : ''}.`);
-      }
-      if (skippedSummary.length) {
-        messages.push(`Skipped rows: ${skippedSummary.join(', ')}.`);
-      }
-      if (!messages.length) {
-        messages.push('Import completed with no changes.');
-      }
+      const createdCount = created.length + updated.length;
 
-      alert(messages.join('\n'));
-    } catch (error) {
-      console.error('Failed to import groups:', error);
-      alert('Failed to import groups. Please try again.');
-    } finally {
-      event.target.value = '';
-    }
-  };
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleExportGroups = () => {
-    const selectedIdSet = new Set((selectedGroups || []).filter(Boolean));
-    const groupsToExport = selectedIdSet.size
-      ? normalizedGroups.filter((group) => selectedIdSet.has(group.id))
-      : normalizedGroups;
-
-    if (!Array.isArray(groupsToExport) || groupsToExport.length === 0) {
-      alert(selectedIdSet.size ? 'Selected groups are not available to export.' : 'No groups available to export.');
-      return;
-    }
-
-    const headers = [ 
-      'Name',
-      'Email',
-      'Team Name',
-      'Subteam Name1',
-      'Subteam Name2',
-      'Subteam Name3',
-      'Subteam Name4',
-      'Subteam Name5',
-    ];
-    const rows = [];
-
-    groupsToExport.forEach((group, index) => {
-      const result = buildTeamMemberData(group);
-      const teamName = result?.team?.teamName || group.teamName || '';
-      const members = Array.isArray(result?.members) ? result.members : [];
-      const subTeams = Array.isArray(result?.subTeams) ? result.subTeams : [];
-      console.log("csv",subTeams)
-      if (members.length === 0) {
-        if (subTeams.length) {
-          subTeams.forEach((subTeam) => {
-            const subTeamName = typeof subTeam?.name === 'string' ? subTeam.name : '';
-            rows.push([ '', '', teamName, subTeamName,'', '', '', '']);
-          });
-        } else {
-          rows.push(['', '',teamName,  '', '', '', '', '']);
-        }
+      if (failedRows.length > 0) {
+        notifyWarning(
+          `Success: ${createdCount}, Failed: ${failedRows.length}`,
+          {
+            title: "Group Import Completed With Issues",
+            dismissible: true,
+            duration: 50000,
+            action: {
+              label: "Download Failed Groups",
+              onClick: () => exportFailedGroupsCSV(failedRows),
+            },
+          }
+        );
       } else {
-        function normalizeSubteams(subTeams, max = 5) {
-          const names = subTeams.map(st => st.name);
-          while (names.length < max) names.push("");
-          return names.slice(0, max);
-        }
-        members.forEach((member) => {
-          // const subTeamNames = Array.isArray(member.subTeamNames)
-          //   ? member.subTeamNames.slice(0, 5)
-          //   : (member.subTeamName ? [member.subTeamName] : []);
-
-          // const normalizedSubTeams = subTeamNames.map((value) =>
-          //   typeof value === 'string' ? value : ''
-          // );
-
-          // while (normalizedSubTeams.length < 5) {
-          //   normalizedSubTeams.push('');
-          // }
-
-          const paddedSubteams = normalizeSubteams(subTeams);
-          rows.push([member.name, member.email,teamName, ...paddedSubteams, ]);
+        notifySuccess(`Imported ${createdCount} group(s).`, {
+          title: "Import Successful",
         });
       }
 
-      // if (index < groupsToExport.length - 1) {
-      //   rows.push(['', '', '', '', '', '', '', '']);
-      // }
-    });
+    } catch (err) {
+      console.error(err);
+      notifyError("Import failed. Please check your file.");
+    } finally {
+      event.target.value = "";
+    }
+  };
 
+  const findMemberSubteamName = (member, group) => {
+    try {
+      // Find membership for this team
+      const membership = member?.profile?.teams?.find(
+        (t) => String(t.team_id) === String(group?.team_id || group?._id)
+      );
+
+      if (!membership || !membership.sub_team_id) return "";
+
+      // Find subteam object
+      const matchedSubteam = group?.subTeams?.find(
+        (st) => String(st._id) === String(membership.sub_team_id)
+      );
+
+      return matchedSubteam?.name || "";
+    } catch {
+      return "";
+    }
+  };
+
+  const handleExportGroups = () => {
+    const allIdsInFiltered = sortedGroups.map((g) => g.id).filter(Boolean);
+    const selectedIdsForExport = allSelected
+      ? allIdsInFiltered.filter((id) => !excludedIds.includes(id))
+      : selectedIds;
+
+    const groupsToExport = selectedIdsForExport.length > 0
+      ? sortedGroups.filter((group) => selectedIdsForExport.includes(group.id))
+      : [];
+
+    if (!Array.isArray(groupsToExport) || groupsToExport.length === 0) {
+      alert('No selected groups available to export.');
+      return;
+    }
+
+    // If exporting entire data
+    const exportTeamsOnly = (selectedIdsForExport.length === (totalCount || 0));
+
+    let headers = [];
+    const rows = [];
+
+    const formatSubteams = (subTeams) => {
+      if (!Array.isArray(subTeams)) return '';
+      return subTeams.map((st) => st?.name || '').join(', ');
+    };
+
+    //
+    // EXPORT 1 — ONLY TEAMS & SUBTEAMS (NO MEMBERS)
+    //
+    if (exportTeamsOnly) {
+      headers = [
+        "Team Name",
+        "Subteams"
+      ];
+
+      groupsToExport.forEach(group => {
+        const result = buildTeamMemberData(group);
+        const teamName = result?.team?.teamName || group.teamName || '';
+        const subTeams = formatSubteams(result?.subTeams || group.subTeams);
+
+        rows.push([teamName, subTeams]);
+      });
+
+    } else {
+      //
+      // EXPORT 2 — INCLUDE MEMBERS
+      //
+      headers = [
+        "Team Name",
+        "Subteams",
+        "Name",
+        "Email",
+      ];
+
+      groupsToExport.forEach(group => {
+        const result = buildTeamMemberData(group);
+        const teamName = result?.team?.teamName || group.teamName || '';
+        const members = Array.isArray(result?.members) ? result.members : [];
+
+        if (members.length === 0) {
+          // No members → emit a single row with empty member fields and no subteams
+          rows.push([teamName, '', '', '']);
+        } else {
+          // Build a map from subteam id -> subteam name for this team for reliable resolution
+          const subTeamNameMap = new Map(
+            (Array.isArray(result?.subTeams) ? result.subTeams : [])
+              .map(st => [String(st.id), st.name || ''])
+          );
+
+          members.forEach(member => {
+            const rawList = Array.isArray(member?.subTeamNames)
+              ? member.subTeamNames
+              : (member?.subTeamName ? [member.subTeamName] : []);
+
+            const resolvedList = rawList
+              .filter(Boolean)
+              .map(v => {
+                const key = String(v);
+                return subTeamNameMap.get(key) || v; // replace id with name when possible
+              });
+
+            const memberSubteams = resolvedList.join(', ');
+
+            rows.push([
+              teamName,
+              memberSubteams,
+              member?.name || '',
+              member?.email || '',
+            ]);
+          });
+        }
+      });
+    }
+
+    //
+    // CSV generation
+    //
     const escape = (value) => {
-      const stringValue = value ?? '';
-      const normalized = typeof stringValue === 'string' ? stringValue : String(stringValue);
-      const escaped = normalized.replace(/"/g, '""');
+      const normalized = value ?? '';
+      const escaped = String(normalized).replace(/"/g, '""');
       return `"${escaped}"`;
     };
 
     const csvLines = [
       headers.map(escape).join(','),
-      ...rows.map((row) => row.map(escape).join(',')),
+      ...rows.map(row => row.map(escape).join(',')),
     ];
 
     const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
@@ -819,7 +969,9 @@ const GroupsManagement = () => {
         status: '',
       });
       setSelectedGroups([]);
-      setSelectAll(false);
+      setSelectionScope('none');
+      setSelectedPageRef(null);
+      setAllSelectionCount(null);
       fetchGroupData();
     } catch (submitError) {
       console.error('Failed to submit group form:', submitError);
@@ -830,24 +982,7 @@ const GroupsManagement = () => {
     setShowForm(false);
   };
 
-  const handleSelectAll = (e) => {
-    setSelectAll(e.target.checked);
-    if (e.target.checked) {
-      const allGroupIds = filteredGroups.map(group => group.id);
-      setSelectedGroups(allGroupIds);
-    } else {
-      setSelectedGroups([]);
-    }
-  };
 
-  const handleSelectGroup = (e, groupId) => {
-    if (e.target.checked) {
-      setSelectedGroups([...selectedGroups, groupId]);
-    } else {
-      setSelectedGroups(selectedGroups.filter(id => id !== groupId));
-      setSelectAll(false);
-    }
-  };
 
   const handleFilter = (filters) => {
     const effectiveLimit = pageSize || 20;
@@ -869,6 +1004,26 @@ const GroupsManagement = () => {
     dispatch(fetchGroups({
       page: 1,
       limit: effectiveLimit
+    }));
+  };
+
+
+  // Local UI filter (instant)
+  const handleLocalFilter = (filters) => {
+    setFilterParams(filters);
+  };
+
+  // Backend filter (debounced)
+  const handleBackendFilter = (filters) => {
+    const effectiveLimit = pageSize || 20;
+
+    dispatch(setGroupCurrentPage(1));
+
+    dispatch(fetchGroups({
+      ...filters,
+      page: 1,
+      limit: effectiveLimit,
+      silent: filters.silent === true,  // 🔥 carry silent forward
     }));
   };
 
@@ -970,13 +1125,251 @@ const GroupsManagement = () => {
 
     return nameMatch && statusMatch;
   });
+  // Apply sorting before pagination
+  const sortedGroups = useMemo(() => {
+    console.log("groups full list", filteredGroups);
+    if (!Array.isArray(filteredGroups)) return [];
+    if (!sortKey) return filteredGroups;
+    const getVal = (g) => {
+      switch (sortKey) {
+        case 'teamName':
+          return (g.teamName || '').toLowerCase();
+        case 'subTeams':
+          return Array.isArray(g.subTeams) ? g.subTeams.length : 0;
+        case 'members':
+          return Number(g.membersCount || 0);
+        case 'status':
+          return (g.status || '').toLowerCase();
+        default:
+          return '';
+      }
+    };
+    const copy = [...filteredGroups];
+    copy.sort((a, b) => {
+      const va = getVal(a);
+      const vb = getVal(b);
+      if (va < vb) return sortDir === 'asc' ? -1 : 1;
+      if (va > vb) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return copy;
+  }, [filteredGroups, sortKey, sortDir]);
+
   // Calculate pagination
   const effectivePageSize = pageSize || 6;
-  const totalItems = filteredGroups.length;
+  const totalItems = sortedGroups.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / effectivePageSize));
   const indexOfLastItem = currentPage * effectivePageSize;
   const indexOfFirstItem = indexOfLastItem - effectivePageSize;
-  const currentItems = filteredGroups.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = sortedGroups.slice(indexOfFirstItem, indexOfLastItem);
+
+  const currentPageIds = useMemo(() => currentItems.map((group) => group.id).filter(Boolean), [currentItems]);
+
+  // Helpers mirrored from Users
+  const isRowSelected = useCallback((id) => {
+    if (!id) return false;
+    return allSelected ? !excludedIds.includes(id) : selectedIds.includes(id);
+  }, [allSelected, excludedIds, selectedIds]);
+
+  const derivedSelectedOnPage = useMemo(() => currentPageIds.filter(isRowSelected), [currentPageIds, isRowSelected]);
+
+  const derivedSelectedCount = useMemo(() => {
+    if (allSelected) {
+      const total = Number(totalItems) || 0;
+      return Math.max(0, total - (excludedIds?.length || 0));
+    }
+    return selectedIds.length;
+  }, [allSelected, excludedIds, selectedIds.length, totalItems]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedGroups([]);
+    setSelectionScope('none');
+    setSelectedPageRef(null);
+    setAllSelectionCount(null);
+    setAllSelected(false);
+    setSelectedIds([]);
+    setExcludedIds([]);
+  }, []);
+
+  const applyPageSelection = useCallback(() => {
+    if (!currentPageIds.length) {
+      clearSelection();
+      return;
+    }
+    // Gmail model: select exactly this page
+    setAllSelected(false);
+    setSelectedIds(currentPageIds);
+    setExcludedIds([]);
+    setSelectionScope('page');
+    setSelectedPageRef(currentPage);
+    setAllSelectionCount(null);
+  }, [clearSelection, currentPage, currentPageIds]);
+
+  const fetchAllFilteredGroupIds = useCallback(async () => {
+    const ids = new Set();
+    const limit = 200;
+    let page = 1;
+    while (page <= 100) {
+      const params = {
+        ...filterParams,
+        page,
+        limit,
+      };
+      try {
+        const response = await api.get('/api/admin/getGroups', { params });
+        const data = Array.isArray(response.data?.data) ? response.data.data : [];
+        if (!data.length) {
+          break;
+        }
+        data.forEach((team) => {
+          const identifier = team?.id || team?._id;
+          if (identifier) {
+            ids.add(identifier);
+          }
+        });
+        if (data.length < limit) {
+          break;
+        }
+        page += 1;
+      } catch (error) {
+        console.error('Failed to fetch all group ids:', error);
+        throw error;
+      }
+    }
+    return Array.from(ids);
+  }, [filterParams]);
+
+  const handleSelectAllPages = useCallback(async () => {
+    if (selectAllLoading) return;
+    setSelectAllLoading(true);
+    try {
+      // Gmail model: logical select-all across filters
+      setAllSelected(true);
+      setSelectedIds([]);
+      setExcludedIds([]);
+      setSelectionScope('all');
+      setSelectedPageRef(null);
+      setAllSelectionCount(Number(totalItems) || 0);
+    } finally {
+      setSelectAllLoading(false);
+    }
+  }, [selectAllLoading, totalItems]);
+
+  const handleSelectAllToggle = useCallback((checked) => {
+    if (checked) {
+      applyPageSelection();
+    } else {
+      // deselect this page
+      if (allSelected) {
+        setExcludedIds((prev) => Array.from(new Set([...prev, ...currentPageIds])));
+      } else {
+        setSelectedIds((prev) => prev.filter((id) => !currentPageIds.includes(id)));
+      }
+      const remaining = allSelected
+        ? Math.max(0, (Number(totalItems) || 0) - (excludedIds.length + currentPageIds.length))
+        : Math.max(0, selectedIds.length - currentPageIds.length);
+      if (remaining <= 0) {
+        clearSelection();
+      } else {
+        setSelectionScope('custom');
+        setSelectedPageRef(null);
+      }
+    }
+  }, [allSelected, applyPageSelection, clearSelection, currentPageIds, excludedIds.length, selectedIds.length, totalItems]);
+
+  const handleSelectGroup = useCallback((checked, groupId) => {
+    if (!groupId) return;
+    if (allSelected) {
+      if (checked) {
+        setExcludedIds((prev) => prev.filter((id) => id !== groupId));
+      } else {
+        setExcludedIds((prev) => Array.from(new Set([...prev, groupId])));
+      }
+      setSelectionScope('all');
+      setSelectedPageRef(null);
+    } else {
+      if (checked) {
+        setSelectedIds((prev) => Array.from(new Set([...prev, groupId])));
+      } else {
+        setSelectedIds((prev) => prev.filter((id) => id !== groupId));
+      }
+      const after = checked
+        ? Array.from(new Set([...selectedIds, groupId]))
+        : selectedIds.filter((id) => id !== groupId);
+      if (after.length === 0) {
+        clearSelection();
+      } else {
+        // User is selecting rows individually → stay in custom mode
+        setSelectionScope('custom');
+        setSelectedPageRef(null);
+      }
+    }
+  }, [allSelected, clearSelection, selectedIds]);
+
+  const handleSelectionOption = useCallback((option) => {
+    switch (option) {
+      case 'page':
+        applyPageSelection();
+        break;
+      case 'all':
+        handleSelectAllPages();
+        break;
+      case 'none':
+      default:
+        clearSelection();
+        break;
+    }
+  }, [applyPageSelection, clearSelection, handleSelectAllPages]);
+
+  const handleSortChange = useCallback((key) => {
+    if (sortKey === key) {
+      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  }, [sortKey]);
+
+  useEffect(() => {
+    if (selectionScope === 'page' && selectedPageRef !== currentPage) {
+      clearSelection();
+    }
+  }, [clearSelection, currentPage, selectedPageRef, selectionScope]);
+
+  useEffect(() => {
+    if (selectionScope === 'page' && selectedPageRef === currentPage) {
+      // ✅ If the page size changed (e.g., search → clear search),
+      //    don’t auto-select everything on the new page.
+      if (selectedIds.length !== currentPageIds.length) {
+        return;
+      }
+
+      const isPageFullySelected =
+        currentPageIds.length > 0 &&
+        currentPageIds.every((id) => isRowSelected(id));
+
+      if (!isPageFullySelected) {
+        // enforce page selection in Gmail model ONLY for the same page
+        setAllSelected(false);
+        setSelectedIds(currentPageIds);
+        setExcludedIds([]);
+      }
+    }
+  }, [currentPageIds, isRowSelected, selectedPageRef, selectionScope, selectedIds.length]);
+
+  // useEffect(() => {
+  //   if (selectionScope === 'page' && selectedPageRef === currentPage) {
+  //     const isPageFullySelected = currentPageIds.length > 0 && currentPageIds.every((id) => isRowSelected(id));
+  //     if (!isPageFullySelected) {
+  //       // enforce page selection in Gmail model
+  //       setAllSelected(false);
+  //       setSelectedIds(currentPageIds);
+  //       setExcludedIds([]);
+  //     }
+  //   }
+  // }, [currentPageIds, isRowSelected, selectedPageRef, selectionScope]);
+
+  const topCheckboxChecked = currentPageIds.length > 0 && currentPageIds.every((id) => isRowSelected(id));
 
   // Generate page numbers
   const pageNumbers = [];
@@ -987,14 +1380,34 @@ const GroupsManagement = () => {
     return <LoadingScreen text={"Loading Groups..."} />
   }
 
+  // const handlecreateSubTeam = async (data) => {
+  //   await dispatch(createSubTeam(data.data)).unwrap();
+  // }
   const handlecreateSubTeam = async (data) => {
+    const name = data.data?.subTeamName?.trim() || "";
+
+    if (!allowedPattern.test(name)) {
+      // notifyError("Only letters, numbers, / and - are allowed in Subteam Name");
+      return;
+    }
+
     await dispatch(createSubTeam(data.data)).unwrap();
-  }
-  
+  };
+
+  // const handleupdateSubTeam = async (id, data) => {
+  //   await dispatch(updateSubTeam({id, subTeamData: data})).unwrap();
+  // }
   const handleupdateSubTeam = async (id, data) => {
-    await dispatch(updateSubTeam({id, subTeamData: data})).unwrap();
-  }
-  
+    const name = data?.subTeamName?.trim() || "";
+
+    if (!allowedPattern.test(name)) {
+      // notifyError("Only letters, numbers, / and - are allowed in Subteam Name");
+      return;
+    }
+
+    await dispatch(updateSubTeam({ id, subTeamData: data })).unwrap();
+  };
+
   const handleDeleteSubTeam = async (id) => {
     try {
       await dispatch(deleteSubTeam(id)).unwrap();
@@ -1009,13 +1422,23 @@ const GroupsManagement = () => {
         <div className="page-content">
           <GroupsFilter
             groups={filteredGroups}
+            onLocalFilter={handleLocalFilter}       // NEW
+            onBackendFilter={handleBackendFilter}   // NEW
             onFilter={handleFilter}
             handleCreateGroup={handleCreateGroup}
             handleImportGroups={handleImportGroups}
             handleExportGroups={handleExportGroups}
             handleBulkDelete={handleBulkDelete}
-            selectedGroups={selectedGroups}
+            // selectedGroups={Array.from({ length: derivedSelectedCount })}
+            selectedGroups={
+              allSelected
+                ? sortedGroups.map(g => g.id).filter(id => !excludedIds.includes(id))
+                : selectedIds
+            }
+            
+            
             onClearFilter={handleClearFilter}
+            handleBulkDeactivate={handleBulkDeactivate}
           />
 
           {showForm && (
@@ -1063,7 +1486,9 @@ const GroupsManagement = () => {
                           className="addOrg-form-input"
                           required
                         />
-
+                        <p style={{ color: '#dc2626', fontSize: '12px', marginLeft: "4px" }}>
+                          Only letters, numbers, / and - are allowed in Team Name.
+                        </p>
                         <datalist id="teamSuggestions" style={{ width: "100%" }}>
                           {filteredGroups.map((team, index) => (
                             <option key={index} value={team.teamName} />
@@ -1100,13 +1525,67 @@ const GroupsManagement = () => {
                     >
                       Cancel
                     </button>
-                    <button onClick={(e )=>handleFormSubmit(e)} className="btn-primary" disabled={loading}>
+                    <button onClick={(e) => handleFormSubmit(e)} className="btn-primary" disabled={loading}>
                       <GoOrganization size={16} />
                       <span>{editMode ? 'Update Team' : 'Create Team'}</span>
                     </button>
                   </div>
                 </form>
               </div>
+            </div>
+          )}
+
+          {selectionScope !== 'none' && derivedSelectedCount > 0 && (
+            <div className="selection-banner sticky" style={{ justifyContent: "center" }} >
+              {selectionScope === 'page' ? (
+                < >
+                  <span>
+                    All {currentPageIds.length} {currentPageIds.length === 1 ? 'group' : 'groups'} on this page are selected.
+
+                  </span>
+                  {totalItems > currentPageIds.length && (
+                    <button
+                      type="button"
+                      className="selection-action action-primary"
+                      onClick={handleSelectAllPages}
+                      disabled={selectAllLoading}
+                    >
+                      {selectAllLoading ? 'Selecting all groups…' : `Select all ${totalItems} groups`}
+                    </button>
+                  )}
+                  <button type="button" className="selection-action action-link" onClick={clearSelection} style={{ height: "30px" }} >
+                    Clear selection
+                  </button>
+                </>
+              ) : selectionScope === 'all' ? (
+                <>
+                  <span>
+                    All {derivedSelectedCount} {derivedSelectedCount === 1 ? 'group' : 'groups'} are selected across all pages.
+                  </span>
+                  <button type="button" className="selection-action action-link selection-action-banner" onClick={clearSelection}>
+                    Clear selection
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span>
+                    {derivedSelectedCount} {derivedSelectedCount === 1 ? 'group' : 'groups'} selected.
+                  </span>
+                  {totalItems > derivedSelectedCount && (
+                    <button
+                      type="button"
+                      className="selection-action action-primary"
+                      onClick={handleSelectAllPages}
+                      disabled={selectAllLoading}
+                    >
+                      {selectAllLoading ? 'Selecting all groups…' : `Select all ${totalItems} groups`}
+                    </button>
+                  )}
+                  <button type="button" className="selection-action action-link" onClick={clearSelection}>
+                    Clear selection
+                  </button>
+                </  >
+              )}
             </div>
           )}
 
@@ -1118,16 +1597,28 @@ const GroupsManagement = () => {
           ) : (
             <GroupsTable
               groups={currentItems}
-              selectedGroups={selectedGroups}
-              handleSelectGroup={handleSelectGroup}
-              selectAll={selectAll}
-              handleSelectAll={handleSelectAll}
+              selectedGroups={derivedSelectedOnPage}
+              onSelectGroup={handleSelectGroup}
+              topCheckboxChecked={topCheckboxChecked}
+              topCheckboxIndeterminate={selectionScope !== 'all' && !topCheckboxChecked && derivedSelectedCount > 0}
+              onTopCheckboxToggle={handleSelectAllToggle}
+              onSelectionOption={handleSelectionOption}
+              selectionScope={selectionScope}
+              selectAllLoading={selectAllLoading}
+              pageSelectionCount={currentPageIds.length}
+              totalFilteredCount={totalItems}
+              totalSelectedCount={derivedSelectedCount}
+              onSelectAllPages={handleSelectAllPages}
+              onClearSelection={clearSelection}
               handleEditGroup={handleEditGroup}
               handleDeleteGroup={handleDeleteGroup}
               onTogglePreview={handleTogglePreviewTeam}
               expandedTeamId={expandedTeamId}
               onAddSubTeam={handleAddSubTeamFromTable}
               onShowMembers={handleShowMembers}
+              sortKey={sortKey}
+              sortDir={sortDir}
+              onSortChange={handleSortChange}
               renderExpandedContent={(group) => {
                 const teamId = group.id || group._id;
                 const originalTeam = Array.isArray(groups)
@@ -1171,6 +1662,8 @@ const GroupsManagement = () => {
             onClose={() => setMembersModalOpen(false)}
             team={membersModalTeam}
             members={membersModalUsers}
+            groups={currentGroup}
+
           />
           <TeamPreview
             isOpen={subTeamModalOpen}
@@ -1186,6 +1679,13 @@ const GroupsManagement = () => {
             editSubTeamTrigger={subTeamEditTrigger}
             onEditSubTeamHandled={handleSubTeamEditHandled}
           />
+          <DeactivateModal
+            open={showDeactivateModal}
+            count={teamsToDeactivate.length}
+            onCancel={() => setShowDeactivateModal(false)}
+            onConfirm={confirmDeactivateTeams}
+          />
+
         </div>
       </div>
     </div>

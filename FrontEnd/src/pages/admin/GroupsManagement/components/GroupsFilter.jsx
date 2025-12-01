@@ -1,4 +1,4 @@
-import { ChevronDown, Import, Search, Share,Filter } from 'lucide-react';
+import { ChevronDown, Import, Search, Share, Filter } from 'lucide-react';
 import { GoX } from 'react-icons/go';
 import { RiDeleteBinFill } from 'react-icons/ri';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
@@ -6,6 +6,8 @@ import api from '../../../../services/api';
 
 const GroupsFilter = ({
   groups,
+  onLocalFilter,     // NEW
+  onBackendFilter,   // NEW
   onFilter,
   handleCreateGroup,
   handleImportGroups,
@@ -154,6 +156,31 @@ const GroupsFilter = ({
     };
   }, [showFilters, showBulkAction]);
 
+  // Combined Search Handler
+  const debounceRef = useRef(null);
+
+  const handleSearch = (value) => {
+    setSearchName(value);
+
+    // --- 1) Frontend instant filter ---
+    onLocalFilter({
+      name: value,
+      status: selectedStatus !== 'All' ? selectedStatus : undefined,
+    });
+
+    // --- 2) Backend debounced filter ---
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(() => {
+      onBackendFilter({
+        name: value.trim(),
+        status: selectedStatus !== 'All' ? selectedStatus : undefined,
+        silent: true,   // 🔥 only search uses silent mode
+      });
+    }, 500); // 500ms debounce recommended
+  };
+
+
   return (
     <>
       {/* Controls bar aligned with OrganizationManagement */}
@@ -164,12 +191,12 @@ const GroupsFilter = ({
             type="text"
             placeholder="Search Groups"
             value={searchName}
-            onChange={(e) => setSearchName(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
           />
         </div>
 
         <div className="controls-right">
-        <button
+          <button
             ref={filterButtonRef}
             className="control-btn"
             onClick={() => {
@@ -183,7 +210,7 @@ const GroupsFilter = ({
               });
             }}
           >
-             <Filter size={16} />
+            <Filter size={16} />
             Filter
           </button>
           <button
@@ -194,11 +221,18 @@ const GroupsFilter = ({
           </button>
           <button
             className="control-btn"
-            onClick={handleExportGroups}
+            onClick={() => {
+              if (!Array.isArray(selectedGroups) || selectedGroups.length === 0) {
+                return;
+              }
+              handleExportGroups();
+            }}
+            disabled={!Array.isArray(selectedGroups) || selectedGroups.length === 0}
+            title={Array.isArray(selectedGroups) && selectedGroups.length === 0 ? 'Select at least one team to export' : undefined}
           >
             Export <Share size={16} color="#6b7280" />
           </button>
-         
+
           <button
             ref={bulkButtonRef}
             className="control-btn"
@@ -235,11 +269,12 @@ const GroupsFilter = ({
       {showFilters && (
         <div
           ref={filterPanelRef}
-          className="filter-panel"
-          style={{ position: 'fixed', top: filterPanelStyle.top, left: filterPanelStyle.left }}
+          className="groups-filter-panel"
+          style={{ position: 'absolute', top: filterPanelStyle.top, left: filterPanelStyle.left }}
         >
           <div className="filter-group">
-            <label>Status</label>
+            <div style={{ fontSize: "15px", fontWeight: "600", color: "#26334d" }}>  <label>Status</label></div>
+
             <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)}>
               <option value="All">All</option>
               <option value="Active">Active</option>
@@ -247,12 +282,13 @@ const GroupsFilter = ({
             </select>
           </div>
           <div className="filter-actions">
+            <button className="btn-secondary" onClick={handleClearFilter}>
+              Clear
+            </button>
             <button className="btn-primary" onClick={handleFilter}>
               Apply
             </button>
-            <button className="reset-btn" onClick={handleClearFilter}>
-              Clear
-            </button>
+
           </div>
         </div>
       )}
@@ -261,32 +297,36 @@ const GroupsFilter = ({
         <div
           ref={bulkPanelRef}
           className="bulk-action-panel"
-          style={{ position: 'fixed', top: bulkPanelStyle.top, left: bulkPanelStyle.left }}
+          style={{ position: 'absolute', top: bulkPanelStyle.top, left: bulkPanelStyle.left, padding: "15px" }}
         >
           <div className="bulk-action-header">
             <label className="bulk-action-title">Items Selected: {selectedGroups.length}</label>
-            {/* <GoX
-              size={20}
-              title="Close"
-              aria-label="Close bulk action panel"
-              className="bulk-action-close"
-            /> */}
           </div>
 
           <div className="bulk-action-actions" style={{ display: 'flex', gap: 8, flexDirection: 'row', alignItems: 'center' }}>
-            <button
-              className="bulk-action-btn"
+            {/* <button
+              className="btn-primary"
               disabled={selectedGroups.length === 0}
-              onClick={handleBulkDeactivate} style={{backgroundColor: '#9e9e9e'}}
+              onClick={handleBulkDeactivate} style={{ backgroundColor: '#9e9e9e' }}
+            >
+              Deactivate
+            </button> */}
+            <button
+               className="btn-primary"
+              //  disabled={group.status === "Inactive"}
+              disabled={selectedGroups.length === 0 || groups.status === "Inactive"}
+              onClick={handleBulkDeactivate} style={{ backgroundColor: '#9e9e9e' }}
             >
               Deactivate
             </button>
+
             <button
-              className="bulk-action-delete-btn"
+              className="btn-primary"
+              style={{ background: "red" }}
               disabled={selectedGroups.length === 0}
               onClick={handleBulkDelete}
             >
-              <RiDeleteBinFill size={16} color="#fff" />
+              <RiDeleteBinFill size={16} color="white" />
               <span>Delete</span>
             </button>
 

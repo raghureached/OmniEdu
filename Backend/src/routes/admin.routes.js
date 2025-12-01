@@ -88,7 +88,7 @@ router.route('/getGroups').get(getGroups)
 router.route('/editGroup/:id').put(editGroup)
 router.route('/deleteGroup/:id').delete(deleteGroup)
 router.route('/deleteGroups').delete(deleteGroups)
-router.route('/deactivateGroups').put(deactivateGroups)
+router.route('/deactivateGroups').post(deactivateGroups)
 router.route('/addUsersToGroup').post(addUsersToGroup)
 
 ///////Team//////////

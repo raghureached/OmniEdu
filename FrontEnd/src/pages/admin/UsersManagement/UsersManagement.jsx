@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Search,
   Filter,
@@ -38,11 +38,13 @@ import LoadingScreen from '../../../components/common/Loading/Loading';
 import { GoX } from 'react-icons/go';
 import UserPreview from './components/UserPreview';
 import BulkAssignToTeam from './components/BulkAssignToTeam';
+import UsersTable from './components/UsersTable';
 import * as XLSX from 'xlsx';
-
+import { notify, notifyError, notifySuccess, notifyWarning } from '../../../utils/notification';
 const UsersManagement = () => {
   const dispatch = useDispatch();
   const {
+    allUsers,
     users,
     loading,
     error,
@@ -51,6 +53,7 @@ const UsersManagement = () => {
     currentPage: currentPageState,
     pageSize: pageSizeState,
   } = useSelector((state) => ({
+    allUsers: state.users.allUsers,
     users: state.users.users,
     loading: state.users.loading,
     error: state.users.error,
@@ -59,7 +62,16 @@ const UsersManagement = () => {
     currentPage: state.users.currentPage || 1,
     pageSize: state.users.pageSize || 6,
   }));
-
+  
+  
+  // console.log("users in data",users)
+  // console.log("filtered users in data",filters)
+  console.log("all users in data", allUsers)
+  console.log("users in data", users)
+  console.log("filters in data", filters)
+  console.log("totalCount in data", totalCount)
+  console.log("currentPage in data", currentPageState)
+  console.log("pageSize in data", pageSizeState)
   const resolveUserId = (user) => user?.uuid || user?._id || user?.id || '';
   const getSelectableUserIds = () => users?.map(resolveUserId).filter(Boolean) || [];
 
@@ -67,6 +79,13 @@ const UsersManagement = () => {
   const [editMode, setEditMode] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
+  const [selectionScope, setSelectionScope] = useState('none'); // none | page | all | custom
+  const [selectedPageRef, setSelectedPageRef] = useState(null);
+  // Gmail-like selection (work-in-progress): declare states to avoid no-undef during incremental refactor
+  const [allSelected, setAllSelected] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [excludedIds, setExcludedIds] = useState([]);
+  const [selectAllLoading, setSelectAllLoading] = useState(false);
   const [showBulkAction, setShowBulkAction] = useState(false);
   const [assignTeamOpen, setAssignTeamOpen] = useState(false);
   const [assignTeamId, setAssignTeamId] = useState('');
@@ -78,6 +97,9 @@ const UsersManagement = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewUser, setPreviewUser] = useState(null);
   const [previewAssignments, setPreviewAssignments] = useState([]);
+  // Sorting (global UI; applied on current page data set returned by server)
+  const [sortKey, setSortKey] = useState(''); // 'name' | 'email' | 'designation' | 'role' | 'status'
+  const [sortDir, setSortDir] = useState('asc');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [tempFilters, setTempFilters] = useState({
@@ -90,6 +112,14 @@ const UsersManagement = () => {
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
+  //search
+  const [localSearch, setLocalSearch] = useState('');
+
+
+  // Load users on first render only
+  useEffect(() => {
+    dispatch(fetchUsers(filters));
+  }, []); // <-- empty dependency = runs once only
 
   useEffect(() => {
     getRoles();
@@ -114,6 +144,60 @@ const UsersManagement = () => {
     }
   };
 
+  const sortedUsers = useMemo(() => {
+
+    let list = Array.isArray(allUsers) ? allUsers : [];
+    if (localSearch.trim()) {
+      const s = localSearch.toLowerCase();
+      list = list.filter(u =>
+        (u?.name || '').toLowerCase().includes(s) ||
+        (u?.email || '').toLowerCase().includes(s) ||
+        (u?.profile?.designation || '').toLowerCase().includes(s)
+      );
+    }
+
+    // console.log("list in users",list);
+    if (!sortKey) return list;
+    const roleLabel = (u) => typeof u?.global_role_id === 'string'
+      ? u.global_role_id
+      : (u?.global_role_id?.name || u?.global_role_id?.title || '');
+    const statusLabel = (u) => (getStatusLabel(u?.status) || '').toLowerCase();
+    const getVal = (u) => {
+      switch (sortKey) {
+        case 'name':
+          return (u?.name || '').toLowerCase();
+        case 'email':
+          return (u?.email || '').toLowerCase();
+        case 'designation':
+          return (u?.profile?.designation || u?.designation || '').toLowerCase();
+        case 'role':
+          return (roleLabel(u) || '').toLowerCase();
+        case 'status':
+          return statusLabel(u);
+        default:
+          return '';
+      }
+    };
+    const copy = [...list];
+    copy.sort((a, b) => {
+      const va = getVal(a);
+      const vb = getVal(b);
+      if (va < vb) return sortDir === 'asc' ? -1 : 1;
+      if (va > vb) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return copy;
+  }, [allUsers, sortKey, sortDir, localSearch]);
+
+  const handleSortChange = useCallback((key) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  }, [sortKey]);
+
   const getDepartments = async () => {
     try {
       // const res = await api.get("api/admin/getDepartments");
@@ -125,16 +209,9 @@ const UsersManagement = () => {
     }
   };
 
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      dispatch(fetchUsers(filters));
-    }, 200);
-
-    return () => clearTimeout(timeoutId);
-  }, [dispatch, filters]);
 
   useEffect(() => {
-    const desiredLimit = 100;
+    const desiredLimit = 20;
     if ((filters?.limit ?? null) !== desiredLimit) {
       dispatch(setFilters({
         ...(filters || {}),
@@ -356,206 +433,312 @@ const UsersManagement = () => {
       fileInputRef.current.click();
     }
   };
+  ///email verification
+  const isValidEmail = (email) => {
+    if (!email) return false;
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email.trim());
+  };
+
+  // Field length validation (industry standards)
+  const isValidLength = (value, max = 100) => {
+    if (!value) return true;
+    return value.trim().length <= max;
+  };
+
+  // Export failed users as CSV
+  const exportFailedUsersCSV = (failed) => {
+    const rows = [
+      ["Name", "Email", "Designation", "Team", "Sub Team", "Role", "Custom1", "Reason"],
+      ...failed.map(f => [
+        f.name || "",
+        f.email || "",
+        f.designation || "",
+        f.teamName || "",
+        f.subTeamName || "",
+        f.roleName || "",
+        f.custom1 || "",
+        f.reason || ""
+      ])
+    ];
+
+    const csvContent = rows
+      .map(r => r.map(x => `"${(x || "").toString().replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "failed_users.csv";
+    a.click();
+
+    URL.revokeObjectURL(url);
+  };
+  // ---------------------------------------------
+  // Helper: Normalize row keys
+  // ---------------------------------------------
+  const normalizeRow = (row) => {
+    const normalized = {};
+    Object.entries(row || {}).forEach(([key, value]) => {
+      if (!key) return;
+      normalized[key.toString().trim().toLowerCase()] = value;
+    });
+    return normalized;
+  };
+
+  // ---------------------------------------------
+  // Helper: Extract column value by multiple header names
+  // ---------------------------------------------
+  const getValue = (normalizedRow, keys) => {
+    for (const key of keys) {
+      const lookupKey = key.trim().toLowerCase();
+      if (Object.prototype.hasOwnProperty.call(normalizedRow, lookupKey)) {
+        return normalizedRow[lookupKey];
+      }
+    }
+    return '';
+  };
+
+  // ---------------------------------------------
+  // Helper: Ensure Team Exists
+  // ---------------------------------------------
+  const ensureTeamByName = async (teamName, teamLookup, dispatch, createTeam, setTeams, setDepartments) => {
+    const normalizedName = teamName.trim();
+    const lookupKey = normalizedName.toLowerCase();
+
+    // If already exists
+    if (teamLookup.has(lookupKey)) {
+      return teamLookup.get(lookupKey);
+    }
+
+    // Create new team
+    const payload = { teamName: normalizedName, status: "Active" };
+    const created = await dispatch(createTeam(payload)).unwrap();
+    const createdTeam = created?.team || created;
+
+    const teamObj = {
+      ...createdTeam,
+      name: createdTeam.name || normalizedName,
+      subTeams: Array.isArray(createdTeam.subTeams) ? createdTeam.subTeams : [],
+    };
+
+    // Save in lookup & state (avoid duplicates)
+    teamLookup.set(lookupKey, teamObj);
+
+    setTeams(prev => {
+      const exists = prev.some((t) => resolveTeamIdentifier(t) === resolveTeamIdentifier(teamObj));
+      return exists ? prev : [...prev, teamObj];
+    });
+    setDepartments(prev => {
+      const exists = prev.some((t) => resolveTeamIdentifier(t) === resolveTeamIdentifier(teamObj));
+      return exists ? prev : [...prev, teamObj];
+    });
+
+    return teamObj;
+  };
+
+  // ---------------------------------------------
+  // Helper: Ensure SubTeam Exists
+  // ---------------------------------------------
+  const ensureSubTeamByName = async (teamObj, subTeamName, subTeamLookup, dispatch, createSubTeam, setTeams) => {
+    const teamId = resolveTeamIdentifier(teamObj);
+    const normalizedName = subTeamName.trim().toLowerCase();
+    const lookupKey = `${teamId}::${normalizedName}`;
+
+    if (subTeamLookup.has(lookupKey)) {
+      return subTeamLookup.get(lookupKey);
+    }
+
+    // Create new subteam
+    const payload = { subTeamName, team_id: teamId };
+    const created = await dispatch(createSubTeam(payload)).unwrap();
+    const createdSubTeam = created?.subTeam || created;
+
+    const subObj = {
+      ...createdSubTeam,
+      name: createdSubTeam.name || subTeamName,
+    };
+
+    // Save in lookup
+    subTeamLookup.set(lookupKey, subObj);
+
+    // Update state (avoid duplicates)
+    setTeams(prev =>
+      prev.map(t => {
+        if (resolveTeamIdentifier(t) !== teamId) return t;
+        const existingSubs = Array.isArray(t.subTeams) ? t.subTeams : [];
+        const already = existingSubs.some((s) => resolveSubTeamIdentifier(s) === resolveSubTeamIdentifier(subObj));
+        return already ? t : { ...t, subTeams: [...existingSubs, subObj] };
+      })
+    );
+
+    return subObj;
+  };
+
+  // Team/Subteam validation
+  const isValidTeamName = (name) => {
+    if (!name) return true; // empty is allowed
+    const regex = /^[A-Za-z0-9/\-\s]+$/;
+    return regex.test(name.trim());
+  };
 
   const handleImportUsers = async (event) => {
     const file = event?.target?.files?.[0];
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     setIsImporting(true);
 
     try {
       const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data, { type: 'array' });
-      if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
-        alert('No sheets found in the selected file.');
+      const workbook = XLSX.read(data, { type: "array" });
+
+      if (!workbook.SheetNames.length) {
+        notifyError("No sheets found.");
         return;
       }
 
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-      if (!Array.isArray(rawRows) || rawRows.length === 0) {
-        alert('The selected file does not contain any data to import.');
+      if (!rawRows.length) {
+        notifyError("No data found in file.");
         return;
       }
 
-      const normalizeRow = (row) => {
-        const normalized = {};
-        Object.entries(row || {}).forEach(([key, value]) => {
-          if (!key) return;
-          normalized[key.toString().trim().toLowerCase()] = value;
-        });
-        return normalized;
-      };
-
-      const getValue = (normalizedRow, keys) => {
-        for (const key of keys) {
-          const lookupKey = key.trim().toLowerCase();
-          if (Object.prototype.hasOwnProperty.call(normalizedRow, lookupKey)) {
-            return normalizedRow[lookupKey];
-          }
-        }
-        return '';
-      };
-
+      // Build lookups from current state for dedupe
       const teamLookup = new Map();
       const subTeamLookup = new Map();
 
       const registerTeam = (teamObj) => {
-        const identifier = resolveTeamIdentifier(teamObj);
+        if (!teamObj) return;
+        const id = resolveTeamIdentifier(teamObj);
         const nameKey = toTrimmedString(teamObj?.name || teamObj?.teamName).toLowerCase();
-        if (nameKey) {
-          teamLookup.set(nameKey, teamObj);
-        }
-        if (identifier && Array.isArray(teamObj?.subTeams)) {
-          teamObj.subTeams.forEach((subTeam) => {
-            const subKey = `${identifier}::${toTrimmedString(subTeam?.name || subTeam?.subTeamName).toLowerCase()}`;
-            if (subKey.endsWith('::')) return;
-            subTeamLookup.set(subKey, subTeam);
-          });
-        }
-      };
-
-      teams.forEach((team) => registerTeam(team));
-
-      const ensureTeamByName = async (teamName) => {
-        const normalizedName = teamName.trim();
-        const lookupKey = normalizedName.toLowerCase();
-        if (teamLookup.has(lookupKey)) {
-          return teamLookup.get(lookupKey);
-        }
-
-        const payload = { teamName: normalizedName, status: 'Active' };
-        const created = await dispatch(createTeam(payload)).unwrap();
-        const createdTeam = created?.team || created;
-        if (!createdTeam) {
-          throw new Error(`Failed to create team "${normalizedName}"`);
-        }
-        const normalizedTeam = {
-          ...createdTeam,
-          name: createdTeam.name || normalizedName,
-          subTeams: Array.isArray(createdTeam.subTeams) ? createdTeam.subTeams : [],
-        };
-        registerTeam(normalizedTeam);
-        setTeams((prev) => {
-          const exists = prev.some((teamItem) => resolveTeamIdentifier(teamItem) === resolveTeamIdentifier(normalizedTeam));
-          if (exists) return prev;
-          return [...prev, normalizedTeam];
+        if (nameKey) teamLookup.set(nameKey, teamObj);
+        const subs = Array.isArray(teamObj?.subTeams) ? teamObj.subTeams : [];
+        subs.forEach((st) => {
+          const subName = toTrimmedString(st?.name || st?.subTeamName).toLowerCase();
+          const subId = resolveSubTeamIdentifier(st);
+          if (!id || !subName) return;
+          subTeamLookup.set(`${id}::${subName}`, st);
+          // also map by ID for robustness when name missing
+          if (subId) subTeamLookup.set(`${id}::${subId}`, st);
         });
-        setDepartments((prev) => {
-          const exists = prev.some((teamItem) => resolveTeamIdentifier(teamItem) === resolveTeamIdentifier(normalizedTeam));
-          if (exists) return prev;
-          return [...prev, normalizedTeam];
-        });
-        return normalizedTeam;
       };
 
-      const ensureSubTeamByName = async (teamObj, subTeamName) => {
-        const teamId = resolveTeamIdentifier(teamObj);
-        if (!teamId) {
-          throw new Error(`Missing identifier for team "${teamObj?.name || teamObj?.teamName || subTeamName}"`);
-        }
-        const normalizedName = subTeamName.trim();
-        const key = `${teamId}::${normalizedName.toLowerCase()}`;
-        if (subTeamLookup.has(key)) {
-          return subTeamLookup.get(key);
-        }
-
-        const existing = Array.isArray(teamObj?.subTeams)
-          ? teamObj.subTeams.find((sub) => toTrimmedString(sub?.name || sub?.subTeamName).toLowerCase() === normalizedName.toLowerCase())
-          : null;
-        if (existing) {
-          subTeamLookup.set(key, existing);
-          return existing;
-        }
-
-        const payload = { subTeamName: normalizedName, team_id: teamId };
-        const created = await dispatch(createSubTeam(payload)).unwrap();
-        const createdSubTeam = created?.subTeam || created?.team || created;
-        if (!createdSubTeam) {
-          throw new Error(`Failed to create sub team "${normalizedName}" for team "${teamObj?.name || teamObj?.teamName}"`);
-        }
-        const normalizedSubTeam = {
-          ...createdSubTeam,
-          name: createdSubTeam.name || normalizedName,
-        };
-        subTeamLookup.set(key, normalizedSubTeam);
-        teamObj.subTeams = Array.isArray(teamObj.subTeams)
-          ? [...teamObj.subTeams, normalizedSubTeam]
-          : [normalizedSubTeam];
-        setTeams((prev) => prev.map((teamItem) => {
-          if (resolveTeamIdentifier(teamItem) !== teamId) {
-            return teamItem;
-          }
-          const existingSubs = Array.isArray(teamItem.subTeams) ? teamItem.subTeams : [];
-          const alreadyPresent = existingSubs.some((subItem) => resolveSubTeamIdentifier(subItem) === resolveSubTeamIdentifier(normalizedSubTeam));
-          if (alreadyPresent) {
-            return teamItem;
-          }
-          return {
-            ...teamItem,
-            subTeams: [...existingSubs, normalizedSubTeam],
-          };
-        }));
-        return normalizedSubTeam;
-      };
+      (Array.isArray(teams) ? teams : []).forEach(registerTeam);
 
       let successCount = 0;
-      const errors = [];
+      const failedUsers = [];
 
-      for (let index = 0; index < rawRows.length; index += 1) {
-        const rowNumber = index + 2; // account for header row
-        const normalizedRow = normalizeRow(rawRows[index]);
+      for (let index = 0; index < rawRows.length; index++) {
+        const rowNum = index + 2;
+        const row = normalizeRow(rawRows[index]);
 
-        const name = toTrimmedString(getValue(normalizedRow, ['name']));
-        const email = toTrimmedString(getValue(normalizedRow, ['email']));
-        const designation = toTrimmedString(getValue(normalizedRow, ['designation']));
-        const teamName = toTrimmedString(getValue(normalizedRow, ['team', 'team name']));
-        const subTeamName = toTrimmedString(getValue(normalizedRow, ['sub team', 'subteam', 'sub team name']));
-        let roleName = toTrimmedString(getValue(normalizedRow, ['role']));
-        const custom1 = toTrimmedString(getValue(normalizedRow, ['custom 1', 'custom1']));
+        const name = toTrimmedString(getValue(row, ["name"]));
+        const email = toTrimmedString(getValue(row, ["email"]));
+        const designation = toTrimmedString(getValue(row, ["designation"]));
+        const teamName = toTrimmedString(getValue(row, ["team", "team name"]));
+        const subTeamName = toTrimmedString(getValue(row, ["subteam", "sub team", "sub team name"]));
+        let roleName = toTrimmedString(getValue(row, ["role"])) || "General User";
+        const custom1 = toTrimmedString(getValue(row, ["custom1", "custom 1"]));
 
-        if (!name || !email) {
-          errors.push(`Row ${rowNumber}: Name and Email are required.`);
+        // --- TEAM & SUBTEAM NAME VALIDATION ---
+        if (teamName && !isValidTeamName(teamName)) {
+          failedUsers.push({
+            name, email, designation, teamName, subTeamName, roleName, custom1,
+            reason: "Invalid characters in Team name. Only letters, numbers, spaces, / and - are allowed"
+          });
           continue;
         }
 
-        if (!roleName) {
-          roleName = 'General User';
+        if (subTeamName && !isValidTeamName(subTeamName)) {
+          failedUsers.push({
+            name, email, designation, teamName, subTeamName, roleName, custom1,
+            reason: "Invalid characters in Subteam name. Only letters, numbers, spaces, / and - are allowed"
+          });
+          continue;
         }
 
+        // --- VALIDATION RULES ---
+        if (!name || !email) {
+          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Name or Email missing" });
+          continue;
+        }
+
+        if (!isValidEmail(email)) {
+          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Invalid email format" });
+          continue;
+        }
+
+        if (!isValidLength(name, 80)) {
+          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Name exceeds 80 characters" });
+          continue;
+        }
+
+        if (!isValidLength(designation, 100)) {
+          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Designation too long" });
+          continue;
+        }
+
+        if (!isValidLength(custom1, 200)) {
+          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Custom1 exceeds limit" });
+          continue;
+        }
+
+        // Validate role
         const roleId = findRoleIdByName(roleName);
         if (!roleId) {
-          errors.push(`Row ${rowNumber}: Role "${roleName}" not found.`);
+          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: `Role "${roleName}" not found` });
           continue;
         }
 
-        let teamId = '';
-        let subTeamId = '';
+        // --- TEAM + SUBTEAM LOGIC ---
+        let teamObj = null;
+        let subTeamObj = null;
 
         try {
+          // --- BLOCK INACTIVE TEAM BEFORE TEAM CREATION / USER IMPORT ---
           if (teamName) {
-            const teamObj = await ensureTeamByName(teamName);
-            teamId = resolveTeamIdentifier(teamObj);
+            // Find team in existing state
+            const existingTeam = teams?.find(
+              (t) => t?.name?.trim().toLowerCase() === teamName.trim().toLowerCase()
+            );
 
-            if (subTeamName) {
-              const subTeamObj = await ensureSubTeamByName(teamObj, subTeamName);
-              subTeamId = resolveSubTeamIdentifier(subTeamObj);
+            if (existingTeam) {
+              const teamStatus = existingTeam?.status?.toLowerCase();
+
+              if (teamStatus === "inactive") {
+                failedUsers.push({
+                  name,
+                  email,
+                  designation,
+                  teamName,
+                  subTeamName,
+                  roleName,
+                  custom1,
+                  reason: "Cannot import user into an inactive team",
+                });
+                continue;
+              }
             }
           }
-        } catch (teamError) {
-          errors.push(`Row ${rowNumber}: ${teamError?.message || 'Failed to process team/subteam.'}`);
+
+          if (teamName) teamObj = await ensureTeamByName(teamName, teamLookup, dispatch, createTeam, setTeams, setDepartments);
+          if (teamObj && subTeamName) subTeamObj = await ensureSubTeamByName(teamObj, subTeamName, subTeamLookup, dispatch, createSubTeam, setTeams);
+        } catch (err) {
+          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: err?.message || "Team/Subteam error" });
           continue;
         }
 
+        // --- CREATE USER PAYLOAD ---
         const payload = {
           name,
           email,
           designation,
-          team: teamId || undefined,
-          subteam: subTeamId || undefined,
+          team: teamObj ? resolveTeamIdentifier(teamObj) : undefined,
+          subteam: subTeamObj ? resolveSubTeamIdentifier(subTeamObj) : undefined,
           role: roleId,
           custom1,
           invite: false,
@@ -563,63 +746,215 @@ const UsersManagement = () => {
 
         try {
           await dispatch(createUser(payload)).unwrap();
-          successCount += 1;
-        } catch (creationError) {
-          const message = creationError?.message || creationError?.error || 'Failed to create user.';
-          errors.push(`Row ${rowNumber}: ${message}`);
+          successCount++;
+        } catch (err) {
+          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: err?.message || "Failed to create user/User already exists" });
         }
       }
 
+      // ---- Refresh data ----
       if (successCount > 0) {
         dispatch(fetchUsers(filters));
         getTeams();
       }
 
-      if (errors.length) {
-        console.error('Import completed with errors:', errors);
-        alert(`Import finished. Success: ${successCount}. Failed: ${errors.length}. Check console for details.`);
+      // ---- SHOW RESULT POPUP ----
+      // if (failedUsers.length > 0) {
+      //   if (window.confirm(`Import completed.\nSuccess: ${successCount}\nFailed: ${failedUsers.length}\n\nDo you want to download failed users?`)) {
+      //     exportFailedUsersCSV(failedUsers);
+      //   }
+      // } else {
+      //  notifySuccess(`Import successful. Imported ${successCount} user(s).`);
+      // }
+      // notifyError("User import failed", {
+      //   title: "Import Failed",
+      //   duration: 8000,
+      // });
+      if (failedUsers.length > 0) {
+        notifyWarning(
+          `Success: ${successCount},  Failed: ${failedUsers.length}`,
+          {
+            title: "User Import Completed With Issues",
+            dismissible: true,
+            duration: 50000,
+            action: {
+              label: 'Download Failed Users',
+              onClick: () => exportFailedUsersCSV(failedUsers),
+            },
+          }
+        );
       } else {
-        alert(`Import finished successfully. Imported ${successCount} user(s).`);
+        notifySuccess(`Imported ${successCount} user(s).`, { title: "Import successful." });
+        clearAllSelections();
       }
-    } catch (error) {
-      console.error('Failed to import users:', error);
-      alert('Failed to import users. Please verify the file format and try again.');
+
+    } catch (err) {
+      // console.error("Import error:", err);
+      notifyError("Import failed. Please check the file.");
     } finally {
-      if (event?.target) {
-        // allow re-uploading the same file
-        event.target.value = '';
-      }
+      if (event?.target) event.target.value = "";
       setIsImporting(false);
     }
   };
 
 
-  const handleExportUsers = () => {
-    // Get users to export - selected users if any, otherwise all users
-    const usersToExport = selectedItems.length > 0 
-      ? users.filter(user => selectedItems.includes(resolveUserId(user)))
-      : users;
+  const handleExportUsers = async () => {
+    // 1) Prefer explicit checkbox selections (selectedItems)
+    const toIdStr = (v) => (v === null || v === undefined) ? '' : String(v);
+    let targetIds = Array.isArray(selectedItems) ? selectedItems.map(toIdStr) : [];
 
-    console.log('Selected Items:', selectedItems);
-    console.log('Users to export:', usersToExport);
+    // 2) If none via explicit selections, fall back to Gmail model
+    if (targetIds.length === 0) {
+      if (!allSelected) {
+        // Use all individually selected IDs across pages
+        targetIds = Array.isArray(selectedIds) ? selectedIds.map(toIdStr) : [];
+      }
+    }
 
-    if (!Array.isArray(usersToExport) || usersToExport.length === 0) {
-      alert(selectedItems.length > 0 
-        ? 'No selected users found to export. Please make sure you have selected users using the checkboxes.' 
-        : 'No users available to export.');
+    // 3) Nothing selected (only block when not using 'Select all')
+    if (!allSelected && (!Array.isArray(targetIds) || targetIds.length === 0)) {
+      notifyWarning('No selected users found to export.', { title: 'Export', dismissible: true, duration: 6000 });
       return;
     }
 
-    // Process each user's data for export
-    const rows = usersToExport.map((user) => {
+    // 4) Try to build dataset from current page first
+    const selectedIdSet = new Set(targetIds);
+    const byId = new Map();
+    (Array.isArray(users) ? users : []).forEach((u) => {
+      const id = toIdStr(resolveUserId(u));
+      if (id && (selectedIdSet.size ? selectedIdSet.has(id) : allSelected) && !excludedIds.map(toIdStr).includes(id)) byId.set(id, u);
+    });
+
+    // 5) If some selected users are not on the current page, fetch across pages
+    const needCrossPage = allSelected || targetIds.some((id) => !byId.has(id));
+    if (needCrossPage) {
+      try {
+        // Iterate all pages and aggregate only selected users
+        for (let page = 1; page <= totalPages; page += 1) {
+          // Skip the current page we already processed, if applicable
+          if (page === currentPage) continue;
+          const params = { ...filters, page, limit: itemsPerPage };
+          let pageUsers = [];
+          try {
+            const res = await dispatch(fetchUsers(params)).unwrap();
+            // Accept common shapes
+            if (Array.isArray(res)) {
+              pageUsers = res;
+            } else if (Array.isArray(res?.users)) {
+              pageUsers = res.users;
+            } else if (Array.isArray(res?.data)) {
+              pageUsers = res.data;
+            }
+          } catch (e) {
+            // If unwrap fails, try to use updated selector snapshot
+            pageUsers = Array.isArray(users) ? users : [];
+          }
+
+          pageUsers.forEach((u) => {
+            const id = toIdStr(resolveUserId(u));
+            if (!id) return;
+            if (allSelected) {
+              if (!excludedIds.map(toIdStr).includes(id) && !byId.has(id)) byId.set(id, u);
+            } else if (selectedIdSet.has(id) && !byId.has(id)) {
+              byId.set(id, u);
+            }
+          });
+
+          // Break early if all found
+          if (!allSelected && byId.size >= selectedIdSet.size) break;
+        }
+      } catch (e) {
+        // Non-fatal: continue with whatever we have
+      }
+    }
+
+    // 6) If still missing, try a single wide fetch (all rows) as a final fallback
+    const missingAfterLoop = !allSelected && targetIds.some((id) => !byId.has(id));
+    if (allSelected || missingAfterLoop) {
+      try {
+        const wideParams = { ...filters, page: 1, limit: Math.max(itemsPerPage, Number(totalCount) || 0) };
+        let wideUsers = [];
+        try {
+          const resAll = await dispatch(fetchUsers(wideParams)).unwrap();
+          if (Array.isArray(resAll)) {
+            wideUsers = resAll;
+          } else if (Array.isArray(resAll?.users)) {
+            wideUsers = resAll.users;
+          } else if (Array.isArray(resAll?.data)) {
+            wideUsers = resAll.data;
+          } else if (Array.isArray(resAll?.results)) {
+            wideUsers = resAll.results;
+          } else if (Array.isArray(resAll?.payload)) {
+            wideUsers = resAll.payload;
+          }
+        } catch (_) {
+          // ignore
+        }
+
+        wideUsers.forEach((u) => {
+          const id = toIdStr(resolveUserId(u));
+          if (!id) return;
+          if (allSelected) {
+            if (!excludedIds.map(toIdStr).includes(id) && !byId.has(id)) byId.set(id, u);
+          } else if (selectedIdSet.has(id) && !byId.has(id)) {
+            byId.set(id, u);
+          }
+        });
+      } catch (_) {
+        // ignore
+      }
+    }
+
+    const usersToExport = allSelected
+      ? Array.from(byId.values())
+      : targetIds.map((id) => byId.get(toIdStr(id))).filter(Boolean);
+    if (usersToExport.length === 0) {
+      notifyWarning('Could not resolve selected users for export.', { title: 'Export', dismissible: true, duration: 6000 });
+      return;
+    }
+    console.log("users to Export", usersToExport)
+    // Process each selected user's data for export
+    // Ensure exported order follows current sorting (asc/desc) like the UI
+    let orderedUsers = usersToExport;
+    if (sortKey) {
+      const roleLabel = (u) => typeof u?.global_role_id === 'string'
+        ? u.global_role_id
+        : (u?.global_role_id?.name || u?.global_role_id?.title || '');
+      const statusLabel = (u) => (getStatusLabel(u?.status) || '').toLowerCase();
+      const getVal = (u) => {
+        switch (sortKey) {
+          case 'name':
+            return (u?.name || '').toLowerCase();
+          case 'email':
+            return (u?.email || '').toLowerCase();
+          case 'designation':
+            return (u?.profile?.designation || u?.designation || '').toLowerCase();
+          case 'role':
+            return (roleLabel(u) || '').toLowerCase();
+          case 'status':
+            return statusLabel(u);
+          default:
+            return '';
+        }
+      };
+      orderedUsers = [...usersToExport].sort((a, b) => {
+        const va = getVal(a);
+        const vb = getVal(b);
+        if (va < vb) return sortDir === 'asc' ? -1 : 1;
+        if (va > vb) return sortDir === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    const rows = orderedUsers.map((user) => {
       const assignments = computeAssignments(user || {});
       const teamNames = assignments.map(a => a.teamName).filter(Boolean);
       const subTeamNames = assignments.map(a => a.subTeamName).filter(Boolean);
-
+      console.log("user in usermanagement", user)
       return {
         name: user?.name || '',
         email: user?.email || '',
-        designation: user?.designation || '',
+        designation: user.profile?.designation || '',
         role: typeof user?.global_role_id === 'string'
           ? user.global_role_id
           : user?.global_role_id?.name || user?.global_role_id?.title || '',
@@ -645,7 +980,7 @@ const UsersManagement = () => {
     // Generate CSV content
     const csvContent = [
       headerLabels.join(','),
-      ...rows.map(row => 
+      ...rows.map(row =>
         headers.map(field => escapeCsvValue(row[field] || '')).join(',')
       )
     ].join('\n');
@@ -661,14 +996,12 @@ const UsersManagement = () => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      
-      // Clear selected items after successful export
-      if (selectedItems.length > 0) {
-        setSelectedItems([]);
-      }
+
+      // Optionally clear selections after export (keep behavior minimal)
+      // setSelectedItems([]);
     } catch (error) {
       console.error('Error during export:', error);
-      alert('An error occurred while exporting. Please try again.');
+      notifyError('An error occurred while exporting. Please try again.', { title: 'Export Failed' });
     }
   };
 
@@ -834,7 +1167,7 @@ const UsersManagement = () => {
     setAssignTeamId('');
     setAssignSubTeamId('');
     setAssignTeamOpen(true);
-  };
+  }
 
   const handleAssignToTeam = (userId) => {
     if (!userId) {
@@ -843,13 +1176,39 @@ const UsersManagement = () => {
     openAssignToTeamModal([userId], 'single');
   };
 
-  const handleOpenAssignForSelected = () => {
-    if (selectedItems.length === 0) {
-      return;
-    }
-    setShowBulkAction(false);
-    openAssignToTeamModal(selectedItems, 'bulk');
-  };
+  // const handleOpenAssignForSelected = () => {
+  //   if (selectedItems.length === 0) {
+  //     return;
+  //   }
+  //   setShowBulkAction(false);
+  //   openAssignToTeamModal(selectedItems, 'bulk');
+  // };
+
+  // --- FIXED BULK ASSIGN HANDLER (GMAIL MODEL) ---
+const handleOpenAssignForSelected = () => {
+  let finalSelectedIds = [];
+
+  if (allSelected) {
+    // ALL PAGES SELECTED → Include all filtered users except excluded ones
+    const allIdsInFiltered = sortedUsers.map((u) => u.id).filter(Boolean);
+    finalSelectedIds = allIdsInFiltered.filter((id) => !excludedIds.includes(id));
+  } else {
+    // CUSTOM OR PAGE SELECTION
+    finalSelectedIds = [...selectedIds];
+  }
+
+  if (finalSelectedIds.length === 0) {
+    notifyWarning("No users selected.");
+    return;
+  }
+
+  // Open modal with selected IDs
+  openAssignToTeamModal(finalSelectedIds, "bulk");
+
+  // Close dropdown panel
+  setShowBulkAction(false);
+};
+
 
   const handleBulkAssignToGroup = async () => {
     if (!assignTeamId) {
@@ -890,26 +1249,43 @@ const UsersManagement = () => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       dispatch(deleteUser(userId));
     }
+    clearAllSelections();
   };
-
+  const uuidToMongoId = useMemo(() => {
+    const map = new Map();
+    users.forEach((u) => {
+      if (u?.uuid && (u?._id || u?.id)) {
+        map.set(u.uuid, u._id || u.id);
+      }
+    });
+    return map;
+  }, [users]);
+  
   const handleBulkAction = async (action) => {
-    if (selectedItems.length === 0) {
+    if (selectedIds.length === 0) {
       alert('Please select at least one user');
       return;
     }
     if (action === 'delete') {
-      if (window.confirm(`Are you sure you want to delete ${selectedItems.length} users?`)) {
+      if (window.confirm(`Are you sure you want to delete ${selectedIds.length} users?`)) {
         try {
-          await dispatch(bulkDeleteUsers(selectedItems)).unwrap();
-          setSelectedItems([]);
-          setShowBulkAction(false);
-          setShowFilters(false);
+          // Convert UUID → MongoDB _id
+          console.log(selectedIds)
+          const mongoIds = selectedIds
+            .map((uuid) => uuidToMongoId.get(uuid))
+            .filter(Boolean);
+    
+          await dispatch(bulkDeleteUsers(mongoIds)).unwrap();
+    
+          clearAllSelections();
+          dispatch(fetchUsers(filters));
         } catch (error) {
           console.error('Failed to delete users:', error);
           alert('Failed to delete selected users. Please try again.');
         }
       }
-    } else if (action === 'deactivate') {
+    }
+    else if (action === 'deactivate') {
       try {
         const requests = selectedItems
           .map((userId) => {
@@ -964,12 +1340,177 @@ const UsersManagement = () => {
 
 
   const currentPage = filters.page || currentPageState || 1;
-  const itemsPerPage = filters.limit || pageSizeState || 6;
+  const itemsPerPage = filters.limit || pageSizeState || 20;
   const totalPages = Math.max(1, Math.ceil((totalCount || 0) / itemsPerPage));
-  const paginatedUsers = Array.isArray(users) ? users : [];
+  // const paginatedUsers = Array.isArray(sortedUsers) ? sortedUsers : [];
+  // Apply pagination to the sorted users
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return Array.isArray(sortedUsers) ? sortedUsers.slice(startIndex, endIndex) : [];
+  }, [sortedUsers, currentPage, itemsPerPage]);
+
   const currentPageUserIds = paginatedUsers
     .map((user) => resolveUserId(user))
     .filter(Boolean);
+
+  // Gmail model: read-side helpers
+  const isRowSelected = useCallback((id) => {
+    if (!id) return false;
+    return allSelected ? !excludedIds.includes(id) : selectedIds.includes(id);
+  }, [allSelected, excludedIds, selectedIds]);
+
+  const derivedSelectedOnPage = useMemo(() => {
+    return currentPageUserIds.filter(isRowSelected);
+  }, [currentPageUserIds, isRowSelected]);
+
+  const derivedSelectedCount = useMemo(() => {
+    if (allSelected) {
+      const total = Number(totalCount) || 0;
+      return Math.max(0, total - (excludedIds?.length || 0));
+    }
+    return selectedIds.length;
+  }, [allSelected, excludedIds, selectedIds.length, totalCount]);
+
+  const topCheckboxChecked = useMemo(() => {
+    if (!currentPageUserIds.length) return false;
+    return currentPageUserIds.every((id) => isRowSelected(id));
+  }, [currentPageUserIds, isRowSelected]);
+
+  const topCheckboxIndeterminate = useMemo(() => {
+    if (!currentPageUserIds.length) return false;
+    const anySelected = currentPageUserIds.some((id) => isRowSelected(id));
+    const allSelectedOnPage = currentPageUserIds.every((id) => isRowSelected(id));
+    return anySelected && !allSelectedOnPage;
+  }, [currentPageUserIds, isRowSelected]);
+
+  const clearSelection = useCallback(() => {
+    setAllSelected(false);
+    setSelectedIds([]);
+    setExcludedIds([]);
+    setSelectionScope('none');
+    setSelectedPageRef(null);
+  }, []);
+
+  const applyPageSelection = useCallback(() => {
+    if (!currentPageUserIds.length) {
+      clearSelection();
+      return;
+    }
+    // Gmail model: select exactly this page
+    setAllSelected(false);
+    setSelectedIds(currentPageUserIds);
+    setExcludedIds([]);
+    setSelectionScope('page');
+    setSelectedPageRef(currentPage);
+  }, [clearSelection, currentPage, currentPageUserIds]);
+
+  const handleSelectAllToggle = useCallback((checked) => {
+    if (checked) {
+      // select this page
+      applyPageSelection();
+    } else {
+      // deselect this page
+      if (allSelected) {
+        setExcludedIds((prev) => Array.from(new Set([...prev, ...currentPageUserIds])));
+      } else {
+        setSelectedIds((prev) => prev.filter((id) => !currentPageUserIds.includes(id)));
+      }
+      // if nothing remains selected, clear
+      const remaining = allSelected
+        ? Math.max(0, (Number(totalCount) || 0) - (excludedIds.length + currentPageUserIds.length))
+        : Math.max(0, selectedIds.length - currentPageUserIds.length);
+      if (remaining <= 0) {
+        clearSelection();
+      } else {
+        setSelectionScope('custom');
+        setSelectedPageRef(null);
+      }
+    }
+  }, [allSelected, applyPageSelection, clearSelection, currentPageUserIds, excludedIds.length, selectedIds.length, totalCount]);
+
+  const handleSelectItem = useCallback((e, userId) => {
+    const checked = e?.target?.checked;
+    if (!userId) return;
+    if (allSelected) {
+      // manage exclusions when globally selected
+      if (checked) {
+        setExcludedIds((prev) => prev.filter((id) => id !== userId));
+      } else {
+        setExcludedIds((prev) => Array.from(new Set([...prev, userId])));
+      }
+      setSelectionScope('all');
+      setSelectedPageRef(null);
+    } else {
+      if (checked) {
+        setSelectedIds((prev) => Array.from(new Set([...prev, userId])));
+      } else {
+        setSelectedIds((prev) => prev.filter((id) => id !== userId));
+      }
+      const after = checked
+        ? Array.from(new Set([...selectedIds, userId]))
+        : selectedIds.filter((id) => id !== userId);
+      if (after.length === 0) {
+        clearSelection();
+      } else {
+        // 🔥 IMPORTANT: row selection should NEVER switch to "page" mode
+        setSelectionScope('custom');
+        setSelectedPageRef(null);
+      }
+    }
+  }, [allSelected, clearSelection, selectedIds]);
+
+  const handleSelectAllPages = useCallback(async () => {
+    if (selectAllLoading) return;
+    setSelectAllLoading(true);
+    try {
+      // Logical select-all across filters (Gmail model)
+      setAllSelected(true);
+      setSelectedIds([]);
+      setExcludedIds([]);
+      setSelectionScope('all');
+      setSelectedPageRef(null);
+    } finally {
+      setSelectAllLoading(false);
+    }
+  }, [selectAllLoading]);
+
+  const handleSelectionOption = useCallback((option) => {
+    switch (option) {
+      case 'page':
+        applyPageSelection();
+        break;
+      case 'all':
+        handleSelectAllPages();
+        break;
+      case 'none':
+      default:
+        clearSelection();
+        break;
+    }
+  }, [applyPageSelection, clearSelection, handleSelectAllPages]);
+
+  // 🔥 UNIVERSAL SELECTION RESET — for Users & Groups
+const clearAllSelections = useCallback(() => {
+  // Gmail-style selection reset
+  setAllSelected(false);
+  setSelectedIds([]);
+  setExcludedIds([]);
+  setSelectionScope("none");
+  setSelectedPageRef(null);
+
+  // Legacy selection reset (if your file still uses it)
+  setSelectedItems && setSelectedItems([]);
+
+}, []);
+
+
+
+  useEffect(() => {
+    if (selectionScope === 'page' && selectedPageRef !== currentPage) {
+      clearSelection();
+    }
+  }, [selectionScope, selectedPageRef, currentPage, clearSelection]);
 
   const handlePageChange = (newPage) => {
     if (!newPage || newPage === currentPage) return;
@@ -1012,28 +1553,45 @@ const UsersManagement = () => {
       });
     }
   };
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      dispatch(setFilters({
+        ...filters,
+        search: localSearch.trim(),
+        page: 1,
+      }));
+    }, 500); // backend only when typing stops
 
-  const handleSelectItem = (e, userId) => {
-    if (!userId) return;
+    return () => clearTimeout(delay);
+  }, [localSearch]);
+  // --- Local frontend filter (instant) ---
+  const handleLocalFilter = useCallback((query) => {
+    setLocalSearch(query?.name || '');
+  }, []);
 
-    if (e.target.checked) {
-      setSelectedItems((prev) => {
-        if (prev.includes(userId)) {
-          return prev;
-        }
-        const next = [...prev, userId];
-        // setShowBulkAction(true);
-        setShowFilters(false);
-        return next;
-      });
-    } else {
-      setSelectedItems((prev) => {
-        const next = prev.filter((id) => id !== userId);
-        // setShowBulkAction(next.length > 0);
-        return next;
-      });
-    }
-  };
+  // --- Backend debounced filter ---
+  const backendDebounceRef = useRef(null);
+  const handleBackendFilter = useCallback((query) => {
+    if (backendDebounceRef.current)
+      clearTimeout(backendDebounceRef.current);
+
+    backendDebounceRef.current = setTimeout(() => {
+      dispatch(setFilters({
+        ...filters,
+        search: query.name || '',
+        page: 1
+      }));
+      dispatch(fetchUsers({
+        ...filters,
+        search: query.name || '',
+        page: 1,
+        silent: true,     // 🔥 don't show loader
+      }));
+    }, 500);
+  }, [dispatch, filters]);
+
+
+
 
   // console.log(users)
   // Available roles
@@ -1057,7 +1615,7 @@ const UsersManagement = () => {
     return <LoadingScreen text={"Loading users..."} />;
   }
 
-  const allSelected = currentPageUserIds.length > 0 && currentPageUserIds.every((id) => selectedItems.includes(id));
+
   //  if(creating)
   //  {
   //   return <LoadingScreen text={"Creating user..."} />;
@@ -1086,26 +1644,20 @@ const UsersManagement = () => {
             <Search className="search-icon" size={18} />
             <input
               type="text"
-              placeholder="Search users..."
-              value={searchTerm}
+              placeholder="Search Users"
+              value={localSearch}
               onChange={(e) => {
-                setSearchTerm(e.target.value);
-                dispatch(setFilters({
-                  ...filters,
-                  search: e.target.value,
-                  page: 1,
-                }));
+                const value = e.target.value;
+
+                // 1) Instant local filter
+                handleLocalFilter({ name: value });
+
+                // 2) Debounced backend fetch
+                handleBackendFilter({ name: value });
               }}
+
             />
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={clearSearch}
-                className="clear-search"
-              >
-                <X size={16} />
-              </button>
-            )}
+
           </form>
 
           <div className="controls-right" style={{ position: 'relative' }}>
@@ -1138,13 +1690,14 @@ const UsersManagement = () => {
               className="control-btn"
               style={{ padding: '12px 12px' }}
               onClick={handleExportUsers}
+              disabled={!allSelected && selectedIds.length === 0}
               type="button"
             >
               Export <Share size={16} color="#6b7280" />
             </button>
 
             {showFilters && (
-              <div className="filter-panel" style={{ right: '-8px', top: '49px' }}>
+              <div className="filter-panel" style={{ right: '185px', top: '50px' }}>
                 <span
                   style={{
                     cursor: 'pointer',
@@ -1158,7 +1711,8 @@ const UsersManagement = () => {
                 </span>
 
                 <div className="filter-group">
-                  <label>Status</label>
+                  <div style={{ fontSize: "15px", fontWeight: "600", color: "#26334d" }}>  <label>Status</label></div>
+
                   <select
                     name="status"
                     value={tempFilters.status || ''}
@@ -1170,6 +1724,8 @@ const UsersManagement = () => {
                     {/* <option value="pending">Pending</option> */}
                   </select>
                 </div>
+
+                {/* selection flyout now handled inside UsersTable */}
 
                 {/* <div className="filter-group">
                     <label>Role</label>
@@ -1187,22 +1743,23 @@ const UsersManagement = () => {
                     </select>
                   </div> */}
 
-                <div className="filter-actions">
+                <div className="user-filter-actions">
                   <button
-                    className="btn-primary"
-                    onClick={handleFilter}
-                    style={{ marginRight: '8px' }}
-                    type="button"
-                  >
-                    Apply
-                  </button>
-                  <button
-                    className="reset-btn"
+                    className="btn-secondary"
                     onClick={resetFilters}
                     type="button"
                   >
                     Clear
                   </button>
+                  <button
+                    className="btn-primary"
+                    onClick={handleFilter}
+                    // style={{ marginRight: '8px' }}
+                    type="button"
+                  >
+                    Apply
+                  </button>
+
                 </div>
               </div>
             )}
@@ -1217,35 +1774,28 @@ const UsersManagement = () => {
             </button>
 
             {showBulkAction && (
-              <div className="bulk-action-panel" style={{ top: '50px', right: '-50px' }}>
+              <div className="bulk-action-panel" style={{ top: '50px', right: '-159px', padding: "15px" }}>
                 <div className="bulk-action-header">
-                  <label className="bulk-action-title">Items Selected: {selectedItems.length}</label>
+                  <label className="bulk-action-title">Items Selected: {derivedSelectedCount}</label>
                 </div>
                 <div className="bulk-action-actions" style={{ display: 'flex', gap: 8, flexDirection: 'row', alignItems: 'center' }}>
-                  {/* <button
-                    className="bulk-action-btn"
-                    disabled={selectedItems.length === 0}
-                    onClick={() => handleBulkAction('deactivate')} style={{ backgroundColor: '#9e9e9e' }}
-                  >
-                    Deactivate
-                  </button> */}
-                  <button
-                    className="bulk-action-delete-btn"
-                    disabled={selectedItems.length === 0}
-                    onClick={() => handleBulkAction('delete')}
-                  >
-                    <RiDeleteBinFill size={16} color="#fff" /> Delete
-                  </button>
-                </div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
                   <button
                     className="btn-primary"
-                    disabled={selectedItems.length === 0}
+                    disabled={!allSelected && selectedIds.length === 0}
                     onClick={handleOpenAssignForSelected}
                   >
                     Assign to Team
                   </button>
+                  <button
+                    className="btn-primary"
+                    disabled={!allSelected && selectedIds.length === 0}
+                    onClick={() => handleBulkAction('delete')} style={{ background: "red" }}
+                  >
+                    <RiDeleteBinFill size={16} color="white" /> Delete
+                  </button>
+
                 </div>
+
               </div>
             )}
           </div>
@@ -1258,147 +1808,88 @@ const UsersManagement = () => {
             Add User
           </button>
         </div>
-
+        {selectionScope !== 'none' && derivedSelectedCount > 0 && (
+          <div className="users-selection-banner" style={{ margin: '12px 0px', justifyContent: 'center' }}>
+            {selectionScope === 'page' ? (
+              <>
+                <span>
+                  All {currentPageUserIds.length} {currentPageUserIds.length === 1 ? 'user' : 'users'} on this page are selected.
+                </span>
+                {totalCount > currentPageUserIds.length && (
+                  <button
+                    type="button"
+                    className="selection-action action-primary"
+                    onClick={handleSelectAllPages}
+                    disabled={selectAllLoading}
+                  >
+                    {selectAllLoading ? 'Selecting all users…' : `Select all ${totalCount} users`}
+                  </button>
+                )}
+                <button type="button" className="selection-action action-link" onClick={clearSelection}>
+                  Clear selection
+                </button>
+              </>
+            ) : selectionScope === 'all' ? (
+              <>
+                <span>
+                  All {derivedSelectedCount} {derivedSelectedCount === 1 ? 'user' : 'users'} are selected across all pages.
+                </span>
+                <button type="button" className="selection-action action-link" onClick={clearSelection}>
+                  Clear selection
+                </button>
+              </>
+            ) : (
+              <>
+                <span>
+                  {derivedSelectedCount} {derivedSelectedCount === 1 ? 'user' : 'users'} selected.
+                </span>
+                {totalCount > derivedSelectedCount && (
+                  <button
+                    type="button"
+                    className="selection-action action-primary"
+                    onClick={handleSelectAllPages}
+                    disabled={selectAllLoading}
+                  >
+                    {selectAllLoading ? 'Selecting all users…' : `Select all ${totalCount} users`}
+                  </button>
+                )}
+                <button type="button" className="selection-action action-link" onClick={clearSelection}>
+                  Clear selection
+                </button>
+              </>
+            )}
+          </div>
+        )}
+        {/* selection flyout now handled inside UsersTable */}
         {/* Users Table */}
-        <div className="users-table-container">
-          <div className="users-table-header">
-            <div className="users-checkbox-cell">
-              <input
-                type="checkbox"
-                onChange={handleSelectAll}
-                checked={allSelected}
-              />
-            </div>
-            <div className="users-header-cell" style={{ justifySelf: 'flex-start', paddingLeft: '45px' }}>Name</div>
-            <div className="users-header-cell" style={{ justifySelf: 'flex-start' }}>Email</div>
-            <div className="users-header-cell" style={{ justifySelf: 'flex-start' }}>Designation</div>
-            <div className="users-header-cell">Role</div>
-            <div className="users-header-cell">Status</div>
-            <div className="users-header-cell">Actions</div>
-          </div>
+        <UsersTable
+          users={paginatedUsers}
+          selectedItems={derivedSelectedOnPage}
+          topCheckboxChecked={topCheckboxChecked}
+          topCheckboxIndeterminate={topCheckboxIndeterminate}
+          onTopCheckboxToggle={handleSelectAllToggle}
+          onSelectItem={handleSelectItem}
+          resolveUserId={resolveUserId}
+          getStatusLabel={getStatusLabel}
+          buildUserTagLabels={buildUserTagLabels}
+          openPreview={openPreview}
+          handleAssignToTeam={handleAssignToTeam}
+          openForm={openForm}
+          handleDelete={handleDelete}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          handlePageChange={handlePageChange}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSortChange={handleSortChange}
+          onSelectionOption={handleSelectionOption}
+          selectionScope={selectionScope}
+          selectAllLoading={selectAllLoading}
+        />
 
-          {paginatedUsers.length ? (
-            paginatedUsers.map((user) => {
-              const statusLabel = getStatusLabel(user?.status);
-              const userId = resolveUserId(user) || user?._id;
-              const nameInitial = (user?.name || user?.email || '?').charAt(0).toUpperCase();
-              const tagLabels = buildUserTagLabels(user);
-              const rawDesignation = user?.profile?.designation;
-              const normalizedDesignation = typeof rawDesignation === 'string' && rawDesignation.trim()
-                ? rawDesignation.trim()
-                : '-';
-              const designationCellClass = normalizedDesignation === '-'
-                ? 'users-designation-cell users-designation-cell--empty'
-                : 'users-designation-cell';
-              // const MAX_VISIBLE_TAGS = 1;
-              // const visibleTags = tagLabels.slice(0, MAX_VISIBLE_TAGS);
-              // const hiddenCount = Math.max(0, tagLabels.length - MAX_VISIBLE_TAGS);
 
-              return (
-                <div className="users-table-row" key={userId}>
-                  <div className="users-checkbox-cell">
-                    <input
-                      type="checkbox"
-                      checked={selectedItems.includes(userId)}
-                      onChange={(e) => handleSelectItem(e, userId)}
-                    />
-                  </div>
-                  <div className="users-user-cell">
-                    <div>
-                      <div className="users-user-avatar">
-                        {nameInitial}
-                      </div>
-                    </div>
 
-                    <div className="users-user-info">
-                      <div className="users-user-name">{user?.name || '-'}</div>
-                    </div>
-                  </div>
-   
-                  <div className="users-email-cell">{user?.email || '-'}</div>
-                  <div className={designationCellClass}>{normalizedDesignation}</div>
-                  <div className="users-role-cell">
-                    <span className="users-role-badge">
-                      {typeof user?.global_role_id === 'string'
-                        ? user?.global_role_id
-                        : (user?.global_role_id?.name || user?.global_role_id?.title || '-')}
-                    </span>
-                  </div>
-                 
-                  <div className="users-status-cell">
-                    <span className={`users-status-badge status-${statusLabel.toLowerCase()}`}>
-                      {statusLabel === 'Active' ? '✓ Active' : '✗ Inactive'}
-                    </span>
-                  </div>
-                  <div className="users-actions-cell">
-                    <button
-                      className="global-action-btn view"
-                      onClick={() => openPreview(user)}
-                      title="View"
-                      type="button"
-                    >
-                      <Eye size={16} />
-                    </button>
-                    <button
-                      className="global-action-btn"
-                      onClick={() => handleAssignToTeam(userId)}
-                      title="Assign to Team"
-                      type="button"
-                    >
-                      <Plus size={16} />
-                    </button>
-                    <button
-                      className="global-action-btn edit"
-                      onClick={() => openForm(user)}
-                      title="Edit"
-                      type="button"
-                    >
-                      <Edit3 size={16} />
-                    </button>
-                    <button
-                      className="global-action-btn delete"
-                      onClick={() => handleDelete(userId)}
-                      title="Delete"
-                      type="button"
-                    >
-                      <Trash2 size={16} />
-                    </button>
 
-                  </div>
-
-                  {tagLabels.length ? (
-                    <div className="users-row-tags">
-                      {tagLabels.join(', ')}
-                      {/* {visibleTags.join(', ')}
-                      {hiddenCount > 0 ? ` ...+${hiddenCount}` : ''} */}
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })
-          ) : (
-            <div className="users-table-empty">No users found</div>
-          )}
-
-          {/* Pagination */}
-          <div className="users-pagination">
-            <button
-              type="button"
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage <= 1}
-            >
-              Prev
-            </button>
-            <span>{`Page ${currentPage} of ${Math.max(1, totalPages)}`}</span>
-            <button
-              type="button"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages}
-            >
-              Next
-            </button>
-          </div>
-        </div>
 
 
         <BulkAssignToTeam
@@ -1515,9 +2006,17 @@ const UsersManagement = () => {
                       >
                         <option value="">Select Team</option>
                         {teams.map((team) => (
-                          <option key={team._id} value={team._id}>
-                            {team.name}
+                          // <option key={team._id} value={team._id}>
+                          //   {team.name}
+                          // </option>
+                          <option
+                            key={team._id}
+                            value={team._id}
+                            disabled={team.status?.toLowerCase() === "inactive"}
+                          >
+                            {team.name} {team.status === "inactive" ? "(Inactive)" : ""}
                           </option>
+
                         ))}
                       </select>
                     </div>
@@ -1532,9 +2031,10 @@ const UsersManagement = () => {
                         <option value="">Select Sub Team</option>
                         {teams.filter((team) => team._id === formData.team).map((team) => (
                           team.subTeams.map((subTeam) => (
-                            <option key={subTeam._id} value={subTeam._id}>
+                            <option key={subTeam._id} value={subTeam._id} disabled={team.status?.toLowerCase() === "inactive"}>
                               {subTeam.name}
                             </option>
+
                           ))
                         ))}
                       </select>

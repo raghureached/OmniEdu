@@ -85,7 +85,7 @@ const BulkAssignToTeam = ({
               >
                 <option value="">Select Team</option>
                 {resolvedTeams.map((team) => (
-                  <option key={team?._id || team?.id} value={team?._id || team?.id}>
+                  <option key={team?._id || team?.id} value={team?._id || team?.id } disabled={team.status?.toLowerCase() === "inactive"}>
                     {team?.name || team?.teamName || 'Untitled Team'}
                   </option>
                 ))}
@@ -101,7 +101,7 @@ const BulkAssignToTeam = ({
               >
                 <option value="">Select Sub Team (optional)</option>
                 {subTeams.map((subTeam) => (
-                  <option key={subTeam?._id || subTeam?.id} value={subTeam?._id || subTeam?.id}>
+                  <option key={subTeam?._id || subTeam?.id} value={subTeam?._id || subTeam?.id} >
                     {subTeam?.name || subTeam?.teamName || 'Untitled Subteam'}
                   </option>
                 ))}

@@ -185,6 +185,19 @@ export const importGroups = createAsyncThunk(
     }
   }
 );
+export const deactivateGroupsBulk = createAsyncThunk(
+  "groups/deactivateGroupsBulk",
+  async (teamUuids, { rejectWithValue }) => {
+    try {
+      const response = await api.post("/api/admin/deactivateGroups", {
+        ids: teamUuids,
+      });
+      return teamUuids;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || "Failed to deactivate groups");
+    }
+  }
+);
 
 // Group slice
 const groupSlice = createSlice({
@@ -221,8 +234,12 @@ const groupSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // Fetch Groups
-      .addCase(fetchGroups.pending, (state) => {
-        state.loading = true;
+      .addCase(fetchGroups.pending, (state,action) => {
+        // state.loading = true;
+        const silent = action.meta.arg?.silent;
+  if (!silent) {
+    state.loading = true;   // show loader normally
+  }
         state.error = null;
       })
       // .addCase(fetchGroups.fulfilled, (state, action) => {
@@ -231,7 +248,7 @@ const groupSlice = createSlice({
       //   state.totalCount = action.payload.totalCount;
       // })
       .addCase(fetchGroups.fulfilled, (state, action) => {
-        state.loading = false;
+        // state.loading = false;
         const groupsArray = Array.isArray(action.payload) ? action.payload : [];
         state.groups = groupsArray.map((team) => ({
           ...team,
@@ -246,10 +263,18 @@ const groupSlice = createSlice({
         state.totalCount = state.groups.length;
         applyMemberCountsToGroups(state);
         console.log("groups in slice", action.payload);
+        const silent = action.meta.arg?.silent;
+  if (!silent) {
+    state.loading = false;
+  }
       })
 
       .addCase(fetchGroups.rejected, (state, action) => {
-        state.loading = false;
+        // state.loading = false;
+        const silent = action.meta.arg?.silent;
+  if (!silent) {
+    state.loading = false;
+  }
         state.error = action.payload?.message || 'Failed to fetch groups';
       })
       .addCase(createTeam.pending, (state) => {
@@ -438,7 +463,17 @@ const groupSlice = createSlice({
           }
         });
         applyMemberCountsToGroups(state);
+      })
+      .addCase(deactivateGroupsBulk.fulfilled, (state, action) => {
+        const deactivatedIds = action.payload;
+      
+        state.groups = state.groups.map(g =>
+          deactivatedIds.includes(g.uuid)
+            ? { ...g, status: "Inactive", membersCount: 0, subTeams: g.subTeams.map(st => ({ ...st, membersCount: 0 })) }
+            : g
+        );
       });
+      
   },
 });
 

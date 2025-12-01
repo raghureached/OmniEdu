@@ -82,7 +82,7 @@ const NotificationCard = ({
           onClick={() => onClose(id)}
           aria-label="Dismiss notification"
         >
-          <X size={16} />
+          <X size={16}/>
         </button>
       )}
       {duration ? (

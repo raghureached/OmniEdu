@@ -2,22 +2,46 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
 
 // Async thunks for user management
+// export const fetchUsers = createAsyncThunk(
+//   'users/fetchUsers',
+//   async (filters, { rejectWithValue }) => {
+//     console.log("filters",filters)
+//     try {
+//       const response = await api.get('/api/admin/getUsers', { params: filters })
+//       // console.log(response.data)
+//       console.log("users in slice:",response.data)
+//       return {
+//         users: response.data.data,
+
+//         pagination: response.data.pagination,
+//       };
+//     } catch (error) {
+//       return rejectWithValue(error.response.data);
+//     }
+//   }
+// );
 export const fetchUsers = createAsyncThunk(
   'users/fetchUsers',
   async (filters, { rejectWithValue }) => {
     try {
-      const response = await api.get('/api/admin/getUsers', { params: filters })
-      // console.log(response.data)
+      // First, get all users without pagination for sorting
+      const allUsersResponse = await api.get('/api/admin/getUsers');
+
+      // Then get paginated users
+      const paginatedResponse = await api.get('/api/admin/getUsers', { 
+        params: filters 
+      });
+
       return {
-        users: response.data.data,
-        pagination: response.data.pagination,
+        users: paginatedResponse.data.data,
+        allUsers: allUsersResponse.data.data, // All users for sorting
+        pagination: paginatedResponse.data.pagination,
       };
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
   }
 );
-
 export const createUser = createAsyncThunk(
   'users/createUser',
   async (userData, { rejectWithValue }) => {
@@ -141,11 +165,12 @@ const userSlice = createSlice({
   name: 'users',
   initialState: {
     users: [],
+    allUsers:[],
     totalCount: 0,
     loading: false,
     error: null,
     currentPage: 1,
-    pageSize: 10,
+    pageSize: 20,
     totalPages: 1,
     hasMore: false,
     filters: {
@@ -153,7 +178,7 @@ const userSlice = createSlice({
       role: '',
       search: '',
       page: 1,
-      limit: 6,
+      limit: 20,
     },
     selectedUsers: [],
     importSuccess: false,
@@ -196,21 +221,27 @@ const userSlice = createSlice({
         role: '',
         search: '',
         page: 1,
-        limit: state.pageSize || 6,
+        limit: state.pageSize || 20,
       };
     },
   },
   extraReducers: (builder) => {
     builder
       // Fetch Users
-      .addCase(fetchUsers.pending, (state) => {
-        state.loading = true;
+      .addCase(fetchUsers.pending, (state,action) => {
+        // state.loading = true;
+        const isTyping = action.meta?.arg?.search !== undefined;
+  if (isTyping) {
+    // no loader during search
+    return;
+  }
         state.error = null;
       })
       .addCase(fetchUsers.fulfilled, (state, action) => {
         state.loading = false;
         const payload = action.payload || {};
         const users = Array.isArray(payload.users) ? payload.users : [];
+        state.allUsers = action.payload.allUsers; // Save all users for sorting
         const pagination = payload.pagination || {};
         const requestParams = action.meta?.arg || {};
 

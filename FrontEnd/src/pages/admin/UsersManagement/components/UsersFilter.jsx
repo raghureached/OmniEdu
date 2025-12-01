@@ -158,7 +158,7 @@ const UsersFilter = ({
         <button className="users_management-btn-import" onClick={() => document.getElementById('import-users').click()}>
           <span className="users_management-btn-icon">↑</span> Import Users
         </button>
-        <button className="users_management-btn-export" onClick={handleExportUsers}>
+        <button className="users_management-btn-export" onClick={handleExportUsers} disabled={selectedUsers.length === 0}>
           <span className="users_management-btn-icon">↓</span> Export Users & Groups
         </button>
         <button 

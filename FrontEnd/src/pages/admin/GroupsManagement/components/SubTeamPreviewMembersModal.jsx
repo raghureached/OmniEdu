@@ -26,16 +26,25 @@ const SubTeamPreviewMembersModal = ({ isOpen, onClose, title, members = [] }) =>
   const filteredMembers = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
+    const sorter = (a, b) => {
+      const aName = (a?.name || a?.fullName || '').toString().trim().toLowerCase();
+      const bName = (b?.name || b?.fullName || '').toString().trim().toLowerCase();
+      if (aName < bName) return -1;
+      if (aName > bName) return 1;
+      return 0;
+    };
+
     if (!normalizedSearch) {
-      return members;
+      return [...members].sort(sorter);
     }
 
-    return members.filter((member) => {
-      const name = (member.name || member.fullName || '').toLowerCase();
-      const email = (member.email || '').toLowerCase();
-
-      return name.includes(normalizedSearch) || email.includes(normalizedSearch);
-    });
+    return members
+      .filter((member) => {
+        const name = (member.name || member.fullName || '').toLowerCase();
+        const email = (member.email || '').toLowerCase();
+        return name.includes(normalizedSearch) || email.includes(normalizedSearch);
+      })
+      .sort(sorter);
   }, [members, searchTerm]);
 
   const totalPages = Math.max(1, Math.ceil(filteredMembers.length / membersPerPage));

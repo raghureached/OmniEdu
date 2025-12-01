@@ -7,6 +7,35 @@ const SubTeam = require("../../models/subTeams_model");
 const Designation = require("../../models/desginations_model");
 const User = require("../../models/users_model");
 const Organization = require("../../models/organization_model");
+// --- Validation helpers ---
+async function ensureActiveTeam(teamId) {
+  if (!teamId) return;
+
+  const t = await Team.findById(teamId);
+  if (!t) throw new Error("Team not found");
+
+  if (String(t.status || "").toLowerCase() !== "active") {
+    throw new Error(`Team "${t.name}" is inactive. Cannot assign users to inactive teams.`);
+  }
+
+  return t;
+}
+
+async function ensureActiveSubteam(subteamId) {
+  if (!subteamId) return;
+
+  const st = await SubTeam.findById(subteamId);
+  if (!st) throw new Error("Subteam not found");
+
+  const parentTeam = await Team.findById(st.team_id);
+  if (!parentTeam) throw new Error("Parent team not found");
+
+  if (String(parentTeam.status || "").toLowerCase() !== "active") {
+    throw new Error(`Subteam "${st.name}" belongs to inactive team "${parentTeam.name}".`);
+  }
+
+  return st;
+}
 
 const addUser = async (req, res) => {
   const session = await mongoose.startSession();
@@ -25,6 +54,16 @@ const addUser = async (req, res) => {
       invite,
       department_id
     } = req.body;
+    // ❗ BLOCK assigning users to inactive team/subteam
+    try {
+      await ensureActiveTeam(team);
+      await ensureActiveSubteam(subteam);
+    } catch (err) {
+      return res.status(400).json({
+        isSuccess: false,
+        message: err.message
+      });
+    }
 
     const password = "12345678";
 
@@ -143,6 +182,17 @@ const editUser = async (req, res) => {
       designation,
       custom1,
     } = req.body;
+
+    // ❗ Prevent editing user into inactive teams/subteams
+    try {
+      await ensureActiveTeam(team);
+      await ensureActiveSubteam(subteam);
+    } catch (err) {
+      return res.status(400).json({
+        isSuccess: false,
+        message: err.message
+      });
+    }
 
     const updatePayload = {
       name,
@@ -505,17 +555,17 @@ const bulkDeleteUsers = async (req, res) => {
       });
     }
 
-    // Step 1: Fetch users to get their UUIDs
-    const usersToDelete = await User.find({ _id: { $in: ids } }, { uuid: 1 });
+    // Step 1: Fetch users to ensure they exist and get their ObjectIds
+    const usersToDelete = await User.find({ _id: { $in: ids } }, { _id: 1 });
 
-    const uuidsToDelete = usersToDelete.map((user) => user.uuid);
+    const objectIdsToDelete = usersToDelete.map((user) => user._id);
 
     // Step 2: Delete users by _id
-    const deletedUsers = await User.deleteMany({ _id: { $in: ids } });
+    const deletedUsers = await User.deleteMany({ _id: { $in: objectIdsToDelete } });
 
-    // Step 3: Delete associated UserProfiles by user_id (uuid)
+    // Step 3: Delete associated UserProfiles by user_id (ObjectId)
     const deletedProfiles = await UserProfile.deleteMany({
-      user_id: { $in: uuidsToDelete },
+      user_id: { $in: objectIdsToDelete },
     });
     await logAdminActivity(req, "delete", `Users and their profiles deleted successfully: ${deletedUsers.deletedCount}`);
     return res.status(200).json({
@@ -539,11 +589,20 @@ const bulkDeleteUsers = async (req, res) => {
 
 const bcrypt = require("bcrypt");
 const logAdminActivity = require("./admin_activity");
-const { sendMail } = require("../../utils/Emailer");
 
 const bulkEditUsers = async (req, res) => {
   try {
     const { ids, name, password, role, profileUpdates } = req.body;
+    // ❗ Prevent assigning users to inactive team/subteam
+    try {
+      if (team) await ensureActiveTeam(team);
+      if (subteam) await ensureActiveSubteam(subteam);
+    } catch (err) {
+      return res.status(400).json({
+        isSuccess: false,
+        message: err.message
+      });
+    }
 
     if (!Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({
@@ -606,7 +665,9 @@ const bulkEditUsers = async (req, res) => {
 
 const importUsers = async (req, res) => {
   try {
+
     const users = await User.insertMany(req.body)
+
     await logAdminActivity(req, "import", `Users imported successfully: ${users.length}`);
     return res.status(200).json({
       isSuccess: true,

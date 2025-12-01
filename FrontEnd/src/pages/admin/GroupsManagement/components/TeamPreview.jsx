@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Users, Trash2 } from 'lucide-react';
 import { GoOrganization, GoX } from 'react-icons/go';
 import { useSelector } from 'react-redux';
@@ -110,6 +110,17 @@ const TeamPreview = ({
   };
 
   const subTeams = Array.isArray(latestTeam?.subTeams) ? latestTeam.subTeams : [];
+  const sortedSubTeams = useMemo(() => {
+    const list = [...subTeams];
+    list.sort((a, b) => {
+      const aName = (a?.name || a?.subTeamName || '').toString().trim().toLowerCase();
+      const bName = (b?.name || b?.subTeamName || '').toString().trim().toLowerCase();
+      if (aName < bName) return -1;
+      if (aName > bName) return 1;
+      return 0;
+    });
+    return list;
+  }, [subTeams]);
   if (!isOpen) {
     return null;
   }
@@ -199,12 +210,31 @@ const TeamPreview = ({
       onClose && onClose();
     }
   };
+  // const handleInputChange = (e) => {
+  //   const { name, value } = e.target;
+  //   setFormData(prev => ({ ...prev, [name]: value }));
+  // };
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "subTeamName") {
+      const regex = /^[A-Za-z0-9\/\-\s]*$/; // allow empty while typing
+      if (!regex.test(value)) {
+        return; // ignore illegal characters
+      }
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+
+    const regex = /^[A-Za-z0-9\/\-\s]+$/;
+    if (!regex.test(formData.subTeamName)) {
+      alert("Subteam name may only contain letters, numbers, '/', and '-'.");
+      return;
+    }
 
     const mappedPayload = {
       team_id: latestTeam._id,
@@ -219,7 +249,7 @@ const TeamPreview = ({
         }
         await updateSubTeam(id, mappedPayload);
       } else {
-        await createSubTeam({data: mappedPayload});  
+        await createSubTeam({ data: mappedPayload });
       }
       handleCloseForm();
     } catch (submitError) {
@@ -283,8 +313,8 @@ const TeamPreview = ({
   const containerClass = inline ? 'team-preview-inline-container' : 'addOrg-modal-overlay';
   const contentClass = inline ? 'addOrg-modal-content team-preview-inline-card' : 'addOrg-modal-content';
   const contentStyle = inline
-    ? { maxWidth: '1500px', width: '100%',borderRadius: '1px' ,boxShadow: 'none' }
-    : {  };
+    ? { maxWidth: '1500px', width: '100%', borderRadius: '1px', boxShadow: 'none' }
+    : {};
 
   const formContent = (
     <>
@@ -326,6 +356,9 @@ const TeamPreview = ({
                 className="addOrg-form-input"
                 required
               />
+              <p style={{ color: '#dc2626', fontSize: '12px', marginLeft: "4px" }}>
+                Only letters, numbers, / and - are allowed in Sub Team Name.
+              </p>
             </div>
           </div>
         </div>
@@ -374,20 +407,20 @@ const TeamPreview = ({
         ) : (
           <div className="addOrg-form-section" style={{ padding: 12 }}>
             <div className="table-container" style={{ marginTop: 12 }}>
-              <div className="table-header" style={{gridTemplateColumns: "50px 250px 250px 250px",color:'rgb(2,2,2)'}}>
+              <div className="table-header" style={{ gridTemplateColumns: "50px 250px 250px 250px", color: 'rgb(2,2,2)' }}>
                 <div style={{ width: 24 }}></div>
                 <div className="col-team">Sub Team Name</div>
                 <div className="col-members">Members</div>
                 <div className="col-actions">Actions</div>
               </div>
 
-              {subTeams.length === 0 ? (
-                <div className="table-row" style={{gridTemplateColumns: "50px 250px 250px 250px"}}>
+              {sortedSubTeams.length === 0 ? (
+                <div className="table-row" style={{ gridTemplateColumns: "50px 250px 250px 250px" }}>
                   <div style={{ gridColumn: '1 / -1', color: '#6b7280' }}>No subteams found.</div>
                 </div>
               ) : (
-                subTeams.map((st) => (
-                  <div key={st._id || st.uuid || st.id} className="table-row" style={{gridTemplateColumns: "50px 250px 250px 250px"}}>
+                sortedSubTeams.map((st) => (
+                  <div key={st._id || st.uuid || st.id} className="table-row" style={{ gridTemplateColumns: "50px 250px 250px 250px" }}>
                     <div style={{ width: 24 }}></div>
                     <div className="col-team">{st.name}</div>
                     <button
@@ -398,7 +431,7 @@ const TeamPreview = ({
                     >
                       {st.membersCount || 0}
                     </button>
-                    <div className="col-actions" style={{ display: 'flex', gap: 10,justifyContent:'center' }}>
+                    <div className="col-actions" style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
                       <button
                         className="global-action-btn edit"
                         onClick={() => handleEdit(st)}
@@ -420,7 +453,7 @@ const TeamPreview = ({
             </div>
 
           </div>
-          
+
         )}
       </div>
       <TeamPreviewMembersModal
