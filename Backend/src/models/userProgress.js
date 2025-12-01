@@ -16,11 +16,10 @@ const userProgressSchema = new mongoose.Schema(
     assignment_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "ForUserAssignment",
-      required: true,
     },
     status: {
       type: String,
-      enum: ["not_started", "in_progress", "completed", "overdue"],
+      enum: ["not_started", "in_progress", "completed", "overdue", "enrolled"],
       default: "not_started",
     },
     progress_percent: {

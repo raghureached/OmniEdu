@@ -1,32 +1,31 @@
 import React, { useState } from 'react';
-import './Assigned.css';
+import './Enrolled.css';
 import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useDispatch } from 'react-redux';
-import { fetchUserAssignments } from '../../../store/slices/userAssignmentSlice';
+import { fetchUserEnrollments } from '../../../store/slices/userAssignmentSlice';
 import { CourseCard } from '../Cards/ContentCards';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 
-const Assigned = () => {
+const Enrolled = () => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   useEffect(() => {
     setLoading(true);
-    dispatch(fetchUserAssignments()).then(() => setLoading(false));
+    dispatch(fetchUserEnrollments()).then(() => setLoading(false));
   }, []);
-  const [activeTab, setActiveTab] = useState('training');
 
-  const assignments = useSelector((state) => state.userAssignments.assignments);
+  const enrolled = useSelector((state) => state.userAssignments.enrolled);
 
-  const currentItems= assignments;
+  const currentItems= enrolled;
   if(loading){
-    return <LoadingScreen text="Loading Assignments" />
+    return <LoadingScreen text="Loading Enrollments" />
   }
 
   return (
     <div className="assigned-container">
       <div className="assigned-header">
-        <p>These are assigned by your organization</p>
+        <p>These are the content you are enrolled in</p>
         
       </div>
 
@@ -40,7 +39,7 @@ const Assigned = () => {
           </div>
         ) : (
           <div className="assigned-empty-state">
-            <p>You currently have no {activeTab === 'training' ? 'assigned trainings' : 'assignments'}.</p>
+            <p>You currently have no Enrollments.</p>
           </div>
         )}
       </div>
@@ -48,4 +47,4 @@ const Assigned = () => {
   );
 };
 
-export default Assigned;
+export default Enrolled;

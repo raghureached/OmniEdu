@@ -161,16 +161,16 @@ const UserLayout = () => {
               {!sidebarCollapsed && <span className='user_sidebar_names'>Assigned</span>}
             </Link>
           </li>
-          <li>
+          {/* <li>
             <Link to="/user/additional" className={isActive('/user/additional') ? 'user_link_active' : ''}>
               <Award size={20} />
               {!sidebarCollapsed && <span className='user_sidebar_names'>Additional</span>}
             </Link>
-          </li>
+          </li> */}
           <li>
-            <Link to="/user/mandatory" className={isActive('/user/mandatory') ? 'user_link_active' : ''}>
+            <Link to="/user/enrolled" className={isActive('/user/enrolled') ? 'user_link_active' : ''}>
               <Shield size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Mandatory</span>}
+              {!sidebarCollapsed && <span className='user_sidebar_names'>Enrolled</span>}
             </Link>
           </li>
           <li>
@@ -218,7 +218,7 @@ const UserLayout = () => {
               {location.pathname.includes('/user/learning-hub') && 'Learning Hub'}
               {location.pathname.includes('/user/assigned') && 'Assigned Training'}
               {location.pathname.includes('/user/additional') && 'Additional Training'}
-              {location.pathname.includes('/user/mandatory') && 'Mandatory Training'}
+              {location.pathname.includes('/user/enrolled') && 'Enrolled Training'}
               {location.pathname.includes('/user/catalog') && 'Course Catalog'}
               {location.pathname.includes('/user/activity-history') && 'Activity History'}
               {location.pathname.includes('/user/profile') && 'User Profile'}

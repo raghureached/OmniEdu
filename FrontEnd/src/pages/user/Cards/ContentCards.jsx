@@ -1,28 +1,28 @@
 import React, { useState } from 'react';
 import './ContentCards.css';
-import {Book} from "lucide-react"
-import ModulePreview from '../../../components/common/Preview/Preview';
 import { useNavigate } from 'react-router-dom';
+import api from '../../../services/api';
 
 export const CourseCard = ({ 
   data,
   status,
-  progressPct = 0   ,
+  progressPct = 0,
   contentType 
 }) => {
   // console.log(data)
-    const [previewModal, setPreviewModal] = useState(false);
+    
     const navigate = useNavigate();
     const buttonStatus = {
         "assigned": "Start",
         "in_progress": "Resume",
         "completed": "View",
-        "expired": "Expired"
+        "expired": "Expired",
+        "not_enrolled": "Enroll"
     };
     const contentIcons = {
         "Module":"",
         "Assessment": "",
-        "Surevy":"",
+        "Survey":"",
         "Learning Path":"",
     }
     const getIcon = (contentType) => {
@@ -31,31 +31,15 @@ export const CourseCard = ({
     const getDuration = (duration) => {
         return `${(duration/60).toFixed(1)}`;
     }
-  const renderStars = (rating) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
-    
-    for (let i = 0; i < 5; i++) {
-      if (i < fullStars) {
-        stars.push(<span key={i} className="star full">★</span>);
-      } else if (i === fullStars && hasHalfStar) {
-        stars.push(<span key={i} className="star half">★</span>);
-      } else {
-        stars.push(<span key={i} className="star empty">★</span>);
-      }
-    }
-    return stars;
-  };
-  const buttonStatusFunc = (status) => {
-    // console.log(data)
-    // console.log(contentType)
+  
+  const buttonStatusFunc = async (status) => {
     const type = contentType.toLowerCase().replace(/\s+/g, '');
     if(!type){
       return;
     }
     if(status === "assigned") {
-      // console.log(type)
+        //api to change status to in_progress
+        const response = await api.post(`/api/user/updateStatus/${data._id}/in_progress`);
         navigate(`/${type}/${data.uuid}`);
     }
     if(status === "in_progress") {
@@ -67,6 +51,11 @@ export const CourseCard = ({
     if(status === "expired") {
       return ;
     }
+    if(status === "not_enrolled"){
+      const response = await api.post(`/api/user/enroll/${data.uuid}/${type}`);
+      
+    }
+      
   }
   // circular progress metrics
   const size = 44;
@@ -95,7 +84,7 @@ export const CourseCard = ({
         <p className="course-description">{data.description.slice(0, 100)}...</p>
         <div className="course-footer">
           <div className="rating">
-            <div className="progress" aria-label={`Progress ${Math.round(pct)}%`} role="img">
+            {progressPct >= 0 && <div className="progress" aria-label={`Progress ${Math.round(pct)}%`} role="img">
               <svg className="progress-ring" width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
                 <circle
                   className="progress-ring__bg"
@@ -119,11 +108,11 @@ export const CourseCard = ({
                   {Math.round(pct)}%
                 </text>
               </svg>
-            </div>
+            </div>}
             <div className="stars">
             </div>
           </div>
-        <button className="btn-primary" onClick={()=>buttonStatusFunc(status)}>{buttonStatus[status]}</button>
+        <button className="btn-primary" onClick={()=>buttonStatusFunc(status)} disabled={data.inProgress}>{buttonStatus[status]}</button>
         </div>
       </div>
     </div>

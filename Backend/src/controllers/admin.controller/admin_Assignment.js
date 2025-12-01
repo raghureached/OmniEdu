@@ -6,6 +6,7 @@ const LearningPath = require("../../models/learningPath_model");
 const OrganizationAssessments = require("../../models/organizationAssessments_model");
 const Module = require("../../models/moduleOrganization_model");
 const OrganizationSurveys = require("../../models/organizationSurveys_model");
+const { sendMail } = require("../../utils/Emailer");
 // If you also track user progress
 // const Progress = require("../models/progress.model");
 
@@ -21,7 +22,7 @@ const createAssignment = async (req, res) => {
       contentName,
       contentType,
       groups,
-      // additional frontend fields
+      sendEmail,
       bulkEmails,
       enableReminder,
       resetProgress,
@@ -68,7 +69,7 @@ const createAssignment = async (req, res) => {
           due_date: e.due_date ? new Date(e.due_date) : null,
         }))
       : [];
-    console.log(elementSchedulesEffective)
+    // console.log(elementSchedulesEffective)
     let assignment;
     // Determine if assigned individually or via groups based on presence of assignedUsers/groups
     const isIndividual = Array.isArray(assignedUsers) && assignedUsers.length > 0 && (!groups || groups.length === 0);
@@ -101,6 +102,7 @@ const createAssignment = async (req, res) => {
         customIntervalValue: isRecurring && recurringInterval === "custom" ? Number(customIntervalValue || 0) : 0,
         customIntervalUnit: isRecurring && recurringInterval === "custom" ? (customIntervalUnit || "days") : "days",
         elementSchedules: elementSchedulesEffective,
+        orgAssignment: true,
       });
     }else{
       
@@ -127,6 +129,7 @@ const createAssignment = async (req, res) => {
       customIntervalValue: isRecurring && recurringInterval === "custom" ? Number(customIntervalValue || 0) : 0,
       customIntervalUnit: isRecurring && recurringInterval === "custom" ? (customIntervalUnit || "days") : "days",
       elementSchedules: elementSchedulesEffective,
+      orgAssignment: true,
     });
   }
     // Create progress records for targeted users
@@ -179,6 +182,7 @@ const createAssignment = async (req, res) => {
               completed_at: null,
               last_activity_at: null,
               ...(elementsProgress.length ? { elements: elementsProgress } : {}),
+              orgAssignment: true,
             },
           },
           upsert: true,
@@ -198,6 +202,9 @@ const createAssignment = async (req, res) => {
       await OrganizationAssessments.updateOne({ _id: assignment.contentId }, {status:"Published"});
     }else if(content_type === "OrganizationSurvey"){
       await OrganizationSurveys.updateOne({ _id: assignment.contentId }, {status:"Published"});
+    }
+    if(sendEmail){
+      await sendMail();
     }
   }catch(error){
     console.log(error)

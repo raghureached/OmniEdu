@@ -54,6 +54,19 @@ const userProfileSchema = new mongoose.Schema(
       default: null,
       trim: true,
     },
+    stars:{
+      type: Number,
+      default: 0,
+    },
+    badges: {
+      type: Number,
+      default: 0,
+    },
+    credits: {
+      type: Number,
+      default: 0,
+    },
+
   },
   {
     timestamps: true,

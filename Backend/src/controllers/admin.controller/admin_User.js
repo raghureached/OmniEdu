@@ -589,6 +589,7 @@ const bulkDeleteUsers = async (req, res) => {
 
 const bcrypt = require("bcrypt");
 const logAdminActivity = require("./admin_activity");
+const { sendMail } = require("../../utils/Emailer");
 
 const bulkEditUsers = async (req, res) => {
   try {

@@ -69,6 +69,7 @@ import SurveyView from './pages/user/SurveyView/SurveyView';
 import Navbar from './components/layouts/Navbar/Navbar';
 import NavbarOnly from './components/layouts/NavbarOnly/NavbarOnly';
 import ChangePassword from './pages/auth/ChangePassword/ChangePassword';
+import Enrolled from './pages/user/Enrolled/Enrolled';
 function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -115,7 +116,7 @@ function App() {
             <Route path="activity-history" element={<ActivityHistory />} />
             <Route path="help-center" element={<HelpCenter />} />
             <Route path="assigned" element={<Assigned />} />
-            <Route path="additional" element={<Additional />} />
+            <Route path="enrolled" element={<Enrolled />} />
             <Route path="mandatory" element={<Mandatory />} />
             <Route path="change-password" element={<ChangePassword />} />
           </Route>

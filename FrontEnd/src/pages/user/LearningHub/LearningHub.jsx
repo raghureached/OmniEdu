@@ -3,9 +3,51 @@ import './LearningHub.css';
 // Import icons from react-icons
 import { FaCheckCircle, FaHourglassHalf, FaPlayCircle, FaExclamationTriangle } from 'react-icons/fa';
 import { FaMedal, FaStar, FaAward } from 'react-icons/fa';
+import api from '../../../services/api';
+import { CourseCard } from '../Cards/ContentCards';
 
 const LearningHub = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({ enrolled: 0, completed: 0, in_progress: 0, expired: 0 });
+  const [inProgressModules, setInProgressModules] = useState([]);
+  
+  const [rewards, setRewards] = useState({ stars: 0, badges: 0, credits: 0 });
+
+  useEffect(() => {
+    // Fetch stats from API
+    const fetchStats = async () => {
+      try {
+        const response = await api.get('/api/user/getStats');
+        const data = await response.data.data;
+        setStats(data);
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    };
+    const fetchRewards = async () => {
+      try {
+        const response = await api.get('/api/user/getUserRewards');
+        const data = await response.data.data;
+
+        setRewards(data);
+      } catch (error) {
+        console.error('Error fetching rewards:', error);
+      }
+    };
+    fetchStats();
+    fetchRewards();
+    const fetchInProgress = async () => {
+      try {
+        const response = await api.get('/api/user/getInProgress');
+        const data = await response.data;
+        console.log(data);
+        setInProgressModules(data);
+      } catch (error) {
+        console.error('Error fetching in progress modules:', error);
+      }
+    };
+    fetchInProgress();
+  }, [])
   
   // Simulate loading data from API
   useEffect(() => {
@@ -17,32 +59,7 @@ const LearningHub = () => {
   }, []);
   
   // Mock data for learning modules with real online images
-  const inProgressModules = [
-    { 
-      id: 1, 
-      title: 'Introduction to React', 
-      progress: 60, 
-      dueDate: '2023-12-15',
-      image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/React-icon.svg/1200px-React-icon.svg.png',
-      lastAccessed: '2 days ago'
-    },
-    { 
-      id: 2, 
-      title: 'Advanced JavaScript Concepts', 
-      progress: 30, 
-      dueDate: '2023-12-20',
-      image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/JavaScript-logo.png/800px-JavaScript-logo.png',
-      lastAccessed: 'Yesterday'
-    },
-    { 
-      id: 5, 
-      title: 'Responsive Web Design', 
-      progress: 75, 
-      dueDate: '2023-12-10',
-      image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/CSS3_logo_and_wordmark.svg/1200px-CSS3_logo_and_wordmark.svg.png',
-      lastAccessed: 'Today'
-    }
-  ];
+
 
   const recommendedModules = [
     { 
@@ -129,7 +146,7 @@ const LearningHub = () => {
                   </div>
                   <div className="learning-stat-info">
                     <span className="learning-stat-label">Completed</span>
-                    <span className="learning-stat-value">0</span>
+                    <span className="learning-stat-value">{stats.completed}</span>
                   </div>
                 </div>
                 
@@ -139,7 +156,7 @@ const LearningHub = () => {
                   </div>
                   <div className="learning-stat-info">
                     <span className="learning-stat-label">In Progress</span>
-                    <span className="learning-stat-value">0</span>
+                    <span className="learning-stat-value">{stats.in_progress}</span>
                   </div>
                 </div>
                 
@@ -149,7 +166,7 @@ const LearningHub = () => {
                   </div>
                   <div className="learning-stat-info">
                     <span className="learning-stat-label">Not Started</span>
-                    <span className="learning-stat-value">0</span>
+                    <span className="learning-stat-value">{stats.enrolled - stats.completed - stats.in_progress}</span>
                   </div>
                 </div>
                 
@@ -159,7 +176,7 @@ const LearningHub = () => {
                   </div>
                   <div className="learning-stat-info">
                     <span className="learning-stat-label">Overdue</span>
-                    <span className="learning-stat-value">0</span>
+                    <span className="learning-stat-value">{stats.expired}</span>
                   </div>
                 </div>
               </div>
@@ -175,7 +192,7 @@ const LearningHub = () => {
                   </div>
                   <div className="learning-achievement-info">
                     <span className="learning-achievement-label">Credits</span>
-                    <span className="learning-achievement-value">0</span>
+                    <span className="learning-achievement-value">{rewards.credits}</span>
                   </div>
                 </div>
                 
@@ -185,17 +202,17 @@ const LearningHub = () => {
                   </div>
                   <div className="learning-achievement-info">
                     <span className="learning-achievement-label">Stars</span>
-                    <span className="learning-achievement-value">0</span>
+                    <span className="learning-achievement-value">{rewards.stars}</span>
                   </div>
                 </div>
                 
                 <div className="learning-achievement-item">
-                  <div className="learning-achievement-icon badges">
+                  <div className="learning-achievement-icon">
                     <FaAward />
                   </div>
                   <div className="learning-achievement-info">
                     <span className="learning-achievement-label">Badges</span>
-                    <span className="learning-achievement-value">0</span>
+                    <span className="learning-achievement-value">{rewards.badges}</span>
                   </div>
                 </div>
               </div>
@@ -237,35 +254,8 @@ const LearningHub = () => {
           {isLoading ? (
             renderSkeleton(2)
           ) : (
-            inProgressModules.map(module => (
-              <div key={module.id} className="learning-module-card">
-                <div className="learning-module-image">
-                  <img src={module.image} alt={module.title} />
-                  <div className="learning-progress-indicator">
-                    <div className="learning-progress-text">{module.progress}%</div>
-                  </div>
-                </div>
-                <div className="learning-module-content">
-                  <h4 className="learning-module-title">{module.title}</h4>
-                  <div className="learning-progress-bar">
-                    <div 
-                      className="learning-progress" 
-                      style={{ width: `${module.progress}%` }}
-                    ></div>
-                  </div>
-                  <div className="learning-module-info">
-                    <div className="learning-info-item">
-                      <span className="learning-info-label">Due:</span>
-                      <span className="learning-info-value">{module.dueDate}</span>
-                    </div>
-                    <div className="learning-info-item">
-                      <span className="learning-info-label">Last accessed:</span>
-                      <span className="learning-info-value">{module.lastAccessed}</span>
-                    </div>
-                  </div>
-                  <button className="learning-btn-continue">Continue Learning</button>
-                </div>
-              </div>
+            inProgressModules?.map(m => (
+              <CourseCard key={m.id} data={m.assignment_id.contentId} status="in_progress" contentType={m.contentType} progressPct={m.progress_pct} />
             ))
           )}
         </div>

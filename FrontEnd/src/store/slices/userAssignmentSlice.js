@@ -13,6 +13,17 @@ export const fetchUserAssignments = createAsyncThunk(
         }
     }
 );
+export const fetchUserEnrollments = createAsyncThunk(
+    "userAssignments/fetchUserEnrollments",
+    async (filters, { rejectWithValue }) => {
+        try {
+            const response = await api.get("api/user/enrolledbyUser");
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response.data);
+        }
+    }
+);
 
 
 
@@ -22,6 +33,7 @@ const userAssignmentSlice = createSlice({
     name: "userAssignment",
     initialState: {
         assignments: [],
+        enrolled: [],
         loading: false,
         error: null,
         filters: {},
@@ -44,6 +56,18 @@ const userAssignmentSlice = createSlice({
             state.loading = false;
             state.error = action.payload;
         })
+        .addCase(fetchUserEnrollments.pending, (state) => {
+            state.loading = true;
+        })
+        .addCase(fetchUserEnrollments.fulfilled, (state, action) => {
+            state.loading = false;
+            state.enrolled = action.payload;
+        })
+        .addCase(fetchUserEnrollments.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.payload;
+        })  
+        
     }
 });
 

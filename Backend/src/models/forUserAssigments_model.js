@@ -56,7 +56,7 @@ const assignmentSchema = new mongoose.Schema(
     recurringInterval: { type: String, default: "" },
     customIntervalValue: { type: Number, default: 0 },
     customIntervalUnit: { type: String, default: "days" },
-    // Learning Path advanced element scheduling
+    orgAssignment: { type: Boolean, default: true },
     elementSchedules: [
       {
         elementId: { type: mongoose.Schema.Types.ObjectId, required: true },

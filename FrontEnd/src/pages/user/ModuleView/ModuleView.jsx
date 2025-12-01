@@ -214,8 +214,20 @@ const ModuleView = ({id}) => {
         alert('Draft saved (dummy action).');
     };
 
-    const handleComplete = () => {
-        alert('Module marked complete (dummy action).');
+    const handleComplete = async() => {
+        try {
+            const rewards = {
+                stars: data.stars,
+                badges: data.badges,
+                credits: data.credits,
+            }
+            const res = await api.post(`/api/user/markComplete/${data._id}`, rewards);
+            if (res.status === 200) {
+                alert('Module marked complete!');
+            }
+        } catch (error) {
+            console.error('Error marking module complete:', error);
+        }
     };
 
     // Feedback helpers
