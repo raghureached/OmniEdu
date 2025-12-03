@@ -134,6 +134,12 @@
   overflow: hidden;
   margin-bottom: 15px;
 }
+.learning-learning-section{
+  background-color: white;
+  margin-bottom: 20px ;
+  padding: 20px;
+  border-radius: 14px;
+}
 
 .learning-progress {
   height: 100%;
@@ -388,6 +394,20 @@
   font-size: 18px;
   font-weight: 600;
   color: #111827;
+}
+.learning-achievement-icon.credits {
+  background: linear-gradient(135deg, #f6e05e, #ecc94b);
+  color: #744210;
+}
+
+.learning-achievement-icon.stars {
+  background: linear-gradient(135deg, #fbd38d, #f6ad55);
+  color: #7b341e;
+}
+
+.learning-achievement-icon.badgesss {
+  background: linear-gradient(135deg, #90cdf4, #4299e1);
+  color: #1a365d;
 }
 
 /* Achievements Panel */

@@ -9,8 +9,6 @@ export const CourseCard = ({
   progressPct = 0,
   contentType 
 }) => {
-  // console.log(data)
-    
     const navigate = useNavigate();
     const buttonStatus = {
         "assigned": "Start",
@@ -112,7 +110,7 @@ export const CourseCard = ({
             <div className="stars">
             </div>
           </div>
-        <button className="btn-primary" onClick={()=>buttonStatusFunc(status)} disabled={data.inProgress}>{buttonStatus[status]}</button>
+        <button className="btn-primary" onClick={()=>buttonStatusFunc(status)} disabled={data.inProgress}>{data.inProgress ? "Enrolled" : buttonStatus[status]}</button>
         </div>
       </div>
     </div>

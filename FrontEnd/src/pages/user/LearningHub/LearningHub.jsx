@@ -10,6 +10,7 @@ const LearningHub = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({ enrolled: 0, completed: 0, in_progress: 0, expired: 0 });
   const [inProgressModules, setInProgressModules] = useState([]);
+  const [recommendedModules,setRecommendedModules] = useState([])
   
   const [rewards, setRewards] = useState({ stars: 0, badges: 0, credits: 0 });
 
@@ -46,7 +47,18 @@ const LearningHub = () => {
         console.error('Error fetching in progress modules:', error);
       }
     };
+    const fetchRecommended = async()=>{
+      try {
+        const response = await api.get('/api/user/getRecomended');
+        const data = await response.data;
+        console.log(data);
+        setRecommendedModules(data);
+      } catch (error) {
+        console.error('Error fetching recommended modules:', error);
+      }
+    }
     fetchInProgress();
+    fetchRecommended();
   }, [])
   
   // Simulate loading data from API
@@ -60,41 +72,6 @@ const LearningHub = () => {
   
   // Mock data for learning modules with real online images
 
-
-  const recommendedModules = [
-    { 
-      id: 3, 
-      title: 'Redux Fundamentals', 
-      category: 'Web Development',
-      duration: '4 hours',
-      level: 'Intermediate',
-      image: 'https://upload.wikimedia.org/wikipedia/commons/4/49/Redux.png'
-    },
-    { 
-      id: 4, 
-      title: 'UI/UX Design Principles', 
-      category: 'Design',
-      duration: '6 hours',
-      level: 'Beginner',
-      image: 'https://cdn.dribbble.com/users/2095589/screenshots/4166422/media/3cc9e7e4d28c4a04e8d5c6883c5b1cf7.png'
-    },
-    { 
-      id: 6, 
-      title: 'Node.js Backend Development', 
-      category: 'Web Development',
-      duration: '8 hours',
-      level: 'Advanced',
-      image: 'https://nodejs.org/static/images/logo-hexagon-card.png'
-    },
-    { 
-      id: 7, 
-      title: 'Data Visualization with D3.js', 
-      category: 'Data Science',
-      duration: '5 hours',
-      level: 'Intermediate',
-      image: 'https://raw.githubusercontent.com/d3/d3-logo/master/d3.png'
-    }
-  ];
 
   // Render loading skeleton
   const renderSkeleton = (count) => {
@@ -207,7 +184,7 @@ const LearningHub = () => {
                 </div>
                 
                 <div className="learning-achievement-item">
-                  <div className="learning-achievement-icon">
+                  <div className="learning-achievement-icon badgesss">
                     <FaAward />
                   </div>
                   <div className="learning-achievement-info">
@@ -247,16 +224,18 @@ const LearningHub = () => {
       <section className="learning-learning-section">
         <div className="learning-section-header">
           <h3>In Progress</h3>
-          <span className="learning-view-all">View All</span>
+          {inProgressModules.length >0 && <span className="learning-view-all">View All</span>}
         </div>
         
         <div className="learning-modules-grid">
           {isLoading ? (
             renderSkeleton(2)
           ) : (
+            inProgressModules.length > 0 ?
             inProgressModules?.map(m => (
               <CourseCard key={m.id} data={m.assignment_id.contentId} status="in_progress" contentType={m.contentType} progressPct={m.progress_pct} />
             ))
+            : "You have no in-progress trainings."
           )}
         </div>
       </section>
@@ -264,7 +243,7 @@ const LearningHub = () => {
       <section className="learning-learning-section">
         <div className="learning-section-header">
           <h3>Recommended For You</h3>
-          <span className="learning-view-all">View All</span>
+          {recommendedModules.length >0 && <span className="learning-view-all">View All</span>}
         </div>
         
         <div className="learning-modules-grid">
@@ -272,30 +251,7 @@ const LearningHub = () => {
             renderSkeleton(4)
           ) : (
             recommendedModules.map(module => (
-              <div key={module.id} className="learning-module-card recommended">
-                <div className="learning-module-image">
-                  <img src={module.image} alt={module.title} />
-                </div>
-                <div className="learning-module-content">
-                  <h4 className="learning-module-title">{module.title}</h4>
-                  <div className="learning-module-info">
-                    <div className="learning-info-item">
-                      <span className="learning-category-badge">{module.category}</span>
-                    </div>
-                    <div className="learning-info-row">
-                      <div className="learning-info-item">
-                        <span className="learning-info-label">Duration:</span>
-                        <span className="learning-info-value">{module.duration}</span>
-                      </div>
-                      <div className="learning-info-item">
-                        <span className="learning-info-label">Level:</span>
-                        <span className="learning-info-value">{module.level}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <button className="learning-btn-start">Start Learning</button>
-                </div>
-              </div>
+              <CourseCard key={module.id} data={module} contentType={module.type} status="not_enrolled" />
             ))
           )}
         </div>

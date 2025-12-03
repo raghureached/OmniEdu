@@ -35,6 +35,8 @@ import { useNavigate } from 'react-router-dom';
 import './UsersManagement.css';
 import '../../globalAdmin/OrganizationManagement/AddOrganizationModal.css';
 import LoadingScreen from '../../../components/common/Loading/Loading';
+import FailedImportModal from '../GroupsManagement/FailedImportModal';
+import ExportModal from '../GroupsManagement/components/ExportModal';
 import { GoX } from 'react-icons/go';
 import UserPreview from './components/UserPreview';
 import BulkAssignToTeam from './components/BulkAssignToTeam';
@@ -62,8 +64,8 @@ const UsersManagement = () => {
     currentPage: state.users.currentPage || 1,
     pageSize: state.users.pageSize || 6,
   }));
-  
-  
+
+
   // console.log("users in data",users)
   // console.log("filtered users in data",filters)
   console.log("all users in data", allUsers)
@@ -114,12 +116,23 @@ const UsersManagement = () => {
   const navigate = useNavigate();
   //search
   const [localSearch, setLocalSearch] = useState('');
+  //failed model
+  const [showFailedImportModal, setShowFailedImportModal] = useState(false);
+  const [importResults, setImportResults] = useState({
+    successCount: 0,
+    failedRows: []
+  });
 
-
-  // Load users on first render only
-  useEffect(() => {
-    dispatch(fetchUsers(filters));
-  }, []); // <-- empty dependency = runs once only
+  // --- central refetch control ---
+const [refetchIndex, setRefetchIndex] = useState(0);
+//export modal
+const [showExportModal, setShowExportModal] = useState(false);
+// Centralized fetch: runs when filters change OR when we explicitly bump refetchIndex
+useEffect(() => {
+  // call fetchUsers exactly once per change
+  dispatch(fetchUsers(filters));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [dispatch, filters, refetchIndex]);
 
   useEffect(() => {
     getRoles();
@@ -447,35 +460,72 @@ const UsersManagement = () => {
   };
 
   // Export failed users as CSV
-  const exportFailedUsersCSV = (failed) => {
-    const rows = [
-      ["Name", "Email", "Designation", "Team", "Sub Team", "Role", "Custom1", "Reason"],
-      ...failed.map(f => [
-        f.name || "",
-        f.email || "",
-        f.designation || "",
-        f.teamName || "",
-        f.subTeamName || "",
-        f.roleName || "",
-        f.custom1 || "",
-        f.reason || ""
-      ])
-    ];
+  // const exportFailedUsersCSV = (failed) => {
+  //   const rows = [
+  //     ["Name", "Email", "Designation", "Team", "Sub Team", "Role", "Custom1", "Reason"],
+  //     ...failed.map(f => [
+  //       f.name || "",
+  //       f.email || "",
+  //       f.designation || "",
+  //       f.teamName || "",
+  //       f.subTeamName || "",
+  //       f.roleName || "",
+  //       f.custom1 || "",
+  //       f.reason || ""
+  //     ])
+  //   ];
 
-    const csvContent = rows
-      .map(r => r.map(x => `"${(x || "").toString().replace(/"/g, '""')}"`).join(","))
-      .join("\n");
+  //   const csvContent = rows
+  //     .map(r => r.map(x => `"${(x || "").toString().replace(/"/g, '""')}"`).join(","))
+  //     .join("\n");
+
+  //   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  //   const url = URL.createObjectURL(blob);
+
+  //   const a = document.createElement("a");
+  //   a.href = url;
+  //   a.download = "failed_users.csv";
+  //   a.click();
+
+  //   URL.revokeObjectURL(url);
+  // };
+  const exportFailedUsersCSV = (failed) => {
+    if (!Array.isArray(failed) || failed.length === 0) return;
+
+    const headers = ["Name", "Email", "Designation", "Team", "Subteam", "Role", "Custom1", "Reason"];
+
+    const escape = (val) => {
+      const str = String(val ?? "").replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const csvContent = [
+      headers.map(escape).join(","),
+      ...failed.map((f) =>
+        [
+          escape(f.name),
+          escape(f.email),
+          escape(f.designation),
+          escape(f.teamName),
+          escape(f.subTeamName),
+          escape(f.roleName),
+          escape(f.custom1),
+          escape(f.reason)
+        ].join(",")
+      ),
+    ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "failed_users.csv";
-    a.click();
-
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `failed_users_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+
   // ---------------------------------------------
   // Helper: Normalize row keys
   // ---------------------------------------------
@@ -754,40 +804,22 @@ const UsersManagement = () => {
 
       // ---- Refresh data ----
       if (successCount > 0) {
-        dispatch(fetchUsers(filters));
+        setRefetchIndex(i => i + 1);
         getTeams();
       }
 
-      // ---- SHOW RESULT POPUP ----
-      // if (failedUsers.length > 0) {
-      //   if (window.confirm(`Import completed.\nSuccess: ${successCount}\nFailed: ${failedUsers.length}\n\nDo you want to download failed users?`)) {
-      //     exportFailedUsersCSV(failedUsers);
-      //   }
-      // } else {
-      //  notifySuccess(`Import successful. Imported ${successCount} user(s).`);
-      // }
-      // notifyError("User import failed", {
-      //   title: "Import Failed",
-      //   duration: 8000,
-      // });
+
       if (failedUsers.length > 0) {
-        notifyWarning(
-          `Success: ${successCount},  Failed: ${failedUsers.length}`,
-          {
-            title: "User Import Completed With Issues",
-            dismissible: true,
-            duration: 50000,
-            action: {
-              label: 'Download Failed Users',
-              onClick: () => exportFailedUsersCSV(failedUsers),
-            },
-          }
-        );
+        // Show modal instead of notification
+        setImportResults({
+          successCount: successCount,
+          failedRows: failedUsers
+        });
+        setShowFailedImportModal(true);
       } else {
         notifySuccess(`Imported ${successCount} user(s).`, { title: "Import successful." });
         clearAllSelections();
       }
-
     } catch (err) {
       // console.error("Import error:", err);
       notifyError("Import failed. Please check the file.");
@@ -796,131 +828,461 @@ const UsersManagement = () => {
       setIsImporting(false);
     }
   };
+  const userFailedColumns = [
+    { key: "name", label: "Name" },
+    { key: "email", label: "Email" },
+    { key: "designation", label: "Designation" },
+    { key: "teamName", label: "Team" },
+    { key: "subTeamName", label: "Subteam" },
+    { key: "roleName", label: "Role" },
+    { key: "custom1", label: "Custom Field" },
+    { key: "reason", label: "Reason" },
+  ];
 
 
-  const handleExportUsers = async () => {
-    // 1) Prefer explicit checkbox selections (selectedItems)
+  // const handleExportUsers = async (exportScope = 'selected') => {
+  //   // 1) Prefer explicit checkbox selections (selectedItems)
+  //   const toIdStr = (v) => (v === null || v === undefined) ? '' : String(v);
+  //   // let targetIds = Array.isArray(selectedItems) ? selectedItems.map(toIdStr) : [];
+  //   let targetIds = [];
+  //   if (exportScope === 'all') {
+  //     // Export ALL users (ignore selections)
+  //     targetIds = []; // Will fetch all below
+  //   } else {
+  //     // Export SELECTED users
+  //     if (allSelected) {
+  //       // All selected except excluded
+  //       const allIdsInFiltered = sortedUsers.map((u) => toIdStr(resolveUserId(u))).filter(Boolean);
+  //       targetIds = allIdsInFiltered.filter((id) => !excludedIds.map(toIdStr).includes(id));
+  //     } else {
+  //       // Use explicitly selected IDs
+  //       targetIds = Array.isArray(selectedIds) ? selectedIds.map(toIdStr) : [];
+  //     }
+  
+  //    // Validate selection
+  //   if (targetIds.length === 0) {
+  //     notifyWarning('No selected users found to export.', { 
+  //       title: 'Export', 
+  //       dismissible: true, 
+  //       duration: 6000 
+  //     });
+  //     return;
+  //   }
+  // }
+
+
+  //   // 2) If none via explicit selections, fall back to Gmail model
+  //   if (targetIds.length === 0) {
+  //     if (!allSelected) {
+  //       // Use all individually selected IDs across pages
+  //       targetIds = Array.isArray(selectedIds) ? selectedIds.map(toIdStr) : [];
+  //     }
+  //   }
+
+  //   // 3) Nothing selected (only block when not using 'Select all')
+  //   if (!allSelected && (!Array.isArray(targetIds) || targetIds.length === 0)) {
+  //     notifyWarning('No selected users found to export.', { title: 'Export', dismissible: true, duration: 6000 });
+  //     return;
+  //   }
+
+  //   // 4) Try to build dataset from current page first
+  //   const selectedIdSet = new Set(targetIds);
+  //   const byId = new Map();
+  //   (Array.isArray(users) ? users : []).forEach((u) => {
+  //     const id = toIdStr(resolveUserId(u));
+  //     if (id && (selectedIdSet.size ? selectedIdSet.has(id) : allSelected) && !excludedIds.map(toIdStr).includes(id)) byId.set(id, u);
+  //   });
+
+  //   // 5) If some selected users are not on the current page, fetch across pages
+  //   const needCrossPage = allSelected || targetIds.some((id) => !byId.has(id));
+  //   if (needCrossPage) {
+  //     try {
+  //       // Iterate all pages and aggregate only selected users
+  //       for (let page = 1; page <= totalPages; page += 1) {
+  //         // Skip the current page we already processed, if applicable
+  //         if (page === currentPage) continue;
+  //         const params = { ...filters, page, limit: itemsPerPage };
+  //         let pageUsers = [];
+  //         try {
+  //           const res = await dispatch(fetchUsers(params)).unwrap();
+  //           // Accept common shapes
+  //           if (Array.isArray(res)) {
+  //             pageUsers = res;
+  //           } else if (Array.isArray(res?.users)) {
+  //             pageUsers = res.users;
+  //           } else if (Array.isArray(res?.data)) {
+  //             pageUsers = res.data;
+  //           }
+  //         } catch (e) {
+  //           // If unwrap fails, try to use updated selector snapshot
+  //           pageUsers = Array.isArray(users) ? users : [];
+  //         }
+
+  //         pageUsers.forEach((u) => {
+  //           const id = toIdStr(resolveUserId(u));
+  //           if (!id) return;
+  //           if (allSelected) {
+  //             if (!excludedIds.map(toIdStr).includes(id) && !byId.has(id)) byId.set(id, u);
+  //           } else if (selectedIdSet.has(id) && !byId.has(id)) {
+  //             byId.set(id, u);
+  //           }
+  //         });
+
+  //         // Break early if all found
+  //         if (!allSelected && byId.size >= selectedIdSet.size) break;
+  //       }
+  //     } catch (e) {
+  //       // Non-fatal: continue with whatever we have
+  //     }
+  //   }
+
+  //   // 6) If still missing, try a single wide fetch (all rows) as a final fallback
+  //   const missingAfterLoop = !allSelected && targetIds.some((id) => !byId.has(id));
+  //   if (allSelected || missingAfterLoop) {
+  //     try {
+  //       const wideParams = { ...filters, page: 1, limit: Math.max(itemsPerPage, Number(totalCount) || 0) };
+  //       let wideUsers = [];
+  //       try {
+  //         const resAll = await dispatch(fetchUsers(wideParams)).unwrap();
+  //         if (Array.isArray(resAll)) {
+  //           wideUsers = resAll;
+  //         } else if (Array.isArray(resAll?.users)) {
+  //           wideUsers = resAll.users;
+  //         } else if (Array.isArray(resAll?.data)) {
+  //           wideUsers = resAll.data;
+  //         } else if (Array.isArray(resAll?.results)) {
+  //           wideUsers = resAll.results;
+  //         } else if (Array.isArray(resAll?.payload)) {
+  //           wideUsers = resAll.payload;
+  //         }
+  //       } catch (_) {
+  //         // ignore
+  //       }
+
+  //       wideUsers.forEach((u) => {
+  //         const id = toIdStr(resolveUserId(u));
+  //         if (!id) return;
+  //         if (allSelected) {
+  //           if (!excludedIds.map(toIdStr).includes(id) && !byId.has(id)) byId.set(id, u);
+  //         } else if (selectedIdSet.has(id) && !byId.has(id)) {
+  //           byId.set(id, u);
+  //         }
+  //       });
+  //     } catch (_) {
+  //       // ignore
+  //     }
+  //   }
+
+  //   const usersToExport = allSelected
+  //     ? Array.from(byId.values())
+  //     : targetIds.map((id) => byId.get(toIdStr(id))).filter(Boolean);
+  //   if (usersToExport.length === 0) {
+  //     notifyWarning('Could not resolve selected users for export.', { title: 'Export', dismissible: true, duration: 6000 });
+  //     return;
+  //   }
+  //   console.log("users to Export", usersToExport)
+  //   // Process each selected user's data for export
+  //   // Ensure exported order follows current sorting (asc/desc) like the UI
+  //   let orderedUsers = usersToExport;
+  //   if (sortKey) {
+  //     const roleLabel = (u) => typeof u?.global_role_id === 'string'
+  //       ? u.global_role_id
+  //       : (u?.global_role_id?.name || u?.global_role_id?.title || '');
+  //     const statusLabel = (u) => (getStatusLabel(u?.status) || '').toLowerCase();
+  //     const getVal = (u) => {
+  //       switch (sortKey) {
+  //         case 'name':
+  //           return (u?.name || '').toLowerCase();
+  //         case 'email':
+  //           return (u?.email || '').toLowerCase();
+  //         case 'designation':
+  //           return (u?.profile?.designation || u?.designation || '').toLowerCase();
+  //         case 'role':
+  //           return (roleLabel(u) || '').toLowerCase();
+  //         case 'status':
+  //           return statusLabel(u);
+  //         default:
+  //           return '';
+  //       }
+  //     };
+  //     orderedUsers = [...usersToExport].sort((a, b) => {
+  //       const va = getVal(a);
+  //       const vb = getVal(b);
+  //       if (va < vb) return sortDir === 'asc' ? -1 : 1;
+  //       if (va > vb) return sortDir === 'asc' ? 1 : -1;
+  //       return 0;
+  //     });
+  //   }
+
+  //   const rows = orderedUsers.map((user) => {
+  //     const assignments = computeAssignments(user || {});
+  //     const teamNames = assignments.map(a => a.teamName).filter(Boolean);
+  //     const subTeamNames = assignments.map(a => a.subTeamName).filter(Boolean);
+  //     console.log("user in usermanagement", user)
+  //     return {
+  //       name: user?.name || '',
+  //       email: user?.email || '',
+  //       designation: user.profile?.designation || '',
+  //       role: typeof user?.global_role_id === 'string'
+  //         ? user.global_role_id
+  //         : user?.global_role_id?.name || user?.global_role_id?.title || '',
+  //       team: teamNames.join(', '),
+  //       subteam: subTeamNames.join(', ')
+  //     };
+  //   });
+
+  //   // Define CSV headers in the desired order
+  //   const headers = ['name', 'email', 'designation', 'role', 'team', 'subteam'];
+  //   const headerLabels = ['Name', 'Email', 'Designation', 'Role', 'Team', 'Subteam'];
+
+  //   // Helper function to escape CSV values
+  //   const escapeCsvValue = (value) => {
+  //     if (value === null || value === undefined) return '';
+  //     const stringValue = String(value);
+  //     // Escape quotes and wrap in quotes if contains comma, newline, or quote
+  //     const needsQuotes = /[,\n"]/.test(stringValue);
+  //     const escaped = stringValue.replace(/"/g, '""');
+  //     return needsQuotes ? `"${escaped}"` : escaped;
+  //   };
+
+  //   // Generate CSV content
+  //   const csvContent = [
+  //     headerLabels.join(','),
+  //     ...rows.map(row =>
+  //       headers.map(field => escapeCsvValue(row[field] || '')).join(',')
+  //     )
+  //   ].join('\n');
+
+  //   try {
+  //     // Create and trigger download
+  //     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  //     const url = URL.createObjectURL(blob);
+  //     const link = document.createElement('a');
+  //     link.href = url;
+  //     link.setAttribute('download', `users_export_${new Date().toISOString().slice(0, 10)}.csv`);
+  //     document.body.appendChild(link);
+  //     link.click();
+  //     document.body.removeChild(link);
+  //     URL.revokeObjectURL(url);
+
+  //     // Optionally clear selections after export (keep behavior minimal)
+  //     // setSelectedItems([]);
+  //   } catch (error) {
+  //     console.error('Error during export:', error);
+  //     notifyError('An error occurred while exporting. Please try again.', { title: 'Export Failed' });
+  //   }
+  // };
+  const handleExportUsers = async (exportScope = 'selected') => {
     const toIdStr = (v) => (v === null || v === undefined) ? '' : String(v);
-    let targetIds = Array.isArray(selectedItems) ? selectedItems.map(toIdStr) : [];
-
-    // 2) If none via explicit selections, fall back to Gmail model
-    if (targetIds.length === 0) {
-      if (!allSelected) {
-        // Use all individually selected IDs across pages
+    let targetIds = [];
+    const byId = new Map();
+    
+    // ========================================
+    // STEP 1: Determine export scope
+    // ========================================
+    
+    if (exportScope === 'all') {
+      // EXPORT ALL USERS - Fetch everything regardless of selection
+      try {
+        const wideParams = { 
+          ...filters, 
+          page: 1, 
+          limit: Math.max(itemsPerPage, Number(totalCount) || 1000) 
+        };
+        
+        let allUsers = [];
+        const resAll = await dispatch(fetchUsers(wideParams)).unwrap();
+        
+        if (Array.isArray(resAll)) {
+          allUsers = resAll;
+        } else if (Array.isArray(resAll?.users)) {
+          allUsers = resAll.users;
+        } else if (Array.isArray(resAll?.data)) {
+          allUsers = resAll.data;
+        }
+    
+        // Build byId map with all users
+        allUsers.forEach((u) => {
+          const id = toIdStr(resolveUserId(u));
+          if (id) byId.set(id, u);
+        });
+    
+        if (byId.size === 0) {
+          notifyWarning('No users found to export.');
+          return;
+        }
+    
+      } catch (e) {
+        console.error('Error during export all:', e);
+        notifyError('Failed to export all users.');
+        return;
+      }
+    
+    } else {
+      // EXPORT SELECTED USERS ONLY
+      
+      // Determine selected IDs based on Gmail-style selection
+      if (allSelected) {
+        const allIdsInFiltered = sortedUsers.map((u) => toIdStr(resolveUserId(u))).filter(Boolean);
+        targetIds = allIdsInFiltered.filter((id) => !excludedIds.map(toIdStr).includes(id));
+      } else {
         targetIds = Array.isArray(selectedIds) ? selectedIds.map(toIdStr) : [];
       }
-    }
-
-    // 3) Nothing selected (only block when not using 'Select all')
-    if (!allSelected && (!Array.isArray(targetIds) || targetIds.length === 0)) {
-      notifyWarning('No selected users found to export.', { title: 'Export', dismissible: true, duration: 6000 });
-      return;
-    }
-
-    // 4) Try to build dataset from current page first
-    const selectedIdSet = new Set(targetIds);
-    const byId = new Map();
-    (Array.isArray(users) ? users : []).forEach((u) => {
-      const id = toIdStr(resolveUserId(u));
-      if (id && (selectedIdSet.size ? selectedIdSet.has(id) : allSelected) && !excludedIds.map(toIdStr).includes(id)) byId.set(id, u);
-    });
-
-    // 5) If some selected users are not on the current page, fetch across pages
-    const needCrossPage = allSelected || targetIds.some((id) => !byId.has(id));
-    if (needCrossPage) {
-      try {
-        // Iterate all pages and aggregate only selected users
-        for (let page = 1; page <= totalPages; page += 1) {
-          // Skip the current page we already processed, if applicable
-          if (page === currentPage) continue;
-          const params = { ...filters, page, limit: itemsPerPage };
-          let pageUsers = [];
-          try {
-            const res = await dispatch(fetchUsers(params)).unwrap();
-            // Accept common shapes
-            if (Array.isArray(res)) {
-              pageUsers = res;
-            } else if (Array.isArray(res?.users)) {
-              pageUsers = res.users;
-            } else if (Array.isArray(res?.data)) {
-              pageUsers = res.data;
+  
+      // Validate selection
+      if (targetIds.length === 0) {
+        notifyWarning('No selected users found to export.', { 
+          title: 'Export', 
+          dismissible: true, 
+          duration: 6000 
+        });
+        return;
+      }
+  
+      // ========================================
+      // STEP 2: Build dataset from current page first
+      // ========================================
+      
+      const selectedIdSet = new Set(targetIds);
+      (Array.isArray(users) ? users : []).forEach((u) => {
+        const id = toIdStr(resolveUserId(u));
+        if (id && selectedIdSet.has(id) && !excludedIds.map(toIdStr).includes(id)) {
+          byId.set(id, u);
+        }
+      });
+  
+      // ========================================
+      // STEP 3: Fetch across pages if needed
+      // ========================================
+      
+      const needCrossPage = allSelected || targetIds.some((id) => !byId.has(id));
+      if (needCrossPage) {
+        try {
+          // Iterate all pages and aggregate only selected users
+          for (let page = 1; page <= totalPages; page += 1) {
+            // Skip the current page we already processed
+            if (page === currentPage) continue;
+            
+            const params = { ...filters, page, limit: itemsPerPage };
+            let pageUsers = [];
+            
+            try {
+              const res = await dispatch(fetchUsers(params)).unwrap();
+              
+              if (Array.isArray(res)) {
+                pageUsers = res;
+              } else if (Array.isArray(res?.users)) {
+                pageUsers = res.users;
+              } else if (Array.isArray(res?.data)) {
+                pageUsers = res.data;
+              }
+            } catch (e) {
+              // Skip this page if fetch fails
+              continue;
             }
-          } catch (e) {
-            // If unwrap fails, try to use updated selector snapshot
-            pageUsers = Array.isArray(users) ? users : [];
+  
+            pageUsers.forEach((u) => {
+              const id = toIdStr(resolveUserId(u));
+              if (!id) return;
+              
+              if (allSelected) {
+                if (!excludedIds.map(toIdStr).includes(id) && !byId.has(id)) {
+                  byId.set(id, u);
+                }
+              } else if (selectedIdSet.has(id) && !byId.has(id)) {
+                byId.set(id, u);
+              }
+            });
+  
+            // Break early if all found
+            if (!allSelected && byId.size >= selectedIdSet.size) break;
           }
-
-          pageUsers.forEach((u) => {
+        } catch (e) {
+          // Non-fatal: continue with whatever we have
+        }
+      }
+  
+      // ========================================
+      // STEP 4: Final fallback - wide fetch if still missing
+      // ========================================
+      
+      const missingAfterLoop = !allSelected && targetIds.some((id) => !byId.has(id));
+      if (allSelected || missingAfterLoop) {
+        try {
+          const wideParams = { 
+            ...filters, 
+            page: 1, 
+            limit: Math.max(itemsPerPage, Number(totalCount) || 0) 
+          };
+          
+          let wideUsers = [];
+          try {
+            const resAll = await dispatch(fetchUsers(wideParams)).unwrap();
+            
+            if (Array.isArray(resAll)) {
+              wideUsers = resAll;
+            } else if (Array.isArray(resAll?.users)) {
+              wideUsers = resAll.users;
+            } else if (Array.isArray(resAll?.data)) {
+              wideUsers = resAll.data;
+            } else if (Array.isArray(resAll?.results)) {
+              wideUsers = resAll.results;
+            } else if (Array.isArray(resAll?.payload)) {
+              wideUsers = resAll.payload;
+            }
+          } catch (_) {
+            // Ignore
+          }
+  
+          wideUsers.forEach((u) => {
             const id = toIdStr(resolveUserId(u));
             if (!id) return;
+            
             if (allSelected) {
-              if (!excludedIds.map(toIdStr).includes(id) && !byId.has(id)) byId.set(id, u);
+              if (!excludedIds.map(toIdStr).includes(id) && !byId.has(id)) {
+                byId.set(id, u);
+              }
             } else if (selectedIdSet.has(id) && !byId.has(id)) {
               byId.set(id, u);
             }
           });
-
-          // Break early if all found
-          if (!allSelected && byId.size >= selectedIdSet.size) break;
-        }
-      } catch (e) {
-        // Non-fatal: continue with whatever we have
-      }
-    }
-
-    // 6) If still missing, try a single wide fetch (all rows) as a final fallback
-    const missingAfterLoop = !allSelected && targetIds.some((id) => !byId.has(id));
-    if (allSelected || missingAfterLoop) {
-      try {
-        const wideParams = { ...filters, page: 1, limit: Math.max(itemsPerPage, Number(totalCount) || 0) };
-        let wideUsers = [];
-        try {
-          const resAll = await dispatch(fetchUsers(wideParams)).unwrap();
-          if (Array.isArray(resAll)) {
-            wideUsers = resAll;
-          } else if (Array.isArray(resAll?.users)) {
-            wideUsers = resAll.users;
-          } else if (Array.isArray(resAll?.data)) {
-            wideUsers = resAll.data;
-          } else if (Array.isArray(resAll?.results)) {
-            wideUsers = resAll.results;
-          } else if (Array.isArray(resAll?.payload)) {
-            wideUsers = resAll.payload;
-          }
         } catch (_) {
-          // ignore
+          // Ignore
         }
-
-        wideUsers.forEach((u) => {
-          const id = toIdStr(resolveUserId(u));
-          if (!id) return;
-          if (allSelected) {
-            if (!excludedIds.map(toIdStr).includes(id) && !byId.has(id)) byId.set(id, u);
-          } else if (selectedIdSet.has(id) && !byId.has(id)) {
-            byId.set(id, u);
-          }
-        });
-      } catch (_) {
-        // ignore
       }
     }
-
-    const usersToExport = allSelected
+  
+    // ========================================
+    // STEP 5: Process users for export
+    // ========================================
+  
+    const usersToExport = exportScope === 'all'
       ? Array.from(byId.values())
       : targetIds.map((id) => byId.get(toIdStr(id))).filter(Boolean);
+  
     if (usersToExport.length === 0) {
-      notifyWarning('Could not resolve selected users for export.', { title: 'Export', dismissible: true, duration: 6000 });
+      notifyWarning('Could not resolve users for export.', { 
+        title: 'Export', 
+        dismissible: true, 
+        duration: 6000 
+      });
       return;
     }
-    console.log("users to Export", usersToExport)
-    // Process each selected user's data for export
-    // Ensure exported order follows current sorting (asc/desc) like the UI
+  
+    console.log("Users to export:", usersToExport);
+  
+    // ========================================
+    // STEP 6: Sort users (maintain UI order)
+    // ========================================
+  
     let orderedUsers = usersToExport;
     if (sortKey) {
       const roleLabel = (u) => typeof u?.global_role_id === 'string'
         ? u.global_role_id
         : (u?.global_role_id?.name || u?.global_role_id?.title || '');
+      
       const statusLabel = (u) => (getStatusLabel(u?.status) || '').toLowerCase();
+      
       const getVal = (u) => {
         switch (sortKey) {
           case 'name':
@@ -937,6 +1299,7 @@ const UsersManagement = () => {
             return '';
         }
       };
+  
       orderedUsers = [...usersToExport].sort((a, b) => {
         const va = getVal(a);
         const vb = getVal(b);
@@ -945,12 +1308,16 @@ const UsersManagement = () => {
         return 0;
       });
     }
-
+  
+    // ========================================
+    // STEP 7: Generate CSV data
+    // ========================================
+  
     const rows = orderedUsers.map((user) => {
       const assignments = computeAssignments(user || {});
       const teamNames = assignments.map(a => a.teamName).filter(Boolean);
       const subTeamNames = assignments.map(a => a.subTeamName).filter(Boolean);
-      console.log("user in usermanagement", user)
+      
       return {
         name: user?.name || '',
         email: user?.email || '',
@@ -962,21 +1329,20 @@ const UsersManagement = () => {
         subteam: subTeamNames.join(', ')
       };
     });
-
-    // Define CSV headers in the desired order
+  
+    // Define CSV headers
     const headers = ['name', 'email', 'designation', 'role', 'team', 'subteam'];
     const headerLabels = ['Name', 'Email', 'Designation', 'Role', 'Team', 'Subteam'];
-
-    // Helper function to escape CSV values
+  
+    // Helper to escape CSV values
     const escapeCsvValue = (value) => {
       if (value === null || value === undefined) return '';
       const stringValue = String(value);
-      // Escape quotes and wrap in quotes if contains comma, newline, or quote
       const needsQuotes = /[,\n"]/.test(stringValue);
       const escaped = stringValue.replace(/"/g, '""');
       return needsQuotes ? `"${escaped}"` : escaped;
     };
-
+  
     // Generate CSV content
     const csvContent = [
       headerLabels.join(','),
@@ -984,9 +1350,12 @@ const UsersManagement = () => {
         headers.map(field => escapeCsvValue(row[field] || '')).join(',')
       )
     ].join('\n');
-
+  
+    // ========================================
+    // STEP 8: Download CSV file
+    // ========================================
+  
     try {
-      // Create and trigger download
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -996,15 +1365,18 @@ const UsersManagement = () => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-
-      // Optionally clear selections after export (keep behavior minimal)
-      // setSelectedItems([]);
+  
+      notifySuccess(`Successfully exported ${orderedUsers.length} user(s).`, { 
+        title: 'Export Complete' 
+      });
+  
     } catch (error) {
       console.error('Error during export:', error);
-      notifyError('An error occurred while exporting. Please try again.', { title: 'Export Failed' });
+      notifyError('An error occurred while exporting. Please try again.', { 
+        title: 'Export Failed' 
+      });
     }
   };
-
 
   const openForm = (user = null) => {
     console.log(user)
@@ -1129,16 +1501,20 @@ const UsersManagement = () => {
           submissionData.removedAssignments = removedForPayload;
         }
 
-        await dispatch(updateUser({ id: targetId, userData: submissionData }));
+        await dispatch(updateUser({ id: targetId, userData: submissionData })).unwrap();
+        setRefetchIndex(i => i + 1);
         closeForm();
+        
       } catch (error) {
         console.error('Error updating user:', error);
       }
     } else {
       try {
         console.log(formData)
-        await dispatch(createUser(formData));
+        await dispatch(createUser(formData)).unwrap();
+        setRefetchIndex(i => i + 1);
         closeForm();
+        
       } catch (error) {
         console.error('Error creating user:', error);
       }
@@ -1185,29 +1561,32 @@ const UsersManagement = () => {
   // };
 
   // --- FIXED BULK ASSIGN HANDLER (GMAIL MODEL) ---
-const handleOpenAssignForSelected = () => {
-  let finalSelectedIds = [];
+  const handleOpenAssignForSelected = () => {
+    let finalSelectedIds = [];
 
-  if (allSelected) {
-    // ALL PAGES SELECTED → Include all filtered users except excluded ones
-    const allIdsInFiltered = sortedUsers.map((u) => u.id).filter(Boolean);
-    finalSelectedIds = allIdsInFiltered.filter((id) => !excludedIds.includes(id));
-  } else {
-    // CUSTOM OR PAGE SELECTION
-    finalSelectedIds = [...selectedIds];
-  }
+    if (allSelected) {
+      // ALL PAGES SELECTED → Include all filtered users except excluded ones
+      const allIdsInFiltered = sortedUsers.map((u) => u.id).filter(Boolean);
+      finalSelectedIds = allIdsInFiltered.filter((id) => !excludedIds.includes(id));
+    } else {
+      // CUSTOM OR PAGE SELECTION
+      finalSelectedIds = [...selectedIds];
+    }
 
-  if (finalSelectedIds.length === 0) {
-    notifyWarning("No users selected.");
-    return;
-  }
+    if (finalSelectedIds.length === 0) {
+      notifyWarning("No users selected.");
+      return;
+    }
 
-  // Open modal with selected IDs
-  openAssignToTeamModal(finalSelectedIds, "bulk");
+    // Open modal with selected IDs
+    openAssignToTeamModal(finalSelectedIds, "bulk");
 
-  // Close dropdown panel
-  setShowBulkAction(false);
-};
+    // Close dropdown panel
+    setShowBulkAction(false);
+    // ✅ Clear selection AFTER opening modal
+      clearSelection();
+
+  };
 
 
   const handleBulkAssignToGroup = async () => {
@@ -1237,7 +1616,7 @@ const handleOpenAssignForSelected = () => {
         setSelectedItems([]);
       }
 
-      dispatch(fetchUsers(filters));
+      setRefetchIndex(i => i + 1);
       alert(targetIds.length > 1 ? 'Users assigned to the selected team successfully' : 'User assigned to the selected team successfully');
     } catch (err) {
       console.error(err);
@@ -1245,9 +1624,10 @@ const handleOpenAssignForSelected = () => {
     }
   };
 
-  const handleDelete = (userId) => {
+  const handleDelete = async(userId) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
-      dispatch(deleteUser(userId));
+      await dispatch(deleteUser(userId)).unwrap();
+      setRefetchIndex(i => i + 1);
     }
     clearAllSelections();
   };
@@ -1260,10 +1640,11 @@ const handleOpenAssignForSelected = () => {
     });
     return map;
   }, [users]);
-  
+
   const handleBulkAction = async (action) => {
     if (selectedIds.length === 0) {
-      alert('Please select at least one user');
+      // alert('Please select at least one user');
+      notifyError('Please select at least one user')
       return;
     }
     if (action === 'delete') {
@@ -1274,14 +1655,14 @@ const handleOpenAssignForSelected = () => {
           const mongoIds = selectedIds
             .map((uuid) => uuidToMongoId.get(uuid))
             .filter(Boolean);
-    
+
           await dispatch(bulkDeleteUsers(mongoIds)).unwrap();
-    
           clearAllSelections();
-          dispatch(fetchUsers(filters));
+          setRefetchIndex(i => i + 1);
         } catch (error) {
           console.error('Failed to delete users:', error);
-          alert('Failed to delete selected users. Please try again.');
+          // alert('Failed to delete selected users. Please try again.');
+          notifyError('Failed to delete selected users. Please try again.')
         }
       }
     }
@@ -1310,7 +1691,7 @@ const handleOpenAssignForSelected = () => {
         setSelectedItems([]);
         setShowBulkAction(false);
         setShowFilters(false);
-        dispatch(fetchUsers(filters));
+        setRefetchIndex(i => i + 1);
       } catch (error) {
         console.error('Failed to deactivate users:', error);
         alert('Failed to deactivate selected users. Please try again.');
@@ -1491,18 +1872,18 @@ const handleOpenAssignForSelected = () => {
   }, [applyPageSelection, clearSelection, handleSelectAllPages]);
 
   // 🔥 UNIVERSAL SELECTION RESET — for Users & Groups
-const clearAllSelections = useCallback(() => {
-  // Gmail-style selection reset
-  setAllSelected(false);
-  setSelectedIds([]);
-  setExcludedIds([]);
-  setSelectionScope("none");
-  setSelectedPageRef(null);
+  const clearAllSelections = useCallback(() => {
+    // Gmail-style selection reset
+    setAllSelected(false);
+    setSelectedIds([]);
+    setExcludedIds([]);
+    setSelectionScope("none");
+    setSelectedPageRef(null);
 
-  // Legacy selection reset (if your file still uses it)
-  setSelectedItems && setSelectedItems([]);
+    // Legacy selection reset (if your file still uses it)
+    setSelectedItems && setSelectedItems([]);
 
-}, []);
+  }, []);
 
 
 
@@ -1581,12 +1962,12 @@ const clearAllSelections = useCallback(() => {
         search: query.name || '',
         page: 1
       }));
-      dispatch(fetchUsers({
-        ...filters,
-        search: query.name || '',
-        page: 1,
-        silent: true,     // 🔥 don't show loader
-      }));
+      // dispatch(fetchUsers({
+      //   ...filters,
+      //   search: query.name || '',
+      //   page: 1,
+      //   silent: true,     // 🔥 don't show loader
+      // }));
     }, 500);
   }, [dispatch, filters]);
 
@@ -1653,7 +2034,11 @@ const clearAllSelections = useCallback(() => {
                 handleLocalFilter({ name: value });
 
                 // 2) Debounced backend fetch
-                handleBackendFilter({ name: value });
+                // handleBackendFilter({ name: value });
+                if (value.trim() !== "") {
+                  handleBackendFilter({ name: value });
+                }
+                
               }}
 
             />
@@ -1689,7 +2074,8 @@ const clearAllSelections = useCallback(() => {
             <button
               className="control-btn"
               style={{ padding: '12px 12px' }}
-              onClick={handleExportUsers}
+              // onClick={handleExportUsers}
+              onClick={() => setShowExportModal(true)} // ✅ Open modal instead
               disabled={!allSelected && selectedIds.length === 0}
               type="button"
             >
@@ -2164,6 +2550,37 @@ const clearAllSelections = useCallback(() => {
           user={previewUser}
           assignments={previewAssignments}
         />
+        <FailedImportModal
+          open={showFailedImportModal}
+          failedRows={importResults.failedRows}
+          successCount={importResults.successCount}
+          onClose={() => {
+            setShowFailedImportModal(false);
+            setImportResults({ successCount: 0, failedRows: [] });
+            clearSelection();
+          }}
+          onDownload={() => {
+            exportFailedUsersCSV(importResults.failedRows);
+            setShowFailedImportModal(false);
+            setImportResults({ successCount: 0, failedRows: [] });
+            clearSelection();
+          }}
+          columns={userFailedColumns}
+        />
+        <ExportModal
+        isOpen={showExportModal}
+        onClose={() => {setShowExportModal(false) 
+          clearSelection();}}
+        onConfirm={async()=>{await handleExportUsers();
+            clearSelection();
+        }}
+        selectedCount={derivedSelectedCount}
+        totalCount={totalCount}
+        hasMembers={true}
+        exportType="users" // ✅ Specify this is for users
+      />
+        
+
       </div>
     </div>
   );

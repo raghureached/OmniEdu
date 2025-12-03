@@ -26,6 +26,8 @@ import TeamMembersModal from './components/TeamMembersModal';
 import api from '../../../services/api';
 import GroupsFilter from './components/GroupsFilter';
 import DeactivateModal from './DeactivateModal';
+import FailedImportModal from './FailedImportModal';
+import ExportModal from './components/ExportModal';
 // Reuse OrganizationManagement styles for consistent look & feel
 import '../../globalAdmin/OrganizationManagement/OrganizationManagement.css';
 import LoadingScreen from '../../../components/common/Loading/Loading';
@@ -66,7 +68,14 @@ const GroupsManagement = () => {
   const [failedGroupRows, setFailedGroupRows] = useState([]);
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [teamsToDeactivate, setTeamsToDeactivate] = useState([]);
-
+  //export model
+  const [showExportModal, setShowExportModal] = useState(false);
+  //FAILED MODEL
+  const [showFailedImportModal, setShowFailedImportModal] = useState(false);
+  const [importResults, setImportResults] = useState({
+    successCount: 0,
+    failedRows: []
+  });
 
   const editMode = !!currentGroup;
 
@@ -512,18 +521,18 @@ const GroupsManagement = () => {
     const selectedGroupIds = allSelected
       ? sortedGroups.map(g => g.id).filter(id => !excludedIds.includes(id))
       : selectedIds;
-  
+
     if (!selectedGroupIds.length) {
       notifyWarning("Please select at least one group to delete");
       return;
     }
-  
+
     if (!window.confirm(`Delete ${selectedGroupIds.length} selected group(s)?`)) return;
-  
+
     for (const groupId of selectedGroupIds) {
       await dispatch(deleteGroup(groupId));
     }
-  
+
     // Clear selection after delete
     setAllSelected(false);
     setSelectedIds([]);
@@ -531,11 +540,11 @@ const GroupsManagement = () => {
     setSelectionScope('none');
     setSelectedPageRef(null);
     setAllSelectionCount(null);
-  
+
     fetchGroupData();
   };
-  
-  
+
+
   //   if (selectedGroups.length === 0) {
   //     alert('Please select at least one group to delete');
   //     return;
@@ -773,23 +782,15 @@ const GroupsManagement = () => {
       }
 
       // ---- FINAL RESULT HANDLING ----
-      setFailedGroupRows(failedRows);
-
       const createdCount = created.length + updated.length;
 
       if (failedRows.length > 0) {
-        notifyWarning(
-          `Success: ${createdCount}, Failed: ${failedRows.length}`,
-          {
-            title: "Group Import Completed With Issues",
-            dismissible: true,
-            duration: 50000,
-            action: {
-              label: "Download Failed Groups",
-              onClick: () => exportFailedGroupsCSV(failedRows),
-            },
-          }
-        );
+        // Show modal instead of notification
+        setImportResults({
+          successCount: createdCount,
+          failedRows: failedRows
+        });
+        setShowFailedImportModal(true);
       } else {
         notifySuccess(`Imported ${createdCount} group(s).`, {
           title: "Import Successful",
@@ -803,7 +804,12 @@ const GroupsManagement = () => {
       event.target.value = "";
     }
   };
-
+  const groupFailedColumns = [
+    { key: "teamName", label: "Team Name" },
+    { key: "subTeamName", label: "Subteam Name" },
+    { key: "reason", label: "Reason" },
+  ];
+  
   const findMemberSubteamName = (member, group) => {
     try {
       // Find membership for this team
@@ -824,15 +830,20 @@ const GroupsManagement = () => {
     }
   };
 
-  const handleExportGroups = () => {
+  const handleExportGroups = (exportType = 'selected') => {
     const allIdsInFiltered = sortedGroups.map((g) => g.id).filter(Boolean);
     const selectedIdsForExport = allSelected
       ? allIdsInFiltered.filter((id) => !excludedIds.includes(id))
       : selectedIds;
 
-    const groupsToExport = selectedIdsForExport.length > 0
-      ? sortedGroups.filter((group) => selectedIdsForExport.includes(group.id))
-      : [];
+    // const groupsToExport = selectedIdsForExport.length > 0
+    //   ? sortedGroups.filter((group) => selectedIdsForExport.includes(group.id))
+    //   : [];
+    // Determine what to export based on exportType
+  const groupsToExport = exportType === 'all' 
+  ? sortedGroups  // Export all filtered groups
+  : sortedGroups.filter((group) => selectedIdsForExport.includes(group.id));
+
 
     if (!Array.isArray(groupsToExport) || groupsToExport.length === 0) {
       alert('No selected groups available to export.');
@@ -840,8 +851,9 @@ const GroupsManagement = () => {
     }
 
     // If exporting entire data
-    const exportTeamsOnly = (selectedIdsForExport.length === (totalCount || 0));
-
+    // const exportTeamsOnly = (selectedIdsForExport.length === (totalCount || 0));
+// If exporting all, only export teams and subteams (no members)
+const exportTeamsOnly = (exportType === 'all');
     let headers = [];
     const rows = [];
 
@@ -885,7 +897,8 @@ const GroupsManagement = () => {
 
         if (members.length === 0) {
           // No members → emit a single row with empty member fields and no subteams
-          rows.push([teamName, '', '', '']);
+          const subTeamNames = (result?.subTeams || []).map(st => st.name).join(', ');
+          rows.push([teamName, subTeamNames, '', '']);
         } else {
           // Build a map from subteam id -> subteam name for this team for reliable resolution
           const subTeamNameMap = new Map(
@@ -1392,6 +1405,7 @@ const GroupsManagement = () => {
     }
 
     await dispatch(createSubTeam(data.data)).unwrap();
+    fetchGroupData();     
   };
 
   // const handleupdateSubTeam = async (id, data) => {
@@ -1427,7 +1441,8 @@ const GroupsManagement = () => {
             onFilter={handleFilter}
             handleCreateGroup={handleCreateGroup}
             handleImportGroups={handleImportGroups}
-            handleExportGroups={handleExportGroups}
+            // handleExportGroups={handleExportGroups}
+            handleExportGroups={() => setShowExportModal(true)}  // ✅ Changed this line
             handleBulkDelete={handleBulkDelete}
             // selectedGroups={Array.from({ length: derivedSelectedCount })}
             selectedGroups={
@@ -1435,8 +1450,8 @@ const GroupsManagement = () => {
                 ? sortedGroups.map(g => g.id).filter(id => !excludedIds.includes(id))
                 : selectedIds
             }
-            
-            
+
+
             onClearFilter={handleClearFilter}
             handleBulkDeactivate={handleBulkDeactivate}
           />
@@ -1682,8 +1697,43 @@ const GroupsManagement = () => {
           <DeactivateModal
             open={showDeactivateModal}
             count={teamsToDeactivate.length}
-            onCancel={() => setShowDeactivateModal(false)}
-            onConfirm={confirmDeactivateTeams}
+            onCancel={() => {
+              setShowDeactivateModal(false) 
+              clearSelection();  // 👈 clear when closing/cancelling modal
+            } 
+          }
+          onConfirm={async () => {
+            await confirmDeactivateTeams(); 
+            clearSelection();     // 👈 clear after deactivation
+          }}
+           
+          />
+          <FailedImportModal
+            open={showFailedImportModal}
+            failedRows={importResults.failedRows}
+            successCount={importResults.successCount}
+            onClose={() => {
+              setShowFailedImportModal(false);
+              setImportResults({ successCount: 0, failedRows: [] });
+              clearSelection();   // 👈 clear when closing modal
+            }}
+            onDownload={() => {
+              exportFailedGroupsCSV(importResults.failedRows);
+              setShowFailedImportModal(false);
+              setImportResults({ successCount: 0, failedRows: [] });
+              clearSelection();   // 👈 clear after downloading
+            }}
+            columns={groupFailedColumns}
+          />
+          <ExportModal
+            isOpen={showExportModal}
+            onClose={() => {setShowExportModal(false); clearSelection(); }}
+            onConfirm={async () => {
+              await handleExportGroups(); 
+              clearSelection(); }}
+            selectedCount={derivedSelectedCount}
+            totalCount={totalItems}
+            hasMembers={derivedSelectedCount > 0 && derivedSelectedCount < totalItems}
           />
 
         </div>

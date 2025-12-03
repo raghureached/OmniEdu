@@ -1,10 +1,12 @@
 const { getAssignment } = require("../controllers/admin.controller/admin_Assignment")
 const { getUserAssignments } = require("../controllers/user_controller/user_assignments")
-const { getModule, getAssessment, getSurvey, getLearningPath, markComplete, getInProgress, updateStatus, enrolledbyUser, getCatalog } = require("../controllers/user_controller/user_content")
+const { getModule, getAssessment, getSurvey, getLearningPath, markComplete, getInProgress, updateStatus, enrolledbyUser, getCatalog, getRecomended } = require("../controllers/user_controller/user_content")
 const { getMessage } = require("../controllers/user_controller/user_Message")
 const { getProfile } = require("../controllers/user_controller/user_profile")
 const { updateProgress, getUserProgress, getUserProgressById } = require("../controllers/user_controller/user_progress")
 const { getContentStats, getUserRewards } = require("../controllers/user_controller/user_stats")
+const { enroll } = require("../controllers/user_controller/user_enroll")
+
 
 const router = require("express").Router()
 
@@ -37,6 +39,8 @@ router.route("/enrolledbyUser").get(enrolledbyUser)
 router.route("/updateStatus/:id/:status").post(updateStatus)
 router.route("/markComplete/:id").post(markComplete)
 router.route("/getCatalog").get(getCatalog)
+router.route("/enroll/:id").post(enroll)
+router.route("/getRecomended").get(getRecomended)
 
 
 

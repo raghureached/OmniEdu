@@ -79,7 +79,7 @@ const Catalog = () => {
             </select>
           </div>
           
-          <div className="catalog-filter-dropdown">
+          {/* <div className="catalog-filter-dropdown">
             <select
               value={selectedLevel}
               onChange={(e) => setSelectedLevel(e.target.value)}
@@ -90,7 +90,7 @@ const Catalog = () => {
                 </option>
               ))}
             </select>
-          </div>
+          </div> */}
         </div>
       </div>
       

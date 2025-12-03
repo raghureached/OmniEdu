@@ -107,6 +107,22 @@ const addUser = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
     await logAdminActivity(req, "add", `User added successfully: ${name}`);
+    
+
+    // Fetch created user + populated relations to match getUsers shape
+    const createdUser = await User
+      .findOne({ uuid: user[0].uuid })
+      .populate({ path: 'global_role_id', select: 'name' })
+      .lean();
+
+    const createdProfile = await UserProfile
+      .findOne({ user_id: createdUser._id })
+      .populate('teams.team_id', 'name')
+      .populate('teams.sub_team_id', 'name')
+      .lean();
+
+     await session.abortTransaction();
+    session.endSession();
     if (invite) {
       await sendMail(
         user[0].email,
@@ -131,18 +147,6 @@ Welcome aboard!`
       );
     }
 
-    // Fetch created user + populated relations to match getUsers shape
-    const createdUser = await User
-      .findOne({ uuid: user[0].uuid })
-      .populate({ path: 'global_role_id', select: 'name' })
-      .lean();
-
-    const createdProfile = await UserProfile
-      .findOne({ user_id: createdUser._id })
-      .populate('teams.team_id', 'name')
-      .populate('teams.sub_team_id', 'name')
-      .lean();
-
     return res.status(201).json({
       isSuccess: true,
       message: 'User and profile created successfully',
@@ -153,11 +157,10 @@ Welcome aboard!`
     console.log(error);
 
     // ❌ Rollback everything if any step fails
-    await session.abortTransaction();
-    session.endSession();
+   
     await logAdminActivity(req, "add", `User addition failed: ${error.message}`);
 
-    res.status(500).json({
+    res.status(400).json({
       isSuccess: false,
       message: "Failed to create user",
       error: error.message
@@ -479,7 +482,6 @@ const getUserbyId = async (req, res) => {
       });
     }
 
-    // Now fetch the rest based on profile fields in parallel
     const [
       designationDoc,
       teamDoc,

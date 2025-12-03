@@ -33,6 +33,8 @@ const TeamPreview = ({
   const groups = useSelector(state => state.groups.groups);
   const teamId = team?.id || team?._id;
   const latestTeam = groups.find(g => (g.id || g._id) === teamId) || team;
+  // 🔍 Team active/inactive detection
+  const isTeamInactive = latestTeam?.status?.toLowerCase() === "inactive";
 
   const allUsers = useSelector(state => state.users?.users || []);
 
@@ -372,7 +374,14 @@ const TeamPreview = ({
           >
             Cancel
           </button>
-          <button type="submit" className="btn-primary" disabled={loading}>
+          {/* <button type="submit" className="btn-primary" disabled={loading}> */}
+          <button
+            type="submit"
+            className="btn-primary"
+            disabled={loading || isTeamInactive}
+            title={isTeamInactive ? "Team is inactive — cannot modify subteams" : ""}
+          >
+
             <GoOrganization size={16} />
             <span>{editMode ? 'Update Sub Team' : 'Create Sub Team'}</span>
           </button>
@@ -432,18 +441,33 @@ const TeamPreview = ({
                       {st.membersCount || 0}
                     </button>
                     <div className="col-actions" style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-                      <button
+                      {/* <button
                         className="global-action-btn edit"
                         onClick={() => handleEdit(st)}
                         aria-label={`Edit subteam ${st.name}`}
+                      > */}
+                      <button
+                        className="global-action-btn edit"
+                        onClick={!isTeamInactive ? () => handleEdit(st) : undefined}
+                        disabled={isTeamInactive}
+                        title={isTeamInactive ? "Team is inactive — cannot edit subteams" : ""}
+                        aria-label={`Edit subteam ${st.name}`}
                       >
+
                         <FiEdit3 size={16} />
                       </button>
-                      <button
+                      {/* <button
                         className="global-action-btn delete"
                         onClick={() => handleDelete(st.uuid || st._id || st.id, st.name)}
                         aria-label={`Delete subteam ${st.name}`}
+                      > */}
+                      <button
+                        className="global-action-btn delete"
+                        onClick={!isTeamInactive ? () => handleDelete(st.uuid || st._id || st.id, st.name) : undefined}
+                        disabled={isTeamInactive}
+                        title={isTeamInactive ? "Team is inactive — cannot delete subteams" : ""}
                       >
+
                         <Trash2 size={16} />
                       </button>
                     </div>

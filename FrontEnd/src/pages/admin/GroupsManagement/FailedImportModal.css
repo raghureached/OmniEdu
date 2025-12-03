@@ -1,0 +1,330 @@
+/* Animations */
+@keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  
+  /* Modal Overlay */
+  .failed-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 3000;
+    animation: fadeIn 0.2s ease-out;
+    padding: 20px;
+  }
+  
+  /* Modal Content */
+  .failed-modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 32px;
+    width: 90%;
+    max-width: 700px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 
+                0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    position: relative;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  /* Close Button */
+  .failed-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  
+  .failed-modal-close:hover {
+    background: #f3f4f6;
+    color: #111827;
+  }
+  
+  /* Icon Container */
+  .failed-modal-icon {
+    width: 56px;
+    height: 56px;
+    background: #fef3c7;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f59e0b;
+    margin: 0 auto 20px;
+  }
+  
+  /* Title */
+  .failed-modal-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 24px 0;
+    text-align: center;
+  }
+  
+  /* Stats Cards */
+  .failed-modal-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  
+  .stat-card {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  .stat-success {
+    border-color: #10b981;
+    background: #f0fdf4;
+  }
+  
+  .stat-failed {
+    border-color: #ef4444;
+    background: #fef2f2;
+  }
+  
+  .stat-total {
+    border-color: #3b82f6;
+    background: #eff6ff;
+  }
+  
+  .stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 4px;
+  }
+  
+  .stat-success .stat-value {
+    color: #10b981;
+  }
+  
+  .stat-failed .stat-value {
+    color: #ef4444;
+  }
+  
+  .stat-total .stat-value {
+    color: #3b82f6;
+  }
+  
+  .stat-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  /* Message */
+  .failed-modal-message {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 24px;
+  }
+  
+  .failed-modal-message p {
+    margin: 0;
+    color: #92400e;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  
+  /* Failed Rows Preview */
+  .failed-rows-preview {
+    margin-bottom: 24px;
+  }
+  
+  .preview-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 12px 0;
+  }
+  
+  .preview-table-container {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  
+  .preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  
+  .preview-table thead {
+    background: #f9fafb;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  .preview-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+  }
+  
+  .preview-table td {
+    padding: 12px;
+    color: #6b7280;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  
+  .preview-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+  
+  .preview-table tbody tr:hover {
+    background: #f9fafb;
+  }
+  
+  .reason-badge {
+    display: inline-block;
+    background: #fef2f2;
+    color: #991b1b;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .preview-note {
+    margin: 12px 0 0 0;
+    color: #6b7280;
+    font-size: 13px;
+    text-align: center;
+    font-style: italic;
+  }
+  
+  /* Actions */
+  .failed-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #e5e7eb;
+  }
+/*   
+  .btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .btn-secondary {
+    background: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+  }
+  
+  .btn-secondary:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+  }
+  
+  .btn-secondary:active {
+    transform: scale(0.98);
+  }
+  
+  .btn-primary {
+    background: #3b82f6;
+    color: white;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }
+  
+  .btn-primary:hover {
+    background: #2563eb;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+  }
+  
+  .btn-primary:active {
+    transform: scale(0.98);
+  }
+   */
+  /* Responsive Design */
+  @media (max-width: 640px) {
+    .failed-modal-content {
+      padding: 24px;
+      max-height: 90vh;
+    }
+  
+    .failed-modal-stats {
+      grid-template-columns: 1fr;
+    }
+  
+    .failed-modal-actions {
+      flex-direction: column-reverse;
+    }
+  
+    .btn {
+      width: 100%;
+      justify-content: center;
+    }
+  
+    .preview-table-container {
+      font-size: 12px;
+    }
+  
+    .preview-table th,
+    .preview-table td {
+      padding: 8px;
+    }
+  }
