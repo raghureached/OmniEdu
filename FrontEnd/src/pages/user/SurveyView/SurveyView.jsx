@@ -8,7 +8,7 @@ import api from '../../../services/api';
 
 const SurveyView = ({ id }) => {
     const [data, setData] = useState(null);
-    const { surveyId } = useParams();
+    const { surveyId ,assignId} = useParams();
     const [activeTab, setActiveTab] = useState('preview');
     const [feedbackReaction, setFeedbackReaction] = useState(null); // 'like' | 'dislike' | null
     const [feedbackComment, setFeedbackComment] = useState('');
@@ -17,15 +17,20 @@ const SurveyView = ({ id }) => {
         const fetchData = async () => {
             try {
                 const uuid = id || surveyId
-                const response = await api.get(`/api/user/getSurvey/${uuid}`);
-                console.log(response.data)
+                let response 
+                if (!assignId) {
+                    response = await api.get(`/api/user/enrolled/getSurvey/${uuid}`);
+                } else {
+                    response = await api.get(`/api/user/getSurvey/${uuid}`);
+                }
+                // console.log(response.data)
                 setData(response.data);
             } catch (error) {
                 console.error('Error fetching survey data:', error);
             }
         };
         fetchData();
-    }, [id]);
+    }, [id,surveyId]);
 
 
     // Derived display values with safe fallbacks

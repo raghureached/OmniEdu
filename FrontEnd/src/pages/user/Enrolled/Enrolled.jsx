@@ -18,6 +18,7 @@ const Enrolled = () => {
   const enrolled = useSelector((state) => state.userAssignments.enrolled);
 
   const currentItems= enrolled;
+  // console.log(currentItems)
   if(loading){
     return <LoadingScreen text="Loading Enrollments" />
   }
@@ -25,7 +26,7 @@ const Enrolled = () => {
   return (
     <div className="assigned-container">
       <div className="assigned-header">
-        <p>These are the content you are enrolled in</p>
+        {/* <p>These are the content you are enrolled in</p> */}
         
       </div>
 
@@ -33,8 +34,7 @@ const Enrolled = () => {
         {currentItems.length > 0 ? (
           <div className="assigned-grid">
             {currentItems.map(item => (
-              
-              item?.assignment_id?.contentId && <CourseCard key={item.id} data={item.assignment_id.contentId} status={item.status} progressPct={item.progress_pct} contentType={item.contentType}/>
+              item?.enrollment_id?.contentId && <CourseCard key={item.id} data={item.enrollment_id.contentId} assign_id={item.enrollment_id._id} status={item.status} progressPct={item.progress_pct} contentType={item.contentType}/>
             ))}
           </div>
         ) : (

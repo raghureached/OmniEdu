@@ -40,12 +40,12 @@
   .global-activity-filters-form input:focus,
   .global-activity-filters-form select:focus {
     outline: none;
-    border-color: #5570f1;
-    box-shadow: 0 0 0 2px rgba(85, 112, 241, 0.3);
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px rgba(28, 136, 199, 0.3);
   }
   
   .global-activity-filters-form button {
-    background: #5570f1;
+    background: var(--color-accent);
     color: white;
     font-weight: 500;
     padding: 10px 16px;
@@ -55,7 +55,7 @@
   }
   
   .global-activity-filters-form button:hover {
-    background: #4458c7;
+    background: var(--color-primary);
   }
   
   /* Date Range Section */
@@ -76,7 +76,7 @@
   }
   
   .global-activity-activity-table thead {
-    background: #5570f1;
+    background: var(--color-accent);
     color: #fff;
   }
   
@@ -126,12 +126,12 @@
   }
   
   .global-activity-pagination button:not(:disabled) {
-    background: #5570f1;
+    background: var(--color-accent);
     color: white;
   }
   
   .global-activity-pagination button:not(:disabled):hover {
-    background: #4458c7;
+    background: var(--color-primary);
   }
   
   .global-activity-pagination span {

@@ -15,8 +15,7 @@ const Catalog = () => {
     const fetchCatalogItems = async () => {
       setIsLoading(true);
       const response = await api.get('/api/user/getCatalog');
-      const data = response.data;
-      // console.log(data);
+      const data = response.data.data;
       setCatalogItems(data);
       setIsLoading(false);
     };
@@ -100,7 +99,7 @@ const Catalog = () => {
         ) : (
           filteredItems.length > 0 ? (
             filteredItems.map(item => (
-              <CourseCard key={item.id} data={item} status="not_enrolled" progressPct={-1} contentType={item.type} />
+              <CourseCard key={item.id} data={item} status={item.inProgress ? "in_progress" : "not_enrolled"} progressPct={-1} contentType={item.type} />
             ))
           ) : (
             <div className="catalog-no-results">

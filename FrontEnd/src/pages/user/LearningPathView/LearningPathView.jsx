@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle, ChevronDown, ChevronLeft, ChevronUp, Star, Play, Pause, Volume2, VolumeX, Maximize, Minimize, FileText, ClipboardCheck, EyeIcon, Plus, ThumbsUp, ThumbsDown, Send, Loader2, Route } from 'lucide-react';
+import { CheckCircle, ChevronDown, ChevronLeft, ChevronUp, Star, Play, Pause, Volume2, VolumeX, Maximize, Minimize, FileText, ClipboardCheck, EyeIcon, Plus, ThumbsUp, ThumbsDown, Send, Loader2, Route, Lock } from 'lucide-react';
 // import '../common/Preview/Preview.css';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -12,16 +12,36 @@ import SurveyView from '../SurveyView/SurveyView';
 const LearningPathView = () => {
     const [propCourseData, setPropCourseData] = useState(null);
     const navigate = useNavigate()
-    const { learningPathId } = useParams();
+    const { learningPathId, assignId } = useParams();
+    const [scheduleData, setScheduleData] = useState(null);
+    const scheduleMap = React.useMemo(() => {
+        // scheduleData is { isSuccess, message, data }
+        const schedules = scheduleData?.data?.elementSchedules;
+        if (!Array.isArray(schedules)) return new Map();
+
+        const map = new Map();
+        schedules.forEach((s) => {
+            if (s.elementId && s.assign_on) {
+                map.set(String(s.elementId), new Date(s.assign_on));
+            }
+        });
+        return map;
+    }, [scheduleData]);
     useEffect(() => {
         const fetchLearningPath = async () => {
             const response = await api.get(`/api/user/getLearningPath/${learningPathId}`);
-            console.log(response.data);
+            // console.log(response.data);
             setPropCourseData(response.data);
 
         };
+        const fetchAssignment = async () => {
+            const response = await api.get(`/api/user/getAssignmentSchedule/${assignId}`);
+            setScheduleData(response.data);
+
+        };
         fetchLearningPath();
-    }, [learningPathId]);
+        fetchAssignment();
+    }, [learningPathId, assignId]);
     // console.log(propCourseData)
     const [activeLesson, setActiveLesson] = useState(null);
     const [contentData, setContentData] = useState(null);
@@ -31,10 +51,13 @@ const LearningPathView = () => {
     const dispatch = useDispatch();
 
     const handleSectionClick = async (section, evt) => {
-        console.log(section)
+        if (section.locked) {
+            // Just ignore click if locked
+            return;
+        }
+
         setActiveLesson(section);
-        setLoadError(null)
-        // Scroll the clicked item into view at the top of the nearest scroll container
+        setLoadError(null);
         try {
             const wrapper = evt?.currentTarget?.parentElement;
             if (wrapper && typeof wrapper.scrollIntoView === 'function') {
@@ -50,6 +73,13 @@ const LearningPathView = () => {
         return ordered.map((l, idx) => {
             const type = (l.type || '').toLowerCase();
             const itemTitle = l.title || (typeof l.id === 'object' && l.id?.title) || `Item ${idx + 1}`;
+
+            // elementId that schedule uses – adjust if your lesson structure is different
+            const elementId = l.id?._id || l.id;   // IMPORTANT: this must match schedule.elementId
+            const assignOn = elementId ? scheduleMap.get(String(elementId)) : null;
+            const now = new Date();
+            const locked = assignOn && assignOn > now;
+
             return {
                 id: idx + 1,
                 title: itemTitle,
@@ -58,9 +88,11 @@ const LearningPathView = () => {
                 data: null,
                 uuid: l.uuid,
                 ref: l.id ?? null,
+                locked,
+                assignOn,
             };
         });
-    }, [sourceData]);
+    }, [sourceData, scheduleMap]);
     // console.log(sections)
 
     const courseData = React.useMemo(() => {
@@ -103,12 +135,13 @@ const LearningPathView = () => {
         <div style={{ display: 'flex', height: '90vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', backgroundColor: '#f8f9fa' }}>
             <div style={{
                 width: '360px',
-                backgroundColor: '#fff',
+                background: 'linear-gradient(180deg, #f9fafb 0%, #eef2ff 100%)',
                 borderRight: '1px solid #e5e7eb',
-                padding: '24px',
+                padding: '24px 20px',
                 height: '100%',
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                boxShadow: '4px 0 12px rgba(15, 23, 42, 0.03)'
             }}>
 
 
@@ -142,8 +175,18 @@ const LearningPathView = () => {
                     {/* <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#111827', marginBottom: '8px', lineHeight: '1.4' }}>{courseData.title}</h1> */}
                 </div>
 
-                <div style={{ marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid #e5e7eb' }}>
+                {/* <div style={{ marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid #e5e7eb' }}>
+                 */}
+                <div style={{
+                    marginBottom: '20px',
+                    padding: '14px 14px 18px 14px',
+                    borderRadius: '14px',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e5e7eb',
+                    boxShadow: '0 8px 18px rgba(15, 23, 42, 0.04)'
+                }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                        {/* <span style={{ fontSize: '20px', fontWeight: '700', color: '#5570f1' }}> */}
                         <span style={{ fontSize: '20px', fontWeight: '700', color: '#5570f1' }}>
                             {(() => { const total = sections.length; const done = completedSet.size; return total ? Math.round((done / total) * 100) : 0; })()}%
                         </span>
@@ -166,25 +209,94 @@ const LearningPathView = () => {
                     paddingRight: "4px"
                 }}>
 
-                    {courseData.sections.map((section, idx) => (
-                        <div key={section.id} style={{ marginBottom: '12px' }} >
-                            <div
-                                onClick={(e) => handleSectionClick(section, e)}
-                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 12px', cursor: 'pointer', borderRadius: '8px', transition: 'background-color 0.2s', backgroundColor: activeLesson?.id === section.id ? '#C2C2C2' : 'transparent' }}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = activeLesson?.id === section.id ? '#C2C2C2' : '#C2C2C2')}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = activeLesson?.id === section.id ? '#C2C2C2' : 'transparent')}>
+                    {courseData.sections.map((section, idx) => {
+                        const isLocked = section.locked;
+                        const hoverText =
+                            isLocked && section.assignOn
+                                ? `Available after ${section.assignOn.toLocaleString()}`
+                                : '';
 
-                                <div style={{ flex: 1 }}>
-                                    {/* {getTypeIcon(section.type)} */}
-                                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#111827', marginBottom: '6px' }}>{section.title}</div>
-                                    <div style={{ fontSize: '12px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        {getTypeIcon(section.type)}<span style={{ border: "1px solid white", padding: "3px 6px", borderRadius: "10px", fontSize: "12px", fontWeight: "500", backgroundColor: "#C2C2C2" }}>{section.type}</span>
-                                        {completedSet.has(section.id) && <CheckCircle size={14} color="#10b981" />}
+                        return (
+                            <div key={section.id} style={{ marginBottom: '12px' }}>
+                                <div
+                                    onClick={(e) => handleSectionClick(section, e)}
+                                    style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: '14px 12px',
+                                        cursor: isLocked ? 'not-allowed' : 'pointer',
+                                        borderRadius: '8px',
+                                        transition: 'background-color 0.2s',
+                                        backgroundColor:
+  activeLesson?.id === section.id ? '#e0e7ff' : 'transparent',
+                                        opacity: isLocked ? 0.6 : 1,
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.backgroundColor =
+                                            activeLesson?.id === section.id ? '#e0e7ff' : '#e0e7ff';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor =
+                                            activeLesson?.id === section.id ? '#e0e7ff' : 'transparent';
+                                    }}
+                                    title={hoverText}
+                                >
+                                    <div style={{ flex: 1 }}>
+                                        <div
+                                            style={{
+                                                fontSize: '14px',
+                                                fontWeight: '600',
+                                                color: '#111827',
+                                                marginBottom: '6px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                justifyContent: 'space-between',
+                                            }}
+                                        >
+                                            {section.title} {isLocked && section.assignOn && (
+                                                <span style={{ fontSize: '11px', color: 'black' }}>
+                                                    <Lock size={16} />
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div
+                                            style={{
+                                                fontSize: '12px',
+                                                color: '#6b7280',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                            }}
+                                        >
+                                            {getTypeIcon(section.type)}
+                                            <span
+                                                style={{
+                                                    border: '1px solid white',
+                                                    padding: '3px 6px',
+                                                    borderRadius: '10px',
+                                                    fontSize: '12px',
+                                                    fontWeight: '500',
+                                                    backgroundColor: '',
+                                                }}
+                                            >
+                                                {section.type}
+                                            </span>
+                                            {section.locked && section.assignOn && (
+                                                <span style={{ fontSize: '11px', color: '#b91c1c' }}>
+                                                    Available after {section.assignOn.toLocaleString()}
+                                                </span>
+                                            )}
+                                            {completedSet.has(section.id) && (
+                                                <CheckCircle size={14} color="#10b981" />
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
             </div>

@@ -46,12 +46,12 @@
 }
 
 .csv-upload-dropzone:hover {
-    border-color: #4f46e5;
+    border-color: var(--color-primary);
     background: #f0f4ff;
 }
 
 .csv-upload-dropzone.drag-active {
-    border-color: #4f46e5;
+    border-color: var(--color-primary);
     background: #f0f4ff;
     transform: scale(1.02);
 }

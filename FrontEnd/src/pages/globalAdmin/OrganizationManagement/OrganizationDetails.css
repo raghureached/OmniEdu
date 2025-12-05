@@ -98,7 +98,7 @@
   font-weight: 500;
 }
 .orgDetail-section ul li strong {
-  color: #5570F1;
+  color: var(--color-accent);
   margin-right: 6px;
 }
 

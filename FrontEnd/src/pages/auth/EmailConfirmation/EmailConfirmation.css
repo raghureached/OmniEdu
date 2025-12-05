@@ -48,7 +48,7 @@
 
 .emailConfirmation-verifying-message {
   background-color: #e9f5fe;
-  color: #0c63e4;
+  color: var(--color-accent);
 }
 
 .emailConfirmation-success-message {
@@ -72,9 +72,9 @@
   display: inline-block;
   width: 40px;
   height: 40px;
-  border: 4px solid rgba(12, 99, 228, 0.2);
+  border: 4px solid rgba(28, 136, 199, 0.2);
   border-radius: 50%;
-  border-top-color: #0c63e4;
+  border-top-color: var(--color-accent);
   animation: spin 1s linear infinite;
   margin: 10px auto;
 }
@@ -98,12 +98,12 @@
 }
 
 .emailConfirmation-btn-primary {
-  background-color: #4a90e2;
+  background-color: var(--color-accent);
   color: white;
 }
 
 .emailConfirmation-btn-primary:hover {
-  background-color: #3a7bc8;
+  background-color: var(--color-primary);
 }
 
 .emailConfirmation-btn-secondary {

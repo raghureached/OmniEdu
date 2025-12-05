@@ -63,7 +63,7 @@
 
 .module-overlay__progress-bar {
   height: 4px;
-  background: #5570f1;
+  background: var(--color-accent);
   transition: width 0.3s ease;
 }
 
@@ -105,9 +105,9 @@
 .module-overlay__form-input:focus,
 .module-overlay__form-select:focus,
 .module-overlay__form-textarea:focus {
-  border-color: #5570f1;
+  border-color: var(--color-accent);
   outline: none;
-  box-shadow: 0 0 6px rgba(85, 112, 241, 0.4);
+  box-shadow: 0 0 6px rgba(28, 136, 199, 0.4);
 }
 
 .module-overlay__form-textarea {
@@ -144,7 +144,7 @@
 
 .module-overlay__add-outcome-btn {
   font-weight: 600;
-  background: #5570f1;
+  background: var(--color-accent);
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -157,7 +157,7 @@
   transition: background-color 0.3s ease;
 }
 .module-overlay__add-outcome-btn:hover {
-  background: #3f57d4;
+  background: var(--color-primary);
 }
 
 .module-overlay__tags-container {
@@ -168,7 +168,7 @@
 }
 
 .module-overlay__tag {
-  background: #5570f1;
+  background: var(--color-accent);
   border-radius: 20px;
   padding: 4px 12px;
   color: #fff;
@@ -211,10 +211,10 @@
 }
 .module-overlay__content-type-btn.active,
 .module-overlay__content-type-btn:hover {
-  border-color: #5570f1;
-  background: #5570f1;
+  border-color: var(--color-accent);
+  background: var(--color-accent);
   color: #fff;
-  box-shadow: 0 4px 8px rgba(85, 112, 241, 0.3);
+  box-shadow: 0 4px 8px rgba(28, 136, 199, 0.3);
 }
 
 .module-overlay__uploaded-file-container {
@@ -240,7 +240,7 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  color: #5570f1;
+  color: var(--color-accent);
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -259,8 +259,8 @@
   gap: 6px;
   cursor: pointer;
   font-weight: 600;
-  color: #5570f1;
-  border: 2px dashed #5570f1;
+  color: var(--color-accent);
+  border: 2px dashed var(--color-accent);
   padding: 14px 18px;
   border-radius: 8px;
   transition: background-color 0.25s ease, color 0.25s ease;
@@ -268,7 +268,7 @@
 }
 .module-overlay__upload-label:hover,
 .module-overlay__upload-label:focus {
-  background-color: #5570f1;
+  background-color: var(--color-accent);
   color: white;
   outline: none;
 }
@@ -283,7 +283,7 @@
 .module-overlay__slider {
   cursor: pointer;
   width: 160px;
-  accent-color: #5570f1;
+  accent-color: var(--color-accent);
 }
 
 .module-overlay__checkbox {
@@ -333,14 +333,14 @@
 
 .module-overlay__btn-prev {
   background-color: #e0e4ff;
-  color: #5570f1;
+  color: var(--color-accent);
 }
 .module-overlay__btn-prev:hover:not(:disabled) {
   background-color: #c9d1ff;
 }
 
 .module-overlay__btn-next {
-  background-color: #5570f1;
+  background-color: var(--color-accent);
   color: white;
 }
 .module-overlay__btn-next:disabled {
@@ -348,7 +348,7 @@
   cursor: not-allowed;
 }
 .module-overlay__btn-next:hover:not(:disabled) {
-  background-color: #3f57d4;
+  background-color: var(--color-primary);
 }
 
 .module-overlay__btn-add {
@@ -382,11 +382,11 @@
   transition: background-color 0.3s ease;
 }
 .module-overlay__step-dot.active {
-  background-color: #5570f1;
-  box-shadow: 0 0 8px rgba(85, 112, 241, 0.4);
+  background-color: var(--color-accent);
+  box-shadow: 0 0 8px rgba(28, 136, 199, 0.4);
 }
 .module-overlay__btn-save {
-  background-color: #5570f1;
+  background-color: var(--color-accent);
   color: white;
 }
 .module-overlay__btn-preview {
@@ -400,10 +400,10 @@
 }
 .module-overlay__drafts p{
   font-weight: 600;
-  color: #5570f1;
+  color: var(--color-accent);
 }
 .module-overlay__drafts button{
   font-weight: 600;
-  background-color: #5570f1;
+  background-color: var(--color-accent);
   color: white;
 }

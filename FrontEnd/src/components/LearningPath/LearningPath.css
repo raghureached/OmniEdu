@@ -61,7 +61,7 @@ body {
 .course-icon {
     width: 60px;
     height: 60px;
-    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -129,7 +129,7 @@ body {
 
 .progress-bar {
     height: 100%;
-    background: linear-gradient(135deg, #5570f1 0%, #4338ca 100%);
+    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 100%);
     border-radius: 4px;
     transition: width 0.3s ease;
 }

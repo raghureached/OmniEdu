@@ -8,7 +8,7 @@ import AssessmentQuiz from '../../../components/Assessments/Assessment';
 import api from '../../../services/api';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 const AssessmentView = ({ id }) => {
-    const { assessmentId, inProgress } = useParams();
+    const { assessmentId, inProgress ,assignId} = useParams();
     const [data, setData] = useState(null)
     const [showQuiz, setShowQuiz] = useState(false);
     const [activeTab, setActiveTab] = useState('preview');
@@ -20,6 +20,7 @@ const AssessmentView = ({ id }) => {
     const [feedbackComment, setFeedbackComment] = useState('');
     const [isAssessmentActive, setIsAssessmentActive] = useState(false);
     const [loading, setLoading] = useState(false);
+    // console.log(assignId)
     useEffect(() => {
         if(inProgress === "true" || inProgress){
             setActiveTab('resources');
@@ -30,7 +31,13 @@ const AssessmentView = ({ id }) => {
             try {
                 setLoading(true);
                 const uuid = id || assessmentId;
-                const response = await api.get(`/api/user/getAssessment/${uuid}`);
+                let response;
+                if(!assignId || assignId === "undefined"){
+                    response = await api.get(`/api/user/enrolled/getAssessment/${uuid}`);
+                    console.log("response data", response.data);
+                }else{
+                    response = await api.get(`/api/user/getAssessment/${uuid}`);
+                }
                 // console.log("response data", response.data);
                 setData(response.data);
                 setLoading(false);
@@ -60,7 +67,6 @@ const AssessmentView = ({ id }) => {
     const tags = Array.isArray(data?.tags) ? data.tags : [];
     const description = data?.description || 'No overview provided.';
     const thumbnail = data?.thumbnail || '';
-    const resource = data?.externalResource || null;
     const instructions = data?.instructions || null
 
 
@@ -266,7 +272,7 @@ const AssessmentView = ({ id }) => {
                             <div className="user-mod-tab-pane user-mod-resources-pane">
                                 <AssessmentQuiz onClose={handleQuizClose} previewMode={false} assessmentData={data} />
                                 <div className="user-mod-resources-content">
-                                    {data.feedbackEnabled ? (
+                                    {data?.feedbackEnabled ? (
                                         <div className="user-mod-card" style={{ height: '22%' }} >
                                             <div className="feedback-header-row" style={{ marginBottom: "20px" }}>
                                                 <h3 className="feedback-title">Feedback</h3>
@@ -310,7 +316,7 @@ const AssessmentView = ({ id }) => {
                                                     </button>
                                                 </div>
                                             </div>
-                                            {data.feedback && (
+                                            {data?.feedback && (
                                                 <div className="user-mod-iframe-container" style={{ marginTop: 8 }}>
                                                     <iframe src={data.feedback} frameBorder="0" title="Feedback"></iframe>
                                                 </div>

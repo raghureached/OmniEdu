@@ -79,7 +79,7 @@
   /* Additional Courses Specific Styles */
   .additional-card {
     background-color: #f8f9fa;
-    border-left: 4px solid #3498db;
+    border-left: 4px solid var(--color-accent);
   }
   
   .additional-course-tags {
@@ -91,7 +91,7 @@
   
   .additional-course-tag {
     background-color: #e8f4fc;
-    color: #3498db;
+    color: var(--color-accent);
     font-size: 12px;
     padding: 4px 8px;
     border-radius: 4px;
@@ -112,7 +112,7 @@
   
   .additional-popularity-medium {
     background-color: #e8f4fc;
-    color: #3498db;
+    color: var(--color-accent);
   }
   
   .additional-popularity-low {
@@ -128,11 +128,11 @@
   
   .additional-btn {
     flex: 2;
-    background-color: #3498db;
+    background-color: var(--color-accent);
   }
   
   .additional-btn:hover {
-    background-color: #2980b9;
+    background-color: var(--color-primary);
   }
   
   .additional-course-info-btn {

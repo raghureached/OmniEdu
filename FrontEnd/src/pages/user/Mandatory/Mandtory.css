@@ -77,7 +77,7 @@
   /* Additional Courses Specific Styles */
   .mandatory-additional-card {
     background-color: #f8f9fa;
-    border-left: 4px solid #3498db;
+    border-left: 4px solid var(--color-accent);
   }
   
   .mandatory-course-tags {
@@ -89,7 +89,7 @@
   
   .mandatory-course-tag {
     background-color: #e8f4fc;
-    color: #3498db;
+    color: var(--color-accent);
     font-size: 12px;
     padding: 4px 8px;
     border-radius: 4px;
@@ -110,7 +110,7 @@
   
   .mandatory-popularity-medium {
     background-color: #e8f4fc;
-    color: #3498db;
+    color: var(--color-accent);
   }
   
   .mandatory-popularity-low {
@@ -126,11 +126,11 @@
   
   .mandatory-additional-btn {
     flex: 2;
-    background-color: #3498db;
+    background-color: var(--color-accent);
   }
   
   .mandatory-additional-btn:hover {
-    background-color: #2980b9;
+    background-color: var(--color-primary);
   }
   
   .mandatory-course-info-btn {
@@ -329,7 +329,7 @@
 
 .priority-medium {
   background-color: #dbeafe;
-  color: #1d4ed8;
+  color: var(--color-primary);
 }
 
 .priority-low {
@@ -351,7 +351,7 @@
 
 .status-in-progress {
   background-color: #e0f2fe;
-  color: #0369a1;
+  color: var(--color-accent);
 }
 
 .status-completed {
@@ -432,7 +432,7 @@
 }
 
 .progress-fill.priority-medium {
-  background-color: #3498db;
+  background-color: var(--color-accent);
 }
 
 .progress-fill.priority-low {

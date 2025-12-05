@@ -10,8 +10,6 @@ code {
 }
 
 
-/* Remove default margin */
-
 h1,
 h2,
 h3,
@@ -23,22 +21,16 @@ p {
 }
 
 
-/* Improve button styling */
-
 button {
     cursor: pointer;
 }
 
-
-/* Improve link styling */
 
 a {
     text-decoration: none;
     color: inherit;
 }
 
-
-/* modified for adding scrolling for all screens */
 
 html,
 body,
@@ -47,26 +39,18 @@ body,
     height: 100%;
     width: 100%;
     overflow-x: hidden;
-    /* Prevent horizontal scroll */
     overflow-y: auto;
-    /* Enable vertical scrolling */
     -webkit-overflow-scrolling: touch;
-    /* Smooth scroll on iOS */
     scroll-behavior: smooth;
-    /* Smooth scrolling */
+   
 }
-
-
-/* Scrollbar styling with proper spacing */
-
 :root {
+    --color-primary: #011F5B;
+    --color-accent: #1C88C7;
     --scrollbar-thumb: #909091;
     --scrollbar-track: rgba(0, 0, 0, 0.05);
     --scrollbar-size: 6px;
 }
-
-
-/* Modern browsers (Chrome, Edge, Safari) */
 
 ::-webkit-scrollbar {
     width: var(--scrollbar-size);
@@ -83,26 +67,17 @@ body,
 }
 
 
-/* Firefox */
-
 html {
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
     overflow-y: overlay;
-    /* Prevents layout shift */
 }
-
-
-/* Prevent unwanted space on the right */
 
 html,
 body {
     overflow-x: clip;
-    /* New standard for overflow-x: hidden */
 }
 
-
-/* Ensure full-width elements don't cause overflow */
 
 img,
 video,
@@ -110,12 +85,8 @@ iframe {
     max-width: 100%;
 }
 
-
-/* Fix for potential margin collapse issues */
-
 body>* {
     display: flow-root;
-    /* Creates a new block formatting context */
 }
 
 
@@ -131,9 +102,9 @@ body>* {
   justify-content: center;
 }
 .global-action-btn.edit:hover {
-    background: #eff6ff;
-    border-color: #dbeafe;
-    color: #2563eb;
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #ffffff;
   }
   
 .global-action-btn.delete:hover {
@@ -181,7 +152,7 @@ body>* {
   }
   
   .btn-primary {
-    background: linear-gradient(135deg, #5570f1 0%, #4338ca 100%);
+    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 100%);
     border: none;
     border-radius: 12px;
     padding: 12px 24px;
@@ -193,12 +164,12 @@ body>* {
     align-items: center;
     gap: 8px;
     transition: all 0.2s ease;
-    box-shadow: 0 4px 14px 0 rgba(85, 112, 241, 0.3);
+    box-shadow: 0 4px 14px 0 rgba(1, 31, 91, 0.3);
   }
   
   .btn-primary:hover {
-    background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
-    box-shadow: 0 6px 20px 0 rgba(85, 112, 241, 0.4);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+    box-shadow: 0 6px 20px 0 rgba(1, 31, 91, 0.4);
     transform: translateY(-1px);
   }
   
@@ -212,3 +183,6 @@ input[type="number"]::-webkit-inner-spin-button {
   margin: 0;
 }
 
+button:hover{
+  transition: background-color 0.4s ease !important; 
+}

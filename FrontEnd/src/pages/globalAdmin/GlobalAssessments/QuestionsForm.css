@@ -56,7 +56,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #5570f1;
+    color: var(--color-accent);
   }
   
   .assess-modal-header h2 {
@@ -161,8 +161,8 @@
   .assess-form-input:focus,
   .assess-form-select:focus,
   .assess-form-textarea:focus {
-    border-color: #5570f1;
-    box-shadow: 0 0 0 3px rgba(85, 112, 241, 0.1);
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(28, 136, 199, 0.1);
   }
   
   .assess-form-input::placeholder,
@@ -212,7 +212,7 @@
   .assess-question-num {
     font-size: 1rem;
     font-weight: 600;
-    color: #5570f1;
+    color: var(--color-accent);
     background: #eff6ff;
     border: 1px solid #dbeafe;
     border-radius: 8px;
@@ -334,7 +334,7 @@
     cursor: pointer;
     font-size: 0.9rem;
     font-weight: 500;
-    color: #5570f1;
+    color: var(--color-accent);
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
@@ -343,7 +343,7 @@
   }
   
   .assess-file-label:hover {
-    border-color: #5570f1;
+    border-color: var(--color-accent);
     background: #f8fafc;
   }
   
@@ -437,7 +437,7 @@
 .assess-preview-link {
   display: inline-block;
   font-size: 0.9rem;
-  color: #1d4ed8;
+  color: var(--color-primary);
   text-decoration: underline;
 }
 .assess-tag-picker {
@@ -465,7 +465,7 @@
   border-radius: 9999px;
   background: #eff6ff;
   border: 1px solid #dbeafe;
-  color: #1e40af;
+  color: var(--color-primary);
   font-size: 0.85rem;
 }
 
@@ -478,7 +478,7 @@
   border-radius: 9999px;
   border: none;
   cursor: pointer;
-  color: #1e40af;
+  color: var(--color-primary);
   background: transparent;
 }
 
@@ -696,7 +696,7 @@
   background: #ffffff;
 }
 .assess-qpreview-option input {
-  accent-color: #5570f1;
+  accent-color: var(--color-accent);
 }
 
 /* Assessment preview refinements */
@@ -789,13 +789,13 @@
   border: 1px solid #e2e8f0; /* slate-200 */
   border-radius: 12px;
   background: #ffffff;
-  color: #5570f1; /* match survey accent */
+  color: var(--color-accent); /* match survey accent */
   font-weight: 500;
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .assess-upload-btn:hover {
-  border-color: #5570f1; /* blue hover like survey */
+  border-color: var(--color-accent); /* blue hover like survey */
   background: #f8fafc;
 }
 .assess-upload-btn:focus-visible {
@@ -815,7 +815,7 @@
 .assess-progress-bar {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, #5570f1 0%, #4338ca 100%);
+  background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-primary) 100%);
   transition: width 300ms ease;
 }
 
@@ -841,7 +841,7 @@
 .assess-header-progress .bar {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, #5570f1 0%, #4338ca 100%);
+  background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-primary) 100%);
   transition: width 300ms ease;
 }
 

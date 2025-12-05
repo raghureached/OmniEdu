@@ -7,6 +7,7 @@ const OrganizationAssessments = require("../../models/organizationAssessments_mo
 const Module = require("../../models/moduleOrganization_model");
 const OrganizationSurveys = require("../../models/organizationSurveys_model");
 const { sendMail } = require("../../utils/Emailer");
+const Notification = require("../../models/Notification_model");
 // If you also track user progress
 // const Progress = require("../models/progress.model");
 
@@ -34,7 +35,7 @@ const createAssignment = async (req, res) => {
       enforceOrder
     } = req.body;
 
-    if (!contentId ) {
+    if (!contentId) {
       return res.status(400).json({
         isSuccess: false,
         message: "Missing required fields",
@@ -46,12 +47,12 @@ const createAssignment = async (req, res) => {
       normalizedType === "Module"
         ? "OrganizationModule"
         : normalizedType === "Assessment"
-        ? "OrganizationAssessments"
-        : normalizedType === "Survey"
-        ? "OrganizationSurvey"
-        : normalizedType === "Learning Path" || normalizedType === "LearningPath"
-        ? "LearningPath"
-        : null;
+          ? "OrganizationAssessments"
+          : normalizedType === "Survey"
+            ? "OrganizationSurvey"
+            : normalizedType === "Learning Path" || normalizedType === "LearningPath"
+              ? "LearningPath"
+              : null;
     // Preload Learning Path details if applicable (for enforceOrder-driven locking only)
     let lp = null;
     if (content_type === "LearningPath" && contentId) {
@@ -64,10 +65,10 @@ const createAssignment = async (req, res) => {
     // Use element schedules exactly as provided; just coerce provided dates to Date objects
     const elementSchedulesEffective = Array.isArray(elementSchedules)
       ? elementSchedules.map(e => ({
-          elementId: e.elementId,
-          assign_on: e.assign_on ? new Date(e.assign_on) : null,
-          due_date: e.due_date ? new Date(e.due_date) : null,
-        }))
+        elementId: e.elementId,
+        assign_on: e.assign_on ? new Date(e.assign_on) : null,
+        due_date: e.due_date ? new Date(e.due_date) : null,
+      }))
       : [];
     // console.log(elementSchedulesEffective)
     let assignment;
@@ -77,23 +78,23 @@ const createAssignment = async (req, res) => {
     const assignDateObj = assignDate ? new Date(assignDate) : null;
     const dueDateObj = dueDate ? new Date(dueDate) : null;
     const assignTimeStr = (assignDateObj && !isNaN(assignDateObj)) ? assignDateObj.toISOString().split('T')[1] : null;
-    const   dueTimeStr = (dueDateObj && !isNaN(dueDateObj)) ? dueDateObj.toISOString().split('T')[1] : null;
+    const dueTimeStr = (dueDateObj && !isNaN(dueDateObj)) ? dueDateObj.toISOString().split('T')[1] : null;
 
-    if(isIndividual){
-     assignment = await ForUserAssignment.create({
-        organization_id:req.user.organization_id,
-        assign_type:content_type,
+    if (isIndividual) {
+      assignment = await ForUserAssignment.create({
+        organization_id: req.user.organization_id,
+        assign_type: content_type,
         assign_on: assignDateObj || Date.now(),
         due_date: dueDateObj || null,
         notify_users: typeof notifyUsers === 'boolean' ? notifyUsers : true,
         isRecurring: isRecurring ?? false,
-        assigned_users:assignedUsers,
+        assigned_users: assignedUsers,
         created_by: req.user._id,
         dueTime: dueTimeStr,
         assignTime: assignTimeStr,
-        contentId:contentId,
-        contentType:contentType,
-        contentName:contentName,
+        contentId: contentId,
+        contentType: contentType,
+        contentName: contentName,
         // additional settings
         bulkEmails: Array.isArray(bulkEmails) ? bulkEmails : [],
         enableReminder: !!enableReminder,
@@ -104,34 +105,34 @@ const createAssignment = async (req, res) => {
         elementSchedules: elementSchedulesEffective,
         orgAssignment: true,
       });
-    }else{
-      
-     assignment = await ForUserAssignment.create({
-      organization_id:req.user.organization_id,
-      assign_type:content_type,
-      assign_on: assignDateObj || Date.now(),
-      due_date: dueDateObj || null,
-      notify_users: typeof notifyUsers === 'boolean' ? notifyUsers : true,
-      isRecurring: isRecurring ?? false,
-      assigned_users:null,
-      created_by: req.user._id,
-      dueTime: dueTimeStr,
-      assignTime: assignTimeStr,
-      contentId:contentId,
-      contentType:contentType,
-      contentName:contentName,
-      groups:groups,
-      // additional settings
-      bulkEmails: Array.isArray(bulkEmails) ? bulkEmails : [],
-      enableReminder: !!enableReminder,
-      resetProgress: !!resetProgress,
-      recurringInterval: isRecurring ? (recurringInterval || "") : "",
-      customIntervalValue: isRecurring && recurringInterval === "custom" ? Number(customIntervalValue || 0) : 0,
-      customIntervalUnit: isRecurring && recurringInterval === "custom" ? (customIntervalUnit || "days") : "days",
-      elementSchedules: elementSchedulesEffective,
-      orgAssignment: true,
-    });
-  }
+    } else {
+
+      assignment = await ForUserAssignment.create({
+        organization_id: req.user.organization_id,
+        assign_type: content_type,
+        assign_on: assignDateObj || Date.now(),
+        due_date: dueDateObj || null,
+        notify_users: typeof notifyUsers === 'boolean' ? notifyUsers : true,
+        isRecurring: isRecurring ?? false,
+        assigned_users: null,
+        created_by: req.user._id,
+        dueTime: dueTimeStr,
+        assignTime: assignTimeStr,
+        contentId: contentId,
+        contentType: contentType,
+        contentName: contentName,
+        groups: groups,
+        // additional settings
+        bulkEmails: Array.isArray(bulkEmails) ? bulkEmails : [],
+        enableReminder: !!enableReminder,
+        resetProgress: !!resetProgress,
+        recurringInterval: isRecurring ? (recurringInterval || "") : "",
+        customIntervalValue: isRecurring && recurringInterval === "custom" ? Number(customIntervalValue || 0) : 0,
+        customIntervalUnit: isRecurring && recurringInterval === "custom" ? (customIntervalUnit || "days") : "days",
+        elementSchedules: elementSchedulesEffective,
+        orgAssignment: true,
+      });
+    }
     // Create progress records for targeted users
     let targetUserIds = [];
     if (isIndividual) {
@@ -146,27 +147,53 @@ const createAssignment = async (req, res) => {
       targetUserIds = profiles.map(p => p.user_id);
     }
     if (targetUserIds.length > 0) {
-      // Precompute element progress entries if provided
+      // 0) remove users who already have this content assigned in this org
+      const existingProgress = await UserContentProgress.find({
+        organization_id: req.user.organization_id,
+        user_id: { $in: targetUserIds },
+        contentId: contentId,
+        orgAssignment: true,      // only org assignments, ignore self-enrolls
+      }).select("user_id");
+
+      const existingUserIds = new Set(
+        existingProgress.map(p => p.user_id.toString())
+      );
+
+      const uniqueTargetUserIds = targetUserIds.filter(
+        uid => !existingUserIds.has(uid.toString())
+      );
+
+      // If everyone already has this content, just return without creating a new assignment
+      if (uniqueTargetUserIds.length === 0) {
+        return res.status(400).json({
+          isSuccess: false,
+          message: "This content is already assigned to the selected users.",
+        });
+      }
+
+      // 1) Precompute element progress entries if provided
       const now = new Date();
       const elementsProgress = Array.isArray(elementSchedulesEffective)
         ? elementSchedulesEffective.map((el, idx) => {
-            const assign = el.assign_on ? new Date(el.assign_on) : null;
-            const due = el.due_date ? new Date(el.due_date) : null;
-            let status = "assigned";
-            if ((assign && assign > now) || (enforceOrderEffective && idx > 0)) {
-              status = "locked";
-            }
-            return {
-              elementId: el.elementId,
-              status,
-              assign_on: assign,
-              due_date: due,
-              started_at: null,
-              completed_at: null,
-            };
-          })
+          const assign = el.assign_on ? new Date(el.assign_on) : null;
+          const due = el.due_date ? new Date(el.due_date) : null;
+          let status = "assigned";
+          if ((assign && assign > now) || (enforceOrderEffective && idx > 0)) {
+            status = "locked";
+          }
+          return {
+            elementId: el.elementId,
+            status,
+            assign_on: assign,
+            due_date: due,
+            started_at: null,
+            completed_at: null,
+          };
+        })
         : [];
-      const ops = targetUserIds.map(uid => ({
+
+      // 2) Build ops only for users who do NOT yet have this content
+      const ops = uniqueTargetUserIds.map(uid => ({
         updateOne: {
           filter: { assignment_id: assignment._id, user_id: uid },
           update: {
@@ -188,27 +215,39 @@ const createAssignment = async (req, res) => {
           upsert: true,
         },
       }));
+
       if (ops.length) {
         await UserContentProgress.bulkWrite(ops, { ordered: false });
       }
+
+      // 3) Send notifications only to new assignees
+      uniqueTargetUserIds.forEach(async (uid) => {
+        await Notification.create({
+          title: "Assignment Created",
+          description: "You have been assigned a new assignment",
+          type: "Assignment",
+          to: uid,
+          from: "Admin",
+        });
+      });
     }
-    try{
+    try {
       // console.log("assignment",assignment)
-    if(content_type === "LearningPath"){
-      await LearningPath.updateOne({ _id: assignment.contentId }, {status:"Published"});
-    }else if(content_type === "OrganizationModule"){
-      await Module.updateOne({ _id: assignment.contentId }, {status:"Published"});
-    }else if(content_type === "OrganizationAssessments"){
-      await OrganizationAssessments.updateOne({ _id: assignment.contentId }, {status:"Published"});
-    }else if(content_type === "OrganizationSurvey"){
-      await OrganizationSurveys.updateOne({ _id: assignment.contentId }, {status:"Published"});
+      if (content_type === "LearningPath") {
+        await LearningPath.updateOne({ _id: assignment.contentId }, { status: "Published" });
+      } else if (content_type === "OrganizationModule") {
+        await Module.updateOne({ _id: assignment.contentId }, { status: "Published" });
+      } else if (content_type === "OrganizationAssessments") {
+        await OrganizationAssessments.updateOne({ _id: assignment.contentId }, { status: "Published" });
+      } else if (content_type === "OrganizationSurvey") {
+        await OrganizationSurveys.updateOne({ _id: assignment.contentId }, { status: "Published" });
+      }
+      if (sendEmail) {
+        await sendMail();
+      }
+    } catch (error) {
+      console.log(error)
     }
-    if(sendEmail){
-      await sendMail();
-    }
-  }catch(error){
-    console.log(error)
-  }
     return res.status(201).json({
       isSuccess: true,
       message: "Assignment created successfully",
@@ -251,12 +290,12 @@ const editAssignment = async (req, res) => {
       normalizedType === "Module"
         ? "OrganizationModule"
         : normalizedType === "Assessment"
-        ? "OrganizationAssessments"
-        : normalizedType === "Survey"
-        ? "OrganizationSurvey"
-        : normalizedType === "Learning Path" || normalizedType === "LearningPath"
-        ? "LearningPath"
-        : undefined;
+          ? "OrganizationAssessments"
+          : normalizedType === "Survey"
+            ? "OrganizationSurvey"
+            : normalizedType === "Learning Path" || normalizedType === "LearningPath"
+              ? "LearningPath"
+              : undefined;
 
     // Safely parse dates and derive time strings
     const assignDateObj = assignDate ? new Date(assignDate) : undefined;
@@ -267,10 +306,10 @@ const editAssignment = async (req, res) => {
     // Coerce element schedules if provided
     const elementSchedulesEffective = Array.isArray(elementSchedules)
       ? elementSchedules.map(e => ({
-          elementId: e.elementId,
-          assign_on: e.assign_on ? new Date(e.assign_on) : null,
-          due_date: e.due_date ? new Date(e.due_date) : null,
-        }))
+        elementId: e.elementId,
+        assign_on: e.assign_on ? new Date(e.assign_on) : null,
+        due_date: e.due_date ? new Date(e.due_date) : null,
+      }))
       : undefined;
 
     const updateDoc = {
@@ -315,57 +354,57 @@ const editAssignment = async (req, res) => {
   }
 };
 
-const deleteAssignment = async(req,res)=>{
-    try {
-        const {id} = req.params
-        const assignment = await ForUserAssignment.findOneAndDelete({uuid:id})
-        return res.status(200).json({
-            isSuccess:true,
-            message:"Assignment deleted successfully",
-            data:assignment
-        })
-    } catch (error) {
-        return res.status(500).json({
-            isSuccess:false,
-            message:"Failed to delete assignment",
-            error:error.message
-        })
-    }
+const deleteAssignment = async (req, res) => {
+  try {
+    const { id } = req.params
+    const assignment = await ForUserAssignment.findOneAndDelete({ uuid: id })
+    return res.status(200).json({
+      isSuccess: true,
+      message: "Assignment deleted successfully",
+      data: assignment
+    })
+  } catch (error) {
+    return res.status(500).json({
+      isSuccess: false,
+      message: "Failed to delete assignment",
+      error: error.message
+    })
+  }
 }
 
-const getAssignments = async(req,res)=>{
-    try {
-        const assignments = await ForUserAssignment.find()
-        return res.status(200).json({
-            isSuccess:true,
-            message:"Assignments fetched successfully",
-            data:assignments
-        })
-    } catch (error) {
-        return res.status(500).json({
-            isSuccess:false,
-            message:"Failed to fetch assignments",
-            error:error.message
-        })
-    }
+const getAssignments = async (req, res) => {
+  try {
+    const assignments = await ForUserAssignment.find()
+    return res.status(200).json({
+      isSuccess: true,
+      message: "Assignments fetched successfully",
+      data: assignments
+    })
+  } catch (error) {
+    return res.status(500).json({
+      isSuccess: false,
+      message: "Failed to fetch assignments",
+      error: error.message
+    })
+  }
 }
 
-const getAssignment = async(req,res)=>{
-    try {
-        const {id} = req.params
-        const assignment = await ForUserAssignment.findOne({uuid:id}).populate("contentId")
-        return res.status(200).json({
-            isSuccess:true,
-            message:"Assignment fetched successfully",
-            data:assignment
-        })
-    } catch (error) {
-        return res.status(500).json({
-            isSuccess:false,
-            message:"Failed to fetch assignment",
-            error:error.message
-        })
-    }
+const getAssignment = async (req, res) => {
+  try {
+    const { id } = req.params
+    const assignment = await ForUserAssignment.findOne({ uuid: id }).populate("contentId")
+    return res.status(200).json({
+      isSuccess: true,
+      message: "Assignment fetched successfully",
+      data: assignment
+    })
+  } catch (error) {
+    return res.status(500).json({
+      isSuccess: false,
+      message: "Failed to fetch assignment",
+      error: error.message
+    })
+  }
 }
 module.exports = {
   createAssignment,

@@ -25,7 +25,7 @@
   transition: border 0.2s;
 }
 .admin-dash-org-select:focus {
-  border-color: #5570F1;
+  border-color: var(--color-accent);
 }
 
 /* Card */
@@ -52,7 +52,7 @@
   letter-spacing: 0.01em;
 }
 .admin-dash-settings-title span {
-  color: #5570F1;
+  color: var(--color-accent);
   background: #eef1fb;
   border-radius: 5px;
   padding: 3px 8px;
@@ -62,13 +62,13 @@
 /* Info */
 .admin-dash-settings-info {
   background: linear-gradient(90deg,#eef1fb 0,#e6edfe 100%);
-  border-left: 4px solid #5570F1;
+  border-left: 4px solid var(--color-accent);
   padding: 14px 20px;
   border-radius: 8px;
   font-size: 0.98rem;
   color: #3a416f;
   margin-bottom: 24px;
-  box-shadow: 0 2px 12px rgba(85,112,241,0.03);
+  box-shadow: 0 2px 12px rgba(28, 136, 199, 0.03);
 }
 
 /* List */
@@ -135,8 +135,8 @@
   border-radius: 50%;
 }
 input:checked + .admin-dash-slider {
-  background-color: #5570F1;
-  box-shadow: 0 2px 8px rgba(85,112,241,0.09);
+  background-color: var(--color-accent);
+  box-shadow: 0 2px 8px rgba(28, 136, 199, 0.09);
 }
 input:checked + .admin-dash-slider:before {
   transform: translateX(25px) scale(1.08);
@@ -145,14 +145,14 @@ input:checked + .admin-dash-slider:before {
 
 /* Save Button */
 .admin-dash-save-btn {
-  background: linear-gradient(90deg,#5570F1 70%, #4056d9 100%);
+  background: linear-gradient(90deg,var(--color-accent) 70%, var(--color-primary) 100%);
   color: #fff;
   font-size: 1.08rem;
   font-weight: 600;
   padding: 14px 0;
   border: none;
   border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(85,112,241,0.09);
+  box-shadow: 0 2px 8px rgba(28, 136, 199, 0.09);
   cursor: pointer;
   width: 100%;
   margin-top: 12px;
@@ -160,6 +160,6 @@ input:checked + .admin-dash-slider:before {
   transition: box-shadow 0.2s, background 0.18s;
 }
 .admin-dash-save-btn:hover {
-  box-shadow: 0 8px 24px rgba(85,112,241,0.15);
-  background: #4056d9;
+  box-shadow: 0 8px 24px rgba(28, 136, 199, 0.15);
+  background: var(--color-primary);
 }

@@ -6,7 +6,7 @@ const userContentProgressSchema = new mongoose.Schema(
     uuid: { type: String, default: uuidv4, unique: true, index: true },
     organization_id: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true },
     assignment_id: { type: mongoose.Schema.Types.ObjectId, ref: "ForUserAssignment"},
-    enrollment_id: { type: mongoose.Schema.Types.ObjectId, ref: "Enrollment" },
+    enrollment_id: { type: mongoose.Schema.Types.ObjectId, ref: "Enrollments" },
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
     contentId: { type: mongoose.Schema.Types.ObjectId, required: true },
     contentType: { type: String, required: true },

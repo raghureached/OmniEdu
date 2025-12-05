@@ -291,7 +291,7 @@ const LearningPaths = () => {
             </div>
           </div>
         )}
-        <button className="btn-primary" onClick={openCreateModal}>+ Add Learning Path</button>
+        <button className="btn-primary" onClick={openCreateModal}>+ Create Learning Path</button>
 
         </div>
         

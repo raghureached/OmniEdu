@@ -58,9 +58,9 @@
 }
 
 .filter-options button.active {
-  background-color: #2563eb;
+  background-color: var(--color-primary);
   color: white;
-  border-color: #2563eb;
+  border-color: var(--color-primary);
 }
 
 .search-group {
@@ -122,7 +122,7 @@
 
 .action-badge.update {
   background-color: #e0f2fe;
-  color: #0284c7;
+  color: var(--color-accent);
 }
 
 .action-badge.delete {

@@ -4,8 +4,8 @@
   --user-mod-muted: #38414f;
   --user-mod-text: #0f1724;
 
-  --user-mod-accent: #5570f1;
-  --user-mod-accent-600: #3f5af0;
+  --user-mod-accent: var(--color-accent);
+  --user-mod-accent-600: var(--color-primary);
   --user-mod-soft: #eff6ff;
   --user-mod-shadow: 0 8px 22px rgba(18, 38, 63, 0.08);
   --user-mod-radius: 12px;

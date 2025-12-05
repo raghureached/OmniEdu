@@ -3,8 +3,8 @@
     --global-preview-card: #ffffff;
     --global-preview-muted: #38414f;
     --global-preview-text: #0f1724;
-    --global-preview-accent: #5570f1;
-    --global-preview-accent-600: #3f5af0;
+    --global-preview-accent: var(--color-accent);
+    --global-preview-accent-600: var(--color-primary);
     --global-preview-soft: #eff6ff;
     --global-preview-shadow: 0 8px 22px rgba(18, 38, 63, 0.08);
     --global-preview-radius: 12px;

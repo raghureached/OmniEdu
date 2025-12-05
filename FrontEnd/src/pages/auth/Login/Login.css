@@ -50,17 +50,17 @@
   width: 60px;
   height: 60px;
   margin: 0 auto 16px;
-  background-color: #0d6efd;
+  background-color: var(--color-accent);
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 16px rgba(13, 110, 253, 0.3);
+  box-shadow: 0 8px 16px rgba(28, 136, 199, 0.3);
   color: white;
 }
 
 .login-logo h1 {
-  color: #0d6efd;
+  color: var(--color-accent);
   margin: 0;
   font-size: 32px;
   font-weight: 700;
@@ -102,10 +102,10 @@
 }
 
 .form-group input:focus {
-  border-color: #0d6efd;
+  border-color: var(--color-accent);
   outline: none;
   background-color: #ffffff;
-  box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+  box-shadow: 0 0 0 4px rgba(28, 136, 199, 0.1);
 }
 
 .form-group input::placeholder {
@@ -136,7 +136,7 @@
 }
 
 .password-toggle:hover {
-  color: #0d6efd;
+  color: var(--color-accent);
 }
 
 .form-options {
@@ -164,7 +164,7 @@
 }
 
 .forgot-password-link {
-  color: #0d6efd;
+  color: var(--color-accent);
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
@@ -172,7 +172,7 @@
 }
 
 .forgot-password-link:hover {
-  color: #0b5ed7;
+  color: var(--color-primary);
   text-decoration: underline;
 }
 
@@ -259,14 +259,14 @@
 }
 
 .signup-link a {
-  color: #0d6efd;
+  color: var(--color-accent);
   text-decoration: none;
   font-weight: 600;
   transition: color 0.2s;
 }
 
 .signup-link a:hover {
-  color: #0b5ed7;
+  color: var(--color-primary);
 }
 
 /* Responsive Design */

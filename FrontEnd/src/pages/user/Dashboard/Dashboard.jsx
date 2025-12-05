@@ -7,6 +7,7 @@ import {
   Global
 } from 'recharts';
 import { fetchMessages } from '../../../store/slices/messageSlice';
+import { FaAward, FaCheckCircle, FaExclamationTriangle, FaHourglassHalf, FaMedal, FaPlayCircle, FaStar } from 'react-icons/fa';
 
 const Dashboard = () => {
   const dispatch = useDispatch();
@@ -43,6 +44,17 @@ const Dashboard = () => {
     { month: 'May', logins: 2890, completions: 1380 },
     { month: 'Jun', logins: 3240, completions: 1520 }
   ];
+  const stats = {
+    completed: 123,
+    in_progress: 456,
+    enrolled: 789,
+    expired: 12
+  };
+  const rewards = {
+    stars: 0,
+    badges: 0,
+    credits: 0
+  };
 
   useEffect(() => {
     dispatch(fetchMessages());
@@ -166,11 +178,11 @@ const Dashboard = () => {
                           <div className="admin-message-text">{msg.message_text}</div>
                           <div className="admin-message-time">{msg.createdAt ? new Date(msg.createdAt).toLocaleString() : ''}</div>
                         </div>
-                        <span style={{float:"right",display:"flex",alignItems:"center",gap:"5px",flexDirection:"column"}}>
-                            
-                            <span> </span>
-                            {msg.isGlobal  ? "- OmniEdu Team" : "- Admin"}
-                            
+                        <span style={{ float: "right", display: "flex", alignItems: "center", gap: "5px", flexDirection: "column" }}>
+
+                          <span> </span>
+                          {msg.isGlobal ? "- OmniEdu Team" : "- Admin"}
+
                         </span>
                       </li>
                     ))}
@@ -187,14 +199,14 @@ const Dashboard = () => {
 
         {/* Getting Started Section */}
         <div className="admin-getting-started">
-          <h2 className="admin-section-title">Getting Started</h2>
+          <h2 className="admin-section-title">Training & Leaderboard Overview</h2>
         </div>
 
-        {/* 3-column row: two stats + quick links */}
-        <div className="admin-summary-grid">
-          {/* Stat Card 1: Organization Performance */}
+
+        {/* <div className="admin-summary-grid">
+          
           <div className="admin-quick-links-card">
-            {/* <h3 className="admin-quick-links-title">Organization Performance</h3> */}
+  
             <h2 className="admin-message-card-title"style={{ marginBottom: '1rem' }} >Completion Rates by Organization</h2>
             <div style={{ width: '100%', height: 250 }}>
               <ResponsiveContainer>
@@ -213,9 +225,9 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Stat Card 2: User Engagement Analytics */}
+          
           <div className="admin-quick-links-card">
-            {/* <h3 className="admin-quick-links-title">User Engagement Analytics</h3> */}
+            
             <h2 className="admin-message-card-title" style={{ marginBottom: '1rem' }}>Monthly User Activity</h2>
             <div style={{ width: '100%', height: 250 }}>
               <ResponsiveContainer>
@@ -235,7 +247,7 @@ const Dashboard = () => {
           </div>
 
 
-          {/* Quick Links */}
+     
           <div className="admin-quick-links-card">
             <h2 className="admin-message-card-title admin-quick-link-item" style={{ padding: "10px 12px" }} >Quick Links</h2>
             <ul className="admin-quick-links-list" role="list">
@@ -254,7 +266,111 @@ const Dashboard = () => {
               ))}
             </ul>
           </div>
+        </div> */}
+        <div className='admin-summary-grid'>
+          <div className="learning-dashboard-card learning-training-summary">
+            <h4 className="learning-card-title">Training Summary</h4>
+            <div className="learning-training-stats">
+              <div className="learning-stat-item">
+                <div className="learning-stat-icon completed">
+                  <FaCheckCircle />
+                </div>
+                <div className="learning-stat-info">
+                  <span className="learning-stat-label">Completed</span>
+                  <span className="learning-stat-value">{stats.completed}</span>
+                </div>
+              </div>
+
+              <div className="learning-stat-item">
+                <div className="learning-stat-icon in-progress">
+                  <FaHourglassHalf />
+                </div>
+                <div className="learning-stat-info">
+                  <span className="learning-stat-label">In Progress</span>
+                  <span className="learning-stat-value">{stats.in_progress}</span>
+                </div>
+              </div>
+
+              <div className="learning-stat-item">
+                <div className="learning-stat-icon not-started">
+                  <FaPlayCircle />
+                </div>
+                <div className="learning-stat-info">
+                  <span className="learning-stat-label">Not Started</span>
+                  <span className="learning-stat-value">{stats.enrolled - stats.completed - stats.in_progress}</span>
+                </div>
+              </div>
+
+              <div className="learning-stat-item">
+                <div className="learning-stat-icon overdue">
+                  <FaExclamationTriangle />
+                </div>
+                <div className="learning-stat-info">
+                  <span className="learning-stat-label">Overdue</span>
+                  <span className="learning-stat-value">{stats.expired}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="learning-dashboard-card learning-achievements-panel">
+            <h4 className="learning-card-title">Achievements</h4>
+            <div className="learning-achievements-container">
+              <div className="learning-achievement-item">
+                <div className="learning-achievement-icon credits">
+                  <FaMedal />
+                </div>
+                <div className="learning-achievement-info">
+                  <span className="learning-achievement-label">Credits</span>
+                  <span className="learning-achievement-value">{rewards.credits}</span>
+                </div>
+              </div>
+
+              <div className="learning-achievement-item">
+                <div className="learning-achievement-icon stars">
+                  <FaStar />
+                </div>
+                <div className="learning-achievement-info">
+                  <span className="learning-achievement-label">Stars</span>
+                  <span className="learning-achievement-value">{rewards.stars}</span>
+                </div>
+              </div>
+
+              <div className="learning-achievement-item">
+                <div className="learning-achievement-icon badgesss">
+                  <FaAward />
+                </div>
+                <div className="learning-achievement-info">
+                  <span className="learning-achievement-label">Badges</span>
+                  <span className="learning-achievement-value">{rewards.badges}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="learning-dashboard-card learning-leaderboard-overview">
+            <h4 className="learning-card-title">Leaderboard</h4>
+            <div className="learning-leaderboard-container">
+              <div className="learning-leaderboard-item">
+                <div className="learning-leaderboard-gauge">
+                  <div className="learning-gauge-fill" style={{ height: '0%' }}></div>
+                  <span className="learning-gauge-label">0%</span>
+                </div>
+                <span className="learning-leaderboard-label">Top in Team</span>
+              </div>
+
+              <div className="learning-leaderboard-item">
+                <div className="learning-leaderboard-gauge">
+                  <div className="learning-gauge-fill" style={{ height: '0%' }}></div>
+                  <span className="learning-gauge-label">0%</span>
+                </div>
+                <span className="learning-leaderboard-label">Top in Organization</span>
+              </div>
+            </div>
+            <p className="learning-motivational-text">Climb higher by completing trainings!</p>
+          </div>
+
+
         </div>
+
       </div>
     </div>
   );

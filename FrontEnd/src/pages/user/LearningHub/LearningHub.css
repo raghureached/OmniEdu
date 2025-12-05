@@ -15,7 +15,7 @@
   margin-bottom: 12px;
   font-size: 28px;
   font-weight: 700;
-  color: #1a56db;
+  color: var(--color-primary);
   letter-spacing: -0.5px;
 }
 
@@ -44,7 +44,7 @@
 }
 
 .learning-view-all {
-  color: #1a56db;
+  color: var(--color-primary);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -52,16 +52,21 @@
 }
 
 .learning-view-all:hover {
-  color: #1e429f;
+  color: var(--color-accent);
   text-decoration: underline;
 }
 
 .learning-modules-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
 }
 
+@media (min-width: 1200px) {
+  .learning-modules-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
 .learning-module-card {
   background-color: white;
   border-radius: 10px;
@@ -143,7 +148,7 @@
 
 .learning-progress {
   height: 100%;
-  background-color: #1a56db;
+  background-color: var(--color-primary);
   border-radius: 4px;
 }
 
@@ -178,7 +183,7 @@
   display: inline-block;
   padding: 4px 10px;
   background-color: #e0e7ff;
-  color: #4338ca;
+  color: var(--color-primary);
   border-radius: 20px;
   font-size: 12px;
   font-weight: 500;
@@ -196,12 +201,12 @@
 }
 
 .learning-btn-continue {
-  background-color: #1a56db;
+  background-color: var(--color-primary);
   color: white;
 }
 
 .learning-btn-continue:hover {
-  background-color: #1e429f;
+  background-color: var(--color-accent);
 }
 
 .learning-btn-start {
@@ -332,7 +337,7 @@
   margin: 0 0 20px 0;
   font-size: 18px;
   font-weight: 600;
-  color: #1a56db;
+  color: var(--color-primary);
   border-bottom: 1px solid #e5e7eb;
   padding-bottom: 10px;
 }
@@ -369,7 +374,7 @@
 }
 
 .learning-stat-icon.in-progress {
-  background-color: #3b82f6; /* blue */
+  background-color: var(--color-accent); /* blue */
 }
 
 .learning-stat-icon.not-started {
@@ -406,7 +411,7 @@
 }
 
 .learning-achievement-icon.badgesss {
-  background: linear-gradient(135deg, #90cdf4, #4299e1);
+  background: linear-gradient(135deg, #90cdf4, var(--color-accent));
   color: #1a365d;
 }
 
@@ -486,7 +491,7 @@
   bottom: 0;
   left: 0;
   width: 100%;
-  background-color: #3b82f6; /* blue */
+  background-color: var(--color-accent); /* blue */
   border-radius: 20px;
   transition: height 1s ease-in-out;
 }

@@ -17,8 +17,7 @@ import LearningHub from './pages/user/LearningHub/LearningHub';
 import Catalog from './pages/user/Catalog/Catalog';
 import ActivityHistory from './pages/user/ActivityHistory/ActivityHistory';
 import HelpCenter from './pages/user/HelpCenter/HelpCenter';
-import Assigned from './pages/user/Assigned/Assigned';
-import Additional from './pages/user/Additional/Additional';
+
 import Mandatory from './pages/user/Mandatory/Mandatory';
 
 // Admin Pages 
@@ -69,7 +68,7 @@ import SurveyView from './pages/user/SurveyView/SurveyView';
 import Navbar from './components/layouts/Navbar/Navbar';
 import NavbarOnly from './components/layouts/NavbarOnly/NavbarOnly';
 import ChangePassword from './pages/auth/ChangePassword/ChangePassword';
-import Enrolled from './pages/user/Enrolled/Enrolled';
+// import Enrolled from './pages/user/Enrolled/Enrolled';
 function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -94,92 +93,105 @@ function App() {
     }
   }, [isAuthenticated, role, navigate]);
   if (loading) {
-    return <LoadingScreen text={"Please Wait..."}/>
+    return <LoadingScreen text={"Please Wait..."} />
   }
   return (
     <div className="App">
       <Routes>
-          <Route
-            path="/login"
-            element={
-              <Login />
-            }
-          />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/email-confirmation" element={<EmailConfirmation />} />
-          <Route path="/user/*" element={<UserLayout />}>
-            <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="profile" element={<UserProfile />} />
-            <Route path="learning-hub" element={<LearningHub />} />
-            <Route path="catalog" element={<Catalog />} />
-            <Route path="activity-history" element={<ActivityHistory />} />
-            <Route path="help-center" element={<HelpCenter />} />
-            <Route path="assigned" element={<Assigned />} />
-            <Route path="enrolled" element={<Enrolled />} />
-            <Route path="mandatory" element={<Mandatory />} />
-            <Route path="change-password" element={<ChangePassword />} />
-          </Route>
-          <Route path="/admin/*" element={<AdminLayout />}>
-            <Route index element={<AdminHome />} />
-            <Route path="users" element={<UsersManagement />} />
-            <Route path="groups" element={<GroupsManagement />} />
-            <Route path="content-modules" element={<ModuleManagement />} />
-            <Route path="content-assessments" element={<AdminAssessments />} />
-            <Route path="learning-paths" element={<LearningPaths />} />
-            <Route path='learning-paths/preview' element={<LearningPath/>}/>
+        <Route
+          path="/login"
+          element={
+            <Login />
+          }
+        />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/email-confirmation" element={<EmailConfirmation />} />
+        <Route path="/user/*" element={<UserLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="profile" element={<UserProfile />} />
+          <Route path="learning-hub" element={<LearningHub />} />
+          <Route path="catalog" element={<Catalog />} />
+          <Route path="activity-history" element={<ActivityHistory />} />
+          <Route path="help-center" element={<HelpCenter />} />
+          {/* <Route path="assigned" element={<Assigned />} /> */}
+          {/* <Route path="enrolled" element={<Enrolled />} /> */}
+          <Route path="mandatory" element={<Mandatory />} />
+          <Route path="change-password" element={<ChangePassword />} />
+        </Route>
+        <Route path="/admin/*" element={<AdminLayout />}>
+          <Route index element={<AdminHome />} />
+          <Route path="users" element={<UsersManagement />} />
+          <Route path="groups" element={<GroupsManagement />} />
+          <Route path="content-modules" element={<ModuleManagement />} />
+          <Route path="content-assessments" element={<AdminAssessments />} />
+          <Route path="learning-paths" element={<LearningPaths />} />
+          <Route path='learning-paths/preview' element={<LearningPath />} />
 
-            <Route path="manage-surveys" element={<AdminSurveys />} />
-            <Route path="create-assignment" element={<CreateAssignmentEnhanced />} />
-            <Route path="manage-assignments" element={<ManageAssignment />} />
-            <Route path="help-center" element={<AdminHelpCenter />} />
-            <Route path="message-board" element={<AdminMessageBoard />} />
-            <Route path="portal-library" element={<AdminPortalActivity />} />
-            <Route path="profile" element={<AdminProfile />} />
-            <Route path="activity-log" element={<AdminActivityLog />} />
-            <Route path="change-password" element={<ChangePassword />} />
-          </Route>
-          <Route path="/global-admin/*" element={<GlobalAdminLayout />}>
-            <Route index element={<GlobalAdminHome/>} />
-            <Route path="organizations" element={<OrganizationManagement />} />
-            <Route path="message-board" element={<GlobalMessageBoard />} />
-            <Route path="roles" element={<GlobalRolesManagement />} />
-            <Route path="module" element={<GlobalModuleManagement />} />
-            <Route path="users" element={<Globalusers />} />
-            <Route path="module/:moduleId" element={<GlobalModuleDetail />} />
-            <Route path="assessments" element={<GlobalAssessments />} />
-            <Route path="surveys" element={<GlobalSurveys />} />
-            <Route path="assignments" element={<GlobalCreateAssignment />} />
-            <Route path="user-dashboard-config" element={<UserDashBoardConfig />} />
-            <Route path="admin-dashboard-config" element={<AdminDashBoardConfig />} />
-            <Route path="profile" element={<GlobalProfile />} />
-            <Route path="activity-log" element={<GlobalAdminActivity />} />
-            <Route path="help-center" element={<GlobalHelpCenter />} />
-            <Route path="portal-library-admin" element={<GlobalPortalActivity />} />    
-            <Route path="analytics-view" element={<AnalyticsView />} />
-            <Route path="change-password" element={<ChangePassword />} />
-          </Route>
-          <Route element={<NavbarOnly />}>
-            <Route path="/module/:moduleId" element={<ModuleView />} />
-            <Route path="/module/:moduleId/:inProgress" element={<ModuleView />} />
-            <Route path='assessment/:assessmentId' element={<AssessmentView />} />
-            <Route path='assessment/:assessmentId/:inProgress' element={<AssessmentView />} />
-            <Route path='survey/:surveyId' element={<SurveyView />} />
-            <Route path='survey/:surveyId/:inProgress' element={<SurveyView />} />
+          <Route path="manage-surveys" element={<AdminSurveys />} />
+          <Route path="create-assignment" element={<CreateAssignmentEnhanced />} />
+          <Route path="manage-assignments" element={<ManageAssignment />} />
+          <Route path="help-center" element={<AdminHelpCenter />} />
+          <Route path="message-board" element={<AdminMessageBoard />} />
+          <Route path="portal-library" element={<AdminPortalActivity />} />
+          <Route path="profile" element={<AdminProfile />} />
+          <Route path="activity-log" element={<AdminActivityLog />} />
+          <Route path="change-password" element={<ChangePassword />} />
+        </Route>
+        <Route path="/global-admin/*" element={<GlobalAdminLayout />}>
+          <Route index element={<GlobalAdminHome />} />
+          <Route path="organizations" element={<OrganizationManagement />} />
+          <Route path="message-board" element={<GlobalMessageBoard />} />
+          <Route path="roles" element={<GlobalRolesManagement />} />
+          <Route path="module" element={<GlobalModuleManagement />} />
+          <Route path="users" element={<Globalusers />} />
+          <Route path="module/:moduleId" element={<GlobalModuleDetail />} />
+          <Route path="assessments" element={<GlobalAssessments />} />
+          <Route path="surveys" element={<GlobalSurveys />} />
+          <Route path="assignments" element={<GlobalCreateAssignment />} />
+          <Route path="user-dashboard-config" element={<UserDashBoardConfig />} />
+          <Route path="admin-dashboard-config" element={<AdminDashBoardConfig />} />
+          <Route path="profile" element={<GlobalProfile />} />
+          <Route path="activity-log" element={<GlobalAdminActivity />} />
+          <Route path="help-center" element={<GlobalHelpCenter />} />
+          <Route path="portal-library-admin" element={<GlobalPortalActivity />} />
+          <Route path="analytics-view" element={<AnalyticsView />} />
+          <Route path="change-password" element={<ChangePassword />} />
+        </Route>
+        <Route element={<NavbarOnly />}>
+          {/* ORG ASSIGNMENTS */}
+          <Route path="/module/:moduleId/:assignId" element={<ModuleView />} />
+          <Route path="/module/:moduleId/:assignId/:inProgress" element={<ModuleView />} />
+          <Route path="assessment/:assessmentId/:assignId" element={<AssessmentView />} />
+          <Route path="assessment/:assessmentId/:assignId/:inProgress" element={<AssessmentView />} />
+          <Route path="survey/:surveyId/:assignId" element={<SurveyView />} />
+          <Route path="survey/:surveyId/:assignId/:inProgress" element={<SurveyView />} />
+          <Route path="learningPath/:learningPathId/:assignId" element={<LearningPathView />} />
+          <Route path="learningPath/:learningPathId/:assignId/:inProgress" element={<LearningPathView />} />
 
-            <Route path='learningPath/:learningPathId' element={<LearningPathView />} />
-            <Route path='learningPath/:learningPathId/:inProgress' element={<LearningPathView />} />
+          {/* GLOBAL ENROLLED CONTENT */}
+          <Route path="/enrolled/module/:moduleId" element={<ModuleView />} />
+          <Route path="/enrolled/module/:moduleId/:inProgress" element={<ModuleView />} />
 
-          </Route>
-          
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/change-password" element={<ChangePassword />} />
-          <Route path="*" element={<div>Page Not Found</div>} />
-          <Route path='test' element={<LearningPath/>}/>
-          
+          <Route path="enrolled/assessment/:assessmentId" element={<AssessmentView />} />
+          {/* <Route path="enrolled/assessment/:assessmentId/:inProgress" element={<AssessmentView />} /> */}
 
-        </Routes>
-      </div>
+          <Route path="enrolled/survey/:surveyId" element={<SurveyView />} />
+          {/* <Route path="enrolled/assessment/:assessmentId/:assignId/:inProgress" element={<AssessmentView />} /> */}
+
+          {/* if/when you support enrolled surveys via buttonStatusFunc: */}
+          {/* <Route path="enrolled/survey/:surveyId" element={<SurveyView />} />
+  <Route path="enrolled/survey/:surveyId/:inProgress" element={<SurveyView />} /> */}
+        </Route>
+
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/change-password" element={<ChangePassword />} />
+        <Route path="*" element={<div>Page Not Found</div>} />
+        <Route path='test' element={<LearningPath />} />
+
+
+      </Routes>
+    </div>
   );
 }
 

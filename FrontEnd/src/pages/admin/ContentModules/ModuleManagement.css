@@ -127,8 +127,9 @@ padding: 12px;
 display: flex;
 align-items: center;
 justify-content: center;
-color: #5570f1;
+color: var(--color-accent);
 }
+
 .global-content-stat-info {
 display: flex;
 flex-direction: column;
@@ -308,13 +309,13 @@ transition: opacity 0.2s ease;
 }
 
 .pagination button:hover:not(:disabled) {
-  background-color: #697ff1;
+  background-color: var(--color-accent);
 }
 
 .pagination button.active {
-   background-color: #5570F1;
-   color: #5570F1;
-   border-color: #5570F1;
+   background-color: var(--color-primary);
+   color: white;
+   border-color: var(--color-primary);
 }
 
 .pagination button:disabled {
@@ -373,9 +374,9 @@ outline: none;
 .modal-content input[type="text"]:focus,
 .modal-content select:focus,
 .modal-content textarea:focus {
-border-color: #5570F1;
+border-color: var(--color-primary);
 background: #eef1fb;
-box-shadow: 0 0 0 3px rgba(85,112,241, 0.12);
+box-shadow: 0 0 0 3px rgba(28, 136, 199, 0.12);
 }
 
 .modal-content textarea {
@@ -411,14 +412,14 @@ border-color: #bcd2fb;
 }
 
 .modal-content .btn-add {
-background: linear-gradient(90deg, #5570F1 70%, #4056d9 100%);
+background: linear-gradient(90deg, var(--color-accent) 70%, var(--color-primary) 100%);
 color: white;
 border: none;
-box-shadow: 0 2px 8px rgba(85,112,241,0.12);
+box-shadow: 0 2px 8px rgba(28, 136, 199, 0.12);
 }
 
 .modal-content .btn-add:hover {
-background: #4056d9;
+background: var(--color-primary);
 color: #fff;
 }
 
@@ -446,9 +447,9 @@ cursor: pointer;
 }
 
 .pagination button.active {
-background-color: #1d4ed8;
+background-color: var(--color-primary);
 color: white;
-border-color: #1d4ed8;
+border-color: var(--color-primary);
 }
 
 .pagination button:disabled {
@@ -508,7 +509,7 @@ opacity: 0.5;
   }
   
   .apply-btn {
-    background: #2563eb;
+    background: var(--color-primary);
     color: white;
     border: none;
   }

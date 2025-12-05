@@ -126,7 +126,7 @@ const createAssignment = async (req, res) => {
 
 const fetchAssignments = async(req,res)=>{
     try {
-        const assignments = await GlobalAssignment.find().populate("contentId").populate("surveyId").populate("assessmentId").populate("orgId")
+        const assignments = await GlobalAssignment.find()
         return res.status(200).json({
             isSuccess:true,
             message:"Assignments fetched successfully",

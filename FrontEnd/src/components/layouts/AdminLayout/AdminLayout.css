@@ -216,7 +216,7 @@
 .admin_menu_toggle {
   background: none;
   border: none;
-  color: #5570F1;
+  color: var(--color-accent);
   cursor: pointer;
   padding: 0.25rem;
   border-radius: 0.25rem;
@@ -227,7 +227,7 @@
 }
 
 .admin_menu_toggle:hover {
-  background-color: #6b81f1;
+  background-color: var(--color-accent);
   color: white;
 }
 
@@ -428,7 +428,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: #4f46e5;
+  background-color: var(--color-accent);
   color: white;
   display: flex;
   align-items: center;
@@ -447,7 +447,7 @@
   width: 48px;
   height: 48px;
   font-size: 18px;
-  background-color: #4f46e5;
+  background-color: var(--color-accent);
 }
 
 /* Add these styles to your existing AdminLayout.css file */

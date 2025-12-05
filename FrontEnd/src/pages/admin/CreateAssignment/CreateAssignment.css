@@ -51,13 +51,13 @@
     z-index: 0;
   }
   .global-assign-assignment-step.global-assign-completed:not(:last-child)::after {
-    background: #5570f1;
+    background: var(--color-accent);
   }
   
   /* Step states */
   .global-assign-assignment-step.global-assign-active .global-assign-step-number {
-    background: linear-gradient(135deg, #5570f1 0%, #4338ca 100%);
-    box-shadow: 0 0 12px rgba(85, 112, 241, 0.8);
+    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 100%);
+    box-shadow: 0 0 12px rgba(28, 136, 199, 0.8);
   }
   .global-assign-assignment-step.global-assign-completed .global-assign-step-number {
     background: #9aabff;
@@ -120,8 +120,8 @@
   .global-assign-assignment-form input:focus,
   .global-assign-assignment-form select:focus,
   .global-assign-assignment-form textarea:focus {
-    border-color: #5570f1;
-    box-shadow: 0 0 6px rgba(85, 112, 241, 0.3);
+    border-color: var(--color-accent);
+    box-shadow: 0 0 6px rgba(28, 136, 199, 0.3);
     background: #fff;
   }
   
@@ -144,11 +144,11 @@
     flex: 1 1 calc(50% - 10px);
   }
   .global-assign-content-item:hover {
-    border-color: #5570f1;
-    background: rgba(85, 112, 241, 0.06);
+    border-color: var(--color-accent);
+    background: rgba(28, 136, 199, 0.06);
   }
   .global-assign-content-item.global-assign-selected {
-    border-color: #5570f1;
+    border-color: var(--color-accent);
     background: #eef2ff;
   }
   .global-assign-content-item-type {
@@ -190,11 +190,11 @@
     justify-content: space-between;
   }
   .global-assign-user-item:hover {
-    border-color: #5570f1;
-    background: rgba(85, 112, 241, 0.06);
+    border-color: var(--color-accent);
+    background: rgba(28, 136, 199, 0.06);
   }
   .global-assign-user-item.global-assign-selected {
-    border-color: #5570f1;
+    border-color: var(--color-accent);
     background: #eef2ff;
   }
   .global-assign-user-email {
@@ -274,9 +274,9 @@
   /* Buttons */
   .global-assign-next-step-btn,
   .global-assign-create-btn {
-    background: #5570f1;
+    background: var(--color-accent);
     color: white;
-    box-shadow: 0 3px 8px rgba(85, 112, 241, 0.25);
+    box-shadow: 0 3px 8px rgba(28, 136, 199, 0.25);
     padding: 11px 20px;
     border-radius: 10px;
     border: none;
@@ -287,7 +287,7 @@
   }
   .global-assign-next-step-btn:hover,
   .global-assign-create-btn:hover {
-    background: #4458d8;
+    background: var(--color-primary);
   }
   .global-assign-prev-step-btn {
     background: #f3f4f6;
@@ -349,12 +349,12 @@
   }
   
   .global-assign-audience-type-option:hover {
-    border-color: #5570f1;
-    background: rgba(85, 112, 241, 0.06);
+    border-color: var(--color-accent);
+    background: rgba(28, 136, 199, 0.06);
   }
   
   .global-assign-audience-type-option input[type="radio"] {
-    accent-color: #5570f1;
+    accent-color: var(--color-accent);
     width: 16px;
     height: 16px;
     cursor: pointer;
@@ -378,8 +378,8 @@
   }
   
   .global-assign-user-search-input:focus {
-    border-color: #5570f1;
-    box-shadow: 0 0 6px rgba(85, 112, 241, 0.3);
+    border-color: var(--color-accent);
+    box-shadow: 0 0 6px rgba(28, 136, 199, 0.3);
     background: #fff;
   }
   
@@ -423,8 +423,8 @@
   }
   
   .global-assign-group-select:focus {
-    border-color: #5570f1;
-    box-shadow: 0 0 6px rgba(85, 112, 241, 0.3);
+    border-color: var(--color-accent);
+    box-shadow: 0 0 6px rgba(28, 136, 199, 0.3);
     background: #fff;
   }
   .global-assign-date-input,
@@ -441,8 +441,8 @@
   
   .global-assign-date-input:focus,
   .global-assign-time-input:focus {
-    border-color: #5570f1;
-    box-shadow: 0 0 6px rgba(85, 112, 241, 0.3);
+    border-color: var(--color-accent);
+    box-shadow: 0 0 6px rgba(28, 136, 199, 0.3);
     background: #fff;
   }
   .filter-overlay{

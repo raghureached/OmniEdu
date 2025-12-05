@@ -374,7 +374,7 @@ const ActivityHistory = () => {
           
           {showCustomDateFilter && (
             <div className="activity-custom-date-filter">
-              <div className="date-input-group">
+              <div className="activity-date-input-group">
                 <label>From:</label>
                 <input 
                   type="date" 
@@ -441,13 +441,7 @@ const ActivityHistory = () => {
                     <td>{activity.score !== null ? activity.score : '-'}</td>
                     <td>{activity.credits}</td>
                     <td>
-                      <div className="activity-stars-container">
-                        {Array(5).fill(0).map((_, i) => (
-                          <span key={i} className={i < activity.stars ? 'activity-star filled' : 'activity-star'}>
-                            ★
-                          </span>
-                        ))}
-                      </div>
+                      {activity.stars}
                     </td>
                     <td>{renderBadges(activity.badges)}</td>
                     <td>{renderActions(activity)}</td>

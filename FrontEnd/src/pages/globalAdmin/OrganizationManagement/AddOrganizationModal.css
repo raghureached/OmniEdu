@@ -159,8 +159,8 @@
 
 .addOrg-form-input:focus,
 .addOrg-form-select:focus {
-  border-color: #5570f1;
-  box-shadow: 0 0 0 3px rgba(85, 112, 241, 0.1);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(28, 136, 199, 0.1);
 }
 
 .addOrg-form-input::placeholder {
@@ -185,8 +185,8 @@
 }
 
 .addOrg-date-btn:hover:not(.addOrg-date-btn-disabled) {
-  border-color: #5570f1;
-  box-shadow: 0 0 0 3px rgba(85, 112, 241, 0.1);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(28, 136, 199, 0.1);
 }
 
 .addOrg-date-btn-disabled {
@@ -244,14 +244,14 @@
 }
 
 .addOrg-inline-upload-zone:hover {
-  border-color: #5570f1;
+  border-color: var(--color-accent);
   background: #f8fafc;
 }
 
 .addOrg-drag-over {
-  border-color: #5570f1 !important;
+  border-color: var(--color-accent) !important;
   background: #eff6ff !important;
-  box-shadow: 0 0 0 3px rgba(85, 112, 241, 0.1);
+  box-shadow: 0 0 0 3px rgba(28, 136, 199, 0.1);
 }
 
 .addOrg-file-input {
@@ -269,7 +269,7 @@
   gap: 8px;
   font-size: 0.9rem;
   font-weight: 500;
-  color: #5570f1;
+  color: var(--color-accent);
   cursor: pointer;
   pointer-events: none;
 }
@@ -331,7 +331,7 @@
   font-size: 0.875rem;
   font-weight: 500;
   color: #1e293b;
-  truncate: ellipsis;
+  text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
 }
@@ -538,8 +538,8 @@
 
 .addOrg-form-input:focus,
 .addOrg-form-select:focus {
-  border-color: #5570f1;
-  box-shadow: 0 0 0 3px rgba(85, 112, 241, 0.1);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(28, 136, 199, 0.1);
 }
 
 .addOrg-form-input::placeholder {
@@ -564,8 +564,8 @@
 }
 
 .addOrg-date-btn:hover:not(.addOrg-date-btn-disabled) {
-  border-color: #5570f1;
-  box-shadow: 0 0 0 3px rgba(85, 112, 241, 0.1);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(28, 136, 199, 0.1);
 }
 
 .addOrg-date-btn-disabled {
@@ -620,14 +620,14 @@
 }
 
 .addOrg-inline-upload-zone:hover {
-  border-color: #5570f1;
+  border-color: var(--color-accent);
   background: #f8fafc;
 }
 
 .addOrg-drag-over {
-  border-color: #5570f1 !important;
+  border-color: var(--color-accent) !important;
   background: #eff6ff !important;
-  box-shadow: 0 0 0 3px rgba(85, 112, 241, 0.1);
+  box-shadow: 0 0 0 3px rgba(28, 136, 199, 0.1);
 }
 
 .addOrg-file-input {
@@ -645,7 +645,7 @@
   gap: 8px;
   font-size: 0.9rem;
   font-weight: 500;
-  color: #5570f1;
+  color: var(--color-accent);
   cursor: pointer;
   pointer-events: none;
 }

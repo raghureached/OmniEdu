@@ -68,7 +68,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background-color: #5570F1;
+  background-color: var(--color-accent);
   color: white;
   border: none;
   border-radius: 14px;
@@ -86,7 +86,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background-color: #5570F1;
+  background-color: var(--color-accent);
   color: white;
   border: none;
   border-radius: 14px;
@@ -95,7 +95,7 @@
 }
 
 .global-portal-add-button:hover {
-  background-color: #218838;
+  background-color: var(--color-primary);
 }
 
 .global-portal-content-grid {

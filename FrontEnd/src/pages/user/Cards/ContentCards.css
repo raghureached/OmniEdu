@@ -3,11 +3,13 @@
   border-radius: 12px;
   overflow: hidden;
   border: 0.5px solid gray;
-  box-shadow:0 4px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   flex-direction: column;
   height: 100%;
+  max-width: 300px;   /* new: control how narrow the card can be */
+  width: 100%;        /* keep it responsive inside its column */
 }
 
 .course-card:hover {
@@ -18,7 +20,7 @@
 .course-image {
   position: relative;
   width: 100%;
-  height: 200px;
+  height: 140px;
   overflow: hidden;
 }
 
@@ -36,14 +38,33 @@
   gap: 8px;
   flex-wrap: wrap;
 }
+.module {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* Deep purple to violet - sophisticated and professional */
+  box-shadow: 0 10px 30px -5px rgba(102, 126, 234, 0.3);
+}
 
-.module{
+.survey {
+  background: linear-gradient(135deg, #06b6d4 0%, var(--color-accent) 100%);
+  /* Cyan to royal blue - trustworthy and engaging */
+  box-shadow: 0 10px 30px -5px rgba(6, 182, 212, 0.3);
+}
 
+.assessment {
+  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+  /* Amber to coral red - energetic and attention-grabbing */
+  box-shadow: 0 10px 30px -5px rgba(245, 158, 11, 0.3);
+}
+
+.learningpath {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  /* Emerald green - growth and progress focused */
+  box-shadow: 0 10px 30px -5px rgba(16, 185, 129, 0.3);
 }
 
 .badge {
-  background: rgba(255, 255, 255, 0.95);
-  color: #4a5568;
+  /* background: rgba(255, 255, 255, 0.95); */
+  color: black;
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 12px;
@@ -52,7 +73,7 @@
 }
 
 .course-content {
-  padding: 20px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
   flex-grow: 1;
@@ -68,10 +89,10 @@
 
 .course-title {
   margin: 0;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 700;
   color: #2d3748;
-  line-height: 1.3;
+  line-height: 1.35;
   flex: 1;
 }
 
@@ -80,15 +101,15 @@
   flex-direction: column;
   align-items: center;
   background: #edf2f7;
-  padding: 8px 12px;
-  border-radius: 8px;
-  min-width: 60px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  min-width: 50px;
 }
 
 .credits-value {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
-  color: #4299e1;
+  color: var(--color-accent);
   line-height: 1;
 }
 
@@ -102,9 +123,9 @@
 
 .course-description {
   color: #4a5568;
-  font-size: 14px;
-  line-height: 1.6;
-  margin: 0 0 16px 0;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0 0 12px 0;
   flex-grow: 1;
 }
 
@@ -112,7 +133,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 16px;
+  padding-top: 12px;
   border-top: 1px solid #e2e8f0;
 }
 
@@ -153,7 +174,7 @@
 }
 
 .enroll-btn {
-  background: #4299e1;
+  background: var(--color-accent);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -165,15 +186,15 @@
 }
 
 .enroll-btn:hover {
-  background: #3182ce;
+  background: var(--color-primary);
 }
 
 .enroll-btn:active {
   transform: scale(0.98);
 }
 .progress {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -188,7 +209,7 @@
 }
 
 .progress-ring__fg {
-  stroke: #5570F1; /* brand color */
+  stroke: var(--color-accent); /* brand color */
   transform: rotate(-90deg);
   transform-origin: 50% 50%;
   transition: stroke-dashoffset 0.3s ease;

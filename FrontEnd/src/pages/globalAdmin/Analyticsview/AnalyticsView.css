@@ -72,7 +72,7 @@
   }
   
   .analytics-metric-icon.organizations-icon {
-    background-color: #0088FE;
+    background-color: var(--color-accent);
   }
   
   .analytics-metric-icon.users-icon {
@@ -115,7 +115,7 @@
   }
   
   .analytics-metric-highlight {
-    color: #3b82f6;
+    color: var(--color-accent);
     font-weight: 500;
   }
   
@@ -191,7 +191,7 @@
     align-items: center;
     justify-content: center;
     margin-bottom: 16px;
-    color: #3b82f6;
+    color: var(--color-accent);
   }
   
   .analytics-summary-content h3 {

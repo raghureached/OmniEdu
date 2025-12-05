@@ -16,7 +16,7 @@
   margin-bottom: 12px;
   font-size: 28px;
   font-weight: 700;
-  color: #1a56db;
+  color: var(--color-primary);
   letter-spacing: -0.5px;
 }
 
@@ -59,8 +59,8 @@
 
 .catalog-search-box input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(28, 136, 199, 0.25);
 }
 
 .catalog-filter-dropdown select {
@@ -80,13 +80,13 @@
 
 .catalog-filter-dropdown select:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(28, 136, 199, 0.25);
 }
 
 .catalog-courses-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 24px;
 }
 
@@ -171,7 +171,7 @@
 .catalog-enroll-button {
   margin: 0 20px 20px;
   padding: 10px 0;
-  background-color: #1a56db;
+  background-color: var(--color-primary);
   color: white;
   border: none;
   border-radius: 6px;
@@ -182,7 +182,7 @@
 }
 
 .catalog-enroll-button:hover {
-  background-color: #1e429f;
+  background-color: var(--color-accent);
 }
 
 .catalog-no-results {

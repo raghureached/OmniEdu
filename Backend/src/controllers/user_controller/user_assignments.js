@@ -45,7 +45,7 @@ const getUserAssignments = async (req, res) => {
 const getAssignment = async (req, res) => {
   try {
     const { id } = req.params
-    const assignment = await ForUserAssignment.findOne({ uuid: id }).populate("content_id")
+    const assignment = await ForUserAssignment.findById(id).populate("contentId")
     return res.status(200).json({
       isSuccess: true,
       message: "Assignment fetched successfully",
@@ -59,8 +59,25 @@ const getAssignment = async (req, res) => {
     })
   }
 }
-
+const getSchedule = async (req, res) => {
+  try {
+    const { id } = req.params
+    const schedule = await ForUserAssignment.findById(id).select("elementSchedules")
+    return res.status(200).json({
+      isSuccess: true,
+      message: "Schedule fetched successfully",
+      data: schedule
+    })
+  } catch (error) {
+    return res.status(500).json({
+      isSuccess: false,
+      message: "Failed to fetch schedule",
+      error: error.message
+    })
+  }
+}
 module.exports = {
   getUserAssignments,
-  getAssignment
+  getAssignment,
+  getSchedule
 }

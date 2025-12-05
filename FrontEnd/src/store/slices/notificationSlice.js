@@ -34,12 +34,9 @@ export const fetchNotifications = createAsyncThunk(
   'notifications/fetchNotifications',
   async (_, { rejectWithValue }) => {
     try {
-      // In a real app, this would be an API call
-      // const response = await api.get('/notifications');
-      // return response.data;
-      
-      // For now, return mock data
-      return initialNotifications;
+      const response = await api.get("api/user/getNotification")
+      console.log(response.data)
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || 'Failed to fetch notifications');
     }
@@ -51,12 +48,8 @@ export const markNotificationAsRead = createAsyncThunk(
   'notifications/markAsRead',
   async (notificationId, { rejectWithValue }) => {
     try {
-      // In a real app, this would be an API call
-      // const response = await api.patch(`/notifications/${notificationId}`, { read: true });
-      // return response.data;
-      
-      // For now, return the ID
-      return notificationId;
+      const response = await api.patch(`/user/markNotificationAsRead/${notificationId}`);
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || 'Failed to mark notification as read');
     }

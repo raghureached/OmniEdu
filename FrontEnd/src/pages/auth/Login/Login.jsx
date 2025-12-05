@@ -21,7 +21,7 @@ const Login = () => {
       } else if (role === 'Administrator') {
         navigate('/admin', { replace: true });
       } else {
-        navigate('/user/learning-hub', { replace: true });
+        navigate('/user/dashboard', { replace: true });
       }
     }
   }, [isAuthenticated, role, navigate]);

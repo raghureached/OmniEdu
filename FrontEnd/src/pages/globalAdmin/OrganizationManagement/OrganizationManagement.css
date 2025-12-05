@@ -54,7 +54,7 @@
     width: 32px;
     height: 32px;
     border-radius: 8px;
-    background-color: #5570F1   ;
+    background-color: var(--color-accent);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -169,7 +169,7 @@
   }
 
   .add-btn {
-    background-color: #5570F1;
+    background-color: var(--color-accent);
     color: white;
     border: none;
     border-radius: 12px;
@@ -184,7 +184,7 @@
   }
 
   .add-btn:hover {
-    background-color: #7084e9;
+    background-color: var(--color-primary);
   }
 
   /* Controls */
@@ -220,7 +220,7 @@
   }
 
   .search-input:focus {
-    border-color: #4f46e5;
+    border-color: var(--color-accent);
   }
 
   .controls-right {
@@ -403,7 +403,7 @@
     border: 1px solid #d1d5db;
     border-radius: 6px;
     background-color: white;
-    color: #5570F1;
+    color: var(--color-accent);
     font-size: 14px;
     cursor: pointer;
     min-width: 40px;
@@ -416,8 +416,8 @@
   }
 
   .org-page-btn.active {
-    border-color: #4f46e5;
-    background-color: #4f46e5;
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
     color: white;
   }
 
@@ -502,7 +502,7 @@
 }
 
 .upload-box {
-  border: 2px dashed #5570F1;
+  border: 2px dashed var(--color-accent);
   border-radius: 8px;
   text-align: center;
   padding: 20px;
@@ -570,8 +570,8 @@
   
   .form-group input:focus,
   .form-group select:focus {
-    border-color: #007bff;
-    box-shadow: 0px 0px 4px rgba(0, 123, 255, 0.4);
+    border-color: var(--color-accent);
+    box-shadow: 0px 0px 4px rgba(28, 136, 199, 0.4);
   }
   
   /* Buttons */
@@ -705,7 +705,7 @@
 }
 
 .apply-btn {
-  background: #2563eb;
+  background: var(--color-primary);
   color: white;
   border: none;
 }

@@ -6,7 +6,7 @@ import { ChevronRight, Submit } from 'lucide-react';
 
 const AssessmentQuiz = ({ isOpen = true, onClose = () => { }, previewMode = false, assessmentData, embedded }) => {
   // Use assessment data from props, fallback to dummy data for backward compatibility
-  console.log("AssessmentQuiz received assessmentData:", assessmentData);
+  // console.log("AssessmentQuiz received assessmentData:", assessmentData);
   const assessment = assessmentData || {}
   const resolveUrl = (u) => {
     if (!u) return u;

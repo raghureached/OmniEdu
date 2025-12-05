@@ -41,9 +41,7 @@
 }
 
 .tab-button.active {
-  color: linear-gradient(135deg, #5570f1 0%, #4338ca 100%);
-
-
+  color: var(--color-accent);
 }
 
 .tab-button.active::after {
@@ -53,7 +51,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(135deg, #5570f1 0%, #4338ca 100%);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 100%);
   
   border-radius: 3px 3px 0 0;
 }
@@ -80,7 +78,7 @@
   display: flex;
   flex-direction: column;
   transition: transform 0.2s, box-shadow 0.2s;
-  border-top: 4px solid #3498db;
+  border-top: 4px solid var(--color-accent);
 }
 
 .assigned-card:hover {
@@ -174,7 +172,7 @@
 
 .progress-fill {
   height: 100%;
-  background-color: #3498db;
+  background-color: var(--color-accent);
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -187,7 +185,7 @@
 }
 
 .launch-button {
-  background-color: #3498db;
+  background-color: var(--color-accent);
   color: white;
   border: none;
   padding: 0.6rem 1rem;
@@ -201,7 +199,7 @@
 }
 
 .launch-button:hover {
-  background-color: #2980b9;
+  background-color: var(--color-primary);
 }
 
 .assigned-empty-state {
@@ -216,7 +214,7 @@
 
 /* Different border colors for different types */
 .assigned-card[data-type="training"] {
-  border-top-color: #3498db;
+  border-top-color: var(--color-accent);
 }
 
 .assigned-card[data-type="assignment"] {

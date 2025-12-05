@@ -17,7 +17,7 @@ const enrollmentSchema = new mongoose.Schema(
     assign_type: {
       type: String,
       required: true,
-      enum: ["OrganizationModule", "OrganizationAssessments", "OrganizationSurvey", "LearningPath"]
+      enum: ["GlobalModule", "GlobalAssessments", "GlobalSurvey"]
     },
     contentId: {
       type: mongoose.Schema.Types.ObjectId,

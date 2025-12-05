@@ -463,7 +463,7 @@ const ModuleManagement = () => {
               </div>
             )}
 
-            <button className="btn-primary" onClick={() => handleOpenModal()}> + Add Module</button>
+            <button className="btn-primary" onClick={() => handleOpenModal()}> + Create Module</button>
           </div>
         </div>
       </div>

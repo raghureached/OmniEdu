@@ -19,7 +19,7 @@
 }
 
 .navbar_only_logo h3 {
-  color: #5570f1;
+  color: var(--color-accent);
   font-size: 24px;
   font-weight: 700;
   margin: 0;
@@ -42,7 +42,7 @@
 }
 
 .user_notification_icon:hover {
-  color: #5570f1;
+  color: var(--color-accent);
 }
 
 .user_notification_badge {
@@ -148,7 +148,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: #5570f1;
+  background-color: var(--color-accent);
   display: flex;
   align-items: center;
   justify-content: center;

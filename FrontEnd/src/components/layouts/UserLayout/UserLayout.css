@@ -77,7 +77,7 @@
 
 .user_sidebar_menu a:hover {
   background-color: rgba(255, 255, 255, 0.1);
-    color: rgb(4, 43, 216);
+    color: var(--color-accent);
   border-left-color: var(--primary-color);
 }
 
@@ -124,7 +124,7 @@
   min-width: 20px;
 }
 .user_sidebar a svg:hover{
-  background-color: #5570F1;
+  background-color: var(--color-accent);
     
 }
 .user_sidebar_footer {
@@ -223,7 +223,7 @@
 .user_menu_toggle {
   background: none;
   border: none;
-  color: #5570F1;
+  color: var(--color-accent);
   cursor: pointer;
   padding: 0.25rem;
   border-radius: 0.25rem;
@@ -479,7 +479,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: #4f46e5;
+  background-color: var(--color-accent);
   color: white;
   display: flex;
   align-items: center;
@@ -498,7 +498,7 @@
   width: 48px;
   height: 48px;
   font-size: 18px;
-  background-color: #4f46e5;
+  background-color: var(--color-accent);
 }
 
 /* Notification dropdown styles */

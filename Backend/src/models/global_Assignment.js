@@ -17,15 +17,15 @@ const globalAssignmentSchema = new mongoose.Schema({
     },
     ModuleId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Content",
+        ref: "GlobalModule",
     },
     surveyId:{
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Survey",
+        ref: "GlobalSurveys",
     },
     assessmentId:{
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Assessment",
+        ref: "GlobalAssessments",
     },
     contentName: {
         type: String,

@@ -1,4 +1,7 @@
 
+const Surveys = require("../../models/global_surveys_model");
+const GlobalAssessments = require("../../models/globalAssessments_model");
+const GlobalModule = require("../../models/globalModule_model");
 const LearningPath = require("../../models/learningPath_model");
 const Module = require("../../models/moduleOrganization_model");
 const OrganizationAssessments = require("../../models/organizationAssessments_model");
@@ -9,14 +12,25 @@ const UserProfile = require("../../models/userProfiles_model");
 const getModule = async (req, res) => {
   try {
     const { moduleId } = req.params;
-    // console.log(moduleId)
     const module = await Module.findOne({ uuid: moduleId }).populate("team").populate("subteam");
     if (!module) {
       return res.status(404).json({ message: 'Module not found' });
     }
     return res.status(200).json(module);
   } catch (error) {
-    console.log(error)
+    return res.status(500).json({ message: error.message });
+  }
+}
+const getEnrolledModule = async (req, res) => {
+  try {
+    const { moduleId } = req.params;
+    // console.log(moduleId)
+    const module = await GlobalModule.findOne({ uuid: moduleId }).populate("team").populate("subteam");
+    if (!module) {
+      return res.status(404).json({ message: 'Module not found' });
+    }
+    return res.status(200).json(module);
+  } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 }
@@ -30,7 +44,21 @@ const getAssessment = async (req, res) => {
     }
     return res.status(200).json(assessment);
   } catch (error) {
-    console.log(error)
+    // console.log(error)
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+const getEnrolledAssessment = async (req, res) => {
+  try {
+    const { assessmentId } = req.params;
+    const assessment = await GlobalAssessments.findOne({ uuid: assessmentId }).populate("questions").populate("team").populate("subteam");
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found' });
+    }
+    return res.status(200).json(assessment);
+  } catch (error) {
+    // console.log(error)
     return res.status(500).json({ message: error.message });
   }
 }
@@ -50,7 +78,7 @@ const getSurvey = async (req, res) => {
     }
     return res.status(200).json(survey);
   } catch (error) {
-    console.log(error)
+    // console.log(error)
     return res.status(500).json({ message: error.message });
   }
 }
@@ -64,7 +92,7 @@ const getLearningPath = async (req, res) => {
     }
     return res.status(200).json(learningPath);
   } catch (error) {
-    console.log(error)
+    // console.log(error)
     return res.status(500).json({ message: error.message });
   }
 }
@@ -93,7 +121,7 @@ const markComplete = async (req, res) => {
       },
       { new: true }
     );
-    return res.status(200).json({ message: "Module marked complete" });
+    return res.status(200).json({ message: "Module marked complete" ,data:update});
   } catch (error) {
     console.log(error)
     return res.status(500).json({ message: error.message });
@@ -103,20 +131,36 @@ const markComplete = async (req, res) => {
 const getInProgress = async (req, res) => {
   try {
     const userId = req.user._id;
-    const inProgress = await UserContentProgress.find({ user_id: req.user._id, status: "in_progress" })
-      .populate({
-        path: "assignment_id",
-        select: "uuid name title description assign_type contentId assign_on due_date created_by",
-        populate: [
-          {
-            path: "contentId",
-            select:
-              "title description duration tags team subteam category status thumbnail credits stars badges uuid",
-          },
-          { path: "created_by", select: "name email" },
-        ],
-      })
-      .lean();
+    const inProgress = await UserContentProgress.find({
+  user_id: req.user._id,
+  status: "in_progress",
+})
+  .populate([
+    {
+      path: "assignment_id",
+      select: "uuid name title description assign_type contentId assign_on due_date created_by",
+      populate: [
+        {
+          path: "contentId",
+          select:
+            "title description duration tags team subteam category status thumbnail credits stars badges uuid",
+        },
+        { path: "created_by", select: "name email" },
+      ],
+    },
+    {
+      path: "enrollment_id",
+      select: "uuid name assign_type contentId assign_on",
+      populate: [
+        {
+          path: "contentId",
+          select:
+            "title description duration tags team subteam category status thumbnail credits stars badges uuid",
+        },
+      ],
+    },
+  ])
+  .lean();
     // const  = await UserContentProgress.find({ user_id: userId, status: "in_progress" }).populate("contentId");
     return res.status(200).json(inProgress);
   } catch (error) {
@@ -131,15 +175,15 @@ const updateStatus = async (req, res) => {
     const userId = req.user._id;
     const status = req.params.status;
     const update = await UserContentProgress.findOneAndUpdate(
-      { user_id: userId, contentId: id },
+      { user_id: userId, assignment_id: id },
       {
         status: status
       },
       { new: true }
     );
-    return res.status(200).json({ message: "Status updated" });
+    return res.status(200).json({ message: "Status updated",data:update });
   } catch (error) {
-    console.log(error)
+    // console.log(error)
     return res.status(500).json({ message: error.message });
   }
 }
@@ -150,14 +194,13 @@ const enrolledbyUser = async (req, res) => {
 
     const enrolled = await UserContentProgress.find({
       user_id: userId,
-      orgAssignment: false,
     });
 
     // Populate each document properly
     const data = await Promise.all(
       enrolled.map((e) =>
         e.populate({
-          path: "assignment_id",
+          path: "enrollment_id",
           select:
             "uuid name title description assign_type contentId assign_on due_date created_by",
           populate: [
@@ -166,7 +209,6 @@ const enrolledbyUser = async (req, res) => {
               select:
                 "title description duration tags team subteam category status thumbnail credits stars badges uuid",
             },
-            { path: "created_by", select: "name email" },
           ],
         })
       )
@@ -179,86 +221,113 @@ const enrolledbyUser = async (req, res) => {
   }
 };
 
-const getCatalog = async (req, res) => {
+// const getCatalog = async (req, res) => {
+//   try {
+//     let catalog = [];
+//     const [modules, assessments, surveys, userProgress] =
+//       await Promise.all([
+//         GlobalModule.find({status:"Published"})
+//           .select("title description duration tags thumbnail credits stars badges uuid category")
+//           .lean(),
+
+//         GlobalAssessments.find({status:"Published"})
+//           .select("title description duration tags thumbnail credits stars badges uuid category")
+//           .lean(),
+
+//         Surveys.find({status:"Published"})
+//           .select("title description duration tags thumbnail credits stars badges uuid category")
+//           .lean(),
+
+//         UserContentProgress.find({ user_id: req.user._id })
+//           .select("contentId")
+//           .lean(),
+//       ])
+
+//     const userProgressIds = new Set(
+//       userProgress.map((p) => p.contentId.toString())
+//     );
+
+
+//     modules.forEach((m) => {
+ 
+//       m.type = "Module";
+//       m.model = "GlobalModule"
+//       m.who = "Global"
+//       if (userProgressIds.has(m._id.toString())) {
+
+//         m.inProgress = true;
+//       };
+//     });
+
+//     assessments.forEach((a) => {
+//       a.type = "Assessment";
+//       a.model = "GlobalAssessments"
+//       a.who = "Global"
+//       if (userProgressIds.has(a._id.toString())) {
+
+//         a.inProgress = true;
+//       }
+
+//     });
+
+//     surveys.forEach((s) => {
+//       s.type = "Survey";
+//       s.model = "GlobalSurvey";
+//       s.who = "Global"
+//       if (userProgressIds.has(s._id.toString())) {
+
+//         s.inProgress = true;
+//       }
+//     });
+
+//     catalog = [...modules, ...assessments, ...surveys];
+
+//     return res.status(200).json(catalog);
+//   } catch (error) {
+//     console.log(error);
+//     return res.status(500).json({ message: error.message });
+//   }
+// };
+
+const getCompleted = async(req,res)=>{
   try {
-    let catalog = [];
-    const [modules, assessments, surveys, learningPaths, userProgress] =
-      await Promise.all([
-        Module.find({ status: "Published" })
-          .select("title description duration tags thumbnail credits stars badges uuid category")
-          .lean(),
-
-        OrganizationAssessments.find({ status: "Published" })
-          .select("title description duration tags thumbnail credits stars badges uuid category")
-          .lean(),
-
-        OrganizationSurveys.find({ status: "Published" })
-          .select("title description duration tags thumbnail credits stars badges uuid category")
-          .lean(),
-
-        LearningPath.find({ status: "Published" })
-          .select("title description duration tags thumbnail credits stars badges uuid category lessons ")
-          .lean(),
-
-        UserContentProgress.find({ user_id: req.user._id })
-          .select("contentId")
-          .lean(),
-      ])
-
-
-    // Convert user progress IDs into a Set for fast lookup
-    const userProgressIds = new Set(
-      userProgress.map((p) => p.contentId.toString())
-    );
-
-    // Mark inProgress where matching
-    modules.forEach((m) => {
-      // console.log(m._id.toString())
-      m.type = "Module";
-      m.model = "OrganizationModule"
-      m.who = "Admin"
-      if (userProgressIds.has(m._id.toString())) {
-
-        m.inProgress = true;
-      };
-    });
-
-    assessments.forEach((a) => {
-      a.type = "Assessment";
-      a.model = "OrganizationAssessments"
-      a.who = "Admin"
-      if (userProgressIds.has(a._id.toString())) {
-
-        a.inProgress = true;
-      }
-
-    });
-
-    surveys.forEach((s) => {
-      s.type = "Survey";
-      s.model = "OrganizationSurvey";
-      s.who = "Admin"
-      if (userProgressIds.has(s._id.toString())) {
-
-        s.inProgress = true;
-      }
-    });
-
-    learningPaths.forEach((lp) => {
-      lp.type = "Learning Path";
-      lp.model = "LearningPath"
-      lp.who = "Admin"
-      if (userProgressIds.has(lp._id.toString())) lp.inProgress = true;
-    });
-
-    catalog = [...modules, ...assessments, ...surveys, ...learningPaths];
-
-    return res.status(200).json(catalog);
+    const userId = req.user._id;
+    const completed = await UserContentProgress.find({
+      user_id: userId,
+      status: "completed"
+    })
+    .populate([
+    {
+      path: "assignment_id",
+      select: "uuid name title description assign_type contentId assign_on due_date created_by",
+      populate: [
+        {
+          path: "contentId",
+          select:
+            "title description duration tags team subteam category status thumbnail credits stars badges uuid",
+        },
+        { path: "created_by", select: "name email" },
+      ],
+    },
+    {
+      path: "enrollment_id",
+      select: "uuid name assign_type contentId assign_on",
+      populate: [
+        {
+          path: "contentId",
+          select:
+            "title description duration tags team subteam category status thumbnail credits stars badges uuid",
+        },
+      ],
+    },
+  ])
+  .lean();
+    return res.status(200).json(completed);
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: error.message });
   }
-};
+}
 
 const getRecomended = async (req, res) => {
   try {
@@ -345,6 +414,47 @@ const getRecomended = async (req, res) => {
   }
 };
 
+const getAssigned = async(req,res)=>{
+  try {
+    const userId = req.user._id;
+    const assigned = await UserContentProgress.find({
+  user_id: req.user._id,
+  status: "assigned",
+})
+  .populate([
+    {
+      path: "assignment_id",
+      select: "uuid name title description assign_type contentId assign_on due_date created_by",
+      populate: [
+        {
+          path: "contentId",
+          select:
+            "title description duration tags team subteam category status thumbnail credits stars badges uuid",
+        },
+        { path: "created_by", select: "name email" },
+      ],
+    },
+    {
+      path: "enrollment_id",
+      select: "uuid name assign_type contentId assign_on",
+      populate: [
+        {
+          path: "contentId",
+          select:
+            "title description duration tags team subteam category status thumbnail credits stars badges uuid",
+        },
+      ],
+    },
+  ])
+  .lean();
+    // const  = await UserContentProgress.find({ user_id: userId, status: "in_progress" }).populate("contentId");
+    return res.status(200).json(assigned);
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({ message: error.message });
+  }
+}
+
 module.exports = {
   getModule,
   getAssessment,
@@ -354,8 +464,11 @@ module.exports = {
   getInProgress,
   updateStatus,
   enrolledbyUser,
-  getCatalog,
-  getRecomended
+  getCompleted,
+  getRecomended,
+  getAssigned,
+  getEnrolledModule,
+  getEnrolledAssessment,
 }
 
 

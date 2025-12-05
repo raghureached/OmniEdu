@@ -25,7 +25,7 @@
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background-color: #4f46e5;
+    background-color: var(--color-primary);
     color: white;
     display: flex;
     align-items: center;
@@ -120,7 +120,7 @@
 
 .globaladminprofile-change-password-btn {
     padding: 8px 16px;
-    background-color: #4f46e5;
+    background-color: var(--color-primary);
     color: white;
     border: none;
     border-radius: 6px;
@@ -131,7 +131,7 @@
 }
 
 .globaladminprofile-change-password-btn:hover {
-    background-color: #4338ca;
+    background-color: var(--color-accent);
 }
 
 

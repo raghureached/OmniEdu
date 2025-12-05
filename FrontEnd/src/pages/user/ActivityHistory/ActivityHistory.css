@@ -15,7 +15,7 @@
   margin-bottom: 12px;
   font-size: 28px;
   font-weight: 700;
-  color: #1a56db;
+  color: var(--color-primary);
   letter-spacing: -0.5px;
 }
 
@@ -70,8 +70,8 @@
 
 .activity-filter-dropdown select:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(28, 136, 199, 0.25);
 }
 
 .activity-list {
@@ -105,7 +105,7 @@
 }
 
 .activity-item.course_started {
-  border-left-color: #3b82f6; /* blue */
+  border-left-color: var(--color-accent);
 }
 
 .activity-item.certificate {
@@ -135,8 +135,8 @@
 }
 
 .activity-item.course_started .activity-icon {
-  background-color: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
+  background-color: rgba(28, 136, 199, 0.1);
+  color: var(--color-accent);
 }
 
 .activity-item.certificate .activity-icon {
@@ -330,8 +330,8 @@
 
 .activity-date-input-group input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(28, 136, 199, 0.25);
 }
 
 /* Table styles */
@@ -556,7 +556,7 @@
 
 .activity-feedback-modal-header h3 {
   margin: 0;
-  color: #1a56db;
+  color: var(--color-primary);
   font-size: 18px;
   font-weight: 600;
 }
@@ -633,8 +633,8 @@
 
 .activity-form-group textarea:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(28, 136, 199, 0.25);
 }
 
 .activity-form-actions {
@@ -661,7 +661,7 @@
 
 .activity-submit-btn {
   padding: 10px 16px;
-  background-color: #1a56db;
+  background-color: var(--color-primary);
   color: white;
   border: none;
   border-radius: 6px;
@@ -671,7 +671,7 @@
 }
 
 .activity-submit-btn:hover {
-  background-color: #1e429f;
+  background-color: var(--color-accent);
 }
 
 /* Activity name with info icon styles */
@@ -747,7 +747,7 @@
   display: inline-flex;
   align-items: center;
   background-color: #f0f9ff;
-  border: 1px solid #bae6fd;
+  border: 1px solid var(--color-accent);
   border-radius: 4px;
   padding: 4px 8px;
   font-size: 0.9rem;
@@ -756,7 +756,7 @@
 .clear-filter-btn {
   background: none;
   border: none;
-  color: #0284c7;
+  color: var(--color-accent);
   font-size: 1.2rem;
   font-weight: bold;
   cursor: pointer;
@@ -765,5 +765,5 @@
 }
 
 .clear-filter-btn:hover {
-  color: #0369a1;
+  color: var(--color-primary);
 }

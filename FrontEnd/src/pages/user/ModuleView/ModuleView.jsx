@@ -9,7 +9,6 @@ import api from '../../../services/api';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 
 const ModuleView = ({id}) => {
-    // console.log(id)
     const navigate = useNavigate();
     const [data, setData] = useState(null);
     const [activeTab, setActiveTab] = useState('preview');
@@ -18,10 +17,11 @@ const ModuleView = ({id}) => {
     const [submission, setSubmission] = useState(null);
     const objectUrlRef = useRef(null);
     const primaryUrlRef = useRef(null);
-    const [feedbackReaction, setFeedbackReaction] = useState(null); // 'like' | 'dislike' | null
+    const [feedbackReaction, setFeedbackReaction] = useState(null);
     const [feedbackComment, setFeedbackComment] = useState('');
     const [loading, setLoading] = useState(false);
-    const { moduleId, inProgress } = useParams();
+    const { moduleId, inProgress, assignId } = useParams();
+    const [assignment, setAssignment] = useState(null);
     useEffect(() => {
         if(inProgress === "true" || inProgress){
             setActiveTab('resources');
@@ -32,11 +32,22 @@ const ModuleView = ({id}) => {
             setLoading(true);
             const uuid = id || moduleId;
             const fetchData = async () => {
-                const response = await api.get(`/api/user/getModule/${uuid}`);
+                let response 
+                if(!assignId || assignId === "undefined"){
+                    response = await api.get(`/api/user/enrolled/getModule/${uuid}`);
+                }else{
+                    response = await api.get(`/api/user/getModule/${uuid}`);
+                }
                 setData(response.data);
                 setLoading(false);
             };
+            const fetchAssignment = async () => {
+                const response = await api.get(`/api/user/getAssignment/${assignId}`);
+                setAssignment(response.data);
+                setLoading(false);
+            };
             fetchData();
+            // fetchAssignment();
         } catch (error) {
             setLoading(false);
             console.error('Error fetching module data:', error);

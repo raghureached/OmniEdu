@@ -5,6 +5,7 @@ import { logout } from '../../../store/slices/authSlice';
 import { fetchNotifications, markNotificationAsRead } from '../../../store/slices/notificationSlice';
 import "./UserLayout.css";
 import { Menu, Home, BookOpen, CheckCircle, Award, Shield, BookCopy, Clock, User, HelpCircle, LogOut, Bell, X } from 'lucide-react';
+import { GoGraph } from 'react-icons/go';
 
 const UserLayout = () => {
   const dispatch = useDispatch();
@@ -153,34 +154,23 @@ const UserLayout = () => {
             </Link>
           </li>
           <li className="user_menu_section">
-            {!sidebarCollapsed && <div className="user_section_title">Training</div>}
+            {/* {!sidebarCollapsed && <div className="user_section_title">Training</div>} */}
           </li>
-          <li>
-            <Link to="/user/assigned" className={isActive('/user/assigned') ? 'user_link_active' : ''}>
-              <CheckCircle size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Assigned</span>}
-            </Link>
-          </li>
-          {/* <li>
-            <Link to="/user/additional" className={isActive('/user/additional') ? 'user_link_active' : ''}>
-              <Award size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Additional</span>}
-            </Link>
-          </li> */}
-          <li>
-            <Link to="/user/enrolled" className={isActive('/user/enrolled') ? 'user_link_active' : ''}>
-              <Shield size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Enrolled</span>}
-            </Link>
-          </li>
+          
           <li>
             <Link to="/user/catalog" className={isActive('/user/catalog') ? 'user_link_active' : ''}>
               <BookCopy size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Course Catalog</span>}
+              {!sidebarCollapsed && <span className='user_sidebar_names'>Global Library</span>}
             </Link>
           </li>
           <li className="user_menu_section">
-            {!sidebarCollapsed && <div className="user_section_title">Other</div>}
+            {!sidebarCollapsed && <div className="user_section_title">Settings</div>}
+          </li>
+          <li>
+            <Link to="/user/analytics" className={isActive('/user/analytics') ? 'user_link_active' : ''}>
+              <GoGraph size={20} />
+              {!sidebarCollapsed && <span className='user_sidebar_names'>Analytics</span>}
+            </Link>
           </li>
           <li>
             <Link to="/user/activity-history" className={isActive('/user/activity-history') ? 'user_link_active' : ''}>
@@ -221,6 +211,7 @@ const UserLayout = () => {
               {location.pathname.includes('/user/enrolled') && 'Enrolled Training'}
               {location.pathname.includes('/user/catalog') && 'Course Catalog'}
               {location.pathname.includes('/user/activity-history') && 'Activity History'}
+              {location.pathname.includes('/user/analytics') && 'Analytics'}
               {location.pathname.includes('/user/profile') && 'User Profile'}
               {location.pathname.includes('/user/help-center') && 'Help Center'}
             </h2>
@@ -253,8 +244,8 @@ const UserLayout = () => {
                         >
                           <div className="user_notification_content">
                             <h5>{notification.title}</h5>
-                            <p>{notification.message}</p>
-                            <span className="user_notification_time">{formatNotificationDate(notification.date)}</span>
+                            <p>{notification.description}</p>
+                            <span className="user_notification_time">{formatNotificationDate(notification.createdAt)}</span>
                           </div>
                         </div>
                       ))

@@ -63,7 +63,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #5570f1;
+  color: var(--color-accent);
 }
 
 .assess-stat-icon.published {
@@ -117,8 +117,8 @@
 }
 
 .assess-search-bar:focus-within {
-  border-color: #5570f1;
-  box-shadow: 0 0 0 3px rgba(85, 112, 241, 0.1);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(28, 136, 199, 0.1);
 }
 
 .assess-search-bar svg {
@@ -142,7 +142,7 @@
 
 /* Buttons */
 .assess-btn-primary {
-  background: linear-gradient(135deg, #5570f1 0%, #4338ca 100%);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 100%);
   border: none;
   border-radius: 12px;
   padding: 12px 20px;
@@ -154,12 +154,12 @@
   align-items: center;
   gap: 8px;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 14px 0 rgba(85, 112, 241, 0.3);
+  box-shadow: 0 4px 14px 0 rgba(28, 136, 199, 0.3);
 }
 
 .assess-btn-primary:hover {
-  background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
-  box-shadow: 0 6px 20px 0 rgba(85, 112, 241, 0.4);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  box-shadow: 0 6px 20px 0 rgba(28, 136, 199, 0.4);
   transform: translateY(-1px);
 }
 
@@ -268,7 +268,7 @@ assess-table th {
   border-radius: 6px;
   padding: 2px 8px;
   font-size: 0.75rem;
-  color: #1d4ed8;
+  color: var(--color-primary);
   width: fit-content;
 }
 
@@ -349,7 +349,7 @@ assess-table th {
 .assess-action-btn.edit:hover {
   background: #eff6ff;
   border-color: #dbeafe;
-  color: #2563eb;
+  color: var(--color-primary);
 }
 
 .assess-action-btn.delete:hover {
@@ -431,7 +431,7 @@ assess-table th {
   }
   
   .apply-btn {
-    background: #2563eb;
+    background: var(--color-primary);
     color: white;
     border: none;
   }

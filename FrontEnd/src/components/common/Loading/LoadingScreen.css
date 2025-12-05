@@ -38,7 +38,7 @@
     width: 60px;
     height: 60px;
     border: 6px solid #e0e7ff; /* lighter ring */
-    border-top: 6px solid #5570f1; /* theme color */
+    border-top: 6px solid var(--color-accent); /* theme color */
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto;

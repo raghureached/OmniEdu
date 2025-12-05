@@ -1,3 +1,4 @@
+const Notification = require("../../models/Notification_model")
 const UserContentProgress = require("../../models/userContentProgress_model")
 const UserProfile = require("../../models/userProfiles_model")
 
@@ -41,5 +42,17 @@ const getUserRewards = async(req,res) =>{
 
 }
 
+const getNotification = async(req,res) =>{
+    try {
+        const notifications = await Notification.find({ to: req.user._id }).sort({ createdAt: -1 })
+        return res.status(200).json({
+            isSuccess: true,
+            message: "Notifications fetched successfully",
+            data: notifications
+        })
+    } catch (error) {
+        console.log(error)
+    }
+}
 
-module.exports = { getContentStats, getUserRewards }
+module.exports = { getContentStats, getUserRewards,getNotification }
