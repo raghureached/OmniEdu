@@ -9,19 +9,21 @@ import reportWebVitals from './reportWebVitals';
 import ErrorBoundary from './pages/ErrorBoundary';
 import './services/errorHandler';
 import { NotificationProvider } from './components/common/Notification/NotificationProvider';
-
+import { ConfirmDialogProvider} from "./components/ConfirmDialogue/ConfirmDialog"
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <ErrorBoundary>
-      <Provider store={store}>
-        <NotificationProvider>
-          <Router>
-            <App />
-          </Router>
-        </NotificationProvider>
-      </Provider>
-    </ErrorBoundary>
+    <ConfirmDialogProvider>
+      <ErrorBoundary>
+        <Provider store={store}>
+          <NotificationProvider>
+            <Router>
+              <App />
+            </Router>
+          </NotificationProvider>
+        </Provider>
+      </ErrorBoundary>
+    </ConfirmDialogProvider>
   </React.StrictMode>
 );
 

@@ -62,11 +62,11 @@
 }
 
 .cae-scope .step.active:not(:last-child)::after {
-  background: #5570f1;
+  background: var(--color-accent);
 }
 
 .cae-scope .step.completed:not(:last-child)::after {
-  background: #5570f1;
+  background: var(--color-accent);
 }
 
 .cae-scope .step-number {
@@ -86,7 +86,7 @@
 }
 
 .cae-scope .step.active .step-number {
-  background: #5570f1;
+  background: var(--color-primary);
   color: white;
   box-shadow: 0 0 12px rgba(85, 112, 241, 0.8);
 }
@@ -126,7 +126,7 @@
   font-weight: 600;
   margin-bottom: 20px;
   color: #2c3e50;
-  border-bottom: 2px solid #5570f1;
+  border-bottom: 2px solid var(--color-accent);
   padding-bottom: 10px;
 }
 
@@ -164,12 +164,12 @@
 }
 
 .cae-scope .radio-option:hover {
-  border-color: #5570f1;
+  border-color: var(--color-accent);
   background: #f8f9fa;
 }
 
 .cae-scope .radio-option.selected {
-  border-color: #5570f1;
+  border-color: var(--color-accent);
   background: #e3f2fd;
 }
 
@@ -178,7 +178,7 @@
   height: 20px;
   margin-right: 12px;
   cursor: pointer;
-  accent-color: #5570f1;
+  accent-color: var(--color-accent);
 }
 
 .cae-scope .radio-option-content {
@@ -230,7 +230,7 @@
 .cae-scope input[type="datetime-local"]:focus,
 .cae-scope textarea:focus {
   outline: none;
-  border-color: #5570f1;
+  border-color: var(--color-accent);
   background: #fff;
   box-shadow: 0 0 6px rgba(85, 112, 241, 0.3);
 }
@@ -283,12 +283,12 @@
 }
 
 .cae-scope .item-card:hover {
-  border-color: #5570f1;
+  border-color: var(--color-accent);
   background: #f8f9fa;
 }
 
 .cae-scope .item-card.selected {
-  border-color: #5570f1;
+  border-color: var(--color-accent);
   background: #e3f2fd;
 }
 
@@ -297,7 +297,7 @@
   height: 20px;
   margin-right: 12px;
   cursor: pointer;
-  accent-color: #5570f1;
+  accent-color: var(--color-accent);
 }
 
 .cae-scope .item-info {
