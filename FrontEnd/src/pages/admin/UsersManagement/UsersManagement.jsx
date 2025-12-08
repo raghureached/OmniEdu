@@ -43,6 +43,8 @@ import BulkAssignToTeam from './components/BulkAssignToTeam';
 import UsersTable from './components/UsersTable';
 import * as XLSX from 'xlsx';
 import { notify, notifyError, notifySuccess, notifyWarning } from '../../../utils/notification';
+import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
+
 const UsersManagement = () => {
   const dispatch = useDispatch();
   const {
@@ -122,17 +124,18 @@ const UsersManagement = () => {
     successCount: 0,
     failedRows: []
   });
-
+  //confirm 
+  const { confirm } = useConfirm();
   // --- central refetch control ---
-const [refetchIndex, setRefetchIndex] = useState(0);
-//export modal
-const [showExportModal, setShowExportModal] = useState(false);
-// Centralized fetch: runs when filters change OR when we explicitly bump refetchIndex
-useEffect(() => {
-  // call fetchUsers exactly once per change
-  dispatch(fetchUsers(filters));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [dispatch, filters, refetchIndex]);
+  const [refetchIndex, setRefetchIndex] = useState(0);
+  //export modal
+  const [showExportModal, setShowExportModal] = useState(false);
+  // Centralized fetch: runs when filters change OR when we explicitly bump refetchIndex
+  useEffect(() => {
+    // call fetchUsers exactly once per change
+    dispatch(fetchUsers(filters));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, filters, refetchIndex]);
 
   useEffect(() => {
     getRoles();
@@ -858,7 +861,7 @@ useEffect(() => {
   //       // Use explicitly selected IDs
   //       targetIds = Array.isArray(selectedIds) ? selectedIds.map(toIdStr) : [];
   //     }
-  
+
   //    // Validate selection
   //   if (targetIds.length === 0) {
   //     notifyWarning('No selected users found to export.', { 
@@ -1076,23 +1079,23 @@ useEffect(() => {
     const toIdStr = (v) => (v === null || v === undefined) ? '' : String(v);
     let targetIds = [];
     const byId = new Map();
-    
+
     // ========================================
     // STEP 1: Determine export scope
     // ========================================
-    
+
     if (exportScope === 'all') {
       // EXPORT ALL USERS - Fetch everything regardless of selection
       try {
-        const wideParams = { 
-          ...filters, 
-          page: 1, 
-          limit: Math.max(itemsPerPage, Number(totalCount) || 1000) 
+        const wideParams = {
+          ...filters,
+          page: 1,
+          limit: Math.max(itemsPerPage, Number(totalCount) || 1000)
         };
-        
+
         let allUsers = [];
         const resAll = await dispatch(fetchUsers(wideParams)).unwrap();
-        
+
         if (Array.isArray(resAll)) {
           allUsers = resAll;
         } else if (Array.isArray(resAll?.users)) {
@@ -1100,27 +1103,27 @@ useEffect(() => {
         } else if (Array.isArray(resAll?.data)) {
           allUsers = resAll.data;
         }
-    
+
         // Build byId map with all users
         allUsers.forEach((u) => {
           const id = toIdStr(resolveUserId(u));
           if (id) byId.set(id, u);
         });
-    
+
         if (byId.size === 0) {
           notifyWarning('No users found to export.');
           return;
         }
-    
+
       } catch (e) {
         console.error('Error during export all:', e);
         notifyError('Failed to export all users.');
         return;
       }
-    
+
     } else {
       // EXPORT SELECTED USERS ONLY
-      
+
       // Determine selected IDs based on Gmail-style selection
       if (allSelected) {
         const allIdsInFiltered = sortedUsers.map((u) => toIdStr(resolveUserId(u))).filter(Boolean);
@@ -1128,21 +1131,21 @@ useEffect(() => {
       } else {
         targetIds = Array.isArray(selectedIds) ? selectedIds.map(toIdStr) : [];
       }
-  
+
       // Validate selection
       if (targetIds.length === 0) {
-        notifyWarning('No selected users found to export.', { 
-          title: 'Export', 
-          dismissible: true, 
-          duration: 6000 
+        notifyWarning('No selected users found to export.', {
+          title: 'Export',
+          dismissible: true,
+          duration: 6000
         });
         return;
       }
-  
+
       // ========================================
       // STEP 2: Build dataset from current page first
       // ========================================
-      
+
       const selectedIdSet = new Set(targetIds);
       (Array.isArray(users) ? users : []).forEach((u) => {
         const id = toIdStr(resolveUserId(u));
@@ -1150,11 +1153,11 @@ useEffect(() => {
           byId.set(id, u);
         }
       });
-  
+
       // ========================================
       // STEP 3: Fetch across pages if needed
       // ========================================
-      
+
       const needCrossPage = allSelected || targetIds.some((id) => !byId.has(id));
       if (needCrossPage) {
         try {
@@ -1162,13 +1165,13 @@ useEffect(() => {
           for (let page = 1; page <= totalPages; page += 1) {
             // Skip the current page we already processed
             if (page === currentPage) continue;
-            
+
             const params = { ...filters, page, limit: itemsPerPage };
             let pageUsers = [];
-            
+
             try {
               const res = await dispatch(fetchUsers(params)).unwrap();
-              
+
               if (Array.isArray(res)) {
                 pageUsers = res;
               } else if (Array.isArray(res?.users)) {
@@ -1180,11 +1183,11 @@ useEffect(() => {
               // Skip this page if fetch fails
               continue;
             }
-  
+
             pageUsers.forEach((u) => {
               const id = toIdStr(resolveUserId(u));
               if (!id) return;
-              
+
               if (allSelected) {
                 if (!excludedIds.map(toIdStr).includes(id) && !byId.has(id)) {
                   byId.set(id, u);
@@ -1193,7 +1196,7 @@ useEffect(() => {
                 byId.set(id, u);
               }
             });
-  
+
             // Break early if all found
             if (!allSelected && byId.size >= selectedIdSet.size) break;
           }
@@ -1201,24 +1204,24 @@ useEffect(() => {
           // Non-fatal: continue with whatever we have
         }
       }
-  
+
       // ========================================
       // STEP 4: Final fallback - wide fetch if still missing
       // ========================================
-      
+
       const missingAfterLoop = !allSelected && targetIds.some((id) => !byId.has(id));
       if (allSelected || missingAfterLoop) {
         try {
-          const wideParams = { 
-            ...filters, 
-            page: 1, 
-            limit: Math.max(itemsPerPage, Number(totalCount) || 0) 
+          const wideParams = {
+            ...filters,
+            page: 1,
+            limit: Math.max(itemsPerPage, Number(totalCount) || 0)
           };
-          
+
           let wideUsers = [];
           try {
             const resAll = await dispatch(fetchUsers(wideParams)).unwrap();
-            
+
             if (Array.isArray(resAll)) {
               wideUsers = resAll;
             } else if (Array.isArray(resAll?.users)) {
@@ -1233,11 +1236,11 @@ useEffect(() => {
           } catch (_) {
             // Ignore
           }
-  
+
           wideUsers.forEach((u) => {
             const id = toIdStr(resolveUserId(u));
             if (!id) return;
-            
+
             if (allSelected) {
               if (!excludedIds.map(toIdStr).includes(id) && !byId.has(id)) {
                 byId.set(id, u);
@@ -1251,38 +1254,38 @@ useEffect(() => {
         }
       }
     }
-  
+
     // ========================================
     // STEP 5: Process users for export
     // ========================================
-  
+
     const usersToExport = exportScope === 'all'
       ? Array.from(byId.values())
       : targetIds.map((id) => byId.get(toIdStr(id))).filter(Boolean);
-  
+
     if (usersToExport.length === 0) {
-      notifyWarning('Could not resolve users for export.', { 
-        title: 'Export', 
-        dismissible: true, 
-        duration: 6000 
+      notifyWarning('Could not resolve users for export.', {
+        title: 'Export',
+        dismissible: true,
+        duration: 6000
       });
       return;
     }
-  
+
     console.log("Users to export:", usersToExport);
-  
+
     // ========================================
     // STEP 6: Sort users (maintain UI order)
     // ========================================
-  
+
     let orderedUsers = usersToExport;
     if (sortKey) {
       const roleLabel = (u) => typeof u?.global_role_id === 'string'
         ? u.global_role_id
         : (u?.global_role_id?.name || u?.global_role_id?.title || '');
-      
+
       const statusLabel = (u) => (getStatusLabel(u?.status) || '').toLowerCase();
-      
+
       const getVal = (u) => {
         switch (sortKey) {
           case 'name':
@@ -1299,7 +1302,7 @@ useEffect(() => {
             return '';
         }
       };
-  
+
       orderedUsers = [...usersToExport].sort((a, b) => {
         const va = getVal(a);
         const vb = getVal(b);
@@ -1308,16 +1311,16 @@ useEffect(() => {
         return 0;
       });
     }
-  
+
     // ========================================
     // STEP 7: Generate CSV data
     // ========================================
-  
+
     const rows = orderedUsers.map((user) => {
       const assignments = computeAssignments(user || {});
       const teamNames = assignments.map(a => a.teamName).filter(Boolean);
       const subTeamNames = assignments.map(a => a.subTeamName).filter(Boolean);
-      
+
       return {
         name: user?.name || '',
         email: user?.email || '',
@@ -1329,11 +1332,11 @@ useEffect(() => {
         subteam: subTeamNames.join(', ')
       };
     });
-  
+
     // Define CSV headers
     const headers = ['name', 'email', 'designation', 'role', 'team', 'subteam'];
     const headerLabels = ['Name', 'Email', 'Designation', 'Role', 'Team', 'Subteam'];
-  
+
     // Helper to escape CSV values
     const escapeCsvValue = (value) => {
       if (value === null || value === undefined) return '';
@@ -1342,7 +1345,7 @@ useEffect(() => {
       const escaped = stringValue.replace(/"/g, '""');
       return needsQuotes ? `"${escaped}"` : escaped;
     };
-  
+
     // Generate CSV content
     const csvContent = [
       headerLabels.join(','),
@@ -1350,11 +1353,11 @@ useEffect(() => {
         headers.map(field => escapeCsvValue(row[field] || '')).join(',')
       )
     ].join('\n');
-  
+
     // ========================================
     // STEP 8: Download CSV file
     // ========================================
-  
+
     try {
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -1365,15 +1368,15 @@ useEffect(() => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-  
-      notifySuccess(`Successfully exported ${orderedUsers.length} user(s).`, { 
-        title: 'Export Complete' 
+
+      notifySuccess(`Successfully exported ${orderedUsers.length} user(s).`, {
+        title: 'Export Complete'
       });
-  
+
     } catch (error) {
       console.error('Error during export:', error);
-      notifyError('An error occurred while exporting. Please try again.', { 
-        title: 'Export Failed' 
+      notifyError('An error occurred while exporting. Please try again.', {
+        title: 'Export Failed'
       });
     }
   };
@@ -1501,22 +1504,36 @@ useEffect(() => {
           submissionData.removedAssignments = removedForPayload;
         }
 
-        await dispatch(updateUser({ id: targetId, userData: submissionData })).unwrap();
+        const res = await dispatch(updateUser({ id: targetId, userData: submissionData })).unwrap();
+        notifySuccess(res?.message || "User updated successfully");
         setRefetchIndex(i => i + 1);
         closeForm();
-        
-      } catch (error) {
-        console.error('Error updating user:', error);
+
+      } catch (err) {
+        const val = err?.error;
+        if (val.includes("E11000") && val.includes("email")) {
+          notifyError("Email already exists", { title: "Failed to update user" });
+        }
+        else {
+          notifyError(err?.message || "Failed to update user");
+        }
       }
     } else {
       try {
         console.log(formData)
-        await dispatch(createUser(formData)).unwrap();
+        const res = await dispatch(createUser(formData)).unwrap();
+        notifySuccess(res?.message || "User created successfully");
         setRefetchIndex(i => i + 1);
         closeForm();
-        
-      } catch (error) {
-        console.error('Error creating user:', error);
+
+      } catch (err) {
+        const val = err?.error;
+        if (val.includes("E11000") && val.includes("email")) {
+          notifyError("Email already exists", { title: "Failed to create user" });
+        }
+        else {
+          notifyError(err?.message || "Failed to create user");
+        }
       }
     }
   };
@@ -1584,19 +1601,19 @@ useEffect(() => {
     // Close dropdown panel
     setShowBulkAction(false);
     // ✅ Clear selection AFTER opening modal
-      clearSelection();
+    clearSelection();
 
   };
 
 
   const handleBulkAssignToGroup = async () => {
     if (!assignTeamId) {
-      alert('Please select a team');
+      notifyWarning('Please select a team');
       return;
     }
 
     if (!assignTargetIds.length) {
-      alert('No users selected for assignment');
+      notifyWarning('No users selected for assignment');
       return;
     }
 
@@ -1617,17 +1634,31 @@ useEffect(() => {
       }
 
       setRefetchIndex(i => i + 1);
-      alert(targetIds.length > 1 ? 'Users assigned to the selected team successfully' : 'User assigned to the selected team successfully');
+      notifySuccess(targetIds.length > 1 ? 'Users assigned to the selected team successfully' : 'User assigned to the selected team successfully');
     } catch (err) {
-      console.error(err);
-      alert('Failed to assign users to team');
+      notifyError(err?.message || 'Failed to assign users to team');
     }
   };
 
-  const handleDelete = async(userId) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      await dispatch(deleteUser(userId)).unwrap();
-      setRefetchIndex(i => i + 1);
+  const handleDelete = async (userId) => {
+    const confirmed = await confirm({
+      title: 'Are you sure you want to delete this user?',
+      message: 'This action will permanently remove the user from the system.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger',
+      showCheckbox: true,
+      checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
+      note: 'Associated items will be removed.',
+    });
+    if (confirmed) {
+      try {
+        const res = await dispatch(deleteUser(userId)).unwrap();
+        notifySuccess(res?.message || "User deleted successfully");
+        setRefetchIndex(i => i + 1);
+      } catch (err) {
+        notifyError(err?.message || "Failed to delete user");
+      }
     }
     clearAllSelections();
   };
@@ -1643,12 +1674,23 @@ useEffect(() => {
 
   const handleBulkAction = async (action) => {
     if (selectedIds.length === 0) {
-      // alert('Please select at least one user');
+     
       notifyError('Please select at least one user')
       return;
     }
     if (action === 'delete') {
-      if (window.confirm(`Are you sure you want to delete ${selectedIds.length} users?`)) {
+      const confirmed = await confirm({
+        title: `Are you sure you want to delete ${selectedIds.length} users?`,
+        message: 'This action will permanently remove all selected users from the system.',
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        type: 'danger',
+        showCheckbox: true,
+        checkboxLabel: 'I understand that this data cannot be retrieved after deleting.',
+        note: 'All associated items will be removed.',
+      });
+  
+      if (confirmed) {
         try {
           // Convert UUID → MongoDB _id
           console.log(selectedIds)
@@ -1656,12 +1698,11 @@ useEffect(() => {
             .map((uuid) => uuidToMongoId.get(uuid))
             .filter(Boolean);
 
-          await dispatch(bulkDeleteUsers(mongoIds)).unwrap();
+            const res =await dispatch(bulkDeleteUsers(mongoIds)).unwrap();
+          notifySuccess(res?.message || "Users deleted successfully");
           clearAllSelections();
           setRefetchIndex(i => i + 1);
         } catch (error) {
-          console.error('Failed to delete users:', error);
-          // alert('Failed to delete selected users. Please try again.');
           notifyError('Failed to delete selected users. Please try again.')
         }
       }
@@ -2038,7 +2079,7 @@ useEffect(() => {
                 if (value.trim() !== "") {
                   handleBackendFilter({ name: value });
                 }
-                
+
               }}
 
             />
@@ -2272,12 +2313,6 @@ useEffect(() => {
           selectionScope={selectionScope}
           selectAllLoading={selectAllLoading}
         />
-
-
-
-
-
-
         <BulkAssignToTeam
           isOpen={assignTeamOpen}
           onClose={() => {
@@ -2351,7 +2386,7 @@ useEffect(() => {
                         value={formData.email}
                         onChange={handleFormChange}
                         required
-                        disabled={editMode}
+
                       />
                     </div>
                   </div>
@@ -2568,19 +2603,20 @@ useEffect(() => {
           columns={userFailedColumns}
         />
         <ExportModal
-        isOpen={showExportModal}
-        onClose={() => {setShowExportModal(false) 
-          clearSelection();}}
-        onConfirm={async()=>{await handleExportUsers();
+          isOpen={showExportModal}
+          onClose={() => {
+            setShowExportModal(false)
+            // clearSelection();
+          }}
+          onConfirm={async () => {
+            await handleExportUsers();
             clearSelection();
-        }}
-        selectedCount={derivedSelectedCount}
-        totalCount={totalCount}
-        hasMembers={true}
-        exportType="users" // ✅ Specify this is for users
-      />
-        
-
+          }}
+          selectedCount={derivedSelectedCount}
+          totalCount={totalCount}
+          hasMembers={true}
+          exportType="users" // ✅ Specify this is for users
+        />
       </div>
     </div>
   );

@@ -33,6 +33,7 @@ import '../../globalAdmin/OrganizationManagement/OrganizationManagement.css';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import { Users } from 'lucide-react';
 import { notifyError, notifyInfo, notifySuccess, notifyWarning } from '../../../utils/notification';
+import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
 
 const GroupsManagement = () => {
   const dispatch = useDispatch();
@@ -76,7 +77,8 @@ const GroupsManagement = () => {
     successCount: 0,
     failedRows: []
   });
-
+ //confirm
+ const { confirm } = useConfirm();
   const editMode = !!currentGroup;
 
   useEffect(() => {
@@ -511,9 +513,27 @@ const GroupsManagement = () => {
     setShowForm(true);
   };
 
-  const handleDeleteGroup = (groupId) => {
-    if (window.confirm('Are you sure you want to delete this group?')) {
-      dispatch(deleteGroup(groupId));
+  const handleDeleteGroup = async(groupId) => {
+    const confirmed = await confirm({
+      title: 'Are you sure you want to delete this group?',
+      message: 'This action will permanently remove the group from the system.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger',
+      showCheckbox: true,
+      checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
+      note: 'Associated items will be removed.',
+    });
+    
+      if (confirmed) {
+      try {
+        const res = dispatch(deleteGroup(groupId));
+        notifySuccess("Group Deleted Successfully")
+      }
+      catch (err) {
+        notifyError(err?.error || "Failed to Delete Group")
+      }
+
     }
   };
   const handleBulkDelete = async () => {
@@ -526,12 +546,38 @@ const GroupsManagement = () => {
       notifyWarning("Please select at least one group to delete");
       return;
     }
+    const confirmed = await confirm({
+      title: `Delete ${selectedGroupIds.length} selected group(s)?`,
+      message: 'This action will permanently remove all selected groups from the system.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger',
+      showCheckbox: true,
+      checkboxLabel: 'I understand that this data cannot be retrieved after deleting.',
+      note: 'All associated items will be removed.',
+    });
+    if (!confirmed)  return;
 
-    if (!window.confirm(`Delete ${selectedGroupIds.length} selected group(s)?`)) return;
+    // for (const groupId of selectedGroupIds) {
+    //   await dispatch(deleteGroup(groupId));
+    // }
+    let allSucceeded = true;
 
     for (const groupId of selectedGroupIds) {
-      await dispatch(deleteGroup(groupId));
+      try {
+        await dispatch(deleteGroup(groupId)).unwrap();
+      } catch (err) {
+        allSucceeded = false;
+      }
     }
+
+    if (allSucceeded) {
+      notifySuccess("All selected groups were deleted successfully");
+    } else {
+      notifyError("Some groups could not be deleted");
+    }
+
+
 
     // Clear selection after delete
     setAllSelected(false);
@@ -544,22 +590,6 @@ const GroupsManagement = () => {
     fetchGroupData();
   };
 
-
-  //   if (selectedGroups.length === 0) {
-  //     alert('Please select at least one group to delete');
-  //     return;
-  //   }
-
-  //   if (window.confirm(`Are you sure you want to delete ${selectedGroups.length} groups?`)) {
-  //     selectedGroups.forEach(groupId => {
-  //       dispatch(deleteGroup(groupId));
-  //     });
-  //     setSelectedGroups([]);
-  //     setSelectionScope('none');
-  //     setSelectedPageRef(null);
-  //     setAllSelectionCount(null);
-  //   }
-  // };
   const handleBulkDeactivate = () => {
     const selectedList = sortedGroups.filter(g => isRowSelected(g.id));
 
@@ -809,7 +839,7 @@ const GroupsManagement = () => {
     { key: "subTeamName", label: "Subteam Name" },
     { key: "reason", label: "Reason" },
   ];
-  
+
   const findMemberSubteamName = (member, group) => {
     try {
       // Find membership for this team
@@ -840,20 +870,20 @@ const GroupsManagement = () => {
     //   ? sortedGroups.filter((group) => selectedIdsForExport.includes(group.id))
     //   : [];
     // Determine what to export based on exportType
-  const groupsToExport = exportType === 'all' 
-  ? sortedGroups  // Export all filtered groups
-  : sortedGroups.filter((group) => selectedIdsForExport.includes(group.id));
+    const groupsToExport = exportType === 'all'
+      ? sortedGroups  // Export all filtered groups
+      : sortedGroups.filter((group) => selectedIdsForExport.includes(group.id));
 
 
     if (!Array.isArray(groupsToExport) || groupsToExport.length === 0) {
-      alert('No selected groups available to export.');
+      notifyWarning('No selected groups available to export.');
       return;
     }
 
     // If exporting entire data
     // const exportTeamsOnly = (selectedIdsForExport.length === (totalCount || 0));
-// If exporting all, only export teams and subteams (no members)
-const exportTeamsOnly = (exportType === 'all');
+    // If exporting all, only export teams and subteams (no members)
+    const exportTeamsOnly = (exportType === 'all');
     let headers = [];
     const rows = [];
 
@@ -970,9 +1000,11 @@ const exportTeamsOnly = (exportType === 'all');
         if (!id) {
           throw new Error('Unable to determine group identifier for update.');
         }
-        await dispatch(updateTeam({ id, teamData: mappedPayload })).unwrap();
+        const res=await dispatch(updateTeam({ id, teamData: mappedPayload })).unwrap();
+        notifySuccess(res?.message || "Team updated successfully");
       } else {
-        await dispatch(createTeam(mappedPayload)).unwrap();
+        const res =await dispatch(createTeam(mappedPayload)).unwrap();
+        notifySuccess(res?.message || "Team created successfully");
       }
 
       setShowForm(false);
@@ -987,7 +1019,10 @@ const exportTeamsOnly = (exportType === 'all');
       setAllSelectionCount(null);
       fetchGroupData();
     } catch (submitError) {
-      console.error('Failed to submit group form:', submitError);
+      // console.error('Failed to submit group form:', submitError);
+      notifyError(submitError?.error || submitError?.message || "Failed to submit group form");
+
+
     }
   };
 
@@ -1403,9 +1438,15 @@ const exportTeamsOnly = (exportType === 'all');
       // notifyError("Only letters, numbers, / and - are allowed in Subteam Name");
       return;
     }
-
-    await dispatch(createSubTeam(data.data)).unwrap();
-    fetchGroupData();     
+    try{
+    const res=await dispatch(createSubTeam(data.data)).unwrap();
+    notifySuccess(res?.message||"SubTeam created successfully")
+    fetchGroupData();
+    }
+    catch(err)
+    {
+      notifyError("Failed to create SubTeam")
+    }
   };
 
   // const handleupdateSubTeam = async (id, data) => {
@@ -1419,15 +1460,22 @@ const exportTeamsOnly = (exportType === 'all');
       return;
     }
 
-    await dispatch(updateSubTeam({ id, subTeamData: data })).unwrap();
+    try {
+      const res = await dispatch(updateSubTeam({ id, subTeamData: data })).unwrap();
+      notifySuccess(res?.message || "SubTeam updated successfully")
+    } catch (error) {
+      // console.error('Failed to delete subteam:', error);
+      notifyError('Failed to update subteam');
+    }
   };
 
   const handleDeleteSubTeam = async (id) => {
     try {
-      await dispatch(deleteSubTeam(id)).unwrap();
+      const res = await dispatch(deleteSubTeam(id)).unwrap();
+      notifySuccess(res?.message || "SubTeam deleted successfully")
     } catch (error) {
-      console.error('Failed to delete subteam:', error);
-      alert('Failed to delete subteam. Please try again.');
+      // console.error('Failed to delete subteam:', error);
+      notifyError('Failed to delete subteam');
     }
   }
   return (
@@ -1698,15 +1746,15 @@ const exportTeamsOnly = (exportType === 'all');
             open={showDeactivateModal}
             count={teamsToDeactivate.length}
             onCancel={() => {
-              setShowDeactivateModal(false) 
-              clearSelection();  // 👈 clear when closing/cancelling modal
-            } 
-          }
-          onConfirm={async () => {
-            await confirmDeactivateTeams(); 
-            clearSelection();     // 👈 clear after deactivation
-          }}
-           
+              setShowDeactivateModal(false)
+              
+            }
+            }
+            onConfirm={async () => {
+              await confirmDeactivateTeams();
+              clearSelection();     // 👈 clear after deactivation
+            }}
+
           />
           <FailedImportModal
             open={showFailedImportModal}
@@ -1727,13 +1775,15 @@ const exportTeamsOnly = (exportType === 'all');
           />
           <ExportModal
             isOpen={showExportModal}
-            onClose={() => {setShowExportModal(false); clearSelection(); }}
+            onClose={() => { setShowExportModal(false);  }}
             onConfirm={async () => {
-              await handleExportGroups(); 
-              clearSelection(); }}
+              await handleExportGroups();
+              clearSelection();
+            }}
             selectedCount={derivedSelectedCount}
             totalCount={totalItems}
             hasMembers={derivedSelectedCount > 0 && derivedSelectedCount < totalItems}
+            exportType="groups"
           />
 
         </div>

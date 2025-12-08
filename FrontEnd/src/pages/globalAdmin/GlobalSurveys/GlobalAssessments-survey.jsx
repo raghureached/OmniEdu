@@ -1,4 +1,4 @@
-import React, { useEffect, useState,useRef } from 'react';
+import React, { useEffect, useState,useRef,useMemo, useCallback } from 'react';
 import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, ChevronDown, Filter } from 'lucide-react';
 import { GoX } from 'react-icons/go';
 import { RiDeleteBinFill } from 'react-icons/ri';
@@ -182,16 +182,7 @@ const GlobalSurveys = () => {
     fetchGroups(); // fetch teams/subteams
   }, [dispatch]);
 
-  // const { groups } = useSelector(state => state.groups); 
-  // console.log("groups in assessments: ",groups)
-  // const splitInstructions = (str) => {
-  //   const raw = String(str || '');
-  //   if (!raw.trim()) return { instruction_header: '', instruction_text: '' };
-  //   const parts = raw.split(/\n{2,}/);
-  //   const header = (parts[0] || '').trim();
-  //   const text = parts.slice(1).join('\n\n').trim();
-  //   return { instruction_header: header, instruction_text: text };
-  // };
+ 
 
   const handleAddAssessment = () => {
     setCurrentAssessment(null);
@@ -223,43 +214,129 @@ const GlobalSurveys = () => {
    // setFeedback({ instructionTop: '', instruction_header_top: '', question_text: '', instructionBottom: '', instruction_header_bottom: '' });
     setShowForm(true);
   };
-  
-  // Visible IDs in the current table page
-  const visibleIds = (assessments || []).map(a => a?.uuid || a?._id || a?.id).filter(Boolean);
-  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
+  // Filter the assessments based on search term and status filter
+  const filteredAssessments = assessments.filter(assessment => {
+    const matchesSearch = searchTerm === '' || 
+      (assessment.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       assessment.description?.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesStatus = !filters.status || assessment.status === filters.status;
+    
+    return matchesSearch && matchesStatus;
+  });
+  // -------------------- Gmail-style Selection Model --------------------
 
-  const toggleSelectOne = (id) => {
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  };
 
-  const toggleSelectAllVisible = () => {
-    setSelectedIds(prev => {
-      const allSelected = visibleIds.length > 0 && visibleIds.every(id => prev.includes(id));
-      if (allSelected) {
-        // Deselect only visible
-        return prev.filter(id => !visibleIds.includes(id));
-      }
-      // Select union of prev and visible
-      const set = new Set([...prev, ...visibleIds]);
-      return Array.from(set);
-    });
-  };
+const [allSelected, setAllSelected] = useState(false);
+const [excludedIds, setExcludedIds] = useState([]);
+const [selectionScope, setSelectionScope] = useState("none");
+const [selectedPageRef, setSelectedPageRef] = useState(null);
+const [allSelectionCount, setAllSelectionCount] = useState(null);
 
-  const clearSelection = () => setSelectedIds([]);
+// Normalize ID
+const resolveId = (a) => a?.uuid || a?._id || a?.id;
 
-  const bulkUpdateStatus = async (status) => {
-    if (selectedIds.length === 0) return;
-    try {
-      await Promise.all(
-        selectedIds.map(id => dispatch(updateSurvey({ uuid: id, data: { status } })).unwrap().catch(() => null))
-      );
-      clearSelection();
-      dispatch(fetchSurveys({ page, limit }));
-    } catch (e) {
-      console.error('Bulk status update failed', e);
+// Visible IDs on current page (use filteredAssessments — correct)
+const visibleIds = useMemo(
+  () => (filteredAssessments || []).map(resolveId).filter(Boolean),
+  [filteredAssessments]
+);
+
+// Total items across all pages
+const totalItems = pagination?.total || filteredAssessments?.length || 0;
+
+// Row selected?
+const isRowSelected = useCallback(
+  (id) => {
+    if (!id) return false;
+    return allSelected ? !excludedIds.includes(id) : selectedIds.includes(id);
+  },
+  [allSelected, excludedIds, selectedIds]
+);
+
+// Selected counts
+const derivedSelectedCount = useMemo(
+  () => (allSelected ? totalItems - excludedIds.length : selectedIds.length),
+  [allSelected, excludedIds.length, selectedIds.length, totalItems]
+);
+
+const derivedSelectedOnPage = useMemo(
+  () => visibleIds.filter(isRowSelected),
+  [visibleIds, isRowSelected]
+);
+
+// Header checkbox state
+const topCheckboxChecked =
+  visibleIds.length > 0 &&
+  visibleIds.every((id) => isRowSelected(id));
+
+const topCheckboxIndeterminate =
+  visibleIds.some((id) => isRowSelected(id)) && !topCheckboxChecked;
+
+// Reset selection completely
+const clearSelection = useCallback(() => {
+  setSelectedIds([]);
+  setAllSelected(false);
+  setExcludedIds([]);
+  setSelectionScope("none");
+  setSelectedPageRef(null);
+  setAllSelectionCount(null);
+}, []);
+
+// Select-all on page
+const handleSelectAllToggle = (checked) => {
+  if (checked) {
+    setSelectedIds(visibleIds);
+    setExcludedIds([]);
+    setAllSelected(false);
+    setSelectionScope("page");
+    setSelectedPageRef(page);
+  } else {
+    if (allSelected) {
+      setExcludedIds((prev) => [...new Set([...prev, ...visibleIds])]);
+    } else {
+      setSelectedIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
     }
-  };
 
+    const remaining = allSelected
+      ? totalItems - (excludedIds.length + visibleIds.length)
+      : selectedIds.length - visibleIds.length;
+
+    if (remaining <= 0) clearSelection();
+    else setSelectionScope("custom");
+  }
+};
+
+// Select-all across ALL PAGES
+const handleSelectAllAcrossPages = () => {
+  setAllSelected(true);
+  setExcludedIds([]);
+  setSelectionScope("all");
+  setAllSelectionCount(totalItems);
+};
+
+// Row checkbox toggle
+const toggleSelectOne = (id, checked) => {
+  if (allSelected) {
+    if (checked) {
+      setExcludedIds((prev) => prev.filter((x) => x !== id));
+    } else {
+      setExcludedIds((prev) => [...new Set([...prev, id])]);
+    }
+    return;
+  }
+
+  setSelectedIds((prev) => {
+    const next = checked ? [...prev, id] : prev.filter((x) => x !== id);
+
+    if (next.length === 0) clearSelection();
+    else setSelectionScope("custom");
+
+    return next;
+  });
+};
+
+ 
   const bulkDelete = async (itemsToDelete = selectedIds) => {
     if (itemsToDelete.length === 0) return;
     if (!window.confirm(`Delete ${itemsToDelete.length} survey(s)? This cannot be undone.`)) return;
@@ -782,16 +859,7 @@ const GlobalSurveys = () => {
     return <LoadingScreen text="Loading Surveys..."/>
   }
 
-  // Filter the assessments based on search term and status filter
-  const filteredAssessments = assessments.filter(assessment => {
-    const matchesSearch = searchTerm === '' || 
-      (assessment.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       assessment.description?.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesStatus = !filters.status || assessment.status === filters.status;
-    
-    return matchesSearch && matchesStatus;
-  });
+  
   return (
     <div className="assess-container">
       {/* Header Section */}
@@ -955,98 +1023,78 @@ const GlobalSurveys = () => {
                 </div>
               </div>
             )}
-      
-      
-      
-          {/* Controls */}
-            {/* <div className="controls">
-              <div className="roles-search-bar">
-                <Search size={16} color="#6b7280" className="search-icon" />
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="Search Surveys"
-                  className="search-input"
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-      
-              <div className="controls-right">
-                <button className="control-btn" onClick={() => setShowFilters((prev) => !prev)}>
-                  <Filter size={16} />
-                  Filter
+         
+      {selectionScope !== 'none' && derivedSelectedCount > 0 && (
+        <div
+          className="globalsurvey-selection-banner"
+          style={{ margin: '12px 0', justifyContent: 'center' }}
+        >
+          {selectionScope === 'page' ? (
+            <>
+              <span>
+                All {visibleIds.length}{' '}
+                {visibleIds.length === 1 ? 'survey' : 'surveys'} on this page are selected.
+              </span>
+              {totalItems > visibleIds.length && (
+                <button
+                  type="button"
+                  className="selection-action action-primary"
+                  onClick={handleSelectAllAcrossPages}
+                  disabled={false /* no async yet */}
+                >
+                  {`Select all ${totalItems} surveys`}
                 </button>
-      
-                <button className="control-btn">
-                        <Share size={16} />
-                        Share
-                      </button>
-                <button className="control-btn" onClick={() => setShowBulkAction((prev) => !prev)}>
-                  Bulk Action <ChevronDown size={16} />
+              )}
+              <button
+                type="button"
+                className="selection-action action-link"
+                onClick={clearSelection}
+              >
+                Clear selection
+              </button>
+            </>
+          ) : selectionScope === 'all' ? (
+            <>
+              <span>
+                All {derivedSelectedCount}{' '}
+                {derivedSelectedCount === 1 ? 'survey' : 'surveys'} are selected across
+                all pages.
+              </span>
+              <button
+                type="button"
+                className="selection-action action-link"
+                onClick={clearSelection}
+              >
+                Clear selection
+              </button>
+            </>
+          ) : (
+            <>
+              <span>
+                {derivedSelectedCount}{' '}
+                {derivedSelectedCount === 1 ? 'survey' : 'surveys'} selected.
+              </span>
+              {totalItems > derivedSelectedCount && (
+                <button
+                  type="button"
+                  className="selection-action action-primary"
+                  onClick={handleSelectAllAcrossPages}
+                >
+                  {`Select all ${totalItems} surveys`}
                 </button>
-                <button className="assess-btn-primary" onClick={handleAddAssessment}>
-                  <Plus size={16} />
-                  <span>Create Survey</span>
-                </button>
-              </div>
-            </div>
-            {showFilters && (
-              <div className="adminsurvey-filter-panel">
-                <span style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px", hover: { color: "#6b7280" } }} onClick={() => setShowFilters(false)}><GoX size={20} color="#6b7280" /></span>
-                <div className="filter-group">
-                  <label>Status</label>
-                  <select
-                    name="status"
-                    value={tempFilters?.status || ""}
-                    onChange={handleFilterChange}
-                  >
-                    <option value="">All</option>
-                    <option value="Saved">Saved</option>
-                    <option value="Draft">Draft</option>
-                    <option value="Published">Published</option>
-                  </select>
-                </div>
-      
-      
-                <div className="filter-actions">
-                <button className="btn-primary" onClick={handleFilter}>
-                    Apply
-                  </button>
-                  <button className="reset-btn" onClick={resetFilters}>
-                    Clear
-                  </button>
-                  
-                 
-                </div>
-              </div>
-            )}
-            {showBulkAction && (
-              <div className="adminsurvey-bulk-action-panel">
-                <div className="bulk-action-header">
-                  <label className="bulk-action-title">Items Selected: {selectedIds.length}</label>
-                  <GoX
-                    size={20}
-                    title="Close"
-                    aria-label="Close bulk action panel"
-                    onClick={() => setShowBulkAction(false)}
-                    className="bulk-action-close"
-                  />
-                </div>
-                <div className="bulk-action-actions">
-                  <button
-                    className="bulk-action-delete-btn"
-                    disabled={selectedIds.length === 0}
-                    onClick={() => handleBulkDelete(selectedIds)}
-                  >
-                    <RiDeleteBinFill size={16} color="#fff" />
-                    <span>Delete</span>
-                  </button>
-                </div>
-              </div>
-            )} */}
-      
-
-      {/* Assessment Table */}
+              )}
+              <button
+                type="button"
+                className="selection-action action-link"
+                onClick={clearSelection}
+              >
+                Clear selection
+              </button>
+            </>
+          )}
+        </div>
+      )}
+      {/* survey Table */}
       <div className="assess-table-section">
         <div className="assess-table-container">
           {assessments.length === 0 ? (
@@ -1066,7 +1114,9 @@ const GlobalSurveys = () => {
               <thead>
                 <tr>
                   <th>
-                    <input type="checkbox" checked={allVisibleSelected} onChange={toggleSelectAllVisible} aria-label="Select all" />
+                    <input type="checkbox"checked={topCheckboxChecked}
+  ref={(el) => el && (el.indeterminate = topCheckboxIndeterminate)}
+  onChange={(e) => handleSelectAllToggle(e.target.checked)} aria-label="Select all" />
                   </th>
                   <th>Survey Details</th>
                   <th>Questions</th>
@@ -1084,7 +1134,8 @@ const GlobalSurveys = () => {
                   <tr key={assessment.uuid || assessment._id || assessment.id} className="assess-table-row">
                     <td>
                       {(() => { const rowId = assessment.uuid || assessment._id || assessment.id; const checked = selectedIds.includes(rowId); return (
-                        <input type="checkbox" checked={checked} onChange={() => toggleSelectOne(rowId)} aria-label="Select row" />
+                        <input type="checkbox" checked={isRowSelected(rowId)}
+                        onChange={(e) => toggleSelectOne(rowId, e.target.checked)} aria-label="Select row" />
                       ); })()}
                     </td>
                     <td>

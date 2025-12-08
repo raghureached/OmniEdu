@@ -4,6 +4,7 @@ import { GoOrganization, GoX } from 'react-icons/go';
 import { useSelector } from 'react-redux';
 import { FiEdit3 } from 'react-icons/fi';
 import TeamPreviewMembersModal from './SubTeamPreviewMembersModal';
+import { notifyError, notifySuccess } from '../../../../utils/notification';
 
 const TeamPreview = ({
   isOpen,
@@ -234,7 +235,7 @@ const TeamPreview = ({
 
     const regex = /^[A-Za-z0-9\/\-\s]+$/;
     if (!regex.test(formData.subTeamName)) {
-      alert("Subteam name may only contain letters, numbers, '/', and '-'.");
+     notifyError("Subteam name may only contain letters, numbers, '/', and '-'.");
       return;
     }
 
@@ -287,10 +288,10 @@ const TeamPreview = ({
     const ok = window.confirm(`Are you sure you want to delete subteam "${name || ''}"?`);
     if (ok && deleteSubTeam) {
       try {
-        await deleteSubTeam(uuid);
+        const res=await deleteSubTeam(uuid);
+        notifySuccess("SubTeam deleted successfully")
       } catch (error) {
-        console.error('Failed to delete subteam:', error);
-        alert('Failed to delete subteam. Please try again.');
+        notifyError('Failed to delete SubTeam');
       }
     }
   };
@@ -416,7 +417,7 @@ const TeamPreview = ({
         ) : (
           <div className="addOrg-form-section" style={{ padding: 12 }}>
             <div className="table-container" style={{ marginTop: 12 }}>
-              <div className="table-header" style={{ gridTemplateColumns: "50px 250px 250px 250px", color: 'rgb(2,2,2)' }}>
+              <div className="table-header" style={{ gridTemplateColumns: "50px 250px 250px 250px", color: 'rgb(2,2,2)',paddingLeft:"200px" }}>
                 <div style={{ width: 24 }}></div>
                 <div className="col-team">Sub Team Name</div>
                 <div className="col-members">Members</div>
@@ -429,7 +430,7 @@ const TeamPreview = ({
                 </div>
               ) : (
                 sortedSubTeams.map((st) => (
-                  <div key={st._id || st.uuid || st.id} className="table-row" style={{ gridTemplateColumns: "50px 250px 250px 250px" }}>
+                  <div key={st._id || st.uuid || st.id} className="table-row" style={{ gridTemplateColumns: "50px 250px 250px 250px",paddingLeft:"200px"  }}>
                     <div style={{ width: 24 }}></div>
                     <div className="col-team">{st.name}</div>
                     <button

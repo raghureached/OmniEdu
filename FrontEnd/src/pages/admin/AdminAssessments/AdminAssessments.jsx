@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, Filter, ChevronDown} from 'lucide-react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, Filter, ChevronDown } from 'lucide-react';
 import { RiDeleteBinFill } from 'react-icons/ri';
 import { GoX } from 'react-icons/go';
 import './AdminAssessments.css'
@@ -11,6 +11,8 @@ import QuestionsForm from './QuestionsForm';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import api from '../../../services/api';
 import { notifyError, notifySuccess } from '../../../utils/notification';
+import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
+
 const AdminAssessments = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
@@ -52,7 +54,7 @@ const AdminAssessments = () => {
     options: ['', ''],
     correct_option: '',
     file_url: '',
-    
+
   }]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   //filters
@@ -62,7 +64,7 @@ const AdminAssessments = () => {
     status: '',
     search: ''
   });
-  
+
   const [tempFilters, setTempFilters] = useState({
     status: '',
     search: ''
@@ -78,7 +80,14 @@ const AdminAssessments = () => {
   const { user: authUser } = useSelector((state) => state.auth || { user: null });
   const [page, setPage] = useState(pagination?.page || 1);
   const limit = 6;
-
+  // Gmail-style selection like UsersManagement
+  const [allSelected, setAllSelected] = useState(false);
+  const [excludedIds, setExcludedIds] = useState([]);
+  const [selectionScope, setSelectionScope] = useState("none");
+  const [selectedPageRef, setSelectedPageRef] = useState(null);
+  const [allSelectionCount, setAllSelectionCount] = useState(null);
+  //confirm
+  const { confirm } = useConfirm();
   // Removed sync effect to avoid double fetch and fetch loops due to pagination object updates
 
   // Fetch list with pagination
@@ -141,29 +150,143 @@ const AdminAssessments = () => {
     setShowForm(true);
   };
 
-  // Visible IDs in the current table page
-  const visibleIds = (assessments || []).map(a => a?.uuid || a?._id || a?.id).filter(Boolean);
-  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
+  // Helper: normalize assessment ID (uuid / _id / id)
+  const resolveAssessmentId = (a) => a?.uuid || a?._id || a?.id || '';
 
-  const toggleSelectOne = (id) => {
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  };
+  // Visible IDs on the current page (API already returns current page only)
+  const visibleIds = useMemo(
+    () => (assessments || []).map(resolveAssessmentId).filter(Boolean),
+    [assessments]
+  );
 
-  const toggleSelectAllVisible = () => {
-    setSelectedIds(prev => {
-      const allSelected = visibleIds.length > 0 && visibleIds.every(id => prev.includes(id));
-      if (allSelected) {
-        // Deselect only visible
-        return prev.filter(id => !visibleIds.includes(id));
+  // Total items in filtered result set (all pages)
+  const totalItems = pagination?.total || assessments?.length || 0;
+
+  // Gmail model: read-side helper
+  const isRowSelected = useCallback(
+    (id) => {
+      if (!id) return false;
+      return allSelected ? !excludedIds.includes(id) : selectedIds.includes(id);
+    },
+    [allSelected, excludedIds, selectedIds]
+  );
+
+  // Derived: which of the visible rows are selected
+  const derivedSelectedOnPage = useMemo(
+    () => visibleIds.filter(isRowSelected),
+    [visibleIds, isRowSelected]
+  );
+
+  // Derived: total selected across all pages
+  const derivedSelectedCount = useMemo(
+    () => (allSelected ? Math.max(0, totalItems - excludedIds.length) : selectedIds.length),
+    [allSelected, totalItems, excludedIds.length, selectedIds.length]
+  );
+
+  // Top checkbox state (header)
+  const topCheckboxChecked =
+    visibleIds.length > 0 && visibleIds.every((id) => isRowSelected(id));
+
+  const topCheckboxIndeterminate =
+    visibleIds.length > 0 &&
+    !topCheckboxChecked &&
+    visibleIds.some((id) => isRowSelected(id));
+
+  // ---- Core reset helpers ----
+  const clearSelection = useCallback(() => {
+    setAllSelected(false);
+    setSelectedIds([]);
+    setExcludedIds([]);
+    setSelectionScope('none');
+    setSelectedPageRef(null);
+    setAllSelectionCount(null);
+  }, []);
+
+  const clearAllSelections = clearSelection; // alias for banner + bulk handlers
+
+  // When user checks/unchecks the header checkbox
+  const handleSelectAllToggle = (checked) => {
+    if (checked) {
+      if (!visibleIds.length) {
+        clearSelection();
+        return;
       }
-      // Select union of prev and visible
-      const set = new Set([...prev, ...visibleIds]);
-      return Array.from(set);
-    });
+      // "Select all on this page" mode
+      setAllSelected(false);
+      setSelectedIds(visibleIds);
+      setExcludedIds([]);
+      setSelectionScope('page');
+      setSelectedPageRef(page);
+      setAllSelectionCount(null);
+    } else {
+      // Unselect this page
+      if (allSelected) {
+        // In ALL mode → mark these as excluded
+        setExcludedIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
+      } else {
+        // In custom/page mode → remove these from selectedIds
+        setSelectedIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
+      }
+
+      // After unselecting, decide whether to fully clear or stay in custom mode
+      const remaining = allSelected
+        ? Math.max(0, totalItems - (excludedIds.length + visibleIds.length))
+        : Math.max(0, selectedIds.length - visibleIds.length);
+
+      if (remaining <= 0) {
+        clearSelection();
+      } else {
+        setSelectionScope('custom');
+        setSelectedPageRef(null);
+      }
+    }
   };
 
-  const clearSelection = () => setSelectedIds([]);
+  // "Select all assessments" across pages (Gmail 'Select all' button in banner)
+  const handleSelectAllAcrossPages = () => {
+    if (!totalItems) return;
+    setAllSelected(true);
+    setExcludedIds([]);
+    setSelectionScope('all');
+    setSelectedPageRef(null);
+    setAllSelectionCount(totalItems);
+  };
 
+  // Row-level toggle
+  const toggleSelectOne = (id, checked) => {
+    if (!id) return;
+
+    if (allSelected) {
+      // In ALL mode, selection is "all" minus excludedIds
+      if (checked) {
+        // re-include this id
+        setExcludedIds((prev) => prev.filter((x) => x !== id));
+      } else {
+        // exclude this id
+        setExcludedIds((prev) => Array.from(new Set([...prev, id])));
+      }
+      setSelectionScope('all');
+      setSelectedPageRef(null);
+    } else {
+      // Normal mode using selectedIds
+      setSelectedIds((prev) => {
+        let next;
+        if (checked) {
+          next = Array.from(new Set([...prev, id]));
+        } else {
+          next = prev.filter((x) => x !== id);
+        }
+
+        if (next.length === 0) {
+          clearSelection();
+        } else {
+          setSelectionScope('custom');
+          setSelectedPageRef(null);
+        }
+        return next;
+      });
+    }
+  };
   // Filter handlers
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -172,7 +295,7 @@ const AdminAssessments = () => {
       [name]: value
     }));
   };
-  
+
   // Update search term when filters change
   useEffect(() => {
     if (filters.search !== searchTerm) {
@@ -277,40 +400,29 @@ const AdminAssessments = () => {
     setSearchTerm('');
   };
 
-  // const handleBulkDelete = async (ids) => {
-  //   if (ids.length === 0) return;
-  //   if (!window.confirm(`Delete ${ids.length} selected assessment(s)? This action cannot be undone.`)) return;
-  //   try {
-  //     await Promise.all(
-  //       ids.map(id => dispatch(deleteAssessment(id)).unwrap().catch(() => null))
-  //     );
-  //     setSelectedIds([]);
-  //     setShowBulkAction(false);
-  //     dispatch(getAssessments({ page, limit }));
-  //   } catch (e) {
-  //     console.error('Bulk delete failed:', e);
-  //   }
-  // };
-
-  const bulkUpdateStatus = async (status) => {
-    if (selectedIds.length === 0) return;
-    try {
-      await Promise.all(
-        selectedIds.map(id => dispatch(editAssessment({ id, data: { status } })).unwrap().catch(() => null))
-      );
-      clearSelection();
-      dispatch(getAssessments({ page, limit }));
-    } catch (e) {
-      console.error('Bulk status update failed', e);
-    }
-  };
+  const finalSelectedIds = allSelected
+    ? assessments.map(a => a.uuid || a._id || a.id).filter(id => !excludedIds.includes(id))
+    : selectedIds;
 
   const bulkDelete = async () => {
     if (selectedIds.length === 0) return;
-    if (!window.confirm(`Delete ${selectedIds.length} assessment(s)? This cannot be undone.`)) return;
+    const confirmed = await confirm({
+      title: `Are you sure you want to delete ${selectedIds.length} assessment(s)?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger', // or 'warning', 'info'
+      showCheckbox: true,
+      checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
+      note: 'Associated items will be removed.',
+    });
+    if (!confirmed)  return;
     try {
       await Promise.all(
-        selectedIds.map(id => dispatch(deleteAssessment(id)).unwrap().catch(() => null))
+        selectedIds.map(id =>
+          dispatch(deleteAssessment(id))
+            .unwrap()
+            .catch(() => null)
+        )
       );
       clearSelection();
       dispatch(getAssessments({ page, limit }));
@@ -379,7 +491,7 @@ const AdminAssessments = () => {
               options: Array.isArray(q.options) && q.options.length ? q.options : [''],
               correct_option: Array.isArray(q.correct_option) ? q.correct_option : (Number.isInteger(q.correct_option) ? [q.correct_option] : []),
               file_url: q.file_url || '',
-             
+
 
               total_points: Number.isFinite(q.total_points) ? q.total_points : 1,
             });
@@ -423,7 +535,7 @@ const AdminAssessments = () => {
         percentage_to_pass: assessment.percentage_to_pass ?? 0,
         instructions: assessment.instructions,
         display_answers:
-          assessment.display_answers || 'AfterAssessment',
+        assessment.display_answers || 'AfterAssessment',
         // Newly added fields
         credits: Number.isFinite(assessment.credits) ? assessment.credits : 0,
         stars: Number.isFinite(assessment.stars) ? assessment.stars : 0,
@@ -528,10 +640,10 @@ const AdminAssessments = () => {
 
     try {
       const res = await dispatch(createAssessment(payload));
-      if(createAssessment.fulfilled.match(res)){
+      if (createAssessment.fulfilled.match(res)) {
         notifySuccess("Assessment created successfully");
-      }else{
-        notifyError("Failed to create assessment",{
+      } else {
+        notifyError("Failed to create assessment", {
           message: res.payload.message,
           title: "Failed to create assessment"
         });
@@ -615,10 +727,10 @@ const AdminAssessments = () => {
     try {
       const res = await dispatch(editAssessment({ id, data }));
       setShowForm(false);
-      if(editAssessment.fulfilled.match(res)){
+      if (editAssessment.fulfilled.match(res)) {
         notifySuccess("Assessment updated successfully");
-      }else{
-        notifyError("Failed to update assessment",{
+      } else {
+        notifyError("Failed to update assessment", {
           message: res.payload.message,
           title: "Failed to update assessment"
         });
@@ -758,10 +870,10 @@ const AdminAssessments = () => {
   const handleDeleteAssessment = async (id) => {
     try {
       const res = await dispatch(deleteAssessment(id));
-      if(deleteAssessment.fulfilled.match(res)){
+      if (deleteAssessment.fulfilled.match(res)) {
         notifySuccess("Assessment deleted successfully");
-      }else{
-        notifyError("Failed to delete assessment",{
+      } else {
+        notifyError("Failed to delete assessment", {
           message: res.payload.message,
           title: "Failed to delete assessment"
         });
@@ -824,25 +936,25 @@ const AdminAssessments = () => {
        
       </div> */}
       {/* Controls */}
-      
+
       <div className="controls">
         <div className="roles-search-bar">
           <Search size={16} color="#6b7280" className="search-icon" />
-            <input
-              type="text"
-              name="search"
-              placeholder="Search Assessments"
-              className="search-input"
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setFilters(prev => ({
-                  ...prev,
-                  search: e.target.value,
-                  status: prev.status
-                }));
-              }}
-            />
+          <input
+            type="text"
+            name="search"
+            placeholder="Search Assessments"
+            className="search-input"
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setFilters(prev => ({
+                ...prev,
+                search: e.target.value,
+                status: prev.status
+              }));
+            }}
+          />
         </div>
 
         <div className="controls-right">
@@ -937,9 +1049,10 @@ const AdminAssessments = () => {
           </div>
           <div className="bulk-action-actions">
             <button
-              className="bulk-action-delete-btn"
+              className="btn-primary"
               disabled={selectedIds.length === 0}
               onClick={() => handleBulkDelete(selectedIds)}
+              style={{background: "red"}}
             >
               <RiDeleteBinFill size={16} color="#fff" />
               <span>Delete</span>
@@ -950,37 +1063,93 @@ const AdminAssessments = () => {
 
 
 
+{selectionScope !== 'none' && derivedSelectedCount > 0 && (
+  <div
+    className="assessments-selection-banner"
+    style={{ margin: '12px 0', justifyContent: 'center' }}
+  >
+    {selectionScope === 'page' ? (
+      <>
+        <span>
+          All {visibleIds.length}{' '}
+          {visibleIds.length === 1 ? 'assessment' : 'assessments'} on this page are selected.
+        </span>
+        {totalItems > visibleIds.length && (
+          <button
+            type="button"
+            className="selection-action action-primary"
+            onClick={handleSelectAllAcrossPages}
+            disabled={false /* no async yet */}
+          >
+            {`Select all ${totalItems} assessments`}
+          </button>
+        )}
+        <button
+          type="button"
+          className="selection-action action-link"
+          onClick={clearSelection}
+        >
+          Clear selection
+        </button>
+      </>
+    ) : selectionScope === 'all' ? (
+      <>
+        <span>
+          All {derivedSelectedCount}{' '}
+          {derivedSelectedCount === 1 ? 'assessment' : 'assessments'} are selected across
+          all pages.
+        </span>
+        <button
+          type="button"
+          className="selection-action action-link"
+          onClick={clearSelection}
+        >
+          Clear selection
+        </button>
+      </>
+    ) : (
+      <>
+        <span>
+          {derivedSelectedCount}{' '}
+          {derivedSelectedCount === 1 ? 'assessment' : 'assessments'} selected.
+        </span>
+        {totalItems > derivedSelectedCount && (
+          <button
+            type="button"
+            className="selection-action action-primary"
+            onClick={handleSelectAllAcrossPages}
+          >
+            {`Select all ${totalItems} assessments`}
+          </button>
+        )}
+        <button
+          type="button"
+          className="selection-action action-link"
+          onClick={clearSelection}
+        >
+          Clear selection
+        </button>
+      </>
+    )}
+  </div>
+)}
 
-
-      {/* {selectedIds.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#f8fafc', margin: '8px 0' }}>
-          <div style={{ color: '#0f172a' }}>
-            <strong>{selectedIds.length}</strong> selected
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="assess-btn-secondary" onClick={() => bulkUpdateStatus('Published')} disabled={loading}>Publish</button>
-            <button className="assess-btn-secondary" onClick={() => bulkUpdateStatus('Draft')} disabled={loading}>Move to Draft</button>
-            <button className="assess-btn-secondary" onClick={bulkDelete} disabled={loading} title="Delete selected">Delete</button>
-            <button className="assess-btn-secondary" onClick={clearSelection}>Clear</button>
-          </div>
-        </div>
-      )} */}
 
       {/* Assessment Table */}
       <div className="assess-table-section">
         <div className="assess-table-container">
           {assessments.length === 0 ? (
             <div className="assess-empty-state">
-              <div className="assess-empty-icon" style={{display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center"}}>
+              <div className="assess-empty-icon" style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
                 <FileText size={48} />
               </div>
               <h3>No assessments found</h3>
               <p>Get started by creating your first assessment</p>
-              <div style={{display:"flex",justifyContent:"center",alignItems:"center"}}>
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
                 <button className="assess-btn-primary" onClick={handleAddAssessment} >
-                <Plus size={16} />
-                Create Assessment
-              </button>
+                  <Plus size={16} />
+                  Create Assessment
+                </button>
               </div>
             </div>
           ) : (
@@ -988,7 +1157,15 @@ const AdminAssessments = () => {
               <thead>
                 <tr>
                   <th>
-                    <input type="checkbox" checked={allVisibleSelected} onChange={toggleSelectAllVisible} aria-label="Select all" />
+                    <input
+                      type="checkbox"
+                      checked={topCheckboxChecked}
+                      ref={(el) => {
+                        if (el) {
+                          el.indeterminate = topCheckboxIndeterminate;
+                        }
+                      }}
+                      onChange={(e) => handleSelectAllToggle(e.target.checked)} aria-label="Select all" />
                   </th>
                   <th>Assessment Details</th>
                   <th>Questions</th>
@@ -1001,14 +1178,14 @@ const AdminAssessments = () => {
                 {assessments
                   .filter(assessment => {
                     // Apply search filter
-                    const matchesSearch = !filters.search || 
+                    const matchesSearch = !filters.search ||
                       assessment.title?.toLowerCase().includes(filters.search.toLowerCase()) ||
                       assessment.description?.toLowerCase().includes(filters.search.toLowerCase());
-                    
+
                     // Apply status filter
-                    const matchesStatus = !filters.status || 
+                    const matchesStatus = !filters.status ||
                       assessment.status?.toLowerCase() === filters.status.toLowerCase();
-                    
+
                     return matchesSearch && matchesStatus;
                   })
                   .map(assessment => (
@@ -1016,7 +1193,8 @@ const AdminAssessments = () => {
                       <td>
                         {(() => {
                           const rowId = assessment.uuid || assessment._id || assessment.id; const checked = selectedIds.includes(rowId); return (
-                            <input type="checkbox" checked={checked} onChange={() => toggleSelectOne(rowId)} aria-label="Select row" />
+                            <input type="checkbox"  checked={isRowSelected(rowId)}
+                            onChange={(e) => toggleSelectOne(rowId, e.target.checked)} aria-label="Select row" />
                           );
                         })()}
                       </td>
@@ -1093,6 +1271,7 @@ const AdminAssessments = () => {
                   ))}
                 {/* Pagination row */}
                 <tr className="assess-table-row">
+
                   <td colSpan={6}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
                       {/* <div style={{ color: '#64748b', fontSize: '0.9rem' }}>

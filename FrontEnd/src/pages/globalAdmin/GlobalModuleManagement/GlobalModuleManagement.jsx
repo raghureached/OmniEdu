@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchContent, deleteContent, createContent, updateContent, bulkDeleteContent } from '../../../store/slices/contentSlice';
 import "./GlobalModuleManagement.css"
@@ -21,8 +21,7 @@ const GlobalModuleManagement = () => {
   const [showDraftModal, setShowDraftModal] = useState(false);
   const [draftContent, setDraftContent] = useState([]);
   const [showBulkAction, setShowBulkAction] = useState(false);
-  const [selectedItems, setSelectedItems] = useState([]);
-  const {showNotification} = useNotification()
+  const { showNotification } = useNotification()
   const [filters, setFilters] = useState({
     status: ''
   });
@@ -120,6 +119,122 @@ const GlobalModuleManagement = () => {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentContent = filteredContent.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredContent.length / itemsPerPage);
+
+  // ---------------- Gmail-style Selection Model ----------------
+
+
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [allSelected, setAllSelected] = useState(false);
+  const [excludedIds, setExcludedIds] = useState([]);
+  const [selectionScope, setSelectionScope] = useState("none");
+  const [selectedPageRef, setSelectedPageRef] = useState(null);
+  const [allSelectionCount, setAllSelectionCount] = useState(null);
+
+  // Normalize ID for all content rows
+  const resolveId = (item) => item?.uuid || item?._id || item?.id;
+
+  // Visible items on this page
+  const visibleIds = useMemo(
+    () => (currentContent || []).map(resolveId).filter(Boolean),
+    [currentContent]
+  );
+
+  // Total items (filtered)
+  const totalItems = filteredContent?.length || 0;
+
+  // Row selection check
+  const isRowSelected = useCallback(
+    (id) => {
+      if (!id) return false;
+      return allSelected ? !excludedIds.includes(id) : selectedIds.includes(id);
+    },
+    [allSelected, excludedIds, selectedIds]
+  );
+
+  // Derived counts
+  const derivedSelectedCount = useMemo(() => {
+    return allSelected
+      ? totalItems - excludedIds.length
+      : selectedIds.length;
+  }, [allSelected, excludedIds.length, selectedIds.length, totalItems]);
+
+  const derivedSelectedOnPage = useMemo(
+    () => visibleIds.filter(isRowSelected),
+    [visibleIds, isRowSelected]
+  );
+
+  // Header checkbox states
+  const topCheckboxChecked =
+    visibleIds.length > 0 &&
+    visibleIds.every((id) => isRowSelected(id));
+
+  const topCheckboxIndeterminate =
+    visibleIds.some((id) => isRowSelected(id)) &&
+    !topCheckboxChecked;
+
+  // Reset everything
+  const clearSelection = useCallback(() => {
+    setSelectedIds([]);
+    setAllSelected(false);
+    setExcludedIds([]);
+    setSelectionScope("none");
+    setSelectedPageRef(null);
+    setAllSelectionCount(null);
+  }, []);
+
+  // Toggle header checkbox (select all on page)
+  const handleSelectAllToggle = (checked) => {
+    if (checked) {
+      setSelectedIds(visibleIds);
+      setExcludedIds([]);
+      setAllSelected(false);
+      setSelectionScope("page");
+      setSelectedPageRef(currentPage);
+    } else {
+      if (allSelected) {
+        setExcludedIds((prev) => [...new Set([...prev, ...visibleIds])]);
+      } else {
+        setSelectedIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
+      }
+
+      const remaining = allSelected
+        ? totalItems - (excludedIds.length + visibleIds.length)
+        : selectedIds.length - visibleIds.length;
+
+      if (remaining <= 0) clearSelection();
+      else setSelectionScope("custom");
+    }
+  };
+
+  // Select ALL across pages
+  const handleSelectAllAcrossPages = () => {
+    setAllSelected(true);
+    setExcludedIds([]);
+    setSelectionScope("all");
+    setAllSelectionCount(totalItems);
+  };
+
+  // Row toggle
+  const toggleSelectOne = (id, checked) => {
+    if (allSelected) {
+      if (checked) {
+        setExcludedIds((prev) => prev.filter((x) => x !== id));
+      } else {
+        setExcludedIds((prev) => [...new Set([...prev, id])]);
+      }
+      return;
+    }
+
+    setSelectedIds((prev) => {
+      const next = checked ? [...prev, id] : prev.filter((x) => x !== id);
+
+      if (next.length === 0) clearSelection();
+      else setSelectionScope("custom");
+
+      return next;
+    });
+  };
+
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -240,22 +355,7 @@ const GlobalModuleManagement = () => {
     }
 
   }
-  const handleSelectAll = (e) => {
-    const checked = e.target.checked;
-    if (checked) {
-      setSelectedItems(currentContent.map(item => item.uuid));
-    } else {
-      setSelectedItems([]);
-    }
-  }
-  const handleSelectItem = (e, id) => {
-    const checked = e.target.checked;
-    if (checked) {
-      setSelectedItems([...selectedItems, id]);
-    } else {
-      setSelectedItems(selectedItems.filter(item => item !== id));
-    }
-  }
+
   const deleteDraft = (title) => {
     const drafts = JSON.parse(localStorage.getItem('drafts'));
     const updatedDrafts = drafts.filter((draft) => draft.title !== title);
@@ -413,7 +513,7 @@ const GlobalModuleManagement = () => {
               // <div className="bulk-action-panel-module">
               <div ref={bulkPanelRef} className="bulk-action-panel-module">
                 <div className="bulk-action-header">
-                  <label className="bulk-action-title">Items Selected: {selectedItems.length}</label>
+                  <label className="bulk-action-title">Items Selected: {derivedSelectedCount}</label>
                   <GoX
                     size={20}
                     title="Close"
@@ -425,8 +525,8 @@ const GlobalModuleManagement = () => {
                 <div className="bulk-action-actions" style={{ display: "flex", justifyContent: "center" }}>
                   <button
                     className="bulk-action-delete-btn"
-                    disabled={selectedItems.length === 0}
-                    onClick={() => handleBulkDelete(selectedItems)}
+                    disabled={derivedSelectedCount === 0}
+                    onClick={() => handleBulkDelete(selectedIds)}
                   >
                     <RiDeleteBinFill size={16} color="#fff" />
                     <span>Delete</span>
@@ -439,14 +539,85 @@ const GlobalModuleManagement = () => {
           </div>
         </div>
       </div>
-
-      {showModal && <GlobalModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange}uploading={uploading} setUploading={setUploading} handleRichInputChange={handleRichInputChange} error={error} />}
+      {selectionScope !== 'none' && derivedSelectedCount > 0 && (
+        <div
+          className="module-selection-banner"
+          style={{ margin: '12px 0', justifyContent: 'center' }}
+        >
+          {selectionScope === 'page' ? (
+            <>
+              <span>
+                All {visibleIds.length}{' '}
+                {visibleIds.length === 1 ? 'module' : 'modules'} on this page are selected.
+              </span>
+              {totalItems > visibleIds.length && (
+                <button
+                  type="button"
+                  className="selection-action action-primary"
+                  onClick={handleSelectAllAcrossPages}
+                  disabled={false /* no async yet */}
+                >
+                  {`Select all ${totalItems} modules`}
+                </button>
+              )}
+              <button
+                type="button"
+                className="selection-action action-link"
+                onClick={clearSelection}
+              >
+                Clear selection
+              </button>
+            </>
+          ) : selectionScope === 'all' ? (
+            <>
+              <span>
+                All {derivedSelectedCount}{' '}
+                {derivedSelectedCount === 1 ? 'module' : 'modules'} are selected across
+                all pages.
+              </span>
+              <button
+                type="button"
+                className="selection-action action-link"
+                onClick={clearSelection}
+              >
+                Clear selection
+              </button>
+            </>
+          ) : (
+            <>
+              <span>
+                {derivedSelectedCount}{' '}
+                {derivedSelectedCount === 1 ? 'module' : 'modules'} selected.
+              </span>
+              {totalItems > derivedSelectedCount && (
+                <button
+                  type="button"
+                  className="selection-action action-primary"
+                  onClick={handleSelectAllAcrossPages}
+                >
+                  {`Select all ${totalItems} modules`}
+                </button>
+              )}
+              <button
+                type="button"
+                className="selection-action action-link"
+                onClick={clearSelection}
+              >
+                Clear selection
+              </button>
+            </>
+          )}
+        </div>
+      )}
+      {showModal && <GlobalModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} handleRichInputChange={handleRichInputChange} error={error} />}
       {showEditModal && <GlobalModuleModal showModal={showEditModal} setShowModal={setShowEditModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} showEditModal={showEditModal} setShowEditModal={setShowEditModal} editContentId={editContentId} handleRichInputChange={handleRichInputChange} error={error} />}
       <div className="table-container">
         <table className="data-table">
           <thead>
             <tr>
-              <th><input type="checkbox" onChange={(e) => handleSelectAll(e)} checked={selectedItems.length === currentContent.length} /></th>
+              <th><input type="checkbox" checked={topCheckboxChecked}
+                ref={(el) => el && (el.indeterminate = topCheckboxIndeterminate)}
+                onChange={(e) => handleSelectAllToggle(e.target.checked)} /></th>
               <th>Title</th>
               <th>Credits</th>
               <th>Status</th>
@@ -457,8 +628,10 @@ const GlobalModuleManagement = () => {
           </thead>
           <tbody>
             {currentContent.map((content) => (
-              <tr key={content.id}>
-                <td><input type="checkbox" onChange={(e) => handleSelectItem(e, content.uuid)} checked={selectedItems.includes(content.uuid)} /></td>
+             <tr key={content.uuid || content.id} className={isRowSelected(content.uuid) ? "selected-row" : ""}>
+
+                <td><input type="checkbox" checked={isRowSelected(content.uuid)}
+                  onChange={(e) => toggleSelectOne(content.uuid, e.target.checked)} /></td>
                 <td>
                   <div className="assess-cell-content">
                     <div className="assess-title-container">
@@ -470,10 +643,10 @@ const GlobalModuleManagement = () => {
                             <span key={`${content.id}-tag-${idx}`} className="assess-classification">{t}</span>
                           ))}
                           {content.tags.length > 3 && (
-                          <span className="assess-classification">+ {content.tags.length - 3} more</span>
-                        )}
+                            <span className="assess-classification">+ {content.tags.length - 3} more</span>
+                          )}
                         </div>
-                        
+
                       )}
                     </div>
                   </div>
@@ -496,7 +669,7 @@ const GlobalModuleManagement = () => {
                 </td>
                 <td>
                   <div style={{ display: "flex", gap: "10px" }}>
-                    
+
                     <button className="global-action-btn edit" onClick={() => {
                       setEditContentId(content.uuid)
                       openEditModal(content);

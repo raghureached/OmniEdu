@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchContent, deleteContent } from '../../../store/slices/contentSlice';
 import LearningPathModal from './LearningPathModal';
@@ -56,6 +56,123 @@ const LearningPaths = () => {
     const reset = { status: '' };
     setTempFilters(reset);
     setFilters(reset);
+  };
+  const filteredPaths = learningPaths.filter(path => {
+    const matchesName = path.title.toLowerCase().includes(nameSearch.toLowerCase());
+    const matchesClassification = classificationFilter === 'all' || path.classification === classificationFilter;
+    const statusActive = (filters.status && filters.status.length > 0) ? filters.status : statusFilter;
+    const matchesStatus = statusActive === 'all' || statusActive === '' || path.status === statusActive;
+
+    return matchesName && matchesClassification && matchesStatus;
+  });
+  const total = filteredPaths.length;
+  const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
+  const startIndex = (page - 1) * itemsPerPage;
+  const pageItems = filteredPaths.slice(startIndex, startIndex + itemsPerPage);
+
+  // ---------------- Gmail-style Selection Model ----------------
+
+
+  const [allSelected, setAllSelected] = useState(false);
+  const [excludedIds, setExcludedIds] = useState([]);
+  const [selectionScope, setSelectionScope] = useState("none");
+  const [selectedPageRef, setSelectedPageRef] = useState(null);
+  const [allSelectionCount, setAllSelectionCount] = useState(null);
+
+  // Normalize ID
+  const resolveId = (p) => p?.uuid || p?.id;
+
+  // Visible rows on this page
+  const visibleIds = useMemo(
+    () => (pageItems || []).map(resolveId).filter(Boolean),
+    [pageItems]
+  );
+
+  // Total items across all filtered results
+  const totalItems = filteredPaths.length;
+
+  // Check if row is selected
+  const isRowSelected = useCallback(
+    (id) => {
+      if (!id) return false;
+      return allSelected ? !excludedIds.includes(id) : selectedIds.includes(id);
+    },
+    [allSelected, excludedIds, selectedIds]
+  );
+
+  // Derived selected count
+  const derivedSelectedCount = useMemo(() => {
+    return allSelected
+      ? totalItems - excludedIds.length
+      : selectedIds.length;
+  }, [allSelected, excludedIds.length, selectedIds.length, totalItems]);
+
+  // Header checkbox states
+  const topCheckboxChecked =
+    visibleIds.length > 0 && visibleIds.every((id) => isRowSelected(id));
+
+  const topCheckboxIndeterminate =
+    visibleIds.some((id) => isRowSelected(id)) && !topCheckboxChecked;
+
+  // Reset selection
+  const clearSelection = useCallback(() => {
+    setSelectedIds([]);
+    setAllSelected(false);
+    setExcludedIds([]);
+    setSelectionScope("none");
+    setSelectedPageRef(null);
+    setAllSelectionCount(null);
+  }, []);
+
+  // Toggle select-all on page
+  const handleSelectAllToggle = (checked) => {
+    if (checked) {
+      setSelectedIds(visibleIds);
+      setExcludedIds([]);
+      setAllSelected(false);
+      setSelectionScope("page");
+      setSelectedPageRef(page);
+    } else {
+      if (allSelected) {
+        setExcludedIds((prev) => [...new Set([...prev, ...visibleIds])]);
+      } else {
+        setSelectedIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
+      }
+
+      const remaining = allSelected
+        ? totalItems - (excludedIds.length + visibleIds.length)
+        : selectedIds.length - visibleIds.length;
+
+      if (remaining <= 0) clearSelection();
+      else setSelectionScope("custom");
+    }
+  };
+
+  // Select ALL across all pages
+  const handleSelectAllAcrossPages = () => {
+    setAllSelected(true);
+    setExcludedIds([]);
+    setSelectionScope("all");
+    setAllSelectionCount(totalItems);
+  };
+
+  // Toggle individual row
+  const toggleSelectOne = (id, checked) => {
+    if (allSelected) {
+      if (checked) {
+        setExcludedIds((prev) => prev.filter((x) => x !== id));
+      } else {
+        setExcludedIds((prev) => [...new Set([...prev, id])]);
+      }
+      return;
+    }
+
+    setSelectedIds((prev) => {
+      const next = checked ? [...prev, id] : prev.filter((x) => x !== id);
+      if (next.length === 0) clearSelection();
+      else setSelectionScope("custom");
+      return next;
+    });
   };
 
   const handleBulkDelete = (ids) => {
@@ -124,20 +241,9 @@ const LearningPaths = () => {
     setEditingPath(path)
     // console.log(path)
   }
-  const filteredPaths = learningPaths.filter(path => {
-    const matchesName = path.title.toLowerCase().includes(nameSearch.toLowerCase());
-    const matchesClassification = classificationFilter === 'all' || path.classification === classificationFilter;
-    const statusActive = (filters.status && filters.status.length > 0) ? filters.status : statusFilter;
-    const matchesStatus = statusActive === 'all' || statusActive === '' || path.status === statusActive;
+ 
 
-    return matchesName && matchesClassification && matchesStatus;
-  });
-
-  const total = filteredPaths.length;
-  const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
-  const startIndex = (page - 1) * itemsPerPage;
-  const pageItems = filteredPaths.slice(startIndex, startIndex + itemsPerPage);
-
+ 
   useEffect(() => {
     if (page > totalPages) {
       setPage(totalPages);
@@ -205,98 +311,167 @@ const LearningPaths = () => {
             <input type="text" placeholder="Search Learning Paths" value={nameSearch} onChange={(e) => setNameSearch(e.target.value)} />
           </div>
         </div>
-        <div style={{display:"flex",gap:"10px",position:"relative"}}>
+        <div style={{ display: "flex", gap: "10px", position: "relative" }}>
           <button
-          ref={filterButtonRef}
-          className="control-btn"
-          onClick={() => {
-            setShowFilters(prev => {
-              const next = !prev;
-              if (next) {
-                setShowBulkAction(false);
-              }
-              return next;
-            });
-          }}
-        >
-          <Filter size={16} />
-          Filter
-        </button>
-        {showFilters && (
-          <div ref={filterPanelRef} className="adminmodule-filter-panel" style={{"left":"-40px"}}>
-            <span
-              style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px" }}
-              onClick={() => setShowFilters(false)}
-            >
-              <GoX size={20} color="#6b7280" />
-            </span>
-            <div className="filter-group">
-              <label>Status</label>
-              <select
-                name="status"
-                value={tempFilters?.status || ""}
-                onChange={handleFilterChange}
+            ref={filterButtonRef}
+            className="control-btn"
+            onClick={() => {
+              setShowFilters(prev => {
+                const next = !prev;
+                if (next) {
+                  setShowBulkAction(false);
+                }
+                return next;
+              });
+            }}
+          >
+            <Filter size={16} />
+            Filter
+          </button>
+          {showFilters && (
+            <div ref={filterPanelRef} className="adminmodule-filter-panel" style={{ "left": "-40px" }}>
+              <span
+                style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px" }}
+                onClick={() => setShowFilters(false)}
               >
-                <option value="">All</option>
-                <option value="Saved">Saved</option>
-                <option value="Draft">Draft</option>
-                <option value="Published">Published</option>
+                <GoX size={20} color="#6b7280" />
+              </span>
+              <div className="filter-group">
+                <label>Status</label>
+                <select
+                  name="status"
+                  value={tempFilters?.status || ""}
+                  onChange={handleFilterChange}
+                >
+                  <option value="">All</option>
+                  <option value="Saved">Saved</option>
+                  <option value="Draft">Draft</option>
+                  <option value="Published">Published</option>
 
-              </select>
+                </select>
+              </div>
+              <div className="filter-actions">
+                <button className="btn-primary" onClick={handleFilter}>
+                  Apply
+                </button>
+                <button className="reset-btn" onClick={resetFilters}>
+                  Clear
+                </button>
+              </div>
             </div>
-            <div className="filter-actions">
-              <button className="btn-primary" onClick={handleFilter}>
-                Apply
-              </button>
-              <button className="reset-btn" onClick={resetFilters}>
-                Clear
-              </button>
+          )}
+          <button
+            ref={bulkButtonRef}
+            className="control-btn"
+            onClick={() => {
+              setShowBulkAction(prev => {
+                const next = !prev;
+                if (next) {
+                  setShowFilters(false);
+                }
+                return next;
+              });
+            }}
+          > Bulk Action <ChevronDown size={16} /></button>
+          {showBulkAction && (
+            <div ref={bulkPanelRef} className="adminmodules-bulk-action-panel" style={{ "left": "-40px", "right": "1000px" }}>
+              <div className="bulk-action-header">
+                <label className="bulk-action-title">Items Selected: {derivedSelectedCount}</label>
+                <GoX
+                  size={20}
+                  title="Close"
+                  aria-label="Close bulk action panel"
+                  onClick={() => setShowBulkAction(false)}
+                  className="bulk-action-close"
+                />
+              </div>
+              <div className="bulk-action-actions" style={{ display: "flex", justifyContent: "center" }}>
+                <button
+                  className="bulk-action-delete-btn"
+                  disabled={derivedSelectedCount === 0}
+                  onClick={() => handleBulkDelete(selectedIds)}
+                >
+                  <RiDeleteBinFill size={16} color="#fff" />
+                  <span>Delete</span>
+                </button>
+              </div>
             </div>
-          </div>
-        )}
-        <button
-          ref={bulkButtonRef}
-          className="control-btn"
-          onClick={() => {
-            setShowBulkAction(prev => {
-              const next = !prev;
-              if (next) {
-                setShowFilters(false);
-              }
-              return next;
-            });
-          }}
-        > Bulk Action <ChevronDown size={16} /></button>
-        {showBulkAction && (
-          <div ref={bulkPanelRef} className="adminmodules-bulk-action-panel" style={{"left":"-40px","right":"1000px"}}>
-            <div className="bulk-action-header">
-              <label className="bulk-action-title">Items Selected: {selectedIds.length}</label>
-              <GoX
-                size={20}
-                title="Close"
-                aria-label="Close bulk action panel"
-                onClick={() => setShowBulkAction(false)}
-                className="bulk-action-close"
-              />
-            </div>
-            <div className="bulk-action-actions" style={{ display: "flex", justifyContent: "center" }}>
-              <button
-                className="bulk-action-delete-btn"
-                disabled={selectedIds.length === 0}
-                onClick={() => handleBulkDelete(selectedIds)}
-              >
-                <RiDeleteBinFill size={16} color="#fff" />
-                <span>Delete</span>
-              </button>
-            </div>
-          </div>
-        )}
-        <button className="btn-primary" onClick={openCreateModal}>+ Create Learning Path</button>
+          )}
+          <button className="btn-primary" onClick={openCreateModal}>+ Add Learning Path</button>
 
         </div>
-        
-      </div>
 
+      </div>
+      {selectionScope !== 'none' && derivedSelectedCount > 0 && (
+        <div
+          className="LearningPath-selection-banner"
+          style={{ margin: '12px 0', justifyContent: 'center' }}
+        >
+          {selectionScope === 'page' ? (
+            <>
+              <span>
+                All {visibleIds.length}{' '}
+                {visibleIds.length === 1 ? 'LearningPath' : 'LearningPaths'} on this page are selected.
+              </span>
+              {totalItems > visibleIds.length && (
+                <button
+                  type="button"
+                  className="selection-action action-primary"
+                  onClick={handleSelectAllAcrossPages}
+                  disabled={false /* no async yet */}
+                >
+                  {`Select all ${totalItems} LearningPaths`}
+                </button>
+              )}
+              <button
+                type="button"
+                className="selection-action action-link"
+                onClick={clearSelection}
+              >
+                Clear selection
+              </button>
+            </>
+          ) : selectionScope === 'all' ? (
+            <>
+              <span>
+                All {derivedSelectedCount}{' '}
+                {derivedSelectedCount === 1 ? 'LearningPath' : 'LearningPaths'} are selected across
+                all pages.
+              </span>
+              <button
+                type="button"
+                className="selection-action action-link"
+                onClick={clearSelection}
+              >
+                Clear selection
+              </button>
+            </>
+          ) : (
+            <>
+              <span>
+                {derivedSelectedCount}{' '}
+                {derivedSelectedCount === 1 ? 'LearningPath' : 'LearningPaths'} selected.
+              </span>
+              {totalItems > derivedSelectedCount && (
+                <button
+                  type="button"
+                  className="selection-action action-primary"
+                  onClick={handleSelectAllAcrossPages}
+                >
+                  {`Select all ${totalItems} LearningPaths`}
+                </button>
+              )}
+              <button
+                type="button"
+                className="selection-action action-link"
+                onClick={clearSelection}
+              >
+                Clear selection
+              </button>
+            </>
+          )}
+        </div>
+      )}
       <div className="learnpath-table-wrapper">
         {filteredPaths.length === 0 ? (
           <div className="learnpath-empty">No learning paths found</div>
@@ -304,7 +479,9 @@ const LearningPaths = () => {
           <table className="learnpath-table">
             <thead>
               <tr>
-                <th><input type="checkbox" onChange={toggleSelectAll} checked={pageItems.length > 0 && pageItems.every(p => selectedIds.includes(p.id))} aria-label="Select all rows" /></th>
+                <th><input type="checkbox" checked={topCheckboxChecked}
+                  ref={(el) => el && (el.indeterminate = topCheckboxIndeterminate)}
+                  onChange={(e) => handleSelectAllToggle(e.target.checked)} aria-label="Select all rows" /></th>
                 <th>Name</th>
                 {/* <th>Classification</th> */}
                 <th>Status</th>
@@ -316,9 +493,11 @@ const LearningPaths = () => {
             </thead>
             <tbody>
               {pageItems.map((path) => (
-                <tr key={path.id}>
+                <tr key={resolveId(path)}
+                className={isRowSelected(resolveId(path)) ? "selected-row" : ""}>
                   <td>
-                    <input type="checkbox" onChange={(e) => handleSelectPath(e, path.id)} checked={selectedIds.includes(path.id)} aria-label={`Select row ${path.title}`} />
+                    <input type="checkbox" checked={isRowSelected(resolveId(path))}
+                      onChange={(e) => toggleSelectOne(resolveId(path), e.target.checked)} aria-label={`Select row ${path.title}`} />
                   </td>
                   <td>
                     <div className="learnpath-name">
@@ -358,42 +537,34 @@ const LearningPaths = () => {
                     </div>
                   </td>
                 </tr>
-                
+
               ))}
               <tr>
                 <td colSpan={6}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-                      {/* <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
-                      {(() => {
-                        const start = assessments.length ? (pagination.page - 1) * pagination.limit + 1 : 0;
-                        const end = Math.min(pagination.page * pagination.limit, pagination.total || start);
-                        const total = pagination.total || 0;
-                        return `Showing ${start}-${end} of ${total}`;
-                      })()}
-                    </div> */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <button
-                          type="button"
-                          onClick={() => setPage(p => Math.max(1, p - 1))}
-                          disabled={page <= 1 || loading}
-                          style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: page <= 1 || loading ? 'not-allowed' : 'pointer' }}
-                        >
-                          Prev
-                        </button>
-                        <span style={{ color: '#0f172a' }}>
-                          {`Page ${page} of ${totalPages}`}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                          disabled={loading || page >= totalPages}
-                          style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: loading || page >= totalPages ? 'not-allowed' : 'pointer' }}
-                        >
-                          Next
-                        </button>
-                      </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <button
+                        type="button"
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page <= 1 || loading}
+                        style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: page <= 1 || loading ? 'not-allowed' : 'pointer' }}
+                      >
+                        Prev
+                      </button>
+                      <span style={{ color: '#0f172a' }}>
+                        {`Page ${page} of ${totalPages}`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        disabled={loading || page >= totalPages}
+                        style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: loading || page >= totalPages ? 'not-allowed' : 'pointer' }}
+                      >
+                        Next
+                      </button>
                     </div>
-                  </td>
+                  </div>
+                </td>
               </tr>
             </tbody>
           </table>

@@ -1,10 +1,10 @@
-import React, { useEffect, useState,useRef } from 'react';
-import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, Filter, ChevronDown} from 'lucide-react';
+import React, { useEffect, useState, useRef,useMemo,useCallback } from 'react';
+import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, Filter, ChevronDown } from 'lucide-react';
 import { RiDeleteBinFill } from 'react-icons/ri';
 import { GoX } from 'react-icons/go';
 import './GlobalAssessments.css'
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchGlobalAssessments, createGlobalAssessment, updateGlobalAssessment, deleteGlobalAssessment, getGlobalAssessmentById, uploadAssessmentFile } from '../../../store/slices/globalAssessmentSlice'; 
+import { fetchGlobalAssessments, createGlobalAssessment, updateGlobalAssessment, deleteGlobalAssessment, getGlobalAssessmentById, uploadAssessmentFile } from '../../../store/slices/globalAssessmentSlice';
 import QuestionsForm from './QuestionsForm';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import api from '../../../services/api';
@@ -15,22 +15,22 @@ const GlobalAssessments = () => {
   const [showForm, setShowForm] = useState(false);
   const [currentAssessment, setCurrentAssessment] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
- const [groups,setGroups] = useState([])
- const {showNotification} = useNotification()
- 
+  const [groups, setGroups] = useState([])
+  const { showNotification } = useNotification()
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     status: '',
-    duration: '',            
-    tags: [],                
-    team: '',  
-    subteam:'', 
+    duration: '',
+    tags: [],
+    team: '',
+    subteam: '',
     Level: '',
-    noOfQuestions: 0,          
-    attempts: 1,             
+    noOfQuestions: 0,
+    attempts: 1,
     unlimited_attempts: false,
-    percentage_to_pass: 0,   
+    percentage_to_pass: 0,
     instructions: '',
     display_answers: 'AfterAssessment',
     credits: 0,
@@ -38,7 +38,7 @@ const GlobalAssessments = () => {
     badges: 0,
     category: '',
     feedbackEnabled: false,
-   
+
     shuffle_questions: false,
     shuffle_options: false,
     thumbnail: '',
@@ -49,17 +49,17 @@ const GlobalAssessments = () => {
     options: ['', ''],
     correct_option: '',
     file_url: '',
-   
+
   }]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
-//filters
-const [showFilters, setShowFilters] = useState(false);
+  //filters
+  const [showFilters, setShowFilters] = useState(false);
   const [showBulkAction, setShowBulkAction] = useState(false);
   const [filters, setFilters] = useState({
     status: '',
     search: ''
   });
-  
+
   const [tempFilters, setTempFilters] = useState({
     status: '',
     search: ''
@@ -70,8 +70,8 @@ const [showFilters, setShowFilters] = useState(false);
   const bulkPanelRef = useRef(null);
   const [filterPanelStyle, setFilterPanelStyle] = useState({ top: 0, left: 0 });
   const [bulkPanelStyle, setBulkPanelStyle] = useState({ top: 0, left: 0 });
-  
-  const {assessments, loading, pagination} = useSelector((state) => state.globalAssessments)
+
+  const { assessments, loading, pagination } = useSelector((state) => state.globalAssessments)
   const { user: authUser } = useSelector((state) => state.auth || { user: null });
   const [page, setPage] = useState(pagination?.page || 1);
   const limit = 6;
@@ -102,7 +102,7 @@ const [showFilters, setShowFilters] = useState(false);
       status: 'Saved',
       duration: '',            // NEW
       tags: [],                // NEW
-      team: '', 
+      team: '',
       Level: '',
       noOfQuestions: 0,                 // NEW
       subteam: '',            // NEW
@@ -110,7 +110,7 @@ const [showFilters, setShowFilters] = useState(false);
       unlimited_attempts: false,
       percentage_to_pass: 0,   // NEW
       instructions: '',
-      
+
       display_answers: 'AfterAssessment',
       // Newly added fields
       credits: 0,
@@ -118,7 +118,7 @@ const [showFilters, setShowFilters] = useState(false);
       badges: 0,
       category: '',
       feedbackEnabled: false,
-      
+
       // Shuffle controls
       shuffle_questions: false,
       shuffle_options: false,
@@ -135,55 +135,157 @@ const [showFilters, setShowFilters] = useState(false);
     }]);
     setShowForm(true);
   };
-  
-  // Visible IDs in the current table page
-  const visibleIds = (assessments || []).map(a => a?.uuid || a?._id || a?.id).filter(Boolean);
-  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
 
-  const toggleSelectOne = (id) => {
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  // ------------------ Gmail-style Selection State ------------------
+  const [allSelected, setAllSelected] = useState(false);
+  const [excludedIds, setExcludedIds] = useState([]);
+  const [selectionScope, setSelectionScope] = useState("none");
+  const [selectedPageRef, setSelectedPageRef] = useState(null);
+  const [allSelectionCount, setAllSelectionCount] = useState(null);
+
+  // Resolve row ID safely
+  const resolveAssessmentId = (a) =>
+    a?.uuid || a?._id || a?.id || null;
+
+  // Visible row IDs on current page
+  const visibleIds = useMemo(
+    () => (assessments || []).map(resolveAssessmentId).filter(Boolean),
+    [assessments]
+  );
+
+  // Total items across ALL pages (from pagination)
+  const totalItems = pagination?.total || assessments?.length || 0;
+
+  // Row selected? (Unified logic)
+  const isRowSelected = useCallback(
+    (id) => {
+      if (!id) return false;
+      return allSelected
+        ? !excludedIds.includes(id)
+        : selectedIds.includes(id);
+    },
+    [allSelected, excludedIds, selectedIds]
+  );
+
+  // Derived selected count (all pages)
+  const derivedSelectedCount = useMemo(() => {
+    return allSelected
+      ? totalItems - excludedIds.length
+      : selectedIds.length;
+  }, [allSelected, totalItems, excludedIds.length, selectedIds.length]);
+
+  // Derived: which visible rows are selected
+  const derivedSelectedOnPage = useMemo(
+    () => visibleIds.filter(isRowSelected),
+    [visibleIds, isRowSelected]
+  );
+
+  // Header checkbox indicators
+  const topCheckboxChecked =
+    visibleIds.length > 0 &&
+    visibleIds.every((id) => isRowSelected(id));
+
+  const topCheckboxIndeterminate =
+    visibleIds.some((id) => isRowSelected(id)) &&
+    !topCheckboxChecked;
+
+  // Reset selection
+  const clearSelection = useCallback(() => {
+    setSelectedIds([]);
+    setAllSelected(false);
+    setExcludedIds([]);
+    setSelectionScope("none");
+    setSelectedPageRef(null);
+    setAllSelectionCount(null);
+  }, []);
+
+  const clearAllSelections = clearSelection;
+
+  // Toggle header checkbox
+  const handleSelectAllToggle = (checked) => {
+    if (checked) {
+      // Select all on this page
+      setSelectedIds(visibleIds);
+      setExcludedIds([]);
+      setAllSelected(false);
+      setSelectionScope("page");
+      setSelectedPageRef(page);
+    } else {
+      // Unselect only the visible rows
+      if (allSelected) {
+        setExcludedIds((prev) => [...new Set([...prev, ...visibleIds])]);
+      } else {
+        setSelectedIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
+      }
+
+      // Check if nothing left selected
+      const remaining = allSelected
+        ? totalItems - (excludedIds.length + visibleIds.length)
+        : selectedIds.length - visibleIds.length;
+
+      if (remaining <= 0) clearSelection();
+      else setSelectionScope("custom");
+    }
   };
 
-  const toggleSelectAllVisible = () => {
-    setSelectedIds(prev => {
-      const allSelected = visibleIds.length > 0 && visibleIds.every(id => prev.includes(id));
-      if (allSelected) {
-        // Deselect only visible
-        return prev.filter(id => !visibleIds.includes(id));
+  // Select ALL rows across ALL pages
+  const handleSelectAllAcrossPages = () => {
+    setAllSelected(true);
+    setExcludedIds([]);
+    setSelectionScope("all");
+    setAllSelectionCount(totalItems);
+  };
+
+  // Toggle a row checkbox
+  const toggleSelectOne = (id, checked) => {
+    if (allSelected) {
+      // ALL mode → move item in/out of excludedIds
+      if (checked) {
+        setExcludedIds((prev) => prev.filter((x) => x !== id));
+      } else {
+        setExcludedIds((prev) => [...new Set([...prev, id])]);
       }
-      // Select union of prev and visible
-      const set = new Set([...prev, ...visibleIds]);
-      return Array.from(set);
+      return;
+    }
+
+    // Regular mode using selectedIds
+    setSelectedIds((prev) => {
+      let next;
+      if (checked) next = [...prev, id];
+      else next = prev.filter((x) => x !== id);
+
+      if (next.length === 0) clearSelection();
+      else setSelectionScope("custom");
+
+      return next;
     });
   };
 
-  const clearSelection = () => setSelectedIds([]);
-
   // Filter handlers
-    const handleFilterChange = (e) => {
-      const { name, value } = e.target;
-      setTempFilters(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    };
-    
-    // Update search term when filters change
-    useEffect(() => {
-      if (filters.search !== searchTerm) {
-        setSearchTerm(filters.search || '');
-      }
-    }, [filters.search]);
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setTempFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
-    const updateFilterPanelPosition = () => {
-      const rect = filterButtonRef.current?.getBoundingClientRect();
-      if (rect) {
-        setFilterPanelStyle({
-          top: rect.bottom + window.scrollY + 8,
-          left: rect.left + window.scrollX,
-        });
-      }
-    };
+  // Update search term when filters change
+  useEffect(() => {
+    if (filters.search !== searchTerm) {
+      setSearchTerm(filters.search || '');
+    }
+  }, [filters.search]);
+
+  const updateFilterPanelPosition = () => {
+    const rect = filterButtonRef.current?.getBoundingClientRect();
+    if (rect) {
+      setFilterPanelStyle({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + window.scrollX,
+      });
+    }
+  };
   const updateBulkPanelPosition = () => {
     const rect = bulkButtonRef.current?.getBoundingClientRect();
     if (rect) {
@@ -196,81 +298,81 @@ const [showFilters, setShowFilters] = useState(false);
     }
   };
 
-    useEffect(() => {
-      const handleClickOutside = (event) => {
-        const target = event.target;
-        const filterBtn = filterButtonRef.current;
-        const bulkBtn = bulkButtonRef.current;
-        const filterPanel = filterPanelRef.current;
-        const bulkPanel = bulkPanelRef.current;
-  
-        if (
-          (showFilters || showBulkAction) &&
-          !(
-            (filterPanel && filterPanel.contains(target)) ||
-            (bulkPanel && bulkPanel.contains(target)) ||
-            (filterBtn && filterBtn.contains(target)) ||
-            (bulkBtn && bulkBtn.contains(target))
-          )
-        ) {
-          setShowFilters(false);
-          setShowBulkAction(false);
-        }
-      };
-  
-      document.addEventListener('mousedown', handleClickOutside);
-  
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }, [showFilters, showBulkAction]);
-  
-    useEffect(() => {
-        if (showFilters) {
-          updateFilterPanelPosition();
-        }
-        if (showBulkAction) {
-          updateBulkPanelPosition();
-        }
-      }, [showFilters, showBulkAction]);
-    
-      useEffect(() => {
-        const handleScrollOrResize = () => {
-          if (showFilters) {
-            updateFilterPanelPosition();
-          }
-          if (showBulkAction) {
-            updateBulkPanelPosition();
-          }
-        };
-    
-        window.addEventListener('scroll', handleScrollOrResize, true);
-        window.addEventListener('resize', handleScrollOrResize);
-    
-        return () => {
-          window.removeEventListener('scroll', handleScrollOrResize, true);
-          window.removeEventListener('resize', handleScrollOrResize);
-        };
-      }, [showFilters, showBulkAction]);
-    
-    const handleFilter = () => {
-      setFilters({
-        ...tempFilters,
-        search: searchTerm
-      });
-      setShowFilters(false);
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const target = event.target;
+      const filterBtn = filterButtonRef.current;
+      const bulkBtn = bulkButtonRef.current;
+      const filterPanel = filterPanelRef.current;
+      const bulkPanel = bulkPanelRef.current;
+
+      if (
+        (showFilters || showBulkAction) &&
+        !(
+          (filterPanel && filterPanel.contains(target)) ||
+          (bulkPanel && bulkPanel.contains(target)) ||
+          (filterBtn && filterBtn.contains(target)) ||
+          (bulkBtn && bulkBtn.contains(target))
+        )
+      ) {
+        setShowFilters(false);
+        setShowBulkAction(false);
+      }
     };
-  
-    const resetFilters = () => {
-      const resetFilters = {
-        status: '',
-        search: ''
-      };
-      setTempFilters(resetFilters);
-      setFilters(resetFilters);
-      setSearchTerm('');
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
     };
-  
+  }, [showFilters, showBulkAction]);
+
+  useEffect(() => {
+    if (showFilters) {
+      updateFilterPanelPosition();
+    }
+    if (showBulkAction) {
+      updateBulkPanelPosition();
+    }
+  }, [showFilters, showBulkAction]);
+
+  useEffect(() => {
+    const handleScrollOrResize = () => {
+      if (showFilters) {
+        updateFilterPanelPosition();
+      }
+      if (showBulkAction) {
+        updateBulkPanelPosition();
+      }
+    };
+
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+
+    return () => {
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
+  }, [showFilters, showBulkAction]);
+
+  const handleFilter = () => {
+    setFilters({
+      ...tempFilters,
+      search: searchTerm
+    });
+    setShowFilters(false);
+  };
+
+  const resetFilters = () => {
+    const resetFilters = {
+      status: '',
+      search: ''
+    };
+    setTempFilters(resetFilters);
+    setFilters(resetFilters);
+    setSearchTerm('');
+  };
+
   const bulkUpdateStatus = async (status) => {
     if (selectedIds.length === 0) return;
     try {
@@ -333,7 +435,7 @@ const [showFilters, setShowFilters] = useState(false);
         attempts: full.attempts ?? 1,
         unlimited_attempts: !!full.unlimited_attempts,
         percentage_to_pass: full.percentage_to_pass ?? 0,
-        instructions:full.instructions,
+        instructions: full.instructions,
         display_answers:
           full.display_answers || 'AfterAssessment',
         // Newly added fields
@@ -342,7 +444,7 @@ const [showFilters, setShowFilters] = useState(false);
         badges: Number.isFinite(full.badges) ? full.badges : 0,
         category: full.category || '',
         feedbackEnabled: !!full.feedbackEnabled,
-       
+
         // Shuffle controls
         shuffle_questions: !!full.shuffle_questions,
         shuffle_options: !!full.shuffle_options,
@@ -366,8 +468,8 @@ const [showFilters, setShowFilters] = useState(false);
               options: Array.isArray(q.options) && q.options.length ? q.options : [''],
               correct_option: Array.isArray(q.correct_option) ? q.correct_option : (Number.isInteger(q.correct_option) ? [q.correct_option] : []),
               file_url: q.file_url || '',
-             
-             
+
+
               total_points: Number.isFinite(q.total_points) ? q.total_points : 1,
             });
           });
@@ -377,18 +479,18 @@ const [showFilters, setShowFilters] = useState(false);
       } else {
         const mappedQuestions = Array.isArray(full.questions)
           ? full.questions.map(q => ({
-              _id: q._id,
-              uuid: q.uuid,
-              type: q.type || '',
-              question_text: q.question_text || '',
-              options: Array.isArray(q.options) && q.options.length ? q.options : [''],
-              correct_option: Array.isArray(q.correct_option) ? q.correct_option : (Number.isInteger(q.correct_option) ? [q.correct_option] : []),
-              file_url: q.file_url || '',
-            }))
+            _id: q._id,
+            uuid: q.uuid,
+            type: q.type || '',
+            question_text: q.question_text || '',
+            options: Array.isArray(q.options) && q.options.length ? q.options : [''],
+            correct_option: Array.isArray(q.correct_option) ? q.correct_option : (Number.isInteger(q.correct_option) ? [q.correct_option] : []),
+            file_url: q.file_url || '',
+          }))
           : [];
         setQuestions(mappedQuestions.length
           ? mappedQuestions
-          : [{ type: '', question_text: '', options: [''], correct_option: '', file_url: ''}]);
+          : [{ type: '', question_text: '', options: [''], correct_option: '', file_url: '' }]);
       }
       setShowForm(true);
     } catch (e) {
@@ -408,7 +510,7 @@ const [showFilters, setShowFilters] = useState(false);
         attempts: assessment.attempts ?? 1,
         unlimited_attempts: !!assessment.unlimited_attempts,
         percentage_to_pass: assessment.percentage_to_pass ?? 0,
-        instructions:assessment.instructions,
+        instructions: assessment.instructions,
         display_answers:
           assessment.display_answers || 'AfterAssessment',
         // Newly added fields
@@ -417,7 +519,7 @@ const [showFilters, setShowFilters] = useState(false);
         badges: Number.isFinite(assessment.badges) ? assessment.badges : 0,
         category: assessment.category || '',
         feedbackEnabled: !!assessment.feedbackEnabled,
-     
+
         // Shuffle controls
         shuffle_questions: !!assessment.shuffle_questions,
         shuffle_options: !!assessment.shuffle_options,
@@ -473,7 +575,7 @@ const [showFilters, setShowFilters] = useState(false);
       attempts: formData.attempts,
       unlimited_attempts: Boolean(formData.unlimited_attempts),
       percentage_to_pass: formData.percentage_to_pass,
-      display_answers: formData.display_answers ,
+      display_answers: formData.display_answers,
       status: statusOverride ?? (formData.status || 'Saved'),
       created_by: authUser?._id || authUser?.uuid || authUser?.id,
       // Newly added fields
@@ -482,7 +584,7 @@ const [showFilters, setShowFilters] = useState(false);
       badges: Number.isFinite(formData.badges) ? formData.badges : 0,
       category: formData.category || '',
       feedbackEnabled: Boolean(formData.feedbackEnabled),
-    
+
       // Shuffle controls
       shuffle_questions: Boolean(formData.shuffle_questions),
       shuffle_options: Boolean(formData.shuffle_options),
@@ -508,7 +610,7 @@ const [showFilters, setShowFilters] = useState(false);
           type: q.type,
           options: q.options,
           correct_option: correct,
-          file_url: q.file_url ,
+          file_url: q.file_url,
           total_points: Number.isFinite(q.total_points) ? q.total_points : 1,
         };
       })
@@ -517,7 +619,7 @@ const [showFilters, setShowFilters] = useState(false);
     try {
       // console.log("payload",payload)
       const response = await dispatch(createGlobalAssessment(payload));
-      if(createGlobalAssessment.fulfilled.match(response)){
+      if (createGlobalAssessment.fulfilled.match(response)) {
         showNotification({
           type: "success",
           message: "Assessment created successfully",
@@ -536,109 +638,109 @@ const [showFilters, setShowFilters] = useState(false);
   };
 
   const handleUpdateAssessment = async (statusOverride) => {
-      // Build data for update (questions are not updated by edit endpoint)
-      // Resolve thumbnail URL (upload if local file)
-      let resolvedThumbUrl = formData.thumbnail_url || '';
-      try {
-        if (formData.thumbnail_file && typeof formData.thumbnail_url === 'string' && formData.thumbnail_url.startsWith('blob:')) {
-          const uploaded = await dispatch(uploadAssessmentFile(formData.thumbnail_file)).unwrap();
-          if (uploaded) {
-            resolvedThumbUrl = uploaded;
-          }
+    // Build data for update (questions are not updated by edit endpoint)
+    // Resolve thumbnail URL (upload if local file)
+    let resolvedThumbUrl = formData.thumbnail_url || '';
+    try {
+      if (formData.thumbnail_file && typeof formData.thumbnail_url === 'string' && formData.thumbnail_url.startsWith('blob:')) {
+        const uploaded = await dispatch(uploadAssessmentFile(formData.thumbnail_file)).unwrap();
+        if (uploaded) {
+          resolvedThumbUrl = uploaded;
         }
-      } catch (thumbErr) {
-        showNotification({
-          type: "error",
-          message: "Failed to upload thumbnail",
-          title: "Thumbnail Upload Failed"
-        });
       }
+    } catch (thumbErr) {
+      showNotification({
+        type: "error",
+        message: "Failed to upload thumbnail",
+        title: "Thumbnail Upload Failed"
+      });
+    }
 
-      const data = {
-        title: formData.title,
-        description: formData.description,
-        instructions: formData.instructions || '',
-        tags: Array.isArray(formData.tags) ? formData.tags : [],
-        duration: formData.duration,
-        team: formData.team,
-        subteam: formData.subteam,
-        Level: formData.Level || '',
-        noOfQuestions: formData.noOfQuestions || 0,
-        attempts: formData.attempts,
-        unlimited_attempts: Boolean(formData.unlimited_attempts),
-        percentage_to_pass: formData.percentage_to_pass,
+    const data = {
+      title: formData.title,
+      description: formData.description,
+      instructions: formData.instructions || '',
+      tags: Array.isArray(formData.tags) ? formData.tags : [],
+      duration: formData.duration,
+      team: formData.team,
+      subteam: formData.subteam,
+      Level: formData.Level || '',
+      noOfQuestions: formData.noOfQuestions || 0,
+      attempts: formData.attempts,
+      unlimited_attempts: Boolean(formData.unlimited_attempts),
+      percentage_to_pass: formData.percentage_to_pass,
 
-        display_answers: formData.display_answers ,
-        // Newly added fields
-        credits: Number.isFinite(formData.credits) ? formData.credits : 0,
-        stars: Number.isFinite(formData.stars) ? formData.stars : 0,
-        badges: Number.isFinite(formData.badges) ? formData.badges : 0,
-        category: formData.category || '',
-        feedbackEnabled: Boolean(formData.feedbackEnabled),
+      display_answers: formData.display_answers,
+      // Newly added fields
+      credits: Number.isFinite(formData.credits) ? formData.credits : 0,
+      stars: Number.isFinite(formData.stars) ? formData.stars : 0,
+      badges: Number.isFinite(formData.badges) ? formData.badges : 0,
+      category: formData.category || '',
+      feedbackEnabled: Boolean(formData.feedbackEnabled),
 
-        // Shuffle controls
-        shuffle_questions: Boolean(formData.shuffle_questions),
-        shuffle_options: Boolean(formData.shuffle_options),
-        // Thumbnail URL (server path)
-        thumbnail: resolvedThumbUrl || '',
-        // Send questions with identifiers so backend can update GlobalQuestion
-        questions: questions.map(q => {
-          // Normalize correct_option to array of integers
-          let correct = q.correct_option;
-          if (typeof correct === 'string') {
-            correct = correct.includes(',')
-              ? correct.split(',').map(s => parseInt(s.trim(), 10)).filter(n => Number.isInteger(n))
-              : Number.isInteger(parseInt(correct.trim(), 10)) ? [parseInt(correct.trim(), 10)] : [];
-          } else if (Number.isInteger(correct)) {
-            correct = [correct];
-          } else if (Array.isArray(correct)) {
-            correct = correct.filter(n => Number.isInteger(n));
-          } else {
-            correct = [];
-          }
-          return {
-            id: q.uuid || q._id,
-            question_text: q.question_text,
-            type: q.type,
-            options: q.options,
-            correct_option: correct,
-            file_url: q.file_url || null,
+      // Shuffle controls
+      shuffle_questions: Boolean(formData.shuffle_questions),
+      shuffle_options: Boolean(formData.shuffle_options),
+      // Thumbnail URL (server path)
+      thumbnail: resolvedThumbUrl || '',
+      // Send questions with identifiers so backend can update GlobalQuestion
+      questions: questions.map(q => {
+        // Normalize correct_option to array of integers
+        let correct = q.correct_option;
+        if (typeof correct === 'string') {
+          correct = correct.includes(',')
+            ? correct.split(',').map(s => parseInt(s.trim(), 10)).filter(n => Number.isInteger(n))
+            : Number.isInteger(parseInt(correct.trim(), 10)) ? [parseInt(correct.trim(), 10)] : [];
+        } else if (Number.isInteger(correct)) {
+          correct = [correct];
+        } else if (Array.isArray(correct)) {
+          correct = correct.filter(n => Number.isInteger(n));
+        } else {
+          correct = [];
+        }
+        return {
+          id: q.uuid || q._id,
+          question_text: q.question_text,
+          type: q.type,
+          options: q.options,
+          correct_option: correct,
+          file_url: q.file_url || null,
 
-          };
-        })
-      };
+        };
+      })
+    };
 
-      // Prevent status changes for published assessments
-      if (currentAssessment && currentAssessment.status === 'Published') {
-        // Remove status from the update payload to prevent changes
-        // The status field should not be included in the update data for published assessments
-      } else {
-        // For non-published assessments, include status in the update
-        data.status = statusOverride ?? formData.status;
-      }
+    // Prevent status changes for published assessments
+    if (currentAssessment && currentAssessment.status === 'Published') {
+      // Remove status from the update payload to prevent changes
+      // The status field should not be included in the update data for published assessments
+    } else {
+      // For non-published assessments, include status in the update
+      data.status = statusOverride ?? formData.status;
+    }
 
-      const id = currentAssessment?.uuid || currentAssessment?._id || currentAssessment?.id;
-      try {
-       const res = await dispatch(updateGlobalAssessment({ id, data }));
-       if(updateGlobalAssessment.fulfilled.match(res)){
+    const id = currentAssessment?.uuid || currentAssessment?._id || currentAssessment?.id;
+    try {
+      const res = await dispatch(updateGlobalAssessment({ id, data }));
+      if (updateGlobalAssessment.fulfilled.match(res)) {
         showNotification({
           type: "success",
           message: "Assessment updated successfully",
           title: "Assessment Updated"
         });
-       }
-        setShowForm(false);
-        dispatch(fetchGlobalAssessments({ page, limit }));
-      } catch (err) {
-        showNotification({
-          type: "error",
-          message: "Failed to update assessment",
-          title: "Assessment Update Failed"
-        });
       }
-    };
+      setShowForm(false);
+      dispatch(fetchGlobalAssessments({ page, limit }));
+    } catch (err) {
+      showNotification({
+        type: "error",
+        message: "Failed to update assessment",
+        title: "Assessment Update Failed"
+      });
+    }
+  };
 
-    const updateQuestionField = (qIndex, field, value) => {
+  const updateQuestionField = (qIndex, field, value) => {
     const updated = [...questions];
     updated[qIndex][field] = value;
     setQuestions(updated);
@@ -651,7 +753,7 @@ const [showFilters, setShowFilters] = useState(false);
       options: ['', ''],
       correct_option: '',
       file_url: '',
-     
+
     }]);
   };
 
@@ -663,7 +765,7 @@ const [showFilters, setShowFilters] = useState(false);
         options: ['', ''],
         correct_option: '',
         file_url: '',
-       
+
       };
       const idx = Math.max(0, Math.min((afterIndex ?? prev.length - 1) + 1, prev.length));
       return [
@@ -754,7 +856,7 @@ const [showFilters, setShowFilters] = useState(false);
           ? [...q.correct_option]
           : (Number.isInteger(q.correct_option) ? q.correct_option : ''),
         file_url: q.file_url || '',
-       
+
       };
       return [
         ...arr.slice(0, index + 1),
@@ -784,7 +886,7 @@ const [showFilters, setShowFilters] = useState(false);
     }
   };
 
-  if(loading){
+  if (loading) {
     return <LoadingScreen text="Loading Assessments..." />
   }
 
@@ -852,25 +954,25 @@ const [showFilters, setShowFilters] = useState(false);
           </div>
         </div>
       )} */}
-      
+
       <div className="controls">
         <div className="roles-search-bar">
           <Search size={16} color="#6b7280" className="search-icon" />
-            <input
-              type="text"
-              name="search"
-              placeholder="Search Assessments"
-              className="search-input"
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setFilters(prev => ({
-                  ...prev,
-                  search: e.target.value,
-                  status: prev.status
-                }));
-              }}
-            />
+          <input
+            type="text"
+            name="search"
+            placeholder="Search Assessments"
+            className="search-input"
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setFilters(prev => ({
+                ...prev,
+                search: e.target.value,
+                status: prev.status
+              }));
+            }}
+          />
         </div>
 
         <div className="controls-right">
@@ -915,83 +1017,155 @@ const [showFilters, setShowFilters] = useState(false);
           </button>
         </div>
       </div>
-       {showFilters && (
-              // <div className="globalassessment-filter-panel">
-              <div
-                ref={filterPanelRef}
-                className="globalassessment-filter-panel"
-                style={{ top: filterPanelStyle.top, left: filterPanelStyle.left, position: 'absolute' }}
-              >
-              <span style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px", hover: { color: "#6b7280" } }} onClick={() => setShowFilters(false)}><GoX size={20} color="#6b7280" /></span>
-                <div className="filter-group">
-                  <label>Status</label>
-                  <select
-                    name="status"
-                    value={tempFilters?.status || ""}
-                    onChange={handleFilterChange}
-                  >
-                    <option value="">All</option>
-                    <option value="Saved">Saved</option>
-                    <option value="Draft">Draft</option>
-                    <option value="Published">Published</option>
-                  </select>
-                </div>
-      
-      
-                <div className="filter-actions">
-                  <button className="btn-primary" onClick={handleFilter}>
-                    Apply
-                  </button>
-                  <button className="reset-btn" onClick={resetFilters}>
-                    Clear
-                  </button>
-      
-      
-                </div>
-              </div>
-            )}
-            {showBulkAction && (
-              // <div className="globalassessment-bulk-action-panel">
-              <div
-                ref={bulkPanelRef}
-                className="globalassessment-bulk-action-panel"
-                style={{ top: bulkPanelStyle.top, left: bulkPanelStyle.left, position: 'absolute' }}
-              >
-                <div className="bulk-action-header">
-                  <label className="bulk-action-title">Items Selected: {selectedIds.length}</label>
-                  <GoX
-                    size={20}
-                    title="Close"
-                    aria-label="Close bulk action panel"
-                    onClick={() => setShowBulkAction(false)}
-                    className="bulk-action-close"
-                  />
-                </div>
-                <div className="bulk-action-actions">
-                  <button
-                    className="bulk-action-delete-btn"
-                    disabled={selectedIds.length === 0}
-                    onClick={() => handleBulkDelete(selectedIds)}
-                  >
-                    <RiDeleteBinFill size={16} color="#fff" />
-                    <span>Delete</span>
-                  </button>
-                </div>
-              </div>
-            )}
-      
+      {showFilters && (
+        // <div className="globalassessment-filter-panel">
+        <div
+          ref={filterPanelRef}
+          className="globalassessment-filter-panel"
+          style={{ top: filterPanelStyle.top, left: filterPanelStyle.left, position: 'absolute' }}
+        >
+          <span style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px", hover: { color: "#6b7280" } }} onClick={() => setShowFilters(false)}><GoX size={20} color="#6b7280" /></span>
+          <div className="filter-group">
+            <label>Status</label>
+            <select
+              name="status"
+              value={tempFilters?.status || ""}
+              onChange={handleFilterChange}
+            >
+              <option value="">All</option>
+              <option value="Saved">Saved</option>
+              <option value="Draft">Draft</option>
+              <option value="Published">Published</option>
+            </select>
+          </div>
+
+
+          <div className="filter-actions">
+            <button className="btn-primary" onClick={handleFilter}>
+              Apply
+            </button>
+            <button className="reset-btn" onClick={resetFilters}>
+              Clear
+            </button>
+
+
+          </div>
+        </div>
+      )}
+      {showBulkAction && (
+        // <div className="globalassessment-bulk-action-panel">
+        <div
+          ref={bulkPanelRef}
+          className="globalassessment-bulk-action-panel"
+          style={{ top: bulkPanelStyle.top, left: bulkPanelStyle.left, position: 'absolute' }}
+        >
+          <div className="bulk-action-header">
+            <label className="bulk-action-title">Items Selected: {selectedIds.length}</label>
+            <GoX
+              size={20}
+              title="Close"
+              aria-label="Close bulk action panel"
+              onClick={() => setShowBulkAction(false)}
+              className="bulk-action-close"
+            />
+          </div>
+          <div className="bulk-action-actions">
+            <button
+              className="bulk-action-delete-btn"
+              disabled={selectedIds.length === 0}
+              onClick={() => handleBulkDelete(selectedIds)}
+            >
+              <RiDeleteBinFill size={16} color="#fff" />
+              <span>Delete</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+    {selectionScope !== 'none' && derivedSelectedCount > 0 && (
+  <div
+    className="globalassessments-selection-banner"
+    style={{ margin: '12px 0', justifyContent: 'center' }}
+  >
+    {selectionScope === 'page' ? (
+      <>
+        <span>
+          All {visibleIds.length}{' '}
+          {visibleIds.length === 1 ? 'assessment' : 'assessments'} on this page are selected.
+        </span>
+        {totalItems > visibleIds.length && (
+          <button
+            type="button"
+            className="selection-action action-primary"
+            onClick={handleSelectAllAcrossPages}
+            disabled={false /* no async yet */}
+          >
+            {`Select all ${totalItems} assessments`}
+          </button>
+        )}
+        <button
+          type="button"
+          className="selection-action action-link"
+          onClick={clearSelection}
+        >
+          Clear selection
+        </button>
+      </>
+    ) : selectionScope === 'all' ? (
+      <>
+        <span>
+          All {derivedSelectedCount}{' '}
+          {derivedSelectedCount === 1 ? 'assessment' : 'assessments'} are selected across
+          all pages.
+        </span>
+        <button
+          type="button"
+          className="selection-action action-link"
+          onClick={clearSelection}
+        >
+          Clear selection
+        </button>
+      </>
+    ) : (
+      <>
+        <span>
+          {derivedSelectedCount}{' '}
+          {derivedSelectedCount === 1 ? 'assessment' : 'assessments'} selected.
+        </span>
+        {totalItems > derivedSelectedCount && (
+          <button
+            type="button"
+            className="selection-action action-primary"
+            onClick={handleSelectAllAcrossPages}
+          >
+            {`Select all ${totalItems} assessments`}
+          </button>
+        )}
+        <button
+          type="button"
+          className="selection-action action-link"
+          onClick={clearSelection}
+        >
+          Clear selection
+        </button>
+      </>
+    )}
+  </div>
+)}
+  
+
 
       {/* Assessment Table */}
       <div className="assess-table-section">
         <div className="assess-table-container">
-          {assessments.length === 0 ? ( 
+          {assessments.length === 0 ? (
             <div className="assess-empty-state">
               <div className="assess-empty-icon">
                 <FileText size={48} />
               </div>
               <h3>No assessments found</h3>
               <p>Get started by creating your first assessment</p>
-              <button className="assess-btn-primary" style={{marginLeft:"36%"}} onClick={handleAddAssessment} >
+              <button className="assess-btn-primary" style={{ marginLeft: "36%" }} onClick={handleAddAssessment} >
                 <Plus size={16} />
                 Create Assessment
               </button>
@@ -1001,7 +1175,9 @@ const [showFilters, setShowFilters] = useState(false);
               <thead>
                 <tr>
                   <th>
-                    <input type="checkbox" checked={allVisibleSelected} onChange={toggleSelectAllVisible} aria-label="Select all" />
+                    <input type="checkbox" checked={topCheckboxChecked}
+                      ref={(el) => el && (el.indeterminate = topCheckboxIndeterminate)}
+                      onChange={(e) => handleSelectAllToggle(e.target.checked)} aria-label="Select all" />
                   </th>
                   <th>Assessment Details</th>
                   <th>Questions</th>
@@ -1016,101 +1192,104 @@ const [showFilters, setShowFilters] = useState(false);
                   //              a.description?.toLowerCase().includes(searchTerm.toLowerCase()))
                   .filter(assessment => {
                     // Apply search filter
-                    const matchesSearch = !filters.search || 
+                    const matchesSearch = !filters.search ||
                       assessment.title?.toLowerCase().includes(filters.search.toLowerCase()) ||
                       assessment.description?.toLowerCase().includes(filters.search.toLowerCase());
-                    
+
                     // Apply status filter
-                    const matchesStatus = !filters.status || 
+                    const matchesStatus = !filters.status ||
                       assessment.status?.toLowerCase() === filters.status.toLowerCase();
-                    
+
                     return matchesSearch && matchesStatus;
                   })
                   .map(assessment => (
-                  <tr key={assessment.uuid || assessment._id || assessment.id} className="assess-table-row">
-                    <td>
-                      {(() => { const rowId = assessment.uuid || assessment._id || assessment.id; const checked = selectedIds.includes(rowId); return (
-                        <input type="checkbox" checked={checked} onChange={() => toggleSelectOne(rowId)} aria-label="Select row" />
-                      ); })()}
-                    </td>
-                    <td>
-                      <div className="assess-cell-content">
-                        <div className="assess-title-container">
-                          <h4 className="assess-title">{assessment.title}</h4>
-                          <p className="assess-description">{assessment.description || "No description provided"}</p>
-                          {Array.isArray(assessment.tags) && assessment.tags.length > 0 && (
-                            <div className="assess-tags">
-                              {assessment.tags.slice(0,3).map((t, idx) => (
-                                <span key={`${assessment.id}-tag-${idx}`} className="assess-classification">{t}</span>
-                              ))}
-                              {assessment.tags.length > 3 && (
-                              <span className="assess-classification">+ {assessment.tags.length - 3} more</span>
-                            )}
-                            </div>
-                            
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="assess-questions-info">
+                    <tr key={assessment.uuid || assessment._id || assessment.id} className="assess-table-row">
+                      <td>
                         {(() => {
-                          const qCount = Array.isArray(assessment?.questions)
-                            ? assessment.questions.length
-                            : Array.isArray(assessment?.sections)
-                              ? assessment.sections.reduce((total, section) => total + (Array.isArray(section?.questions) ? section.questions.length : 0), 0)
-                              : 0;
-                          return (
-                            <>
-                              <span className="assess-question-count">{qCount}</span>
-                              <span className="assess-question-label">{qCount === 1 ? 'Question' : 'Questions'}</span>
-                            </>
+                          const rowId = assessment.uuid || assessment._id || assessment.id; const checked = selectedIds.includes(rowId); return (
+                            <input type="checkbox" checked={isRowSelected(rowId)}
+                              onChange={(e) => toggleSelectOne(rowId, e.target.checked)} aria-label="Select row" />
                           );
                         })()}
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`assess-status-badge ${assessment.status?.toLowerCase()}`}>
-                        {assessment.status}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="assess-date-info">
-                        <Calendar size={14} />
-                        <span>{assessment.createdAt ? new Date(assessment.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        }) : ""}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="assess-actions">
-                        <button 
-                          className="assess-action-btn edit" 
-                          onClick={() => handleEditAssessment(assessment)}
-                          title="Edit Assessment"
-                        >
-                          <Edit3 size={14} />
-                        </button>
-                      <button 
-                          className="assess-action-btn delete" 
-                          onClick={() => handleDeleteAssessment(assessment.uuid)}
-                          title="Delete Assessment"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                        
-                       
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              {/* Pagination row */}
-              <tr className="assess-table-row">
-                <td colSpan={6}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-                    {/* <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
+                      </td>
+                      <td>
+                        <div className="assess-cell-content">
+                          <div className="assess-title-container">
+                            <h4 className="assess-title">{assessment.title}</h4>
+                            <p className="assess-description">{assessment.description || "No description provided"}</p>
+                            {Array.isArray(assessment.tags) && assessment.tags.length > 0 && (
+                              <div className="assess-tags">
+                                {assessment.tags.slice(0, 3).map((t, idx) => (
+                                  <span key={`${assessment.id}-tag-${idx}`} className="assess-classification">{t}</span>
+                                ))}
+                                {assessment.tags.length > 3 && (
+                                  <span className="assess-classification">+ {assessment.tags.length - 3} more</span>
+                                )}
+                              </div>
+
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="assess-questions-info">
+                          {(() => {
+                            const qCount = Array.isArray(assessment?.questions)
+                              ? assessment.questions.length
+                              : Array.isArray(assessment?.sections)
+                                ? assessment.sections.reduce((total, section) => total + (Array.isArray(section?.questions) ? section.questions.length : 0), 0)
+                                : 0;
+                            return (
+                              <>
+                                <span className="assess-question-count">{qCount}</span>
+                                <span className="assess-question-label">{qCount === 1 ? 'Question' : 'Questions'}</span>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`assess-status-badge ${assessment.status?.toLowerCase()}`}>
+                          {assessment.status}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="assess-date-info">
+                          <Calendar size={14} />
+                          <span>{assessment.createdAt ? new Date(assessment.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          }) : ""}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="assess-actions">
+                          <button
+                            className="assess-action-btn edit"
+                            onClick={() => handleEditAssessment(assessment)}
+                            title="Edit Assessment"
+                          >
+                            <Edit3 size={14} />
+                          </button>
+                          <button
+                            className="assess-action-btn delete"
+                            onClick={() => handleDeleteAssessment(assessment.uuid)}
+                            title="Delete Assessment"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+
+
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                {/* Pagination row */}
+                <tr className="assess-table-row">
+                  <td colSpan={6}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                      {/* <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
                       {(() => {
                         const start = assessments.length ? (pagination.page - 1) * pagination.limit + 1 : 0;
                         const end = Math.min(pagination.page * pagination.limit, pagination.total || start);
@@ -1118,38 +1297,38 @@ const [showFilters, setShowFilters] = useState(false);
                         return `Showing ${start}-${end} of ${total}`;
                       })()}
                     </div> */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <button
-                        type="button"
-                        onClick={() => setPage(p => Math.max(1, p - 1))}
-                        disabled={page <= 1 || loading}
-                        style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: page <= 1 || loading ? 'not-allowed' : 'pointer' }}
-                      >
-                        Prev
-                      </button>
-                      <span style={{ color: '#0f172a' }}>
-                        {(() => {
-                          const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1)));
-                          return `Page ${page} of ${totalPages}`;
-                        })()}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1)));
-                          setPage(p => Math.min(totalPages, p + 1));
-                        }}
-                        disabled={loading || (pagination && page >= Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1))))}
-                        style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: loading || (pagination && page >= Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1)))) ? 'not-allowed' : 'pointer' }}
-                      >
-                        Next
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <button
+                          type="button"
+                          onClick={() => setPage(p => Math.max(1, p - 1))}
+                          disabled={page <= 1 || loading}
+                          style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: page <= 1 || loading ? 'not-allowed' : 'pointer' }}
+                        >
+                          Prev
+                        </button>
+                        <span style={{ color: '#0f172a' }}>
+                          {(() => {
+                            const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1)));
+                            return `Page ${page} of ${totalPages}`;
+                          })()}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1)));
+                            setPage(p => Math.min(totalPages, p + 1));
+                          }}
+                          disabled={loading || (pagination && page >= Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1))))}
+                          style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: loading || (pagination && page >= Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1)))) ? 'not-allowed' : 'pointer' }}
+                        >
+                          Next
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           )}
         </div>
       </div>
