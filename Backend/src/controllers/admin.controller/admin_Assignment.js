@@ -178,8 +178,6 @@ const createAssignment = async (req, res) => {
         orgAssignment: true,      // only org assignments, ignore self-enrolls
       }).select("user_id").session(session);
 
-      console.log("existingProgress:", existingProgress);
-
       const existingUserIds = new Set(
         existingProgress.map(p => p.user_id.toString())
       );

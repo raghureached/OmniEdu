@@ -13,16 +13,9 @@ import { GoBook, GoX } from 'react-icons/go';
 import { admincreateContent, adminupdateContent, enhanceText } from '../../../store/slices/adminModuleSlice';
 import { categories } from '../../../utils/constants';
 import { notifyError, notifySuccess } from '../../../utils/notification';
-const trainingTypes = [
-    "Mandatory Training",
-    "Continuous Learning",
-    "Micro Learning/Learning Byte",
-    "Initial/Onboarding Training",
-];
-
 
 const ModuleModal = ({
-    showModal, setShowModal, newContent, handleInputChange, showEditModal, setShowEditModal, editContentId, drafts, setDrafts, handleRichInputChange, error
+    showModal, setShowModal, newContent, handleInputChange, showEditModal, setShowEditModal, editContentId, drafts, setDrafts, handleRichInputChange, teams
 }) => {
     const [currentStep, setCurrentStep] = useState(1);
     const [aiHelpOpen, setAiHelpOpen] = useState(false);
@@ -35,7 +28,6 @@ const ModuleModal = ({
     const [showIframe, setShowIframe] = useState(false);
     const { uploading } = useSelector((state) => state.content);
     const [preview, setPreview] = useState(false);
-    const [teams, setTeams] = useState([]);
     const [aiProcessing, setAiProcessing] = useState(false);
     const [generatingImage, setGeneratingImage] = useState(false);
     const [filePreview, setFilePreview] = useState({ open: false, url: null, name: '', type: '', isBlob: false });
@@ -74,17 +66,7 @@ const ModuleModal = ({
         // Extend here for other providers if needed
         return normalizeYouTube(url);
     };
-    useEffect(() => {
-        const fetchTeams = async () => {
-            try {
-                const response = await api.get('/api/admin/getGroups');
-                setTeams(response.data.data);
-            } catch (error) {
-                console.error('Error fetching teams:', error);
-            }
-        };
-        fetchTeams();
-    }, []);
+   
     // Run URL validation when externalResource changes
     useEffect(() => {
         setShowIframe(false); // hide iframe whenever URL changes

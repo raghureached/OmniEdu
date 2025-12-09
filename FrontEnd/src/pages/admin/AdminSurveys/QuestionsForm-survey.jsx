@@ -10,7 +10,7 @@ import CustomLoader2 from '../../../components/common/Loading/CustomLoader2';
 import { toast, ToastContainer } from "react-toastify";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
-
+import { notify,notifyError,notifySuccess,notifyInfo } from '../../../utils/notification.js';
 const QuestionsForm = ({
     currentAssessment,
     formData,
@@ -146,34 +146,7 @@ const QuestionsForm = ({
     };
 
 
-    // const enhanceTexthelper = async (title, description) => {
-    //     try {
-    //         setAiProcessing(true);
-
-    //         if (!title && !description) {
-    //             toast.error('Please enter both title and description');
-    //             setAiProcessing(false)
-    //             return;
-    //         }
-    //         if (!title) {
-    //             toast.error('Please enter title ');
-    //             setAiProcessing(false)
-    //             return;
-    //         }
-    //         if (!description) {
-    //             toast.error('Please enter description');
-    //             setAiProcessing(false)
-    //             return;
-    //         }
-
-    //         const response = await api.post('/api/admin/enhanceSurvey', { title, description });
-    //         setFormData({ ...formData, title: response.data.data.title, description: response.data.data.description, tags: response.data.data.tags });
-    //     } catch (error) {
-    //         console.error('Error enhancing text:', error);
-    //     } finally {
-    //         setAiProcessing(false);
-    //     }
-    // }
+   
     const enhanceTexthelper = async (title, description) => {
         try {
             setAiProcessing(true);
@@ -186,11 +159,11 @@ const QuestionsForm = ({
                 description: response.data.data.description,
                 tags: response.data.data.tags
             });
-            toast.success('Tags generated from AI');
+           notifySuccess('Tags generated from AI');
             return true; // ✅ success
         } catch (error) {
             console.error('Error enhancing text:', error);
-            toast.error('Failed to generate tags');
+           notifyError(error.message,{title:'Failed to generate tags'});
             return false; // ❗ failure
         } finally {
             setAiProcessing(false);
@@ -320,14 +293,8 @@ const QuestionsForm = ({
             setAiProcessing(true);
             if (!noOfSections) {
                
-                toast.error(
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                       
-                        <div style={{ marginLeft: 10 }}>
-                            <strong>Enter the Number of sections</strong>
-                           
-                        </div>
-                    </div>
+               notifyError(
+                "The number of sections is missing"
                 );
 
                 setAiProcessing(false);
@@ -335,15 +302,7 @@ const QuestionsForm = ({
             }
             if (!noOfQuestions) {
                
-                toast.error(
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                       
-                        <div style={{ marginLeft: 10 }}>
-                            <strong>Enter the  Number of Questions</strong>
-                            
-                        </div>
-                    </div>
-                );
+               notifyError("The number of Questions is missing");
 
                 setAiProcessing(false);
                 return;
@@ -386,26 +345,16 @@ const QuestionsForm = ({
                 if (typeof setFormElements === 'function') {
                     setFormElements(newFormElements);
                 }
-                // setStep(2);
-                // toast.success("Survey questions generated successfully!");
-                toast.success(
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                        <CheckCircle color="#10b981" size={22} />
-                        <div style={{ marginLeft: 10 }}>
-                            <strong>Survey questions generated successfully</strong>
-                            <div style={{ fontSize: 13, opacity: 0.8 }}>
-                                You can review and edit them in Step 2
-                            </div>
-                        </div>
-                    </div>
-                );
+               
+               notifySuccess("You can review and edit them in Step 2", {title:"Survey questions generated successfully"});
 
             } else {
-                throw new Error("Failed to generate questions");
+                notifyError("Failed to generate questions")
+                // throw new Error("Failed to generate questions");
             }
         } catch (error) {
-            console.error("Error generating questions:", error);
-            toast.error(error.response?.data?.message || "Failed to generate questions");
+            // console.error("Error generating questions:", error);
+            notifyError(error.response?.data?.message || "Failed to generate questions");
         } finally {
             setAiProcessing(false);
         }

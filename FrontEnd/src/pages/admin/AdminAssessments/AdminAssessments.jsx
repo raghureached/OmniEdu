@@ -287,6 +287,9 @@ const AdminAssessments = () => {
       });
     }
   };
+
+
+  
   // Filter handlers
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -400,6 +403,73 @@ const AdminAssessments = () => {
     setSearchTerm('');
   };
 
+   // "Select all pages / Select this page" dropdown (like GroupsTable)
+   const [selectionMenuOpen, setSelectionMenuOpen] = useState(false);
+   const selectionMenuRef = useRef(null);
+   const selectionTriggerRef = useRef(null);
+   const [selectionMenuPos, setSelectionMenuPos] = useState({ top: 0, left: 0 });
+   useEffect(() => {
+    if (!selectionMenuOpen) return;
+
+    const handleClickOutside = (event) => {
+      if (!selectionMenuRef.current) return;
+      if (
+        !selectionMenuRef.current.contains(event.target) &&
+        !selectionTriggerRef.current?.contains(event.target)
+      ) {
+        setSelectionMenuOpen(false);
+      }
+    };
+
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') setSelectionMenuOpen(false);
+    };
+
+    const handleReposition = () => {
+      const btn = selectionTriggerRef.current;
+      if (!btn) return;
+      const rect = btn.getBoundingClientRect();
+      const offset = 8;
+      setSelectionMenuPos({ top: rect.bottom + offset, left: rect.left });
+    };
+
+    window.addEventListener('scroll', handleReposition, true);
+    window.addEventListener('resize', handleReposition);
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEsc);
+
+    // initial position sync
+    handleReposition();
+
+    return () => {
+      window.removeEventListener('scroll', handleReposition, true);
+      window.removeEventListener('resize', handleReposition);
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [selectionMenuOpen]);
+    // Map dropdown options -> existing Gmail selection logic
+    const handleSelectionOption = (option) => {
+      switch (option) {
+        case 'all':
+          // "Select all pages"
+          handleSelectAllAcrossPages();
+          break;
+        case 'page':
+          // "Select this page" → same as checking the master checkbox on
+          // a non-selected page
+          handleSelectAllToggle(true);
+          break;
+        case 'none':
+        default:
+          clearSelection();
+          break;
+      }
+  
+      setSelectionMenuOpen(false);
+    };
+  
+
   const finalSelectedIds = allSelected
     ? assessments.map(a => a.uuid || a._id || a.id).filter(id => !excludedIds.includes(id))
     : selectedIds;
@@ -425,9 +495,15 @@ const AdminAssessments = () => {
         )
       );
       clearSelection();
+      notifySuccess("Surveys deleted successfully");
+      setShowBulkAction(false);
       dispatch(getAssessments({ page, limit }));
     } catch (e) {
       console.error('Bulk delete failed', e);
+       notifyError("Failed to delete surveys", {
+              message: e.message,
+              title: "Failed to delete surveys"
+            });
     }
   };
   const handleBulkDelete = bulkDelete;
@@ -1156,7 +1232,7 @@ const AdminAssessments = () => {
             <table className="assess-table">
               <thead>
                 <tr>
-                  <th>
+                  {/* <th>
                     <input
                       type="checkbox"
                       checked={topCheckboxChecked}
@@ -1166,6 +1242,117 @@ const AdminAssessments = () => {
                         }
                       }}
                       onChange={(e) => handleSelectAllToggle(e.target.checked)} aria-label="Select all" />
+                  </th> */}
+                   <th>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        position: 'relative',
+                      }}
+                    >
+                      {/* Master checkbox (same behaviour as before) */}
+                      <div>
+                      <input
+                        type="checkbox"
+                        checked={topCheckboxChecked}
+                        ref={(el) => {
+                          if (el) {
+                            el.indeterminate = topCheckboxIndeterminate;
+                          }
+                        }}
+                        onChange={(e) => handleSelectAllToggle(e.target.checked)}
+                        aria-label="Select all"
+                      />
+                      </div>
+
+                      {/* Dropdown trigger (Chevron) – copied from GroupsTable */}
+                      <div>
+                      <button
+                        type="button"
+                        ref={selectionTriggerRef}
+                        className={`assess-select-all-menu-toggle ${selectionMenuOpen ? 'open' : ''}`}
+                        aria-haspopup="menu"
+                        aria-expanded={selectionMenuOpen}
+                        aria-label="Selection options"
+                        onClick={() => {
+                          const btn = selectionTriggerRef.current;
+                          if (btn) {
+                            const rect = btn.getBoundingClientRect();
+                            const offset = 8;
+                            setSelectionMenuPos({
+                              top: rect.bottom + offset,
+                              left: rect.left,
+                            });
+                          }
+                          setSelectionMenuOpen((prev) => !prev);
+                        }}
+                        style={{
+                          padding: 0,
+                          border: 'none',
+                          background: 'transparent',
+                          cursor: 'pointer',
+                         
+                        }}
+                      >
+                        <ChevronDown size={15} className="chevron" />
+                      </button>
+                      </div>
+                    </div>
+
+                    {/* Flyout menu (fixed position like GroupsTable) */}
+                    {selectionMenuOpen && (
+                      <div
+                        ref={selectionMenuRef}
+                        className="assess-select-all-flyout"
+                        role="menu"
+                        style={{
+                          position: 'fixed',
+                          top: selectionMenuPos.top,
+                          left: selectionMenuPos.left,
+                          gap: '5px',
+                          
+                        }}
+                      >
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => handleSelectionOption('all')}
+                          className={selectionScope === 'all' ? 'selected' : ''}
+                         
+                          
+                        >
+                          <span>Select all pages</span>
+                          {selectionScope === 'all' && (
+                            <img
+                              src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"
+                              alt="selected"
+                              className="check-icon"
+                              style={{ width: 16, height: 16 }}
+                            />
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => handleSelectionOption('page')}
+                          className={selectionScope === 'page' ? 'selected' : ''}
+                         
+                        >
+                          <span>Select this page</span>
+                          {selectionScope === 'page' && (
+                            <img
+                              src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"
+                              alt="selected"
+                              className="check-icon"
+                              style={{ width: 16, height: 16 }}
+                            />
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </th>
                   <th>Assessment Details</th>
                   <th>Questions</th>
@@ -1250,6 +1437,13 @@ const AdminAssessments = () => {
                       </td>
                       <td>
                         <div className="assess-actions">
+                        <button
+                            className="assess-action-btn edit"
+                            onClick={() => handleEditAssessment(assessment)}
+                            title="Edit Assessment"
+                          >
+                            <Edit3 size={14} />
+                          </button>
                           <button
                             className="assess-action-btn delete"
                             onClick={() => handleDeleteAssessment(assessment.uuid)}
@@ -1257,13 +1451,7 @@ const AdminAssessments = () => {
                           >
                             <Trash2 size={14} />
                           </button>
-                          <button
-                            className="assess-action-btn edit"
-                            onClick={() => handleEditAssessment(assessment)}
-                            title="Edit Assessment"
-                          >
-                            <Edit3 size={14} />
-                          </button>
+                         
 
                         </div>
                       </td>

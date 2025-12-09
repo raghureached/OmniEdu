@@ -56,7 +56,7 @@ export const login = createAsyncThunk(
       await api.post('/auth/login', { email, password });
       // Step 2: verify session via cookie-based check
       const verify = await api.post('/auth/checkAuth');
-      console.log(verify.data.role)
+      // console.log(verify.data.role)
       return {
         ...verify.data,
         lastLoginDateTime: new Date().toISOString(),

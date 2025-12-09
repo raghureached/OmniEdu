@@ -11,7 +11,7 @@ import ModuleModal from './ModuleModal';
 import { GoX } from 'react-icons/go';
 import { toast } from 'react-toastify';
 import { notifyError, notifySuccess } from '../../../utils/notification';
-import api from '../../../services/api';
+import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
 
 
 const ModuleManagement = () => {
@@ -20,8 +20,6 @@ const ModuleManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [contentType, setContentType] = useState("all");
   const [showModal, setShowModal] = useState(false);
-    const [teams, setTeams] = useState([]);
-
   const [showEditModal, setShowEditModal] = useState(false);
   const [editContentId, setEditContentId] = useState(null);
   const [showDraftModal, setShowDraftModal] = useState(false);
@@ -62,23 +60,22 @@ const ModuleManagement = () => {
   });
   const [uploading, setUploading] = useState(false)
   const navigate = useNavigate()
-   useEffect(() => {
-          const fetchTeams = async () => {
-              try {
-                  const response = await api.get('/api/admin/getGroups');
-                  setTeams(response.data.data);
-              } catch (error) {
-                  console.error('Error fetching teams:', error);
-              }
-          };
-          fetchTeams();
-      }, []);
   useEffect(() => {
     dispatch(adminfetchContent());
   }, [dispatch]);
+  const { confirm } = useConfirm();
 
   const handleDeleteContent = async (contentId) => {
-    if (window.confirm("Are you sure you want to delete this content?")) {
+    const confirmed = await confirm({
+      title: `Are you sure you want to delete this module?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger', // or 'warning', 'info'
+      showCheckbox: true,
+      checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
+      note: 'Associated items will be removed.',
+    });
+    if (!confirmed)  return;
       const res = await dispatch(admindeleteContent(contentId));
       if (admindeleteContent.fulfilled.match(res)) {
         notifySuccess("Content deleted successfully");
@@ -88,7 +85,7 @@ const ModuleManagement = () => {
           title: "Failed to delete content"
         });
       }
-    }
+    
   };
 
   // Filter handlers
@@ -597,12 +594,13 @@ const ModuleManagement = () => {
                   </select>
                 </div>
                 <div className="filter-actions">
+                <button className="btn-secondary" onClick={resetFilters}>
+                    Clear
+                  </button>
                   <button className="btn-primary" onClick={handleFilter}>
                     Apply
                   </button>
-                  <button className="reset-btn" onClick={resetFilters}>
-                    Clear
-                  </button>
+                  
                 </div>
               </div>
             )}
@@ -750,14 +748,17 @@ const ModuleManagement = () => {
                 <th>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, position: 'relative' }}>
                     {/* Master checkbox (same as before) */}
+                    <div style={{gap:4}}>
                     <input
                       type="checkbox"
                       checked={topCheckboxChecked}
                       ref={(el) => el && (el.indeterminate = topCheckboxIndeterminate)}
                       onChange={(e) => handleSelectAllToggle(e.target.checked)}
                     />
+                    </div>
 
                     {/* Dropdown trigger (Chevron) */}
+                    <div>
                     <button
                       type="button"
                       ref={selectionTriggerRef}
@@ -778,6 +779,7 @@ const ModuleManagement = () => {
                     >
                       <ChevronDown size={15} className="chevron" />
                     </button>
+                    </div>
                   </div>
 
                   {/* Flyout menu (positioned like GroupsTable) */}
@@ -816,17 +818,7 @@ const ModuleManagement = () => {
                         role="menuitem"
                         onClick={() => handleSelectionOption('page')}
                         className={selectionScope === 'page' ? 'selected' : ''}
-                        style={{
-                          padding: '6px 12px',
-                          border: 'none',
-                          background: 'transparent',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: 13,
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                        }}
+                       
                       >
                         <span>Select this page</span>
                         {selectionScope === 'page' && (
@@ -843,7 +835,7 @@ const ModuleManagement = () => {
 
                 <th>Title</th>
                 <th>Status</th>
-                {/* <th>Team</th> */}
+                <th>Team</th>
                 <th>Date Created</th>
                 <th>Actions</th>
               </tr>
@@ -877,7 +869,7 @@ const ModuleManagement = () => {
                         {content.status === 'Published' ? `${content.status}` : content.status === 'Draft' ? 'Draft' : 'Saved'}
                       </span>
                     </td>
-                    {/* <td>{content.team?.name || "All"}</td> */}
+                    <td>{content.team?.name || "All"}</td>
                     <td>
                       <div className="assess-date-info"><Calendar size={14} />
                         <span>{content.createdAt ? new Date(content.createdAt).toLocaleDateString('en-US', {

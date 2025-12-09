@@ -4,6 +4,7 @@ const GlobalRoles = require("../models/globalRoles_model");
 const UserProfile = require("../models/userProfiles_model");
 const User = require("../models/users_model");
 const jwt = require("jsonwebtoken");
+const passport = require('passport');
 
 const canonicalRole = (role) => {
     const r = String(role || '').toLowerCase().replace(/[^a-z]/g, '');
@@ -201,9 +202,68 @@ const changePassword = async (req, res) => {
     }
 };
 
+const googleAuth = passport.authenticate('google', { scope: ['profile', 'email'] });
+
+const googleAuthCallback = async (req, res) => {
+    passport.authenticate('google', async (err, user) => {
+        try {
+            if (err) {
+                return res.redirect(`${process.env.FRONTEND_URL}/login?error=${encodeURIComponent(err.message)}`);
+            }
+            
+            if (!user) {
+                return res.redirect(`${process.env.FRONTEND_URL}/login?error=Authentication failed`);
+            }
+
+            // Determine user role and generate tokens
+            let role = 'User';
+            let organization_id = null;
+            
+            if (user.role === 'GlobalAdmin') {
+                role = 'GlobalAdmin';
+            } else {
+                // Get user profile for organization info
+                const userProfile = await UserProfile.findOne({ user_id: user._id });
+                if (userProfile) {
+                    organization_id = userProfile.organization_id;
+                }
+                
+                // Get role from GlobalRoles if available
+                if (user.global_role_id) {
+                    const roleDoc = await GlobalRoles.findById(user.global_role_id).select("name");
+                    role = canonicalRole(roleDoc?.name) || 'User';
+                }
+            }
+
+            // Generate JWT tokens
+            const { accessToken, refreshToken } = await generateTokens(user._id, role, organization_id);
+
+            // Set cookies
+            res.cookie("refreshToken", refreshToken, options);
+            res.cookie("accessToken", accessToken, options);
+
+            // Redirect based on role
+            let redirectUrl = '/user/dashboard';
+            if (role === 'GlobalAdmin') {
+                redirectUrl = '/global-admin/organizations';
+            } else if (role === 'Administrator') {
+                redirectUrl = '/admin';
+            }
+
+            return res.redirect(`${process.env.FRONTEND_URL}${redirectUrl}`);
+            
+        } catch (error) {
+            console.error('Google auth callback error:', error);
+            return res.redirect(`${process.env.FRONTEND_URL}/login?error=Authentication failed`);
+        }
+    })(req, res);
+};
+
 module.exports = {
     login,
     logout,
     changePassword,
-    checkAuth
+    checkAuth,
+    googleAuth,
+    googleAuthCallback
 }

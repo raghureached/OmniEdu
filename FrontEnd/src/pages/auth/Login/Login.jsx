@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { login } from '../../../store/slices/authSlice';
 import './Login.css';
 import { Eye, EyeOff } from 'lucide-react';
@@ -12,7 +12,17 @@ const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [searchParams] = useSearchParams();
   const { isAuthenticated, loading, error, role } = useSelector((state) => state.auth);
+
+  // Handle OAuth callback errors
+  useEffect(() => {
+    const oauthError = searchParams.get('error');
+    if (oauthError) {
+      // You can set this in your Redux store or show a toast
+      console.error('OAuth Error:', oauthError);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (isAuthenticated && role) {
@@ -32,7 +42,12 @@ const Login = () => {
   };
 
   const handleSSOLogin = (provider) => {
-    alert("Feature is yet to be implemented");
+    if (provider === 'google') {
+      // Redirect to backend Google OAuth endpoint
+      window.location.href = `${process.env.REACT_APP_API_URL || 'http://localhost:5003'}/auth/google`;
+    } else {
+      alert("Feature is yet to be implemented");
+    }
   };
 
   return (
@@ -50,9 +65,9 @@ const Login = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
-          {error && (
+          {(error || searchParams.get('error')) && (
             <div className="error-message">
-              <span>{error}</span>
+              <span>{error || searchParams.get('error')}</span>
             </div>
           )}
 

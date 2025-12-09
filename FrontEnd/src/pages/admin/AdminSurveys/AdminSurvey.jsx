@@ -21,6 +21,7 @@ import QuestionsForm from './QuestionsForm-survey';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import api from '../../../services/api';
 import { notifyError, notifySuccess } from '../../../utils/notification';
+import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
 const AdminSurveys = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
@@ -43,7 +44,7 @@ const AdminSurveys = () => {
   const bulkPanelRef = useRef(null);
   const [filterPanelStyle, setFilterPanelStyle] = useState({ top: 0, left: 0 });
   const [bulkPanelStyle, setBulkPanelStyle] = useState({ top: 0, left: 0 });
-
+  const { confirm } = useConfirm();
   const updateFilterPanelPosition = () => {
     const rect = filterButtonRef.current?.getBoundingClientRect();
     if (rect) {
@@ -173,13 +174,14 @@ const AdminSurveys = () => {
         const response = await api.get('/api/admin/getGroups');
         setGroups(response.data.data)
       } catch (error) {
+        notifyError("Error fetching groups")
         console.error('Error fetching groups:', error);
       }
     };
     fetchGroups(); // fetch teams/subteams
   }, [dispatch]);
 
-   // Filter the assessments based on search term and status filter
+  // Filter the assessments based on search term and status filter
   const filteredAssessments = assessments.filter(assessment => {
     const matchesSearch = searchTerm === '' ||
       (assessment.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -304,7 +306,69 @@ const AdminSurveys = () => {
   };
 
 
+  // "Select all pages / Select this page" dropdown (like GroupsTable)
+  const [selectionMenuOpen, setSelectionMenuOpen] = useState(false);
+  const selectionMenuRef = useRef(null);
+  const selectionTriggerRef = useRef(null);
+  const [selectionMenuPos, setSelectionMenuPos] = useState({ top: 0, left: 0 });
+  useEffect(() => {
+    if (!selectionMenuOpen) return;
 
+    const handleClickOutside = (event) => {
+      if (!selectionMenuRef.current) return;
+      if (
+        !selectionMenuRef.current.contains(event.target) &&
+        !selectionTriggerRef.current?.contains(event.target)
+      ) {
+        setSelectionMenuOpen(false);
+      }
+    };
+
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') setSelectionMenuOpen(false);
+    };
+
+    const handleReposition = () => {
+      const btn = selectionTriggerRef.current;
+      if (!btn) return;
+      const rect = btn.getBoundingClientRect();
+      const offset = 8;
+      setSelectionMenuPos({ top: rect.bottom + offset, left: rect.left });
+    };
+
+    window.addEventListener('scroll', handleReposition, true);
+    window.addEventListener('resize', handleReposition);
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEsc);
+
+    // initial position sync
+    handleReposition();
+
+    return () => {
+      window.removeEventListener('scroll', handleReposition, true);
+      window.removeEventListener('resize', handleReposition);
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [selectionMenuOpen]);
+
+  // Map dropdown options -> existing Gmail selection logic
+  const handleSelectionOption = (option) => {
+    switch (option) {
+      case 'all':    // "Select all pages"
+        handleSelectAllAcrossPages();
+        break;
+      case 'page':   // "Select this page"
+        handleSelectAllToggle(true);
+        break;
+      case 'none':
+      default:
+        clearSelection();
+        break;
+    }
+
+    setSelectionMenuOpen(false);
+  };
 
   const handleAddAssessment = () => {
     setCurrentAssessment(null);
@@ -339,7 +403,17 @@ const AdminSurveys = () => {
 
   const bulkDelete = async (itemsToDelete = selectedIds) => {
     if (itemsToDelete.length === 0) return;
-    if (!window.confirm(`Delete ${itemsToDelete.length} survey(s)? This cannot be undone.`)) return;
+    // if (!window.confirm(`Delete ${itemsToDelete.length} survey(s)? This cannot be undone.`)) return;
+     const confirmed = await confirm({
+      title: `Are you sure you want to delete ${itemsToDelete.length} Survey(s)?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger', // or 'warning', 'info'
+      showCheckbox: true,
+      checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
+      note: 'Associated items will be removed.',
+    });
+     if (!confirmed)  return;
     try {
       await Promise.all(
         itemsToDelete.map(id => dispatch(deleteSurvey(id)).unwrap().catch(() => null))
@@ -516,15 +590,16 @@ const AdminSurveys = () => {
         const options = (Array.isArray(element.options) ? element.options : []).map(o => (o || '').trim()).filter(Boolean);
 
         if (!question_type || !['Multiple Choice', 'Multi Select'].includes(question_type)) {
-          alert('Each question must have a valid type: Multiple Choice or Multi Select');
+          // alert('Each question must have a valid type: Multiple Choice or Multi Select');
+          notifyError('Each question must have a valid type: Multiple Choice or Multi Select')
           return;
         }
         if (!question_text) {
-          alert('Each question must have non-empty text');
+          notifyError('Each question must have non-empty text');
           return;
         }
         if (options.length < 2) {
-          alert('Each question must have at least two non-empty options');
+          notifyError('Each question must have at least two non-empty options');
           return;
         }
         currentSection.questions.push({
@@ -569,6 +644,7 @@ const AdminSurveys = () => {
       dispatch(fetchSurveys({ page, limit }));
     } catch (err) {
       console.error('Failed to create assessment:', err?.response?.data || err.message);
+      notifyError()
     }
   };
 
@@ -577,20 +653,20 @@ const AdminSurveys = () => {
 
     if (!currentAssessment) {
       console.error('❌ currentAssessment is null/undefined');
-      alert('Error: No assessment selected for update. Please select an assessment to edit first.');
+      notifyError('Error: No assessment selected for update. Please select an assessment to edit first.');
       return;
     }
 
     if (typeof currentAssessment !== 'object') {
       console.error('❌ currentAssessment is not an object:', currentAssessment);
-      alert('Error: Invalid assessment data. Please try again.');
+      notifyError('Error: Invalid assessment data. Please try again.');
       return;
     }
 
     if (!currentAssessment.uuid && !currentAssessment._id && !currentAssessment.id) {
       console.error('❌ currentAssessment missing ID fields');
       console.error('Available fields:', Object.keys(currentAssessment));
-      alert('Error: Assessment ID fields missing. Please try editing again.');
+      notifyError('Error: Assessment ID fields missing. Please try editing again.');
       return;
     }
 
@@ -619,15 +695,15 @@ const AdminSurveys = () => {
         const options = (Array.isArray(element.options) ? element.options : []).map(o => (o || '').trim()).filter(Boolean);
 
         if (!question_type || !['Multiple Choice', 'Multi Select'].includes(question_type)) {
-          alert('Each question must have a valid type: Multiple Choice or Multi Select');
+          notifyError('Each question must have a valid type: Multiple Choice or Multi Select');
           return;
         }
         if (!question_text) {
-          alert('Each question must have non-empty text');
+          notifyError('Each question must have non-empty text');
           return;
         }
         if (options.length < 2) {
-          alert('Each question must have at least two non-empty options');
+          notifyError('Each question must have at least two non-empty options');
           return;
         }
         currentSection.questions.push({
@@ -850,7 +926,7 @@ const AdminSurveys = () => {
     return <LoadingScreen text="Loading Surveys..." />
   }
 
-  
+
 
   return (
     <div className="assess-container">
@@ -979,12 +1055,13 @@ const AdminSurveys = () => {
 
 
           <div className="filter-actions">
+          <button className="btn-secondary" onClick={resetFilters}>
+              Clear
+            </button>
             <button className="btn-primary" onClick={handleFilter}>
               Apply
             </button>
-            <button className="reset-btn" onClick={resetFilters}>
-              Clear
-            </button>
+           
 
 
           </div>
@@ -1008,7 +1085,8 @@ const AdminSurveys = () => {
           </div>
           <div className="bulk-action-actions">
             <button
-              className="bulk-action-delete-btn"
+              className="btn-secondary"
+              style={{background:"red",color:"white"}}
               disabled={selectedIds.length === 0}
               onClick={() => handleBulkDelete(selectedIds)}
             >
@@ -1111,12 +1189,119 @@ const AdminSurveys = () => {
             <table className="assess-table">
               <thead>
                 <tr>
-                  <th>
+                  {/* <th>
                     <input type="checkbox"
                       checked={topCheckboxChecked}
                       ref={(el) => el && (el.indeterminate = topCheckboxIndeterminate)}
                       onChange={(e) => handleSelectAllToggle(e.target.checked)} aria-label="Select all" />
+                  </th> */}
+                  <th>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        position: 'relative',
+                      }}
+                    >
+                      {/* Master checkbox (same behaviour as before) */}
+                      <input
+                        type="checkbox"
+                        checked={topCheckboxChecked}
+                        ref={(el) => {
+                          if (el) {
+                            el.indeterminate = topCheckboxIndeterminate;
+                          }
+                        }}
+                        onChange={(e) => handleSelectAllToggle(e.target.checked)}
+                        aria-label="Select all"
+                      />
+
+                      {/* Dropdown trigger (Chevron) — same UI as GroupsTable */}
+                      <button
+                        type="button"
+                        ref={selectionTriggerRef}
+                        className={`survey-select-all-menu-toggle ${selectionMenuOpen ? 'open' : ''}`}
+                        aria-haspopup="menu"
+                        aria-expanded={selectionMenuOpen}
+                        aria-label="Selection options"
+                        onClick={() => {
+                          const btn = selectionTriggerRef.current;
+                          if (btn) {
+                            const rect = btn.getBoundingClientRect();
+                            const offset = 8;
+                            setSelectionMenuPos({
+                              top: rect.bottom + offset,
+                              left: rect.left,
+                            });
+                          }
+                          setSelectionMenuOpen((prev) => !prev);
+                        }}
+                        style={{
+                          padding: 0,
+                          border: 'none',
+                          background: 'transparent',
+                          cursor: 'pointer',
+                         
+                        }}
+                      >
+                        <ChevronDown size={15} className="chevron" />
+                      </button>
+                    </div>
+
+                    {/* Flyout menu (fixed, like GroupsTable) */}
+                    {selectionMenuOpen && (
+                      <div
+                        ref={selectionMenuRef}
+                        className="survey-select-all-flyout"
+                        role="menu"
+                        style={{
+                          position: 'fixed',
+                          top: selectionMenuPos.top,
+                          left: selectionMenuPos.left,
+                          gap: '5px',
+                          
+                        }}
+                      >
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => handleSelectionOption('all')}
+                          className={selectionScope === 'all' ? 'selected' : ''}
+                         
+                        >
+                          <span>Select all pages</span>
+                          {selectionScope === 'all' && (
+                            <img
+                              src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"
+                              alt="selected"
+                              className="check-icon"
+                              style={{ width: 16, height: 16 }}
+                            />
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => handleSelectionOption('page')}
+                          className={selectionScope === 'page' ? 'selected' : ''}
+                         
+                        >
+                          <span>Select this page</span>
+                          {selectionScope === 'page' && (
+                            <img
+                              src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"
+                              alt="selected"
+                              className="check-icon"
+                              style={{ width: 16, height: 16 }}
+                            />
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </th>
+
                   <th>Survey Details</th>
                   <th>Questions</th>
                   <th>Status</th>
@@ -1178,19 +1363,20 @@ const AdminSurveys = () => {
                     <td>
                       <div className="assess-actions">
                         <button
-                          className="assess-action-btn delete"
-                          onClick={() => handleDeleteAssessment(assessment.uuid)}
-                          title="Delete Assessment"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                        <button
                           className="assess-action-btn edit"
                           onClick={() => handleEditAssessment(assessment)}
                           title="Edit Assessment"
                         >
                           <Edit3 size={14} />
                         </button>
+                        <button
+                          className="assess-action-btn delete"
+                          onClick={() => handleDeleteAssessment(assessment.uuid)}
+                          title="Delete Assessment"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+
 
                       </div>
                     </td>

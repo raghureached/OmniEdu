@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { FileText, Plus, X, Upload, Copy, Eye, ChevronRight, ChevronLeft, Info,Trash2 } from 'lucide-react';
+import { FileText, Plus, X, Upload, Copy, Eye, ChevronRight, ChevronLeft, Info, Trash2 } from 'lucide-react';
 import api from '../../../services/api.js';
 import './QuestionsForm.css';
 import '../AdminSurveys/QuestionsForm-survey.css'
@@ -14,6 +14,9 @@ import { toast, ToastContainer } from "react-toastify";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
 import { categories } from '../../../utils/constants.js';
+import { notifyError, notifySuccess } from '../../../utils/notification';
+import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
+
 const QuestionsForm = ({
     currentAssessment,
     formData,
@@ -95,7 +98,7 @@ const QuestionsForm = ({
     const isAIDisabled = !formData.title?.trim() ||
         !formData.description?.trim();
 
-
+    const { confirm } = useConfirm();
 
     // Duration will be stored as a plain number of minutes (integer)
     const enhanceTexthelper = async (title, description) => {
@@ -103,11 +106,13 @@ const QuestionsForm = ({
             setAiProcessing(true);
             const response = await api.post('/api/admin/enhanceAssessment', { title, description });
             setFormData({ ...formData, title: response.data.data.title, description: response.data.data.description, tags: response.data.data.tags });
-            toast.success('Tags generated from AI');
+            // toast.success('Tags generated from AI');
+            notifySuccess('Tags generated from AI');
             return true; // indicate success so caller can proceed to question generation
         } catch (error) {
             console.error('Error enhancing text:', error);
-            toast.error('Failed to generate tags');
+            // toast.error('Failed to generate tags');
+            notifySuccess('Failed to generate tags')
             return false; // indicate failure so caller can stop
         } finally {
             setAiProcessing(false);
@@ -322,13 +327,13 @@ const QuestionsForm = ({
 
             // Validate
             if (!Array.isArray(aiQs) || aiQs.length === 0) {
-              
+
                 toast.error(
                     <div style={{ display: "flex", alignItems: "center" }}>
-                       
+
                         <div style={{ marginLeft: 10 }}>
                             <strong>AI did not return a valid questions array. Please try again.</strong>
-                         
+
                         </div>
                     </div>
                 );
@@ -353,25 +358,14 @@ const QuestionsForm = ({
             // Update both parent state (source of truth) and formData
             setQuestions(normalized);
             setFormData((prev) => ({ ...prev, questions: normalized }));
-             toast.success(
-                                <div style={{ display: "flex", alignItems: "center" }}>
-                                  
-                                    <div style={{ marginLeft: 10 }}>
-                                        <strong>Survey questions generated successfully</strong>
-                                        <div style={{ fontSize: 13, opacity: 0.8 }}>
-                                            You can review and edit them in Step 2
-                                        </div>
-                                    </div>
-                                </div>)
+            notifySuccess("You can review and edit them in Step 2", {
+                title: "Survey questions generated successfully"
+            });
+
         } catch (error) {
             console.log(error);
-            toast.error(
-                <div style={{ display: "flex", alignItems: "center" }}>
-                   
-                    <div style={{ marginLeft: 10 }}>
-                        <strong>Failed to generate questions. Please try again.</strong>
-                    </div>
-                </div>
+            notifyError(
+               "Failed to generate questions. Please try again."
             );
 
         } finally {
@@ -662,13 +656,13 @@ const QuestionsForm = ({
                                     <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
                                         <div style={{ width: "50%" }} >
                                             <label className='assess-form-label' style={{ margin: "10px" }}>Number of Questions</label>
-                                            <input type="number" name="noOfQuestions" placeholder="Enter the Number of Questions" value={noOfQuestions} className='assess-form-input' 
-                                          
-                                            onChange={(e) => {
-                                                const value = e.target.value;
-                                                setNoOfQuestions(value);
-                                                setFormData({ ...formData, noOfQuestions: value });
-                                            }} />
+                                            <input type="number" name="noOfQuestions" placeholder="Enter the Number of Questions" value={noOfQuestions} className='assess-form-input'
+
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    setNoOfQuestions(value);
+                                                    setFormData({ ...formData, noOfQuestions: value });
+                                                }} />
                                         </div>
                                         <div style={{ width: "50%" }}>
                                             <label className='assess-form-label' style={{ margin: "10px" }}>Level</label>
@@ -714,7 +708,7 @@ const QuestionsForm = ({
                                    >
                                        {aiProcessing || creating ? "Please Wait.." : "Create with AI ✨"}
                                    </button> */}
-                                        <div style={{  margin: '0 auto 8px', display: 'flex', justifyContent: 'flex-start' }}>
+                                    <div style={{ margin: '0 auto 8px', display: 'flex', justifyContent: 'flex-start' }}>
                                         <button
                                             type="button"
                                             className="survey-assess-btn-link"
@@ -772,9 +766,9 @@ const QuestionsForm = ({
                                                 if (!enhanced) {
                                                     toast.error('Enhancement failed');
                                                     return;
-                                                } 
+                                                }
                                                 // stop if failed ❗
-           
+
                                                 const q = parseInt(formData.noOfQuestions);
                                                 const l = formData.Level;
 
@@ -915,46 +909,7 @@ const QuestionsForm = ({
 
                                                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px' }}>
                                                         <div style={{ flex: 2 }}>
-                                                            {/* Optional Instructions (above Question Type) */}
-                                                            {/* <div className="assess-form-group">
-                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                    <label className="assess-form-label" style={{ marginBottom: 0 }}>Instructions (optional)</label>
-                                                                    <button
-                                                                        type="button"
-                                                                        className="survey-assess-btn-secondary"
-                                                                        style={{ padding: '6px 10px', fontSize: 15, fontWeight: 'bold' }}
-                                                                        onClick={() => setInstructionsOpen(prev => ({ ...prev, [qIndex]: !prev[qIndex] }))}
-                                                                    >
-                                                                        {instructionsOpen[qIndex] || !!q.instructions ? 'Hide' : 'Add'} Instructions
-                                                                    </button>
-                                                                </div>
-                                                                {(instructionsOpen[qIndex] || !!q.instructions) && (
-                                                                    <div style={{ marginTop: 8 }}>
-                                                                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
-                                                                            <button
-                                                                                type="button"
-                                                                                className="assess-remove-question"
-                                                                                aria-label="Close instructions"
-                                                                                title="Close instructions"
-                                                                                onClick={() => {
-                                                                                   
-                                                                                    updateQuestionField(qIndex, 'instructions', '');
-                                                                                    setInstructionsOpen(prev => ({ ...prev, [qIndex]: false }));
-                                                                                }}
-                                                                            >
-                                                                                <X size={16} />
-                                                                            </button>
-                                                                        </div>
-                                                                        <div className="assess-instructions-box">
-                                                                            <RichText
-                                                                                value={q.instructions || ''}
-                                                                                onChange={(html) => updateQuestionField(qIndex, 'instructions', html)}
-                                                                            />
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                            </div> */}
-
+                                                          
                                                             {/* Question Type */}
                                                             <div className="assess-form-group">
                                                                 <label className="assess-form-label" style={{ marginTop: "10px" }}>Question Type<span className="assess-required">*</span></label>
@@ -965,7 +920,7 @@ const QuestionsForm = ({
                                                                     onChange={e => updateQuestionField(qIndex, 'type', e.target.value)}
                                                                     required
                                                                 >
-                                                                    
+
                                                                     <option value="">Select Type</option>
                                                                     <option value="Multiple Choice">Multiple Choice</option>
                                                                     <option value="Multi Select">Multi Select</option>
@@ -1064,50 +1019,8 @@ const QuestionsForm = ({
                                                         filePreview={questionFilePreview}
                                                         onClose={closeQuestionFilePreview}
                                                     />
-                                                    {/* Preview overlay (opens on clicking Preview; closes with X) */}
-                                                    {/* {previewOpen[qIndex] && (
-                                                        <div className="assess-file-preview-overlay" onClick={(e) => { if (e.target === e.currentTarget) setPreviewOpen(prev => ({ ...prev, [qIndex]: false })); }}>
-                                                            <div className="assess-file-preview-modal">
-
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setPreviewOpen(prev => ({ ...prev, [qIndex]: false }))}
-                                                                    aria-label="Close file preview"
-                                                                    className="assess-file-preview-close"
-                                                                >
-                                                                    <X size={18} />
-                                                                </button>
-                                                                <div className="assess-file-preview-body">
-
-                                                                    {q.file_url ? (
-                                                                        <>
-                                                                            {q.file_url.match(/\.(jpeg|jpg|png|gif)$/i) && (
-                                                                                <img src={resolveUrl(q.file_url)} alt="Preview" />
-                                                                            )}
-                                                                            {q.file_url.match(/\.(mp4|webm|ogg)$/i) && (
-                                                                                <video src={resolveUrl(q.file_url)} controls />
-                                                                            )}
-                                                                            {q.file_url.match(/\.(mp3|wav|ogg)$/i) && (
-                                                                                <audio src={resolveUrl(q.file_url)} controls />
-                                                                            )}
-                                                                            {q.file_url.match(/\.pdf$/i) && (
-                                                                                <iframe src={resolveUrl(q.file_url)} title="PDF Preview" />
-                                                                            )}
-                                                                            {!q.file_url.match(/\.(jpeg|jpg|png|gif|mp4|webm|ogg|mp3|wav|pdf)$/i) && (
-                                                                                <div>
-                                                                                    <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: 6 }}>
-                                                                                        Preview not supported for this file type.
-                                                                                    </p>
-                                                                                </div>
-                                                                            )}
-                                                                        </>
-                                                                    ) : (
-                                                                        <p>No file attached.</p>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    )} */}
+                                          
+                                                    
 
                                                     {/* Question Text */}
                                                     <div className="assess-form-group" style={{ marginTop: '20px' }}>
@@ -2075,18 +1988,18 @@ const QuestionsForm = ({
                 />
             )}
             <FilePreviewModal open={filePreview.open} filePreview={filePreview} onClose={closeFilePreview} />
-             <ToastContainer
-                           position="top-right"
-                           autoClose={10000}
-                           hideProgressBar={false}
-                           newestOnTop
-                           closeOnClick
-                           pauseOnHover
-                           draggable
-                           toastClassName="custom-toast"
-                           bodyClassName="custom-toast-body"
-                       />
-           
+            <ToastContainer
+                position="top-right"
+                autoClose={10000}
+                hideProgressBar={false}
+                newestOnTop
+                closeOnClick
+                pauseOnHover
+                draggable
+                toastClassName="custom-toast"
+                bodyClassName="custom-toast-body"
+            />
+
         </>
     );
 };

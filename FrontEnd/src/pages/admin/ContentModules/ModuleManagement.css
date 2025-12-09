@@ -127,8 +127,7 @@ padding: 12px;
 display: flex;
 align-items: center;
 justify-content: center;
-color: var(--color-accent);
-
+color: #5570f1;
 }
 .global-content-stat-info {
 display: flex;
@@ -309,15 +308,14 @@ transition: opacity 0.2s ease;
 }
 
 .pagination button:hover:not(:disabled) {
-  background-color: var(--color-accent);
+  background-color: #697ff1;
 }
 
 .pagination button.active {
-   background-color: var(--color-primary);
-   color: white;
-   border-color: var(--color-primary);
+   background-color: #5570F1;
+   color: #5570F1;
+   border-color: #5570F1;
 }
-
 
 .pagination button:disabled {
   cursor: not-allowed;
@@ -375,9 +373,9 @@ outline: none;
 .modal-content input[type="text"]:focus,
 .modal-content select:focus,
 .modal-content textarea:focus {
-border-color: var(--color-primary);
+border-color: #5570F1;
 background: #eef1fb;
-box-shadow: 0 0 0 3px rgba(28, 136, 199, 0.12);
+box-shadow: 0 0 0 3px rgba(85,112,241, 0.12);
 }
 
 .modal-content textarea {
@@ -413,16 +411,17 @@ border-color: #bcd2fb;
 }
 
 .modal-content .btn-add {
-background: linear-gradient(90deg, var(--color-accent) 70%, var(--color-primary) 100%);
+background: linear-gradient(90deg, #5570F1 70%, #4056d9 100%);
 color: white;
 border: none;
-box-shadow: 0 2px 8px rgba(28, 136, 199, 0.12);
+box-shadow: 0 2px 8px rgba(85,112,241,0.12);
 }
 
 .modal-content .btn-add:hover {
-background: var(--color-primary);
+background: #4056d9;
 color: #fff;
 }
+
 /* Responsive for mobile */
 @media (max-width: 520px) {
 .modal-content {
@@ -447,9 +446,9 @@ cursor: pointer;
 }
 
 .pagination button.active {
-background-color: var(--color-primary);
+background-color: #1d4ed8;
 color: white;
-border-color: var(--color-primary);
+border-color: #1d4ed8;
 }
 
 .pagination button:disabled {
@@ -508,8 +507,8 @@ opacity: 0.5;
     cursor: pointer;
   }
   
-   .apply-btn {
-    background: var(--color-primary);
+  .apply-btn {
+    background: #2563eb;
     color: white;
     border: none;
   }
@@ -709,35 +708,4 @@ opacity: 0.5;
   height: 16px;
   flex-shrink: 0;
   filter: invert(25%) sepia(16%) saturate(339%) hue-rotate(179deg) brightness(90%) contrast(86%);
-}
-
-datalist option {
-  padding: 10px 16px;
-  cursor: pointer;
-  color: #334155;
-  transition: background-color 0.15s ease;
-}
-
-datalist option:hover {
-  background-color: #f1f5f9;
-  color: #5570f1;
-}
-
-/* Custom scrollbar for datalist */
-datalist::-webkit-scrollbar {
-  width: 6px;
-}
-
-datalist::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
-}
-
-datalist::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
-datalist::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
 }

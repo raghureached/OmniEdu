@@ -961,7 +961,7 @@ body {
   font-size: 12px;
   font-weight: 500;
   color: #52637a;
-    margin-left: 74px;
+  margin-left: 84px;
   width: calc(220px - 44px);
   max-width: calc(220px - 44px);
   overflow: hidden;
@@ -1012,8 +1012,8 @@ body {
 
 /* Dribbble-like select pill beside checkbox */
 .users-select-all-menu-toggle {
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
+  /* border: 1px solid #e5e7eb;
+  background: #ffffff; */
   color: #111827;
   padding: 0px;
   border-radius: 9999px;
