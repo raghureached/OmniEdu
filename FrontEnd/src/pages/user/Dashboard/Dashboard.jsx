@@ -1,63 +1,59 @@
-import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { BookOpen, Users, Award, TrendingUp, ClipboardCheck, ListChecks, GraduationCap, PencilLine, ClipboardList, MessageSquare, Activity, HelpCircle, Megaphone, SearchX, Globe } from 'lucide-react';
+import { GraduationCap, PencilLine, Activity, HelpCircle, Megaphone } from 'lucide-react';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line,
   Global
 } from 'recharts';
 import { fetchMessages } from '../../../store/slices/messageSlice';
 import { FaAward, FaCheckCircle, FaExclamationTriangle, FaHourglassHalf, FaMedal, FaPlayCircle, FaStar } from 'react-icons/fa';
+import api from '../../../services/api';
 
 const Dashboard = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const { currentMessages, loading } = useSelector((state) => state.globalMessage);
+  const { currentMessages } = useSelector((state) => state.globalMessage);
+  const [stats,setStats] = useState({})
+  const [rewards,setRewards] = useState({})
+  const [loading,setLoading] = useState(false)
   const userName = user?.name || 'Admin';
   const currentHour = new Date().getHours();
-  // const orgId = user?.organization?.uuid
-  //   || user?.organizationUuid
-  //   || user?.organization_uuid
-  //   || user?.orgId
-  //   || user?.org_id
-  //   || user?.organization_id
-  //   || user?.orgUuid
-  //   || user?.organizationUUID
-  //   || user?.organizationId
-  //   || user?.organization?.id;
+  
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/api/user/getStats');
+        const data = await response.data.data;
+        console.log(data)
+        setStats(data);
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    const fetchRewards = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/api/user/getUserRewards');
+        const data = await response.data.data;
 
-  // Mock data for Organization Performance
-  const organizationData = [
-    { name: 'Org A', completionRate: 82, assessmentPassRate: 88 },
-    { name: 'Org B', completionRate: 75, assessmentPassRate: 79 },
-    { name: 'Org C', completionRate: 68, assessmentPassRate: 72 },
-    { name: 'Org D', completionRate: 79, assessmentPassRate: 81 },
-    { name: 'Org E', completionRate: 85, assessmentPassRate: 90 }
-  ];
-
-  // Mock data for User Activity
-  const userActivityData = [
-    { month: 'Jan', logins: 2450, completions: 980 },
-    { month: 'Feb', logins: 2280, completions: 1050 },
-    { month: 'Mar', logins: 2780, completions: 1280 },
-    { month: 'Apr', logins: 3120, completions: 1420 },
-    { month: 'May', logins: 2890, completions: 1380 },
-    { month: 'Jun', logins: 3240, completions: 1520 }
-  ];
-  const stats = {
-    completed: 123,
-    in_progress: 456,
-    enrolled: 789,
-    expired: 12
-  };
-  const rewards = {
-    stars: 0,
-    badges: 0,
-    credits: 0
-  };
-
+        setRewards(data);
+      } catch (error) {
+        console.error('Error fetching rewards:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+    fetchRewards();
+    
+  }, [])
+ 
   useEffect(() => {
     dispatch(fetchMessages());
+
   }, [dispatch]);
 
   // Keep hover effect visible while scrolling by tracking the element under the pointer
@@ -201,72 +197,6 @@ const Dashboard = () => {
         <div className="admin-getting-started">
           <h2 className="admin-section-title">Training & Leaderboard Overview</h2>
         </div>
-
-
-        {/* <div className="admin-summary-grid">
-          
-          <div className="admin-quick-links-card">
-  
-            <h2 className="admin-message-card-title"style={{ marginBottom: '1rem' }} >Completion Rates by Organization</h2>
-            <div style={{ width: '100%', height: 250 }}>
-              <ResponsiveContainer>
-                <BarChart data={organizationData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                  <XAxis dataKey="name" stroke="#666" />
-                  <YAxis stroke="#666" />
-                  <Tooltip
-                    wrapperStyle={{ backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '8px', padding: '10px' }}
-                  />
-                  <Legend/>
-                  <Bar dataKey="completionRate" name="Completion Rate%" fill="#0088FE" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="assessmentPassRate" name="Pass Rate%" fill="#00C49F" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          
-          <div className="admin-quick-links-card">
-            
-            <h2 className="admin-message-card-title" style={{ marginBottom: '1rem' }}>Monthly User Activity</h2>
-            <div style={{ width: '100%', height: 250 }}>
-              <ResponsiveContainer>
-                <LineChart data={userActivityData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                  <XAxis dataKey="month" stroke="#666" />
-                  <YAxis stroke="#666" />
-                  <Tooltip
-                    wrapperStyle={{ backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '8px', padding: '10px' }}
-                  />
-                  <Legend />
-                  <Line type="monotone" dataKey="logins" name="User Logins" stroke="#0088FE" strokeWidth={3} dot={{ r: 5 }} />
-                  <Line type="monotone" dataKey="completions" name="Completions" stroke="#00C49F" strokeWidth={3} dot={{ r: 5 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-
-     
-          <div className="admin-quick-links-card">
-            <h2 className="admin-message-card-title admin-quick-link-item" style={{ padding: "10px 12px" }} >Quick Links</h2>
-            <ul className="admin-quick-links-list" role="list">
-              {quickLinks.map(({ to, title, desc, Icon }) => (
-                <li key={to} className="admin-quick-link-item">
-                  <Link to={to} className="admin-quick-link-row">
-                    <span className="admin-quick-link-icon" aria-hidden="true">
-                      <Icon size={22} />
-                    </span>
-                    <span className="admin-quick-link-text">
-                      <span className="admin-quick-link-title">{title}</span>
-                      <span className="admin-quick-link-desc">{desc}</span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div> */}
         <div className='admin-summary-grid'>
           <div className="learning-dashboard-card learning-training-summary">
             <h4 className="learning-card-title">Training Summary</h4>

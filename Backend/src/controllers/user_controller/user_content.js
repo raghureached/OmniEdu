@@ -96,7 +96,69 @@ const getLearningPath = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 }
+const markCompleteLP = async (req, res) => {
+  try {
+    const { lpId, id,pct} = req.params;
+    const userId = req.user._id;
+  
 
+    const updateMain = await UserContentProgress.findOneAndUpdate(
+      {
+        user_id:userId,
+        contentId:lpId,
+      },
+      {
+        progress_pct:pct
+      }
+    )
+    
+    const update = await UserContentProgress.findOneAndUpdate(
+      { 
+        user_id: userId, 
+        contentId: lpId,
+        'elements.elementId': id
+      },
+      {
+        $set: {
+          'elements.$.status': "completed",
+          'elements.$.progress_pct': 100
+        }
+      },
+      { new: true }
+    );
+    
+    return res.status(200).json({ message: "Module marked complete", data: update });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+const getCompletedinLP = async(req,res)=>{
+  try {
+    const { lpId } = req.params;
+    const userId = req.user._id;
+
+    const lpProgress = await UserContentProgress.findOne({ 
+      user_id: userId, 
+      contentId: lpId,
+      
+    });
+    
+    if (!lpProgress) {
+      return res.status(200).json([]);
+    }
+    
+    const completedElements = lpProgress.elements ? 
+      lpProgress.elements.filter((e)=>e.status === "completed") : [];
+    const set = new Set(completedElements.map((e)=>e.elementId));
+    const uniqueElements = Array.from(set);
+    return res.status(200).json(uniqueElements);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: error.message });
+  }
+}
 const markComplete = async (req, res) => {
   try {
     const { id } = req.params;
@@ -461,6 +523,7 @@ module.exports = {
   getSurvey,
   getLearningPath,
   markComplete,
+  markCompleteLP,
   getInProgress,
   updateStatus,
   enrolledbyUser,
@@ -469,6 +532,7 @@ module.exports = {
   getAssigned,
   getEnrolledModule,
   getEnrolledAssessment,
+  getCompletedinLP
 }
 
 

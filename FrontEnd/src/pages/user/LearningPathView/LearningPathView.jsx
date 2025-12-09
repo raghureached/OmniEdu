@@ -14,6 +14,7 @@ const LearningPathView = () => {
     const navigate = useNavigate()
     const { learningPathId, assignId } = useParams();
     const [scheduleData, setScheduleData] = useState(null);
+    const [pct,setPct] = useState(0)
     const scheduleMap = React.useMemo(() => {
         // scheduleData is { isSuccess, message, data }
         const schedules = scheduleData?.data?.elementSchedules;
@@ -30,10 +31,10 @@ const LearningPathView = () => {
     useEffect(() => {
         const fetchLearningPath = async () => {
             const response = await api.get(`/api/user/getLearningPath/${learningPathId}`);
-            // console.log(response.data);
             setPropCourseData(response.data);
 
         };
+
         const fetchAssignment = async () => {
             const response = await api.get(`/api/user/getAssignmentSchedule/${assignId}`);
             setScheduleData(response.data);
@@ -42,14 +43,31 @@ const LearningPathView = () => {
         fetchLearningPath();
         fetchAssignment();
     }, [learningPathId, assignId]);
+    useEffect(() => {
+        getCompleted();
+    }, [propCourseData])
+    const getCompleted = async () => {
+        if (!propCourseData) {
+            return;
+        }
+        const response = await api.get(`/api/user/getCompletedinLP/${propCourseData?._id}`);
+        setCompletedSet(response.data)
+    }
     // console.log(propCourseData)
     const [activeLesson, setActiveLesson] = useState(null);
     const [contentData, setContentData] = useState(null);
     const [loadingContent, setLoadingContent] = useState(false);
     const [loadError, setLoadError] = useState(null);
-    const [completedSet, setCompletedSet] = React.useState(new Set());
+    const [completedSet, setCompletedSet] = useState([]);
     const dispatch = useDispatch();
-
+    const handleCompleteSection = async (id) => {
+        setPct(pct+completedSet.length/propCourseData?.lessons.length*100)
+        const res = await api.post(`/api/user/markComplete/${propCourseData?._id}/${id}`,{pct:pct});
+        if (res.status === 200) {
+            alert('Module marked complete!');
+        }
+        return;
+    }
     const handleSectionClick = async (section, evt) => {
         if (section.locked) {
             // Just ignore click if locked
@@ -114,9 +132,7 @@ const LearningPathView = () => {
     React.useEffect(() => {
         (async () => {
             if (!activeSection || contentData) return;
-            // console.log(activeSection)
             setActiveLesson(activeSection);
-            // console.log(activeSection)
             setLoadingContent(false);
             setLoadError(null);
         })();
@@ -143,8 +159,6 @@ const LearningPathView = () => {
                 flexDirection: 'column',
                 boxShadow: '4px 0 12px rgba(15, 23, 42, 0.03)'
             }}>
-
-
                 <button style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#6b7280', padding: '8px 0', marginBottom: '20px', transition: 'color 0.2s' }}
                     onMouseEnter={(e) => e.target.style.color = '#111827'}
                     onMouseLeave={(e) => e.target.style.color = '#6b7280'}
@@ -188,15 +202,15 @@ const LearningPathView = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                         {/* <span style={{ fontSize: '20px', fontWeight: '700', color: '#5570f1' }}> */}
                         <span style={{ fontSize: '20px', fontWeight: '700', color: '#5570f1' }}>
-                            {(() => { const total = sections.length; const done = completedSet.size; return total ? Math.round((done / total) * 100) : 0; })()}%
+                            {(() => { const total = sections.length; const done = completedSet.length; return total ? Math.round((done / total) * 100) : 0; })()}%
                         </span>
                         <span style={{ fontSize: '13px', color: '#6b7280', fontWeight: '500' }}>
-                            {completedSet.size}/{sections.length} Lessons
+                            {completedSet.length}/{sections.length} Lessons
                         </span>
                     </div>
                     <div style={{ width: '100%', height: '10px', backgroundColor: '#e5e7eb', borderRadius: '10px', overflow: 'hidden' }}>
                         {(() => {
-                            const total = sections.length; const done = completedSet.size; const pct = total ? Math.round((done / total) * 100) : 0; return (
+                            const total = sections.length; const done = completedSet.length; const pct = total ? Math.round((done / total) * 100) : 0; return (
                                 <div style={{ height: '100%', background: 'linear-gradient(90deg, #5570f1 0%, #4338ca 100%)', width: `${pct}%`, borderRadius: '10px', transition: 'width 0.5s ease' }}></div>
                             );
                         })()}
@@ -210,6 +224,7 @@ const LearningPathView = () => {
                 }}>
 
                     {courseData.sections.map((section, idx) => {
+                        // console.log(section)
                         const isLocked = section.locked;
                         const hoverText =
                             isLocked && section.assignOn
@@ -229,7 +244,7 @@ const LearningPathView = () => {
                                         borderRadius: '8px',
                                         transition: 'background-color 0.2s',
                                         backgroundColor:
-  activeLesson?.id === section.id ? '#e0e7ff' : 'transparent',
+                                            activeLesson?.id === section.id ? '#e0e7ff' : 'transparent',
                                         opacity: isLocked ? 0.6 : 1,
                                     }}
                                     onMouseEnter={(e) => {
@@ -288,7 +303,7 @@ const LearningPathView = () => {
                                                     Available after {section.assignOn.toLocaleString()}
                                                 </span>
                                             )}
-                                            {completedSet.has(section.id) && (
+                                            {completedSet.includes(section.ref) && (
                                                 <CheckCircle size={14} color="#10b981" />
                                             )}
                                         </div>
@@ -303,7 +318,7 @@ const LearningPathView = () => {
             {activeLesson?.type === 'Module' && (
                 <div style={{ flex: 1, overflowY: 'auto', backgroundColor: '#f8f9fa' }}>
                     <ModuleView
-
+                        lpId={propCourseData._id}
                         id={activeLesson?.uuid}
 
                     />

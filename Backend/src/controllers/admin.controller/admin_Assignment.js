@@ -12,6 +12,9 @@ const Notification = require("../../models/Notification_model");
 // const Progress = require("../models/progress.model");
 
 const createAssignment = async (req, res) => {
+  const session = await UserContentProgress.startSession();
+  session.startTransaction();
+
   try {
     const {
       assignDate,
@@ -30,12 +33,11 @@ const createAssignment = async (req, res) => {
       recurringInterval,
       customIntervalValue,
       customIntervalUnit,
-      // learning path advanced scheduling
-      elementSchedules,
       enforceOrder
     } = req.body;
 
     if (!contentId) {
+      await session.abortTransaction();
       return res.status(400).json({
         isSuccess: false,
         message: "Missing required fields",
@@ -53,24 +55,42 @@ const createAssignment = async (req, res) => {
             : normalizedType === "Learning Path" || normalizedType === "LearningPath"
               ? "LearningPath"
               : null;
-    // Preload Learning Path details if applicable (for enforceOrder-driven locking only)
+
     let lp = null;
     if (content_type === "LearningPath" && contentId) {
-      lp = await LearningPath.findById(contentId).select("enforceOrder lessons");
+      lp = await LearningPath.findById(contentId).select("enforceOrder lessons").session(session);
     }
 
     // Determine effective enforceOrder: rely solely on LP setting
     const enforceOrderEffective = !!(lp && lp.enforceOrder === true);
+    elementSchedules = lp?.lessons.map(lesson => ({
+      elementId: lesson.id.toString(),
+      assign_on: lesson.assign_on || null,
+      due_date: lesson.due_date || null,
+    }));
 
     // Use element schedules exactly as provided; just coerce provided dates to Date objects
-    const elementSchedulesEffective = Array.isArray(elementSchedules)
+    // If no element schedules provided, fetch them from the content
+    let elementSchedulesEffective = Array.isArray(elementSchedules)
       ? elementSchedules.map(e => ({
         elementId: e.elementId,
         assign_on: e.assign_on ? new Date(e.assign_on) : null,
         due_date: e.due_date ? new Date(e.due_date) : null,
       }))
       : [];
-    // console.log(elementSchedulesEffective)
+
+    // If elementSchedules is empty, try to fetch elements from the content
+    if (elementSchedulesEffective.length === 0) {
+      if (content_type === "LearningPath" && lp) {
+        // Get lessons from learning path
+        elementSchedulesEffective = lp.lessons.map(lesson => ({
+          elementId: lesson.id.toString(),
+          assign_on: lesson.assign_on || null,
+          due_date: lesson.due_date || null,
+        }))
+      } 
+    }
+
     let assignment;
     // Determine if assigned individually or via groups based on presence of assignedUsers/groups
     const isIndividual = Array.isArray(assignedUsers) && assignedUsers.length > 0 && (!groups || groups.length === 0);
@@ -81,7 +101,7 @@ const createAssignment = async (req, res) => {
     const dueTimeStr = (dueDateObj && !isNaN(dueDateObj)) ? dueDateObj.toISOString().split('T')[1] : null;
 
     if (isIndividual) {
-      assignment = await ForUserAssignment.create({
+      assignment = await ForUserAssignment.create([{
         organization_id: req.user.organization_id,
         assign_type: content_type,
         assign_on: assignDateObj || Date.now(),
@@ -104,10 +124,11 @@ const createAssignment = async (req, res) => {
         customIntervalUnit: isRecurring && recurringInterval === "custom" ? (customIntervalUnit || "days") : "days",
         elementSchedules: elementSchedulesEffective,
         orgAssignment: true,
-      });
+      }], { session });
+      assignment = assignment[0];
     } else {
 
-      assignment = await ForUserAssignment.create({
+      assignment = await ForUserAssignment.create([{
         organization_id: req.user.organization_id,
         assign_type: content_type,
         assign_on: assignDateObj || Date.now(),
@@ -131,7 +152,8 @@ const createAssignment = async (req, res) => {
         customIntervalUnit: isRecurring && recurringInterval === "custom" ? (customIntervalUnit || "days") : "days",
         elementSchedules: elementSchedulesEffective,
         orgAssignment: true,
-      });
+      }], { session });
+      assignment = assignment[0];
     }
     // Create progress records for targeted users
     let targetUserIds = [];
@@ -143,17 +165,20 @@ const createAssignment = async (req, res) => {
           { team_id: { $in: groups } },
           { "teams.team_id": { $in: groups } }
         ],
-      }).select("user_id teams team_id");
+      }).select("user_id teams team_id").session(session);
       targetUserIds = profiles.map(p => p.user_id);
     }
     if (targetUserIds.length > 0) {
+      
       // 0) remove users who already have this content assigned in this org
       const existingProgress = await UserContentProgress.find({
         organization_id: req.user.organization_id,
         user_id: { $in: targetUserIds },
         contentId: contentId,
         orgAssignment: true,      // only org assignments, ignore self-enrolls
-      }).select("user_id");
+      }).select("user_id").session(session);
+
+      console.log("existingProgress:", existingProgress);
 
       const existingUserIds = new Set(
         existingProgress.map(p => p.user_id.toString())
@@ -163,15 +188,16 @@ const createAssignment = async (req, res) => {
         uid => !existingUserIds.has(uid.toString())
       );
 
+
       // If everyone already has this content, just return without creating a new assignment
       if (uniqueTargetUserIds.length === 0) {
+        await session.abortTransaction();
         return res.status(400).json({
           isSuccess: false,
           message: "This content is already assigned to the selected users.",
         });
       }
-
-      // 1) Precompute element progress entries if provided
+      
       const now = new Date();
       const elementsProgress = Array.isArray(elementSchedulesEffective)
         ? elementSchedulesEffective.map((el, idx) => {
@@ -181,7 +207,7 @@ const createAssignment = async (req, res) => {
           if ((assign && assign > now) || (enforceOrderEffective && idx > 0)) {
             status = "locked";
           }
-          return {
+          const element = {
             elementId: el.elementId,
             status,
             assign_on: assign,
@@ -189,76 +215,110 @@ const createAssignment = async (req, res) => {
             started_at: null,
             completed_at: null,
           };
+          return element;
         })
         : [];
 
       // 2) Build ops only for users who do NOT yet have this content
-      const ops = uniqueTargetUserIds.map(uid => ({
-        updateOne: {
-          filter: { assignment_id: assignment._id, user_id: uid },
-          update: {
-            $setOnInsert: {
-              organization_id: req.user.organization_id,
-              assignment_id: assignment._id,
-              user_id: uid,
-              contentId: assignment.contentId,
-              contentType: assignment.contentType,
-              status: "assigned",
-              progress_pct: 0,
-              started_at: null,
-              completed_at: null,
-              last_activity_at: null,
-              ...(elementsProgress.length ? { elements: elementsProgress } : {}),
-              orgAssignment: true,
+      const ops = uniqueTargetUserIds.map(uid => {
+        const updateData = {
+          organization_id: req.user.organization_id,
+          assignment_id: assignment._id,
+          user_id: uid,
+          contentId: assignment.contentId,
+          contentType: assignment.contentType,
+          status: "assigned",
+          progress_pct: 0,
+          started_at: null,
+          completed_at: null,
+          last_activity_at: null,
+          orgAssignment: true,
+        };
+
+        // Add elements array if elementsProgress exists
+        if (elementsProgress && elementsProgress.length > 0) {
+          updateData.elements = elementsProgress;
+
+        } else {
+          console.log(`No elements to add for user ${uid}`);
+        }
+
+        return {
+          updateOne: {
+            filter: { assignment_id: assignment._id, user_id: uid },
+            update: {
+              $setOnInsert: updateData
             },
+            upsert: true,
           },
-          upsert: true,
-        },
-      }));
+        };
+      });
 
       if (ops.length) {
-        await UserContentProgress.bulkWrite(ops, { ordered: false });
+        await UserContentProgress.bulkWrite(ops, { session, ordered: false });
       }
 
       // 3) Send notifications only to new assignees
-      uniqueTargetUserIds.forEach(async (uid) => {
-        await Notification.create({
-          title: "Assignment Created",
-          description: "You have been assigned a new assignment",
-          type: "Assignment",
-          to: uid,
-          from: "Admin",
-        });
-      });
-    }
-    try {
-      // console.log("assignment",assignment)
-      if (content_type === "LearningPath") {
-        await LearningPath.updateOne({ _id: assignment.contentId }, { status: "Published" });
-      } else if (content_type === "OrganizationModule") {
-        await Module.updateOne({ _id: assignment.contentId }, { status: "Published" });
-      } else if (content_type === "OrganizationAssessments") {
-        await OrganizationAssessments.updateOne({ _id: assignment.contentId }, { status: "Published" });
-      } else if (content_type === "OrganizationSurvey") {
-        await OrganizationSurveys.updateOne({ _id: assignment.contentId }, { status: "Published" });
+      const notificationOps = uniqueTargetUserIds.map(uid => ({
+        insertOne: {
+          document: {
+            title: "Assignment Created",
+            description: "You have been assigned a new assignment",
+            type: "Assignment",
+            to: uid,
+            from: "Admin",
+          }
+        }
+      }));
+
+      if (notificationOps.length) {
+        await Notification.bulkWrite(notificationOps, { session, ordered: false });
       }
+    }
+
+    // Update content status to Published
+    const updatePromises = [];
+    if (content_type === "LearningPath") {
+      updatePromises.push(LearningPath.updateOne({ _id: assignment.contentId }, { status: "Published" }).session(session));
+    } else if (content_type === "OrganizationModule") {
+      updatePromises.push(Module.updateOne({ _id: assignment.contentId }, { status: "Published" }).session(session));
+    } else if (content_type === "OrganizationAssessments") {
+      updatePromises.push(OrganizationAssessments.updateOne({ _id: assignment.contentId }, { status: "Published" }).session(session));
+    } else if (content_type === "OrganizationSurvey") {
+      updatePromises.push(OrganizationSurveys.updateOne({ _id: assignment.contentId }, { status: "Published" }).session(session));
+    }
+
+    if (updatePromises.length > 0) {
+      await Promise.all(updatePromises);
+    }
+
+    // Commit the transaction
+    await session.commitTransaction();
+
+    // Send email outside of transaction (non-critical operation)
+    try {
       if (sendEmail) {
         await sendMail();
       }
     } catch (error) {
-      console.log(error)
+      console.log("Email sending failed:", error);
     }
+
     return res.status(201).json({
       isSuccess: true,
       message: "Assignment created successfully",
       data: assignment,
     });
   } catch (error) {
+    await session.abortTransaction();
+    console.error("Transaction error:", error);
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to create assignment",
       error: error.message,
     });
+  } finally {
+    await session.endSession();
   }
 };
 

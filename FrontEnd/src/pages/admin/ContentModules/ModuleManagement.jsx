@@ -11,6 +11,7 @@ import ModuleModal from './ModuleModal';
 import { GoX } from 'react-icons/go';
 import { toast } from 'react-toastify';
 import { notifyError, notifySuccess } from '../../../utils/notification';
+import api from '../../../services/api';
 
 
 const ModuleManagement = () => {
@@ -19,6 +20,8 @@ const ModuleManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [contentType, setContentType] = useState("all");
   const [showModal, setShowModal] = useState(false);
+    const [teams, setTeams] = useState([]);
+
   const [showEditModal, setShowEditModal] = useState(false);
   const [editContentId, setEditContentId] = useState(null);
   const [showDraftModal, setShowDraftModal] = useState(false);
@@ -59,6 +62,17 @@ const ModuleManagement = () => {
   });
   const [uploading, setUploading] = useState(false)
   const navigate = useNavigate()
+   useEffect(() => {
+          const fetchTeams = async () => {
+              try {
+                  const response = await api.get('/api/admin/getGroups');
+                  setTeams(response.data.data);
+              } catch (error) {
+                  console.error('Error fetching teams:', error);
+              }
+          };
+          fetchTeams();
+      }, []);
   useEffect(() => {
     dispatch(adminfetchContent());
   }, [dispatch]);
@@ -829,7 +843,7 @@ const ModuleManagement = () => {
 
                 <th>Title</th>
                 <th>Status</th>
-                <th>Team</th>
+                {/* <th>Team</th> */}
                 <th>Date Created</th>
                 <th>Actions</th>
               </tr>
@@ -863,7 +877,7 @@ const ModuleManagement = () => {
                         {content.status === 'Published' ? `${content.status}` : content.status === 'Draft' ? 'Draft' : 'Saved'}
                       </span>
                     </td>
-                    <td>{content.team?.name || "All"}</td>
+                    {/* <td>{content.team?.name || "All"}</td> */}
                     <td>
                       <div className="assess-date-info"><Calendar size={14} />
                         <span>{content.createdAt ? new Date(content.createdAt).toLocaleDateString('en-US', {

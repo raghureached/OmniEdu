@@ -118,9 +118,10 @@
 }
 
 .assess-search-bar:focus-within {
-  border-color: #5570f1;
-  box-shadow: 0 0 0 3px rgba(85, 112, 241, 0.1);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(28, 136, 199, 0.1);
 }
+
 
 .assess-search-bar svg {
   color: #94a3b8;

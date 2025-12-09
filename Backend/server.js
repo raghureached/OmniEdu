@@ -13,7 +13,7 @@ const devRouter = require("./src/routes/dev.routes");
 const userRouter = require("./src/routes/user.routes");
 const cookieParser = require("cookie-parser");
 const { authenticate, authorize } = require("./src/middleware/auth_middleware");
-//MONGODB connection
+
 
 
 connectDB;
@@ -25,23 +25,17 @@ app.use(express.json({ limit: "200mb" })); //to parse the json data upto 200mb(b
 app.use(express.urlencoded({ extended: true, limit: "200mb" })); //same here as json
 app.use(cookieParser())
 app.use((req, res, next) => {
-  //to track whats coming || method || url
   logger.info(`Received Method:${req.method} request to ${req.url}`);
   logger.info(`Request Body -${JSON.stringify(req.body)}`);
-  next(); //to pass into next function
+  next();
 });
-// app.use(logActivity)
 const path = require('path');
-const { sendMail } = require("./src/utils/Emailer");
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/globalAdmin',authenticate,authorize(['GlobalAdmin']),globalAdminRouter)
-// app.use('/api/globalAdmin',globalAdminRouter)
 app.use('/auth',authRouter)
 app.use('/api/admin',authenticate,authorize(['Administrator']),adminRouter)
-// app.use('/api/admin',adminRouter)
 app.use('/dev',devRouter)
-// app.use('/api/user',authenticate,authorize(['User']),userRouter)
 app.use('/api/user',authenticate,userRouter)
 app.post('/api/sendOtp', require('./src/controllers/OTP').sendOTP)
 app.post('/api/verifyOtp', require('./src/controllers/OTP').verifyOTP)

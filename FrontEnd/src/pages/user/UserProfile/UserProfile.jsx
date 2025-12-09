@@ -3,9 +3,10 @@ import { useSelector } from 'react-redux';
 import './UserProfile.css';
 
 const UserProfile = () => {
-  const { user, lastLoginDateTime, sessionStartTime } = useSelector((state) => state.auth);
+  const { user, lastLoginDateTime, sessionStartTime,role } = useSelector((state) => state.auth);
+  console.log(role)
   const [activeTab, setActiveTab] = useState('personal');
-  
+  // console.log(user)
   // Format date function
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -72,37 +73,37 @@ const UserProfile = () => {
               <div className="userprofile-info">
                 <div className="userprofile-info-group">
                   <span className="userprofile-info-label">Full Name</span>
-                  <span className="userprofile-info-value">{userData.personal.name}</span>
+                  <span className="userprofile-info-value">{user.name}</span>
                 </div>
                 <div className="userprofile-info-group">
                   <span className="userprofile-info-label">Email Address</span>
-                  <span className="userprofile-info-value">{userData.personal.email}</span>
+                  <span className="userprofile-info-value">{user.email}</span>
                 </div>
                 <div className="userprofile-info-group">
                   <span className="userprofile-info-label">Role</span>
-                  <span className="userprofile-info-value">{userData.personal.role}</span>
+                  <span className="userprofile-info-value">{role}</span>
                 </div>
                 <div className="userprofile-info-group">
                   <span className="userprofile-info-label">Department</span>
                   <span className="userprofile-info-value">
-                    {userData.personal.department}
+                    {user.deparment || 'N/A'}
                   </span>
                 </div>
                 <div className="userprofile-info-group">
                   <span className="userprofile-info-label">Position</span>
-                  <span className="userprofile-info-value">{userData.personal.position}</span>
+                  <span className="userprofile-info-value">{user.position || 'N/A'}</span>
                 </div>
                 <div className="userprofile-info-group">
                   <span className="userprofile-info-label">Join Date</span>
-                  <span className="userprofile-info-value">{userData.personal.joinDate}</span>
+                  <span className="userprofile-info-value">{new Date(user.createdAt).toLocaleDateString()}</span>
                 </div>
                 <div className="userprofile-info-group">
                   <span className="userprofile-info-label">Employee ID</span>
-                  <span className="userprofile-info-value">{userData.personal.employeeId}</span>
+                  <span className="userprofile-info-value">{user.employeeId || 'N/A'}</span>
                 </div>
                 <div className="userprofile-info-group">
                   <span className="userprofile-info-label">Last Login</span>
-                  <span className="userprofile-info-value">{userData.personal.lastLogin}</span>
+                  <span className="userprofile-info-value">{formatDate(lastLoginDateTime) || 'N/A'}</span>
                 </div>
               </div>
             </div>

@@ -107,7 +107,7 @@ const addUser = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
     await logAdminActivity(req, "add", `User added successfully: ${name}`);
-    
+
 
     // Fetch created user + populated relations to match getUsers shape
     const createdUser = await User
@@ -120,9 +120,6 @@ const addUser = async (req, res) => {
       .populate('teams.team_id', 'name')
       .populate('teams.sub_team_id', 'name')
       .lean();
-
-     await session.abortTransaction();
-    session.endSession();
     if (invite) {
       await sendMail(
         user[0].email,
@@ -156,8 +153,8 @@ Welcome aboard!`
   } catch (error) {
     console.log(error);
 
-    // ❌ Rollback everything if any step fails
-   
+    await session.abortTransaction();
+    session.endSession();
     await logAdminActivity(req, "add", `User addition failed: ${error.message}`);
 
     res.status(400).json({

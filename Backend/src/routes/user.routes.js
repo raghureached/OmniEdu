@@ -1,6 +1,6 @@
 const { getAssignment } = require("../controllers/admin.controller/admin_Assignment")
 const { getUserAssignments, getSchedule } = require("../controllers/user_controller/user_assignments")
-const { getModule, getAssessment, getSurvey, getLearningPath, markComplete, getInProgress, updateStatus, enrolledbyUser, getRecomended, getCompleted, getAssigned, getEnrolledModule, getEnrolledAssessment } = require("../controllers/user_controller/user_content")
+const { getModule, getAssessment, getSurvey, getLearningPath, markComplete, markCompleteLP, getInProgress, updateStatus, enrolledbyUser, getRecomended, getCompleted, getAssigned, getEnrolledModule, getEnrolledAssessment, getCompletedinLP } = require("../controllers/user_controller/user_content")
 const { getMessage } = require("../controllers/user_controller/user_Message")
 const { getProfile } = require("../controllers/user_controller/user_profile")
 const { updateProgress, getUserProgress, getUserProgressById } = require("../controllers/user_controller/user_progress")
@@ -42,13 +42,14 @@ router.route("/getInProgress").get(getInProgress)
 router.route("/enrolledbyUser").get(enrolledbyUser)
 router.route("/updateStatus/:id/:status").post(updateStatus)
 router.route("/markComplete/:id").post(markComplete)
+router.route("/markComplete/:lpId/:id").post(markCompleteLP)
 router.route("/getCatalog").get(getCatalog)
 router.route("/enroll/:id").post(enroll)
 router.route("/getRecomended").get(getRecomended)
 router.route("/getCompleted").get(getCompleted)
 router.route("/getAssigned").get(getAssigned)
 router.route("/getAssignmentSchedule/:id").get(getSchedule)
-
+router.route("/getCompletedinLP/:lpId").get(getCompletedinLP)
 
 
 

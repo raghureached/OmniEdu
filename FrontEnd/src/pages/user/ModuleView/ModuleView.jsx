@@ -8,7 +8,7 @@ import VideoPlayer from '../../../components/VideoPlayer/VideoPlayer';
 import api from '../../../services/api';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 
-const ModuleView = ({id}) => {
+const ModuleView = ({id,lpId}) => {
     const navigate = useNavigate();
     const [data, setData] = useState(null);
     const [activeTab, setActiveTab] = useState('preview');
@@ -226,6 +226,13 @@ const ModuleView = ({id}) => {
     };
 
     const handleComplete = async() => {
+        if(id){
+            const res = await api.post(`/api/user/markComplete/${lpId}/${data._id}`);
+            if (res.status === 200) {
+                alert('Module marked complete!');
+            }
+            return;
+        }
         try {
             const rewards = {
                 stars: data.stars,

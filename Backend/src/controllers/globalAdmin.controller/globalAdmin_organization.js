@@ -7,174 +7,197 @@ const OrganizationRole = require("../../models/organizationRoles_model");
 const mongoose = require("mongoose");
 const User = require("../../models/users_model");
 const UserProfile = require("../../models/userProfiles_model");
+const { sendMail } = require("../../utils/Emailer");
 
 const STATUS_ENUM = ["Active", "Inactive", "Suspended"];
 
 const baseOrgSchema = z.object({
-    name: z.string().min(1, "Organization name is required"),
-    email: z.string().email("Invalid email format"),
-    status: z.enum(STATUS_ENUM),
-    start_date: z.coerce.date({ invalid_type_error: "Invalid start date" }),
-    end_date: z.coerce.date({ invalid_type_error: "Invalid end date" }),
-    planId: z.string().min(1, "Plan ID is required"),
+  name: z.string().min(1, "Organization name is required"),
+  email: z.string().email("Invalid email format"),
+  status: z.enum(STATUS_ENUM),
+  start_date: z.coerce.date({ invalid_type_error: "Invalid start date" }),
+  end_date: z.coerce.date({ invalid_type_error: "Invalid end date" }),
+  planId: z.string().min(1, "Plan ID is required"),
 });
 
 const createOrganizationSchema = baseOrgSchema;
 
 const updateOrganizationSchema = baseOrgSchema.partial().refine(
-    (data) => Object.keys(data).length > 0, { message: "At least one field must be provided for update" }
+  (data) => Object.keys(data).length > 0, { message: "At least one field must be provided for update" }
 );
 
 const addOrganization = async (req, res) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    try {
-      // -------- 1. Validation --------
-      const parsed = createOrganizationSchema.safeParse(req.body);
-      if (!parsed.success) {
-        await session.abortTransaction();
-        await session.endSession();
-        return res.status(400).json({
-          success: false,
-          message: "Validation failed",
-          errors: parsed.error.flatten(),
-        });
-      }
-  
-      // -------- 2. Plan Verification --------
-      const { name, email, status, start_date, end_date, planId } = parsed.data;
-      const plan = await Plan.findById(planId);
-      if (!plan) {
-        await session.abortTransaction();
-        await session.endSession();
-        return res.status(404).json({
-          success: false,
-          message: "Plan not found",
-        });
-      }
-  
-      // -------- 3. Logo & Document files checks --------
-      // console.log(req.uploadedFiles)
-      if (!req.uploadedFiles?.logo?.[0]?.url) {
-        await session.abortTransaction();
-        await session.endSession();
-        return res.status(400).json({
-          success: false,
-          message: "Organization logo upload failed or missing.",
-        });
-      }
-      if (!req.uploadedFiles?.invoice?.[0]?.url) {
-        await session.abortTransaction();
-        await session.endSession();
-        return res.status(400).json({
-          success: false,
-          message: "Invoice document upload failed or missing.",
-        });
-      }
-      if(!req.uploadedFiles?.receipt?.[0]?.url){
-        await session.abortTransaction();
-        await session.endSession();
-        return res.status(400).json({
-          success: false,
-          message: "Reciept document upload failed or missing.",
-        });
-      }
-      if(!req.uploadedFiles?.document3?.[0]?.url){
-        await session.abortTransaction();
-        await session.endSession();
-        return res.status(400).json({
-          success: false,
-          message: "Document 3 upload failed or missing.",
-        });
-      }
-      if(!req.uploadedFiles?.document4?.[0]?.url){
-        await session.abortTransaction();
-        await session.endSession();
-        return res.status(400).json({
-          success: false,
-          message: "Document 4 upload failed or missing.",
-        });
-      }
-      const logo_url = req.uploadedFiles.logo[0].url;
-      const invoice_url = req.uploadedFiles.invoice[0].url;
-      const receipt_url = req.uploadedFiles.receipt[0].url;
-      const document3 = req.uploadedFiles?.document3?.[0]?.url;
-      const document4 = req.uploadedFiles?.document4?.[0]?.url;
-      const roles = await Role.find({isDefault:true})
-  
-      // -------- 3. Organization creation --------
-      const newOrg = await Organization.create([{
-        name,
-        email,
-        status,
-        logo_url,
-        start_date,
-        end_date,
-        receipt_url,
-        invoice_url,
-        document3,
-        document4,
-        plan: plan._id,
-        planName: plan.name,
-        planId: generatePlanId(name, plan.name),
-        roles:roles.map(role=>role._id)
-      }], { session,ordered:true });
-  
-      const org = Array.isArray(newOrg) ? newOrg[0] : newOrg; 
-      const password = name.toLowerCase().replace(/\s/g, "").slice(0, 6) + "@123";
-      const user = await User.create([{
-        name,
-        email,
-        password,
-        organization_id: org._id,
-        global_role_id: "68c67caae94bfd6484cd0d00",
-      }], { session,ordered:true })
-      // await user.save({ session });
-  
-      await session.commitTransaction();
-      await session.endSession();
-      await logGlobalAdminActivity(req,"Add Organization","organization", `Organization added successfully ${org.name}`);
-  
-      return res.status(201).json({
-        success: true,
-        message: "Organization added successfully",
-        data: org,
-      });
-    } catch (error) {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    // -------- 1. Validation --------
+    const parsed = createOrganizationSchema.safeParse(req.body);
+    if (!parsed.success) {
       await session.abortTransaction();
       await session.endSession();
-      // console.log(error)
-      // Duplicate key error    
-      if (error.code === 11000) {
-        return res.status(409).json({
-          success: false,
-          message: "An organization or user with these details already exists.",
-          keyValue: error.keyValue,
-        });
-      }
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
-        message: "Failed to add organization",
-        error: error.message,
+        message: "Validation failed",
+        errors: parsed.error.flatten(),
       });
     }
-  };
-  
+
+    // -------- 2. Plan Verification --------
+    const { name, email, status, start_date, end_date, planId } = parsed.data;
+    const plan = await Plan.findById(planId);
+    if (!plan) {
+      await session.abortTransaction();
+      await session.endSession();
+      return res.status(404).json({
+        success: false,
+        message: "Plan not found",
+      });
+    }
+
+    // -------- 3. Logo & Document files checks --------
+    // console.log(req.uploadedFiles)
+    if (!req.uploadedFiles?.logo?.[0]?.url) {
+      await session.abortTransaction();
+      await session.endSession();
+      return res.status(400).json({
+        success: false,
+        message: "Organization logo upload failed or missing.",
+      });
+    }
+    if (!req.uploadedFiles?.invoice?.[0]?.url) {
+      await session.abortTransaction();
+      await session.endSession();
+      return res.status(400).json({
+        success: false,
+        message: "Invoice document upload failed or missing.",
+      });
+    }
+    if (!req.uploadedFiles?.receipt?.[0]?.url) {
+      await session.abortTransaction();
+      await session.endSession();
+      return res.status(400).json({
+        success: false,
+        message: "Reciept document upload failed or missing.",
+      });
+    }
+    if (!req.uploadedFiles?.document3?.[0]?.url) {
+      await session.abortTransaction();
+      await session.endSession();
+      return res.status(400).json({
+        success: false,
+        message: "Document 3 upload failed or missing.",
+      });
+    }
+    if (!req.uploadedFiles?.document4?.[0]?.url) {
+      await session.abortTransaction();
+      await session.endSession();
+      return res.status(400).json({
+        success: false,
+        message: "Document 4 upload failed or missing.",
+      });
+    }
+    const logo_url = req.uploadedFiles.logo[0].url;
+    const invoice_url = req.uploadedFiles.invoice[0].url;
+    const receipt_url = req.uploadedFiles.receipt[0].url;
+    const document3 = req.uploadedFiles?.document3?.[0]?.url;
+    const document4 = req.uploadedFiles?.document4?.[0]?.url;
+    const roles = await Role.find({ isDefault: true })
+
+    // -------- 3. Organization creation --------
+    const newOrg = await Organization.create([{
+      name,
+      email,
+      status,
+      logo_url,
+      start_date,
+      end_date,
+      receipt_url,
+      invoice_url,
+      document3,
+      document4,
+      plan: plan._id,
+      planName: plan.name,
+      planId: generatePlanId(name, plan.name),
+      roles: roles.map(role => role._id)
+    }], { session, ordered: true });
+
+    const org = Array.isArray(newOrg) ? newOrg[0] : newOrg;
+    const password = name.toLowerCase().replace(/\s/g, "").slice(0, 6) + "@123";
+    const user = await User.create([{
+      name,
+      email,
+      password,
+      organization_id: org._id,
+      global_role_id: "68c67caae94bfd6484cd0d00",
+    }], { session, ordered: true })
+    // await user.save({ session });
+    await sendMail(
+      email,
+      "Welcome to OmniEdu – Your Account is Now Active!",
+      `Hello ${name},
+      
+      Great news! You’ve been officially added to the OmniEdu platform.
+      
+      Your login details are provided below:
+      Email: ${email}
+      Password: ${password}
+      
+      You can use these credentials to access your personalized learning dashboard, course modules, assessments, and more.
+      
+      🔐 Security Tip:  
+      Please change your password after logging in for the first time.
+      
+      If you need any assistance, our support team is always here to help.
+      
+      We’re excited to have you with us.  
+      Welcome aboard!`
+    );
+
+    await session.commitTransaction();
+    await session.endSession();
+    await logGlobalAdminActivity(req, "Add Organization", "organization", `Organization added successfully ${org.name}`);
+    
+
+    return res.status(201).json({
+      success: true,
+      message: "Organization added successfully",
+      data: org,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    await session.endSession();
+    // console.log(error)
+    // Duplicate key error    
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "An organization or user with these details already exists.",
+        keyValue: error.keyValue,
+      });
+    }
+    return res.status(500).json({
+      success: false,
+      message: "Failed to add organization",
+      error: error.message,
+    });
+  }
+};
+
 
 function generatePlanId(orgName, planName) {
-    const sanitize = (str, len = null) => {
-        if (!str) return "";
-        return str
-            .toUpperCase()
-            .replace(/[^A-Z0-9]/g, "") // remove spaces, hyphens, special chars
-            .substring(0, len || str.length); // cut length if required
-    };
+  const sanitize = (str, len = null) => {
+    if (!str) return "";
+    return str
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "") // remove spaces, hyphens, special chars
+      .substring(0, len || str.length); // cut length if required
+  };
 
-    const orgCode = sanitize(orgName, 3).padEnd(3, "X"); // ensure at least 3 chars
-    const planCode = sanitize(planName, 3);
-    const year = new Date().getFullYear();
+  const orgCode = sanitize(orgName, 3).padEnd(3, "X"); // ensure at least 3 chars
+  const planCode = sanitize(planName, 3);
+  const year = new Date().getFullYear();
 
-    return `${orgCode}-${planCode}-${year}`;
+  return `${orgCode}-${planCode}-${year}`;
 }
 
 
@@ -285,131 +308,131 @@ const editOrganization = async (req, res) => {
 };
 
 
-const deleteOrganization = async(req, res) => {
-    try {
-        const session = await mongoose.startSession();
-        session.startTransaction();
-        const deletedOrg = await Organization.findOneAndDelete({ uuid: req.params.id },{session})
-        const deletedAdmin = await User.findOneAndDelete({email:deletedOrg.email},{session})
-        await session.commitTransaction();
-        await session.endSession();
-        await logGlobalAdminActivity(req,"Delete Organization","organization",`Organization deleted successfully ${deletedOrg.name}`)
-        return res.status(200).json({
-            success: true,
-            message: "Organization deleted successfully",
-            data: deletedOrg
-        })
-    } catch (error) {
-        await session.abortTransaction();
-        await session.endSession();
-        return res.status(500).json({
-            success: false,
-            message: "Failed to delete organization",
-            error: error.message
-        })
-    }
+const deleteOrganization = async (req, res) => {
+  try {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    const deletedOrg = await Organization.findOneAndDelete({ uuid: req.params.id }, { session })
+    const deletedAdmin = await User.findOneAndDelete({ email: deletedOrg.email }, { session })
+    await session.commitTransaction();
+    await session.endSession();
+    await logGlobalAdminActivity(req, "Delete Organization", "organization", `Organization deleted successfully ${deletedOrg.name}`)
+    return res.status(200).json({
+      success: true,
+      message: "Organization deleted successfully",
+      data: deletedOrg
+    })
+  } catch (error) {
+    await session.abortTransaction();
+    await session.endSession();
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete organization",
+      error: error.message
+    })
+  }
 }
 
-const deleteOrganizations = async(req, res) => {
-    try {
-        const session = await mongoose.startSession();
-        session.startTransaction();
-        const deletedOrgs = await Organization.deleteMany({ uuid: { $in: req.body.ids } },{session})
-        const deletedAdmins = await User.deleteMany({email:deletedOrgs.email},{session})
-        await session.commitTransaction();
-        await session.endSession();
-        await logGlobalAdminActivity(req,"Delete Organizations","organization",`Organizations deleted successfully ${deletedOrgs.deletedCount}`)
-        return res.status(200).json({
-            success: true,
-            message: "Organizations deleted successfully",
-            data: deletedOrgs
-        })
-    } catch (error) {
-        await session.abortTransaction();
-        await session.endSession();
-        return res.status(500).json({
-            success: false,
-            message: "Failed to delete organizations",
-            error: error.message
-        })
-    }
+const deleteOrganizations = async (req, res) => {
+  try {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    const deletedOrgs = await Organization.deleteMany({ uuid: { $in: req.body.ids } }, { session })
+    const deletedAdmins = await User.deleteMany({ email: deletedOrgs.email }, { session })
+    await session.commitTransaction();
+    await session.endSession();
+    await logGlobalAdminActivity(req, "Delete Organizations", "organization", `Organizations deleted successfully ${deletedOrgs.deletedCount}`)
+    return res.status(200).json({
+      success: true,
+      message: "Organizations deleted successfully",
+      data: deletedOrgs
+    })
+  } catch (error) {
+    await session.abortTransaction();
+    await session.endSession();
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete organizations",
+      error: error.message
+    })
+  }
 }
-const getOrganizations = async(req, res) => {
-    try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = 50;
-        const skip = (page - 1) * limit;
+const getOrganizations = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 50;
+    const skip = (page - 1) * limit;
 
-        // Filters from query
-        const name = req.query.name;
-        const status = req.query.status;
-        const plan = req.query.plan;
+    // Filters from query
+    const name = req.query.name;
+    const status = req.query.status;
+    const plan = req.query.plan;
 
-        // Build dynamic MongoDB filter
-        const filter = {};
+    // Build dynamic MongoDB filter
+    const filter = {};
 
-        if (name) {
-            filter.name = { $regex: name, $options: 'i' }; // case-insensitive search
-        }
-
-        if (status) {
-            filter.status  = status;
-        }
-
-        if (plan) {
-            filter.plan = plan; // e.g., 'free', 'premium'
-        }
-
-        // Fetch filtered and paginated results
-        const organizations = await Organization.find(filter)
-            .skip(skip)
-            .limit(limit);
-        const total = await Organization.countDocuments(filter);
-        // console.log("organizations",organizations)
-        return res.status(200).json({
-            success: true,
-            message: "Organizations fetched successfully",
-            data: organizations,
-            pagination: {
-                total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit),
-                hasNextPage: page * limit < total
-            }
-        });
-
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Failed to fetch organizations",
-            error: error.message
-        });
+    if (name) {
+      filter.name = { $regex: name, $options: 'i' }; // case-insensitive search
     }
+
+    if (status) {
+      filter.status = status;
+    }
+
+    if (plan) {
+      filter.plan = plan; // e.g., 'free', 'premium'
+    }
+
+    // Fetch filtered and paginated results
+    const organizations = await Organization.find(filter)
+      .skip(skip)
+      .limit(limit);
+    const total = await Organization.countDocuments(filter);
+    // console.log("organizations",organizations)
+    return res.status(200).json({
+      success: true,
+      message: "Organizations fetched successfully",
+      data: organizations,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page * limit < total
+      }
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch organizations",
+      error: error.message
+    });
+  }
 };
 
-const getOrganizationById = async(req,res)=>{
-    try {
-        const organization = await Organization.findOne({ uuid: req.params.id })
-        // await logGlobalAdminActivity(req,"Get Organization","organization",`Organization fetched successfully ${organization.name}`)
-        return res.status(200).json({
-            success: true,
-            message: "Organization fetched successfully",
-            data: organization
-        })
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Failed to fetch organization",
-            error: error.message
-        })
-    }
+const getOrganizationById = async (req, res) => {
+  try {
+    const organization = await Organization.findOne({ uuid: req.params.id })
+    // await logGlobalAdminActivity(req,"Get Organization","organization",`Organization fetched successfully ${organization.name}`)
+    return res.status(200).json({
+      success: true,
+      message: "Organization fetched successfully",
+      data: organization
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch organization",
+      error: error.message
+    })
+  }
 }
 module.exports = {
-    addOrganization,
-    editOrganization,
-    deleteOrganization,
-    getOrganizations,
-    getOrganizationById,
-    deleteOrganizations
+  addOrganization,
+  editOrganization,
+  deleteOrganization,
+  getOrganizations,
+  getOrganizationById,
+  deleteOrganizations
 }
