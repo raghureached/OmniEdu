@@ -15,6 +15,8 @@ const Dashboard = () => {
   const { currentMessages } = useSelector((state) => state.globalMessage);
   const [stats,setStats] = useState({})
   const [rewards,setRewards] = useState({})
+  const [leaderboard,setLeaderboard] = useState({ organization: [], team: [],totalUsers:0 })
+  const [leaderboardPositions,setLeaderboardPositions] = useState({ organization: 0, team: 0 })
   const [loading,setLoading] = useState(false)
   const userName = user?.name || 'Admin';
   const currentHour = new Date().getHours();
@@ -46,8 +48,27 @@ const Dashboard = () => {
         setLoading(false);
       }
     };
+    const fetchLeaderboard = async () => {
+      try {
+        const orgResponse = await api.get('/api/user/getLeaderboard');
+        const teamResponse = await api.get('/api/user/getLeaderboardinTeam');
+        
+        setLeaderboard({
+          organization: orgResponse.data.leaderboard || [],
+          team: teamResponse.data.leaderboard || [],
+          totalUsers:orgResponse.data.totalUsers || 0
+        });
+        setLeaderboardPositions({
+          organization: orgResponse.data.position || 0,
+          team: teamResponse.data.position || 0
+        });
+      } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+      }
+    };
     fetchStats();
     fetchRewards();
+    fetchLeaderboard();
     
   }, [])
  
@@ -280,22 +301,32 @@ const Dashboard = () => {
             <h4 className="learning-card-title">Leaderboard</h4>
             <div className="learning-leaderboard-container">
               <div className="learning-leaderboard-item">
-                <div className="learning-leaderboard-gauge">
-                  <div className="learning-gauge-fill" style={{ height: '0%' }}></div>
-                  <span className="learning-gauge-label">0%</span>
+                <div className="learning-leaderboard-position">
+                  <div className="learning-position-badge">
+                    <FaMedal className="learning-medal-icon" />
+                    <span className="learning-position-number">#{leaderboardPositions.team || 0}</span>
+                  </div>
+                  <div className="learning-position-info">
+                    <span className="learning-position-label">Team Rank</span>
+                    <span className="learning-position-total">of {leaderboard.team.length}</span>
+                  </div>
                 </div>
-                <span className="learning-leaderboard-label">Top in Team</span>
               </div>
 
               <div className="learning-leaderboard-item">
-                <div className="learning-leaderboard-gauge">
-                  <div className="learning-gauge-fill" style={{ height: '0%' }}></div>
-                  <span className="learning-gauge-label">0%</span>
+                <div className="learning-leaderboard-position">
+                  <div className="learning-position-badge">
+                    <FaAward className="learning-medal-icon" />
+                    <span className="learning-position-number">#{leaderboardPositions.organization || 0}</span>
+                  </div>
+                  <div className="learning-position-info">
+                    <span className="learning-position-label">Organization Rank</span>
+                    <span className="learning-position-total">of {leaderboard.totalUsers}</span>
+                  </div>
                 </div>
-                <span className="learning-leaderboard-label">Top in Organization</span>
               </div>
             </div>
-            <p className="learning-motivational-text">Climb higher by completing trainings!</p>
+            <p className="learning-motivational-text">Keep climbing the leaderboard!</p>
           </div>
 
 

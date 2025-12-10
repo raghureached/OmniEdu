@@ -197,12 +197,7 @@ const GlobalAdminLayout = () => {
                             {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Roles</span>}
                         </Link>
                     </li>
-                    <li>
-                        <Link to="/global-admin/users" className={isActive("/global-admin/users") ? "globaladmin_link_active" : ""}>
-                            <User2 size={20} />
-                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Users</span>}
-                        </Link>
-                    </li>
+                    
                     <li>
                         <Link to="/global-admin/message-board" className={isActive("/global-admin/message-board") ? "globaladmin_link_active" : ""}>
                             <MessageCircleCode size={20} />

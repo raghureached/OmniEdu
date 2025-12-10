@@ -132,6 +132,8 @@ router.route('/deleteAssignment/:id').delete(deleteAssignment)
 //////Profile//////
 router.route('/getProfile').get(getProfile)
 
+/////Analytics//////
+
 // AI
 router.route('/enhanceText').post(enhanceText)
 // router.route('/generateImage').post(generateImage)

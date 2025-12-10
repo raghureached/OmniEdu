@@ -5,7 +5,7 @@ import { GoBook } from 'react-icons/go';
 import { RiDeleteBin2Fill } from 'react-icons/ri';
 import { EyeIcon, Plus, ThumbsUp, ThumbsDown, Send, Play, Pause, Volume2, VolumeX, Maximize, Minimize, ChevronLast, ChevronLeft, ChevronRight, FileText, Check } from 'lucide-react';
 import AssessmentQuiz from '../../Assessments/Assessment';
-const AssessmentPreview = ({ isOpen, onClose, data, embedded }) => {
+const AssessmentPreview = ({ isOpen, onClose, data, embedded,updateDB=true }) => {
     // console.log("data in Assessment in main preview", data)
     const navigate = useNavigate();
     const [showQuiz, setShowQuiz] = useState(false);
@@ -16,6 +16,8 @@ const AssessmentPreview = ({ isOpen, onClose, data, embedded }) => {
     const objectUrlRef = useRef(null);
     const [feedbackReaction, setFeedbackReaction] = useState(null); // 'like' | 'dislike' | null
     const [feedbackComment, setFeedbackComment] = useState('');
+    const [showTags, setShowTags] = useState(false);
+    const [showDesc, setShowDesc] = useState(false)
     const [isAssessmentActive, setIsAssessmentActive] = useState(false); // Track if assessment is active (not preview)
     // Initialize from incoming data
     useEffect(() => {
@@ -161,42 +163,6 @@ const AssessmentPreview = ({ isOpen, onClose, data, embedded }) => {
         setActiveTab(tab);
     };
 
-    const handlePreview = (res) => {
-        const norm = normalizeResource(res);
-        if (!norm) return;
-        setModalContent({ title: `Preview — ${norm.name}`, body: norm });
-        setShowModal(true);
-    };
-
-    const handleFileChange = (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-        setSubmission(file);
-    };
-
-    const handlePreviewFile = (fileOrUrl) => {
-        const norm = normalizeResource(fileOrUrl || submission);
-        if (!norm) return;
-        setModalContent({ title: `Preview — ${norm.name}`, body: norm });
-        setShowModal(true);
-    };
-
-    const handleRemoveFile = () => {
-        if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
-        objectUrlRef.current = null;
-        setSubmission(null);
-        const input = document.getElementById('uploadFiles');
-        if (input) input.value = '';
-    };
-
-    const handleSaveDraft = () => {
-        alert('Draft saved (dummy action).');
-    };
-
-    const handleComplete = () => {
-        alert('Assessment marked complete (dummy action).');
-    };
-
     // Feedback helpers
     const toggleReaction = (type) => {
         setFeedbackReaction((prev) => (prev === type ? null : type));
@@ -312,7 +278,7 @@ const AssessmentPreview = ({ isOpen, onClose, data, embedded }) => {
                                             <div className="global-preview-small-row">
                                                 <div className="global-preview-card">
                                                     <h3>Overview</h3>
-                                                    <p>{description.slice(0, 250)}{description.length > 250 ? '...' : ''}</p>
+                                                    <p>{showDesc ? description : description.slice(0, 250)}{description.length > 250 ? !showDesc && <span style={{cursor:"pointer"}} onClick={() => setShowDesc(true)}>...</span> : ''}</p>
                                                 </div>
 
                                                 
@@ -345,8 +311,12 @@ const AssessmentPreview = ({ isOpen, onClose, data, embedded }) => {
                                                             <div className="global-preview-tag">No tags</div>
                                                         )}
                                                         {tags.length > 3 && (
-                                                            <div className="global-preview-tag">+{tags.length - 3} more</div>
+                                                            <div className="global-preview-tag" style={{cursor:"pointer"}} onClick={()=>setShowTags(true)}>+{tags.length - 3} more</div>
                                                         )}
+                                                        {showTags && tags.slice(3).map((t, idx) => (
+                                                            <div key={idx} className="global-preview-tag">{t}</div>
+                                                        ))}
+                                                       
                                                     </div>
                                                 </div>
                                                 
@@ -435,7 +405,7 @@ const AssessmentPreview = ({ isOpen, onClose, data, embedded }) => {
                                     </div>
                                 </div>
                             )}
-                            {showQuiz && !embedded && (<AssessmentQuiz isOpen={open} onClose={handleQuizClose} previewMode={!isAssessmentActive} assessmentData={data} embedded={embedded} />)}
+                            {showQuiz && !embedded && (<AssessmentQuiz isOpen={open} onClose={handleQuizClose} previewMode={!isAssessmentActive} assessmentData={data} embedded={embedded} updateDB={updateDB}/>)}
                             
                         </div>
                     </div>

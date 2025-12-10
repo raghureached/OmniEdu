@@ -61,7 +61,7 @@ const LearningPathView = () => {
     const [completedSet, setCompletedSet] = useState([]);
     const dispatch = useDispatch();
     const handleCompleteSection = async (id) => {
-        setPct(pct+completedSet.length/propCourseData?.lessons.length*100)
+        setPct(pct+(completedSet.length/propCourseData?.lessons.length)*100)
         const res = await api.post(`/api/user/markComplete/${propCourseData?._id}/${id}`,{pct:pct});
         if (res.status === 200) {
             alert('Module marked complete!');
@@ -202,7 +202,7 @@ const LearningPathView = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                         {/* <span style={{ fontSize: '20px', fontWeight: '700', color: '#5570f1' }}> */}
                         <span style={{ fontSize: '20px', fontWeight: '700', color: '#5570f1' }}>
-                            {(() => { const total = sections.length; const done = completedSet.length; return total ? Math.round((done / total) * 100) : 0; })()}%
+                            {(() => { const total = sections.length; const done = pct; return total ? Math.round((done / total) * 100) : 0; })()}%
                         </span>
                         <span style={{ fontSize: '13px', color: '#6b7280', fontWeight: '500' }}>
                             {completedSet.length}/{sections.length} Lessons
@@ -210,7 +210,7 @@ const LearningPathView = () => {
                     </div>
                     <div style={{ width: '100%', height: '10px', backgroundColor: '#e5e7eb', borderRadius: '10px', overflow: 'hidden' }}>
                         {(() => {
-                            const total = sections.length; const done = completedSet.length; const pct = total ? Math.round((done / total) * 100) : 0; return (
+                            const total = sections.length; const done = pct; return (
                                 <div style={{ height: '100%', background: 'linear-gradient(90deg, #5570f1 0%, #4338ca 100%)', width: `${pct}%`, borderRadius: '10px', transition: 'width 0.5s ease' }}></div>
                             );
                         })()}
@@ -320,7 +320,6 @@ const LearningPathView = () => {
                     <ModuleView
                         lpId={propCourseData._id}
                         id={activeLesson?.uuid}
-
                     />
                 </div>
             )}

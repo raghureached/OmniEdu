@@ -22,14 +22,6 @@ const userProfileSchema = new mongoose.Schema(
       type:String,
       default:null
     },
-    team_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Team",
-    },
-    sub_team_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "SubTeam",
-    },
     teams: [
       {
         team_id: { type: mongoose.Schema.Types.ObjectId, ref: "Team" },

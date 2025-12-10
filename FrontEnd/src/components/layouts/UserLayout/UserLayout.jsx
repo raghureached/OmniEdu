@@ -140,7 +140,8 @@ const UserLayout = () => {
           </div>
         </div>
         
-        <ul className="user_sidebar_menu">
+        <div style={{display:'flex', flexDirection:'column',justifyContent:'space-between',height:'100%'}}>
+          <ul className="user_sidebar_menu">
           <li>
             <Link to="/user/dashboard" className={isActive('/user/dashboard') ? 'user_link_active' : ''}>
               <Home size={20} />
@@ -163,6 +164,8 @@ const UserLayout = () => {
               {!sidebarCollapsed && <span className='user_sidebar_names'>Global Library</span>}
             </Link>
           </li>
+        </ul>
+        <ul className="user_sidebar_menu">
           <li className="user_menu_section">
             {!sidebarCollapsed && <div className="user_section_title">Settings</div>}
           </li>
@@ -190,14 +193,16 @@ const UserLayout = () => {
               {!sidebarCollapsed && <span className='user_sidebar_names'>Help Center</span>}
             </Link>
           </li>
-        </ul>
-        
-        <div className="user_sidebar_footer">
-          <button onClick={handleLogout} className="user_logout_btn">
+          <li>
+          <Link onClick={handleLogout} className={isActive('/user/logout') ? 'user_link_active' : ''}>
             <LogOut size={20} />
-            {!sidebarCollapsed && <span>Logout</span>}
-          </button>
+            {!sidebarCollapsed && <span className='user_sidebar_names'>Logout</span>}
+          </Link>
+          </li>
+        </ul>
         </div>
+        
+        
       </nav>
       
       <main className={`user_content ${sidebarCollapsed ? 'user_content_expanded' : ''}`}>
@@ -206,9 +211,9 @@ const UserLayout = () => {
             <h2>
               {location.pathname.includes('/user/dashboard') && 'Dashboard'}
               {location.pathname.includes('/user/learning-hub') && 'Learning Hub'}
-              {location.pathname.includes('/user/assigned') && 'Assigned Training'}
-              {location.pathname.includes('/user/additional') && 'Additional Training'}
-              {location.pathname.includes('/user/enrolled') && 'Enrolled Training'}
+              {location.pathname.includes('/user/assigned') && 'Assigned Trainings'}
+              {location.pathname.includes('/user/inProgress') && 'In Progress Trainings'}
+              {location.pathname.includes('/user/completed') && 'Completed Trainings'}
               {location.pathname.includes('/user/catalog') && 'Course Catalog'}
               {location.pathname.includes('/user/activity-history') && 'Activity History'}
               {location.pathname.includes('/user/analytics') && 'Analytics'}

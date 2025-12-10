@@ -135,7 +135,7 @@ const LearningHub = () => {
       <section className="learning-learning-section">
         <div className="learning-section-header">
           <h3>Assigned</h3>
-          {assigned.length > 0 && <span className="learning-view-all" onClick={()=>navigate("/assigned")}>View All</span>}
+          {assigned.length > 0 && <span className="learning-view-all" onClick={()=>navigate("user/assigned")}>View All</span>}
         </div>
 
         <div className="learning-modules-grid">
@@ -154,7 +154,7 @@ const LearningHub = () => {
       <section className="learning-learning-section">
         <div className="learning-section-header">
           <h3>In Progress</h3>
-          {inProgressModules.length > 0 && <span className="learning-view-all" onClick={()=>navigate("/inprogress")}>View All</span>}
+          {inProgressModules.length > 0 && <span className="learning-view-all" onClick={()=>navigate("/user/inProgress")}>View All</span>}
         </div>
 
         <div className="learning-modules-grid">
@@ -172,7 +172,7 @@ const LearningHub = () => {
       <section className="learning-learning-section">
         <div className="learning-section-header">
           <h3>Completed</h3>
-          {completed.length > 0 && <span className="learning-view-all" onClick={()=>navigate("/completed")}>View All</span>}
+          {completed.length > 0 && <span className="learning-view-all" onClick={()=>navigate("/user/completed")}>View All</span>}
         </div>
 
         <div className="learning-modules-grid">
@@ -181,7 +181,7 @@ const LearningHub = () => {
           ) : (
             completed.length > 0 ?
               completed?.slice(0,4).map(module => (
-                <CourseCard key={module.id} data={module.enrollment_id.contentId || module.assignment_id.contentId} contentType={module.contentType} status="not_enrolled" />
+                <CourseCard key={module.id} data={module.assignment_id.contentId || module.enrollment_id.contentId} contentType={module.contentType} progressPct={100} status="completed" />
               ))
               : "You have no Completed trainings."
           )}

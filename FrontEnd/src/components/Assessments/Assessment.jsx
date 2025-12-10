@@ -4,7 +4,7 @@ import SubmissionPopup from './SubmissionPopup';
 import { MdApps, MdQuestionAnswer, MdQuiz, MdTimer } from 'react-icons/md';
 import { ChevronRight, Submit } from 'lucide-react';
 
-const AssessmentQuiz = ({ isOpen = true, onClose = () => { }, previewMode = false, assessmentData, embedded }) => {
+const AssessmentQuiz = ({ isOpen = true, onClose = () => { }, previewMode = false, assessmentData, embedded, updateDB=true }) => {
   // Use assessment data from props, fallback to dummy data for backward compatibility
   // console.log("AssessmentQuiz received assessmentData:", assessmentData);
   const assessment = assessmentData || {}
@@ -494,6 +494,8 @@ const AssessmentQuiz = ({ isOpen = true, onClose = () => { }, previewMode = fals
           // This will properly go to preview mode
           onClose();
         }}
+        updateDB={updateDB}
+        previewMode={previewMode}
         assessmentData={assessment}
         answers={selectedAnswers}
         timeSpent={submissionTimeSpent}

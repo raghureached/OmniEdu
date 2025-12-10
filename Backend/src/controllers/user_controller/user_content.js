@@ -2,12 +2,14 @@
 const Surveys = require("../../models/global_surveys_model");
 const GlobalAssessments = require("../../models/globalAssessments_model");
 const GlobalModule = require("../../models/globalModule_model");
+const Leaderboard = require("../../models/leaderboard.model");
 const LearningPath = require("../../models/learningPath_model");
 const Module = require("../../models/moduleOrganization_model");
 const OrganizationAssessments = require("../../models/organizationAssessments_model");
 const OrganizationSurveys = require("../../models/organizationSurveys_model");
 const UserContentProgress = require("../../models/userContentProgress_model");
 const UserProfile = require("../../models/userProfiles_model");
+const User = require("../../models/users_model");
 
 const getModule = async (req, res) => {
   try {
@@ -163,7 +165,9 @@ const markComplete = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user._id;
-    const { stars, badges, credits } = req.body;
+    const { stars, badges, credits,duration } = req.body;
+    const current = await UserContentProgress.findOne({user_id:userId,contentId:id});
+    if(current.status === "completed") return res.status(201).json({message:"Content is aldready completed by User."});
     const update = await UserContentProgress.findOneAndUpdate(
       { user_id: userId, contentId: id },
       {
@@ -182,6 +186,24 @@ const markComplete = async (req, res) => {
         }
       },
       { new: true }
+    );
+    // Get user's team for leaderboard
+    const userProfile = await UserProfile.findOne({ user_id: userId });
+    const teamId = userProfile.teams.length > 0 ? userProfile.teams[0].team_id : null;
+    
+    const updatedLeaderboard = await Leaderboard.findOneAndUpdate(
+      { user_id: userId },
+      {
+        $inc: {
+          noOfhoursCompleted: duration
+        },
+        $setOnInsert: {
+          organization_id: req.user.organization_id,
+          team_id: teamId
+        }
+      },
+      { new: true, upsert: true }
+
     );
     return res.status(200).json({ message: "Module marked complete", data: update });
   } catch (error) {
@@ -517,6 +539,29 @@ const getAssigned = async (req, res) => {
   }
 }
 
+const getLeaderboard = async (req, res) => {
+  try {
+    const leaderboard = await Leaderboard.find({ organization_id: req.user.organization_id }).sort({ noOfhoursCompleted: -1 });
+    const totalUsers = await User.find({ organization_id: req.user.organization_id });
+    return res.status(200).json({leaderboard,position:leaderboard.findIndex((l) => l.user_id.toString() === req.user._id.toString()) + 1,totalUsers:totalUsers.length});
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({ message: error.message });
+  }
+}
+const getLeaderboardinTeam = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const teams = await UserProfile.findOne({ user_id: userId }).select("teams");
+    const PrimaryTeam = teams.teams[0].team_id;
+    const leaderboard = await Leaderboard.find({ team_id: PrimaryTeam }).sort({ noOfhoursCompleted: -1 });
+    return res.status(200).json({leaderboard,position:leaderboard.findIndex((l) => l.user_id.toString() === req.user._id.toString()) + 1});
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({ message: error.message });
+  }
+}
+
 module.exports = {
   getModule,
   getAssessment,
@@ -532,7 +577,9 @@ module.exports = {
   getAssigned,
   getEnrolledModule,
   getEnrolledAssessment,
-  getCompletedinLP
+  getCompletedinLP,
+  getLeaderboard,
+  getLeaderboardinTeam
 }
 
 

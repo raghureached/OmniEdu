@@ -152,19 +152,6 @@ const Login = () => {
             </svg>
             <span>Google</span>
           </button>
-          <button
-            type="button"
-            onClick={() => handleSSOLogin('microsoft')}
-            className="sso-btn microsoft"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24">
-              <path fill="#f25022" d="M1 1h10v10H1z"/>
-              <path fill="#00a4ef" d="M13 1h10v10H13z"/>
-              <path fill="#7fba00" d="M1 13h10v10H1z"/>
-              <path fill="#ffb900" d="M13 13h10v10H13z"/>
-            </svg>
-            <span>Microsoft</span>
-          </button>
         </div>
 
         <div className="signup-link">

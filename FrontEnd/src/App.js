@@ -51,7 +51,7 @@ import UserDashBoardConfig from './pages/globalAdmin/UserDashBoardConfig/UserDas
 import AdminDashBoardConfig from './pages/globalAdmin/AdminDashBoardConfig/AdminDashBoardConfig';
 import GlobalCreateAssignment from './pages/globalAdmin/GlobalAssignments/CreateAssignment';
 import GlobalAdminActivity from './pages/globalAdmin/GlobalActivityLog/GlobalActivityLog';
-import AnalyticsView from './pages/globalAdmin/Analyticsview/AnalyticsView';
+// import AnalyticsView from './pages/globalAdmin/Analyticsview/AnalyticsView';
 import GlobalAdminHome from './pages/globalAdmin/GlobalAdminDashboard/GlobalAdminHome';
 import GlobalAssessments from './pages/globalAdmin/GlobalAssessments/GlobalAssessments';
 import GlobalModuleManagement from './pages/globalAdmin/GlobalModuleManagement/GlobalModuleManagement';
@@ -65,17 +65,25 @@ import LearningPathView from './pages/user/LearningPathView/LearningPathView';
 import SurveyView from './pages/user/SurveyView/SurveyView';
 import NavbarOnly from './components/layouts/NavbarOnly/NavbarOnly';
 import ChangePassword from './pages/auth/ChangePassword/ChangePassword';
+import { checkAuth, updateSessionTime } from './store/slices/authSlice';
+import InProgress from './pages/user/InProgress/InProgress';
+import Assigned from './pages/user/Assigned/Assigned';
+import Completed from './pages/user/Completed/Completed';
+import AnalyticsViewNew from './pages/globalAdmin/Analyticsview/AnalyticsViewNew';
+import LearnerAnalytics from './pages/user/Analytics/Analytics';
+import useLearningTracker from './hooks/LearningActivity';
 // import Enrolled from './pages/user/Enrolled/Enrolled';
 function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  // useEffect(() => {
-  //   dispatch(checkAuth());
-  //   const interval = setInterval(() => {
-  //     dispatch(updateSessionTime());
-  //   }, 60000);
-  //   return () => clearInterval(interval);
-  // }, [dispatch]);
+  useLearningTracker();
+  useEffect(() => {
+    dispatch(checkAuth());
+    const interval = setInterval(() => {
+      dispatch(updateSessionTime());
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [dispatch]);
   const { isAuthenticated, role, loading } = useSelector((state) => state.auth);
 
   useEffect(() => {
@@ -107,12 +115,14 @@ function App() {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="profile" element={<UserProfile />} />
+          <Route path='analytics' element={<LearnerAnalytics />} />
           <Route path="learning-hub" element={<LearningHub />} />
           <Route path="catalog" element={<Catalog />} />
           <Route path="activity-history" element={<ActivityHistory />} />
           <Route path="help-center" element={<HelpCenter />} />
-          {/* <Route path="assigned" element={<Assigned />} /> */}
-          {/* <Route path="enrolled" element={<Enrolled />} /> */}
+          <Route path="assigned" element={<Assigned  />} />
+          <Route path="inProgress" element={<InProgress />} />
+          <Route path="completed" element={<Completed />} />
           <Route path="mandatory" element={<Mandatory />} />
           <Route path="change-password" element={<ChangePassword />} />
         </Route>
@@ -152,8 +162,9 @@ function App() {
           <Route path="activity-log" element={<GlobalAdminActivity />} />
           <Route path="help-center" element={<GlobalHelpCenter />} />
           <Route path="portal-library-admin" element={<GlobalPortalActivity />} />
-          <Route path="analytics-view" element={<AnalyticsView />} />
+          <Route path="analytics-view" element={<AnalyticsViewNew />} />
           <Route path="change-password" element={<ChangePassword />} />
+          {/* <Route path='test' element={<AnalyticsViewNew />} /> */}
         </Route>
         <Route element={<NavbarOnly />}>
           {/* ORG ASSIGNMENTS */}
@@ -185,6 +196,7 @@ function App() {
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="*" element={<div>Page Not Found</div>} />
         <Route path='test' element={<LearningPath />} />
+    
 
 
       </Routes>

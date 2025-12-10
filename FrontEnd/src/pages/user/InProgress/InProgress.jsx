@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './Assigned.css';
 import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useDispatch } from 'react-redux';
@@ -8,36 +7,35 @@ import { CourseCard } from '../Cards/ContentCards';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import { Search } from 'lucide-react';
 import api from '../../../services/api';
-
-const Assigned = () => {
+import './InProgress.css';
+const InProgress = () => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
-  const [assignedModules, setAssignedModules] = useState([]);
+  const [inProgressModules, setInProgressModules] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     search: ''
   });
-  
   useEffect(() => {
-    const fetchAssigned = async () => {
+    const fetchInProgress = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/api/user/getAssigned');
+        const response = await api.get('/api/user/getInProgress');
         const data = await response.data;
-        setAssignedModules(data);
+        setInProgressModules(data);
       } catch (error) {
-        console.error('Error fetching assigned modules:', error);
+        console.error('Error fetching in progress modules:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchAssigned();
+    fetchInProgress();
   }, []);
-  
   const [activeTab, setActiveTab] = useState('training');
+  // const assignments = useSelector(state => state.userAssignments);
   
   // Filter modules based on search term
-  const filteredModules = assignedModules.filter(item => {
+  const filteredModules = inProgressModules.filter(item => {
     const content = item?.assignment_id?.contentId || item?.enrollment_id?.contentId;
     if (!content) return false;
     
@@ -50,6 +48,8 @@ const Assigned = () => {
   });
   
   const currentItems = filteredModules;
+
+
   if(loading){
     return <LoadingScreen text="Loading Assignments" />
   }
@@ -61,7 +61,7 @@ const Assigned = () => {
           <Search size={16} color="#6b7280" className="search-icon" />
           <input
             type="text"
-            placeholder="Search Assigned Modules"
+            placeholder="Search In Progress Modules"
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -84,7 +84,7 @@ const Assigned = () => {
           </div>
         ) : (
           <div className="assigned-empty-state">
-            <p>You currently have no {activeTab === 'training' ? 'assigned trainings' : 'assignments'}.</p>
+            <p>You currently have no {activeTab === 'training' ? 'in progress trainings' : 'assignments'}.</p>
           </div>
         )}
       </div>
@@ -92,4 +92,4 @@ const Assigned = () => {
   );
 };
 
-export default Assigned;
+export default InProgress;

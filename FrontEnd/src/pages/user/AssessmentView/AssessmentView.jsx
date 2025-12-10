@@ -73,7 +73,7 @@ const AssessmentView = ({ id }) => {
 
     const handleQuizClose = () => {
         setShowQuiz(false);
-        setIsAssessmentActive(false); // Reset to preview mode when quiz closes
+        setIsAssessmentActive(false);
         setActiveTab('preview');
 
     };

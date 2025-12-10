@@ -238,7 +238,9 @@ const ModuleView = ({id,lpId}) => {
                 stars: data.stars,
                 badges: data.badges,
                 credits: data.credits,
+                duration:data.duration
             }
+            
             const res = await api.post(`/api/user/markComplete/${data._id}`, rewards);
             if (res.status === 200) {
                 alert('Module marked complete!');

@@ -67,15 +67,6 @@ const UsersManagement = () => {
     pageSize: state.users.pageSize || 6,
   }));
 
-
-  // console.log("users in data",users)
-  // console.log("filtered users in data",filters)
-  console.log("all users in data", allUsers)
-  console.log("users in data", users)
-  console.log("filters in data", filters)
-  console.log("totalCount in data", totalCount)
-  console.log("currentPage in data", currentPageState)
-  console.log("pageSize in data", pageSizeState)
   const resolveUserId = (user) => user?.uuid || user?._id || user?.id || '';
   const getSelectableUserIds = () => users?.map(resolveUserId).filter(Boolean) || [];
 
@@ -1792,10 +1783,7 @@ const UsersManagement = () => {
   return (
     <div className="main-content">
       <div className="page-content">
-        <div className="page-header">
-          {/* <h1 className="page-title">Users Management</h1> */}
-
-        </div>
+       
 
 
         {/* Search and Filter Controls */}

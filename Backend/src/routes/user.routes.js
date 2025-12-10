@@ -1,12 +1,17 @@
 const { getAssignment } = require("../controllers/admin.controller/admin_Assignment")
 const { getUserAssignments, getSchedule } = require("../controllers/user_controller/user_assignments")
-const { getModule, getAssessment, getSurvey, getLearningPath, markComplete, markCompleteLP, getInProgress, updateStatus, enrolledbyUser, getRecomended, getCompleted, getAssigned, getEnrolledModule, getEnrolledAssessment, getCompletedinLP } = require("../controllers/user_controller/user_content")
+const { getModule, getAssessment, getSurvey, getLearningPath, markComplete, markCompleteLP, getInProgress, updateStatus, enrolledbyUser, getRecomended, getCompleted, getAssigned, getEnrolledModule, getEnrolledAssessment, getCompletedinLP, getLeaderboard, getLeaderboardinTeam } = require("../controllers/user_controller/user_content")
 const { getMessage } = require("../controllers/user_controller/user_Message")
 const { getProfile } = require("../controllers/user_controller/user_profile")
 const { updateProgress, getUserProgress, getUserProgressById } = require("../controllers/user_controller/user_progress")
 const { getContentStats, getUserRewards, getNotification } = require("../controllers/user_controller/user_stats")
+const { 
+  getAnalytics,
+  updateLearningActivity, 
+} = require("../controllers/user_controller/user_analytics")
 const { enroll } = require("../controllers/user_controller/user_enroll")
 const { getCatalog } = require("../controllers/user_controller/user_courseCatalog")
+const { updateAssessmentAttempt } = require("../controllers/user_controller/user_assessment")
 
 
 const router = require("express").Router()
@@ -50,13 +55,23 @@ router.route("/getCompleted").get(getCompleted)
 router.route("/getAssigned").get(getAssigned)
 router.route("/getAssignmentSchedule/:id").get(getSchedule)
 router.route("/getCompletedinLP/:lpId").get(getCompletedinLP)
-
-
+router.route("/getLeaderboard").get(getLeaderboard)
+router.route("/getLeaderboardinTeam").get(getLeaderboardinTeam)
+router.route("/updateAssessmentAttempt").post(updateAssessmentAttempt)
+router.route("/updateWeeklyProgress").post(updateLearningActivity)
 
 
 /////////STATS?/////////////
 router.route("/getStats").get(getContentStats)
 router.route("/getUserRewards").get(getUserRewards)
+
+/////////ANALYTICS/////////////
+router.route("/analytics").get(getAnalytics)
+// router.route("/analytics/completion").get(getCompletionMetrics)
+// router.route("/analytics/deadlines").get(getDeadlines)
+// router.route("/analytics/time-spent").get(getTimeSpent)
+// router.route("/analytics/assessment-performance").get(getAssessmentPerformance)
+// router.route("/analytics/gamification").get(getGamificationStats)
 
 
 ///////////NOTIFICATION////////////

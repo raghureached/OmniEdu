@@ -1542,8 +1542,7 @@ const GroupsManagement = () => {
                         <input
                           type="text"
                           name="teamName"
-                          placeholder="Enter or select team name"
-                          list="teamSuggestions"
+                          placeholder="Enter team name"
                           value={formData.teamName}
                           onChange={handleInputChange}
                           className="addOrg-form-input"
@@ -1552,11 +1551,7 @@ const GroupsManagement = () => {
                         <p style={{ color: '#dc2626', fontSize: '12px', marginLeft: "4px" }}>
                           Only letters, numbers, / and - are allowed in Team Name.
                         </p>
-                        <datalist id="teamSuggestions" style={{ width: "100%" }}>
-                          {filteredGroups.map((team, index) => (
-                            <option key={index} value={team.teamName} />
-                          ))}
-                        </datalist>
+                        
                       </div>
                       <div className="addOrg-form-group">
                         <label className="addOrg-form-label">

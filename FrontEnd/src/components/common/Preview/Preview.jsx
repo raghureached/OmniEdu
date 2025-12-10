@@ -19,6 +19,9 @@ const ModulePreview = ({ isOpen, onClose, data,embedded,teams }) => {
     const [subteamName,setSubteamName] = useState('');
     const [feedbackReaction, setFeedbackReaction] = useState(null); // 'like' | 'dislike' | null
     const [feedbackComment, setFeedbackComment] = useState('');
+    const [showAll, setShowAll] = useState(false);
+    const [showDescription, setShowDescription] = useState(false);
+    const [showOutcomes, setShowOutcomes] = useState(false);
     useEffect(() => {
             if (data.team) {
                 const team = teams.find((team) => team.id === data.team);
@@ -98,7 +101,7 @@ const ModulePreview = ({ isOpen, onClose, data,embedded,teams }) => {
     };
 
     const normalizeResource = (res) => {
-        // Accepts: {name,url,type} or string url or File object
+        
         if (!res) return null;
         if (typeof res === 'string') {
             const name = fileNameFromUrl(res);
@@ -329,7 +332,7 @@ const ModulePreview = ({ isOpen, onClose, data,embedded,teams }) => {
                                                 
                                                 <div className="global-preview-card">
                                                     <h3>Overview</h3>
-                                                    <p style={{color:"#0f1724",fontWeight:"400"}}>{description.slice(0, 250)}...</p>
+                                                    <p style={{color:"#0f1724",fontWeight:"400"}}>{showDescription ? description : description.slice(0, 250)}{!showDescription && <span style={{color:"#0f1724",fontWeight:"400",cursor:"pointer"}} onClick={()=>setShowDescription(true)}>...</span>}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -349,16 +352,18 @@ const ModulePreview = ({ isOpen, onClose, data,embedded,teams }) => {
                                                     <h3>Tags</h3>
                                                     <div className="global-preview-tags-wrap">
                                                         {tags.length ? (
-                                                            
                                                             tags.slice(0, 3).map((t, idx) => (
                                                                 <div key={idx} className="global-preview-tag">{t}</div>
                                                             ))
                                                         ) : (
                                                             <div className="global-preview-tag">No tags</div>
                                                         )}
-                                                        {tags.length > 3 && (
-                                                            <span className="global-preview-tag">+{tags.length - 3} more</span>
+                                                        {!showAll && tags.length > 3 && (
+                                                            <span className="global-preview-tag" style={{cursor:'pointer'}} onClick={() => setShowAll(true)}>+{tags.length - 3} more</span>
                                                         )}
+                                                        {showAll && tags.slice(3).map((t, idx) => (
+                                                            <div key={idx} className="global-preview-tag">{t}</div>
+                                                        ))}
                                                     </div>
                                                 </div>
                                                 <div className="global-preview-card" style={{height:"fit-content"}}>
@@ -372,9 +377,16 @@ const ModulePreview = ({ isOpen, onClose, data,embedded,teams }) => {
                                                     ) : (
                                                         <p className="global-preview-prereq">No learning outcomes provided.</p>
                                                     )}
-                                                    {outcomes.length > 2 && (
-                                                        <span className="global-preview-tag">+{outcomes.length - 2} more</span>
+                                                    {!showOutcomes && outcomes.length > 2 && (
+                                                        <span className="global-preview-tag" style={{cursor:'pointer'}} onClick={() => setShowOutcomes(true)}>+{outcomes.length - 2} more</span>
                                                     )}
+                                                    {showOutcomes &&
+                                                       <ul className="global-preview-learn-list">
+                                                            {outcomes.slice(2).map((o, idx) => (
+                                                                <li key={idx} style={{fontWeight:"400"}}>✅ {o}</li>
+                                                            ))}
+                                                        </ul>
+                                                    }
                                                 </div>
                                             </div>
                                         </div>

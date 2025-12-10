@@ -16,8 +16,6 @@ const userRouter = require("./src/routes/user.routes");
 const cookieParser = require("cookie-parser");
 const { authenticate, authorize } = require("./src/middleware/auth_middleware");
 
-
-
 connectDB;
 
 // Session middleware for Passport

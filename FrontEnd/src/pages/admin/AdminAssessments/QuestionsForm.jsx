@@ -1838,7 +1838,7 @@ const QuestionsForm = ({
             )}
             {/* Assessment Preview Modal (single page, no sections) */}
 
-            {assessmentPreviewOpen && (<AssessmentPreview data={{ ...formData, questions }} onClose={() => setAssessmentPreviewOpen(false)} />)}
+            {assessmentPreviewOpen && (<AssessmentPreview data={{ ...formData, questions }} onClose={() => setAssessmentPreviewOpen(false)} updateDB={false} />)}
 
             {/* Single Question Preview Modal (Survey UI) */}
             {questionPreviewIndex !== null && questions[questionPreviewIndex] && (

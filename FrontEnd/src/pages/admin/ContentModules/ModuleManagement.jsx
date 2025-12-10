@@ -12,6 +12,7 @@ import { GoX } from 'react-icons/go';
 import { toast } from 'react-toastify';
 import { notifyError, notifySuccess } from '../../../utils/notification';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
+import api from '../../../services/api';
 
 
 const ModuleManagement = () => {
@@ -27,7 +28,7 @@ const ModuleManagement = () => {
   const [selectAll, setSelectAll] = useState(false);
   const [showBulkAction, setShowBulkAction] = useState(false);
   const [selectAllLoading, setSelectAllLoading] = useState(false);
-  console.log(items)
+  // console.log(items)
   const [filters, setFilters] = useState({
     status: ''
   });
@@ -58,12 +59,28 @@ const ModuleManagement = () => {
     thumbnail: "",
     submissionEnabled: false,
   });
+  const [teams,setTeams] = useState([])
   const [uploading, setUploading] = useState(false)
   const navigate = useNavigate()
   useEffect(() => {
     dispatch(adminfetchContent());
+    
   }, [dispatch]);
   const { confirm } = useConfirm();
+
+
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const res = await api.get('/api/admin/getGroups');
+        setTeams(res.data.data);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    fetchTeams()
+
+  }, []);
 
   const handleDeleteContent = async (contentId) => {
     const confirmed = await confirm({
@@ -717,8 +734,8 @@ const ModuleManagement = () => {
           )}
         </div>
       )}
-      {showModal && <ModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading} handleRichInputChange={handleRichInputChange} error={error} />}
-      {showEditModal && <ModuleModal showModal={showEditModal} setShowModal={setShowEditModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} showEditModal={showEditModal} setShowEditModal={setShowEditModal} editContentId={editContentId} handleRichInputChange={handleRichInputChange} error={error} />}
+      {showModal && <ModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading} handleRichInputChange={handleRichInputChange} error={error} teams={teams}/>}
+      {showEditModal && <ModuleModal showModal={showEditModal} setShowModal={setShowEditModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} showEditModal={showEditModal} setShowEditModal={setShowEditModal} editContentId={editContentId} handleRichInputChange={handleRichInputChange} error={error} teams={teams}/>}
       {currentContent.length === 0 ? (
         <div className='assess-table-section'>
           <div className='assess-table-container'>

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './Assigned.css';
 import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useDispatch } from 'react-redux';
@@ -8,36 +7,34 @@ import { CourseCard } from '../Cards/ContentCards';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import { Search } from 'lucide-react';
 import api from '../../../services/api';
-
-const Assigned = () => {
+const Completed = () => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
-  const [assignedModules, setAssignedModules] = useState([]);
+  const [completedModules, setCompletedModules] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     search: ''
   });
-  
   useEffect(() => {
-    const fetchAssigned = async () => {
+    const fetchCompleted = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/api/user/getAssigned');
+        const response = await api.get('/api/user/getCompleted');
         const data = await response.data;
-        setAssignedModules(data);
+        setCompletedModules(data);
       } catch (error) {
-        console.error('Error fetching assigned modules:', error);
+        console.error('Error fetching completed modules:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchAssigned();
+    fetchCompleted();
   }, []);
   
   const [activeTab, setActiveTab] = useState('training');
   
   // Filter modules based on search term
-  const filteredModules = assignedModules.filter(item => {
+  const filteredModules = completedModules.filter(item => {
     const content = item?.assignment_id?.contentId || item?.enrollment_id?.contentId;
     if (!content) return false;
     
@@ -50,6 +47,8 @@ const Assigned = () => {
   });
   
   const currentItems = filteredModules;
+
+
   if(loading){
     return <LoadingScreen text="Loading Assignments" />
   }
@@ -61,7 +60,8 @@ const Assigned = () => {
           <Search size={16} color="#6b7280" className="search-icon" />
           <input
             type="text"
-            placeholder="Search Assigned Modules"
+            class
+            placeholder="Search Modules"
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -71,7 +71,8 @@ const Assigned = () => {
               }));
             }}
           />
-        </div>
+          </div>
+        
       </div>
 
       <div className="assigned-content">
@@ -84,7 +85,7 @@ const Assigned = () => {
           </div>
         ) : (
           <div className="assigned-empty-state">
-            <p>You currently have no {activeTab === 'training' ? 'assigned trainings' : 'assignments'}.</p>
+            <p>You currently have no {activeTab === 'training' ? 'completed trainings' : 'assignments'}.</p>
           </div>
         )}
       </div>
@@ -92,4 +93,4 @@ const Assigned = () => {
   );
 };
 
-export default Assigned;
+export default Completed;

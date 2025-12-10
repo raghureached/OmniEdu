@@ -689,7 +689,9 @@ const LearningPaths = () => {
                   </td>
                   {/* <td>{path.classification}</td> */}
                   <td>
-                    <span className={`learnpath-badge learnpath-${path.status.toLowerCase()}`}>{path.status}</span>
+                    <span className={` ${path.status === 'Published' ? 'published' : path.status === 'Draft' ? 'draft' : 'saved'} assess-status-badge`}>
+                        {path.status === 'Published' ? `${path.status}` : path.status === 'Draft' ? 'Draft' : 'Saved'}
+                      </span>
                   </td>
                   {/* <td>{path.version}</td> */}
                   <td>{normalizeDuration(path.duration)}</td>
