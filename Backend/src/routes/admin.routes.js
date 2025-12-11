@@ -32,6 +32,9 @@ const {
 const { enhanceText, enhanceSurvey, enhanceAssessment, createQuestions } = require("../controllers/admin.controller/admin_AI");
 const { generateSurveyWithSections } = require("../controllers/admin.controller/admin_AI");
 const {addTeam,editTeam,addSubTeam,editSubTeam,deleteSubTeam,addUsersToGroup} = require("../controllers/admin.controller/admin_Groups");
+const { getCourseDistribution, getUsersData, calculateUsageTrend, getAdoption } = require("../controllers/admin.controller/admin_analytics");
+const { createAdminTicket, getAdminTickets, updateAdminTicketStatus, updateAdminTicket, deleteAdminTicket } = require("../controllers/admin.controller/admin_Tickets");
+const { getTicketStats } = require("../controllers/user_controller/user_Tickets");
 
 const router = require("express").Router();
 
@@ -133,7 +136,10 @@ router.route('/deleteAssignment/:id').delete(deleteAssignment)
 router.route('/getProfile').get(getProfile)
 
 /////Analytics//////
-
+router.route('/analytics/getCourseDistribution').get(getCourseDistribution)
+router.route('/analytics/getUserData').get(getUsersData)
+router.route('/analytics/getUsageTrend').get(calculateUsageTrend)
+router.route('/analytics/getAdoption').get(getAdoption)
 // AI
 router.route('/enhanceText').post(enhanceText)
 // router.route('/generateImage').post(generateImage)
@@ -141,5 +147,16 @@ router.route('/enhanceSurvey').post(enhanceSurvey)
 router.route('/enhanceAssessment').post(enhanceAssessment)
 router.route('/createQuestions').post(createQuestions)
 router.route('/createSurveyQuestions').post(generateSurveyWithSections)
+
+// SUPPORT TICKETS (Admins → Admin Tickets)
+
+
+router.route('/createTicket').post(createAdminTicket);
+router.route('/getTickets').get(getAdminTickets);
+router.route('/getTicketStats').get(getTicketStats);
+router.route('/updateTicketStatus/:ticketId').put(updateAdminTicketStatus);
+router.route('/updateTicket/:ticketId').put(updateAdminTicket);
+router.route('/deleteTicket/:ticketId').delete(deleteAdminTicket);
+
 
 module.exports = router;

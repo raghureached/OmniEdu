@@ -2,6 +2,8 @@ const User = require('../../models/users_model');
 const UserProfile = require('../../models/userProfiles_model');
 const Organization = require('../../models/organization_model');
 const Leaderboard = require('../../models/leaderboard.model');
+const adminTicket = require('../../models/adminTicket');
+const userTickets = require('../../models/userTickets');
 
 const getAnalyticsData = async (req, res) => {
   try {
@@ -48,7 +50,7 @@ const getAnalyticsData = async (req, res) => {
     // Get organization data from leaderboard - aggregate total hours per organization
     // First get all organizations
     const allOrganizations = await Organization.find({}, 'name').sort({ name: 1 });
-    
+
     // Get leaderboard data aggregated by organization
     const orgLeaderboardData = await Leaderboard.aggregate([
       {
@@ -68,7 +70,7 @@ const getAnalyticsData = async (req, res) => {
     // Create a map of organization_id to leaderboard data
     const leaderboardMap = {};
     orgLeaderboardData.forEach(data => {
-        data.totalHours = data.totalHours/60; 
+      data.totalHours = data.totalHours / 60;
       leaderboardMap[data._id.toString()] = data;
     });
 
@@ -77,7 +79,7 @@ const getAnalyticsData = async (req, res) => {
       allOrganizations.map(async (organization) => {
         const orgId = organization._id.toString();
         const leaderboardInfo = leaderboardMap[orgId];
-        
+
         const totalHours = leaderboardInfo ? leaderboardInfo.totalHours : 0;
         const userCount = leaderboardInfo ? leaderboardInfo.userCount : 0;
 
@@ -99,7 +101,7 @@ const getAnalyticsData = async (req, res) => {
         ]);
 
         const previousHours = previousPeriodHours.length > 0 ? previousPeriodHours[0].totalHours : 0;
-        const change = previousHours > 0 ? 
+        const change = previousHours > 0 ?
           (((totalHours - previousHours) / previousHours) * 100).toFixed(0) : 0;
 
         return {
@@ -116,6 +118,13 @@ const getAnalyticsData = async (req, res) => {
     const validOrgData = orgData
       .sort((a, b) => b.totalHours - a.totalHours)
       .slice(0, 5);
+    const ticketsData = {};
+    const adminTickets = await adminTicket.find();
+    const userTicketss = await userTickets.find();
+    ticketsData.adminOpen = adminTickets.filter((t) => t.status === "Open").length;
+    ticketsData.adminResolved = adminTickets.filter((t) => t.status === "Resolved").length
+    ticketsData.userOpen = userTicketss.filter((t) => t.status === "Open").length;
+    ticketsData.userResolved = userTicketss.filter((t) => t.status === "Resolved").length;
 
     // System Health Metrics
     const systemHealth = await getSystemHealthMetrics();
@@ -148,6 +157,7 @@ const getAnalyticsData = async (req, res) => {
       },
       organizations: validOrgData, // Top 5 organizations by total hours
       systemHealth: systemHealth,
+      ticketsData,
       timestamp: now
     });
 
@@ -169,8 +179,8 @@ const getSystemHealthMetrics = async () => {
         }
       }
     ]);
-    
-    const totalBandwidthGB = totalBandwidthResult.length > 0 ? 
+
+    const totalBandwidthGB = totalBandwidthResult.length > 0 ?
       Math.round((totalBandwidthResult[0].totalHours * 0.001) * 100) / 100 : 0; // Convert to GB
 
     // Get CPU load (simulated - in production you'd get this from system monitoring)
@@ -198,7 +208,7 @@ const getSystemHealthMetrics = async () => {
       }
     ]);
 
-    const monthlyBandwidthGB = monthlyBandwidthResult.length > 0 ? 
+    const monthlyBandwidthGB = monthlyBandwidthResult.length > 0 ?
       Math.round((monthlyBandwidthResult[0].monthlyHours * 0.001) * 100) / 100 : 0;
 
     return {
@@ -224,7 +234,7 @@ const getSystemHealthMetrics = async () => {
 const generateBandwidthTrend = () => {
   const trend = [];
   const now = new Date();
-  
+
   for (let i = 29; i >= 0; i--) {
     const date = new Date(now);
     date.setDate(date.getDate() - i);
@@ -233,7 +243,7 @@ const generateBandwidthTrend = () => {
       value: Math.round(Math.random() * 50 + 10) // 10-60 GB per day
     });
   }
-  
+
   return trend;
 };
 

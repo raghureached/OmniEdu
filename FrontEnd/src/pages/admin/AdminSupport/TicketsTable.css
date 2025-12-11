@@ -1,0 +1,329 @@
+/* Container */
+.support-container {
+    min-height: 100vh;
+    background: #f8fafc;
+    padding: 24px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  
+  /* Header */
+  .support-header {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  }
+  
+  .support-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .support-title {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1e293b;
+  }
+  
+  .support-subtitle {
+    color: #64748b;
+    font-size: 1rem;
+    margin-top: 4px;
+  }
+  
+  /* Button */
+  .support-btn-primary {
+    background: linear-gradient(135deg, #1c88c7 0%, #2679bd 100%);
+    color: #ffffff;
+    padding: 10px 18px;
+    border-radius: 12px;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+  
+  /* Search Bar */
+  .support-search {
+    max-width: 400px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: 2px solid rgb(206, 206, 206);
+    margin-bottom: 20px;
+    width:280px;
+  }
+  
+  .support-search-input {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 0.95rem;
+  }
+  
+  /* Table */
+  .support-table-section {
+    background: #ffffff;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 2px solid rgb(206, 206, 206);
+  }
+  
+  .support-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  .support-table th:nth-child(1) {
+    width: 15%; /* Ticket Details*/
+  }
+  .support-table th:nth-child(2) {
+    width: 55%; /* Ticket Details - takes most space */
+  }
+
+  .support-table th:nth-child(3) {
+    width: 10%; /* Status */
+  }
+
+  .support-table th:nth-child(4) {
+    width: 15%; /* Date Created */
+  }
+
+  .support-table th {
+    padding: 16px 20px;
+    background: #f8fafc;
+    color: #374151;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .support-row td {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  
+  .support-row:hover {
+    background: #f8fafc;
+  }
+  
+  .support-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    word-break: break-word;
+  }
+  
+  .support-ticket-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  
+  .support-ticket-description {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #64748b;
+  }
+  
+  /* Ticket Status Badges */
+  .support-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  
+  .support-badge.open {
+    background: #fef3c7;
+    color: #d97706;
+  }
+  
+  .support-badge.in-progress {
+    background: #e0f2fe;
+    color: #0284c7;
+  }
+  
+  .support-badge.resolved {
+    background: #d1fae5;
+    color: #059669;
+  }
+  
+  .support-date {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #64748b;
+    font-size: 0.85rem;
+  }
+  
+  /* ---------------- POPUP STYLES ---------------- */
+  
+  .support-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.55);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+  }
+  
+  .support-popup-container {
+    background: #ffffff;
+    width: 80%;
+    max-width: 950px;
+    max-height: 90%;
+    overflow-y: auto;
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    animation: popupScale 0.25s ease;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  }
+  
+  .support-popup-close {
+    position: absolute;
+    top: 14px;
+    right: 20px;
+    font-size: 28px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: #475569;
+    font-weight: bold;
+  }
+  
+  /* ================== ACTIONS ================== */
+.actions-wrapper {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.tickets-action-btn {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tickets-action-btn.edit:hover {
+  background: #eff6ff;
+  border-color: #dbeafe;
+  color: var(--color-primary);
+}
+
+.tickets-action-btn.delete:hover {
+  background: #fee2e2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+/* ================== EMPTY STATE ================== */
+.ticket-empty-state {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.ticket-empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  color: #cbd5e1;
+  margin: 0 auto 16px;
+}
+
+.ticket-empty-state h3 {
+  color: #374151;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.ticket-empty-state p {
+  font-size: .95rem;
+    margin: 0 0 24px;
+}
+
+/* ================== STAT CARDS ================== */
+.ticket-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.ticket-stat-card {
+  background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 140px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.ticket-stat-icon {
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent);
+}
+
+.ticket-stat-icon.open {
+  background: #fff7ed;
+  color: #b45309;
+}
+
+.ticket-stat-icon.resolved {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.ticket-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.ticket-stat-number {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.ticket-stat-label {
+  font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+  @keyframes popupScale {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  

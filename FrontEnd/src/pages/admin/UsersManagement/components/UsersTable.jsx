@@ -126,7 +126,7 @@ const UsersTable = ({
           </button>
         </div>
 
-        <div style={{ justifySelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        {/* <div style={{ justifySelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <span className='users-header-cell'>Email</span>
           <button
             type="button"
@@ -140,7 +140,7 @@ const UsersTable = ({
               <ChevronDown size={14} color={sortKey === 'email' && sortDir === 'desc' ? '#111827' : '#cbd5e1'} strokeWidth={3} />
             </span>
           </button>
-        </div>
+        </div> */}
         <div style={{ justifySelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <span className='users-header-cell'>Designation</span>
           <button
@@ -156,22 +156,22 @@ const UsersTable = ({
             </span>
           </button>
         </div>
-         <div  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-         <span className='users-header-cell'>Role</span>
-         <button
-          type="button"
-          className="users-header-cell"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-          onClick={() => onSortChange && onSortChange('role')}
-        >
-          
-          <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1 }}>
-            <ChevronUp size={14} color={sortKey === 'role' && sortDir === 'asc' ? '#111827' : '#cbd5e1'} strokeWidth={3} />
-            <ChevronDown size={14} color={sortKey === 'role' && sortDir === 'desc' ? '#111827' : '#cbd5e1'} strokeWidth={3} />
-          </span>
-        </button>
-         </div>
-       
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span className='users-header-cell'>Role</span>
+          <button
+            type="button"
+            className="users-header-cell"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+            onClick={() => onSortChange && onSortChange('role')}
+          >
+
+            <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1 }}>
+              <ChevronUp size={14} color={sortKey === 'role' && sortDir === 'asc' ? '#111827' : '#cbd5e1'} strokeWidth={3} />
+              <ChevronDown size={14} color={sortKey === 'role' && sortDir === 'desc' ? '#111827' : '#cbd5e1'} strokeWidth={3} />
+            </span>
+          </button>
+        </div>
+
         <span className='users-header-cell'>Status</span>
         {/* <button
           type="button"
@@ -193,7 +193,7 @@ const UsersTable = ({
           ref={menuRef}
           className="users-select-all-flyout"
           role="menu"
-          style={{ position: 'fixed', top: menuPos.top, left: menuPos.left,gap:"5px" }}
+          style={{ position: 'fixed', top: menuPos.top, left: menuPos.left, gap: "5px" }}
         >
           <button
             type="button"
@@ -222,7 +222,7 @@ const UsersTable = ({
               setMenuOpen(false);
             }}
             className={selectionScope === "page" ? "selected" : ""}
-            
+
           >
             <span>Select this page</span>
             {selectionScope === 'page' && (
@@ -245,8 +245,8 @@ const UsersTable = ({
           const rawDesignation = user?.profile?.designation;
           const normalizedDesignation = typeof rawDesignation === 'string' && rawDesignation.trim()
             ? rawDesignation.trim()
-            : '-';
-          const designationCellClass = normalizedDesignation === '-'
+            : 'N/A';
+          const designationCellClass = normalizedDesignation === 'N/A'
             ? 'users-designation-cell users-designation-cell--empty'
             : 'users-designation-cell';
 
@@ -266,10 +266,12 @@ const UsersTable = ({
                 </div>
                 <div className="users-user-info">
                   <div className="users-user-name">{user?.name || '-'}</div>
+                  <div className="users-email-cell">{user?.email || '-'}</div>
+
                 </div>
               </div>
 
-              <div className="users-email-cell">{user?.email || '-'}</div>
+              {/* <div className="users-email-cell">{user?.email || '-'}</div> */}
               <div className={designationCellClass}>{normalizedDesignation}</div>
               <div className="users-role-cell">
                 <span className="users-role-badge">

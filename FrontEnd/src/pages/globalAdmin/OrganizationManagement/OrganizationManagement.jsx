@@ -26,6 +26,7 @@ import LoadingScreen from "../../../components/common/Loading/Loading";
 import { GoX } from "react-icons/go";
 import {useNotification} from "../../../components/common/Notification/NotificationProvider"
 import { notifyError, notifySuccess } from "../../../utils/notification";
+import { useConfirm } from "../../../components/ConfirmDialogue/ConfirmDialog";
 
 const OrganizationManagement = () => {
   const dispatch = useDispatch();
@@ -43,6 +44,7 @@ const OrganizationManagement = () => {
   const [showFilters, setShowFilters] = useState(false);
   const {showNotification} = useNotification()
   const [showBulkAction, setShowBulkAction] = useState(false)
+  const {confirm} = useConfirm()
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -288,7 +290,16 @@ const OrganizationManagement = () => {
     );
   };
   const handleDeleteOrg = async (id) => {
-    if (window.confirm("Are you sure you want to delete this organization?")) {
+    const confirmed = await confirm({
+      title: `Are you sure you want to delete this Organization?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger', // or 'warning', 'info'
+      showCheckbox: true,
+      checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
+      note: 'Associated items will be removed.',
+    });
+    if (confirmed) {
       try {
         const resultAction = await dispatch(deleteOrganization(id));
         if(deleteOrganization.fulfilled.match(resultAction)){
@@ -320,7 +331,16 @@ const OrganizationManagement = () => {
       alert("Please select at least one organization to delete.")
       return;
     }
-    if (window.confirm("Are you sure you want to delete these organizations?")) {
+    const confirmed = await confirm({
+      title: `Are you sure you want to delete these organizations?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger', // or 'warning', 'info'
+      showCheckbox: true,
+      checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
+      note: 'Associated items will be removed.',
+    });
+    if (confirmed) {
       try {
         const resultAction = await dispatch(deleteOrganizations(ids));
         if(deleteOrganizations.fulfilled.match(resultAction)){

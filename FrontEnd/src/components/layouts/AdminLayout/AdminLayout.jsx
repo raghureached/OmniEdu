@@ -337,9 +337,9 @@ const AdminLayout = () => {
           </li>
           <li>
             <Link
-              to="/admin/analytics-overview"
+              to="/admin/analytics"
               className={
-                isActive("/admin/analytics-overview") ? "admin_link_active" : ""
+                isActive("/admin/analytics") ? "admin_link_active" : ""
               }
             >
               <ChartColumnIncreasing size={20} />
@@ -391,6 +391,19 @@ const AdminLayout = () => {
               )}
             </Link>
           </li>
+          <li>
+            <Link
+              to="/admin/support"
+              className={
+                isActive("/admin/support") ? "admin_link_active" : ""
+              }
+            >
+              <HelpCircle size={20} />
+              {!sidebarCollapsed && (
+                <span className="admin_sidebar_names">Support</span>
+              )}
+            </Link>
+          </li>
         </ul>
 
         <div className="admin_sidebar_footer">
@@ -432,12 +445,14 @@ const AdminLayout = () => {
                 "Portal Library"}
               {location.pathname.includes("/admin/message-board") &&
                 "Message Board"}
-              {location.pathname.includes("/admin/analytics-overview") &&
+              {location.pathname.includes("/admin/analytics") &&
                 "Analytics Overview"}
               {location.pathname.includes("/admin/activity-log") &&
                 "Activity Log"}
               {location.pathname.includes("/admin/help-center") &&
                 "Help Center"}
+              {location.pathname.includes("/admin/support") &&
+                "Support"}
               {location.pathname === "/admin" && "Admin Dashboard"}
             </h2>
           </div>

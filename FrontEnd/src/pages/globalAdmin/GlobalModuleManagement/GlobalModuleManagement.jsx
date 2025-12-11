@@ -9,9 +9,11 @@ import { RiDeleteBinFill } from "react-icons/ri";
 import GlobalModuleModal from './GlobalModuleModal';
 import { GoX } from 'react-icons/go';
 import { useNotification } from '../../../components/common/Notification/NotificationProvider.jsx';
+import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog.jsx';
 
 const GlobalModuleManagement = () => {
   const dispatch = useDispatch();
+  const {confirm } = useConfirm();
   const { items, loading, error } = useSelector((state) => state.content);
   const [searchTerm, setSearchTerm] = useState("");
   const [contentType, setContentType] = useState("all");
@@ -58,8 +60,17 @@ const GlobalModuleManagement = () => {
     dispatch(fetchContent());
   }, [dispatch]);
 
-  const handleDeleteContent = (contentId) => {
-    if (window.confirm("Are you sure you want to delete this content?")) {
+  const handleDeleteContent = async (contentId) => {
+    const confirmed = await confirm({
+      title: `Are you sure you want to delete this Module?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger', // or 'warning', 'info'
+      showCheckbox: true,
+      checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
+      note: 'Associated items will be removed.',
+    });
+    if (confirmed) {
       const deleteRes = dispatch(deleteContent(contentId));
       deleteRes.then(() => {
         showNotification({
@@ -368,12 +379,21 @@ const GlobalModuleManagement = () => {
     setNewContent(JSON.parse(drafts));
     // setShowModal(true);
   }
-  const handleBulkDelete = (ids) => {
+  const handleBulkDelete = async(ids) => {
     if (ids.length === 0) {
       alert("Please select at least one module to delete.")
       return;
     }
-    if (window.confirm("Are you sure you want to delete these modules?")) {
+    const confirmed = await confirm({
+      title: `Are you sure you want to delete these Modules?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger', // or 'warning', 'info'
+      showCheckbox: true,
+      checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
+      note: 'Associated items will be removed.',
+    });
+    if (confirmed) {
       try {
         dispatch(bulkDeleteContent(ids));
       } catch (error) {

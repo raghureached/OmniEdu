@@ -20,6 +20,8 @@ import adminModuleReducer from './slices/adminModuleSlice'
 import adminMessageReducer from './slices/adminMessageSlice'
 import learningPathReducer from './slices/learningPathSlice'
 import userAssignmentReducer from './slices/userAssignmentSlice'
+import userTicketsReducer from './slices/userTicketsSlice'
+import adminTicketsReducer from './slices/adminTicketsSlice'
 
 const store = configureStore({
   reducer: {
@@ -34,7 +36,7 @@ const store = configureStore({
     message: messageReducer,
     globalMessage:globalMessageReducer ,
     activityLog: activityLogReducer,
-    surveys: surveyReducer,
+    surveys: surveyReducer, 
     globalAssignments: globalAssignmentReducer,
     globalAssessments: globalAssessmentReducer,
     adminAssessments: adminAssessmentReducer,
@@ -43,7 +45,9 @@ const store = configureStore({
     adminModule: adminModuleReducer,
     adminMessages: adminMessageReducer,
     learningPaths: learningPathReducer,
-    userAssignments: userAssignmentReducer
+    userAssignments: userAssignmentReducer,
+    userTickets: userTicketsReducer,
+    adminTickets: adminTicketsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

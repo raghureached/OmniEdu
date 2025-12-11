@@ -154,7 +154,7 @@ const AnalyticsViewNew = () => {
           value={formatNumber(data?.stats?.dau?.value)}
           subtitle={data?.stats?.dau?.sublabel}
           trend={data?.stats?.dau?.change >= 0 ? 'up' : 'down'}
-          trendValue={`${Math.abs(data?.stats?.dau?.change)}%`}
+          trendValue={`${Math.abs(data?.stats?.dau?.change)}`}
           color="color-primary"
           delay={0}
         />
@@ -164,7 +164,7 @@ const AnalyticsViewNew = () => {
           value={formatNumber(data?.stats?.mau?.value)}
           subtitle={data?.stats?.mau?.sublabel}
           trend={data?.stats?.mau?.change >= 0 ? 'up' : 'down'}
-          trendValue={`${Math.abs(data?.stats?.mau?.change)}%`}
+          trendValue={`${Math.abs(data?.stats?.mau?.change)}`}
           color="color-secondary"
           delay={100}
         />
@@ -209,8 +209,8 @@ const AnalyticsViewNew = () => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                <XAxis dataKey="label" stroke="#9ca3af" style={{ fontSize: 12 }} />
-                <YAxis stroke="#9ca3af" style={{ fontSize: 12 }} />
+                <XAxis dataKey="label" stroke="black" style={{ fontSize: 12 }} />
+                <YAxis stroke="black" style={{ fontSize: 12 }} />
                 <Tooltip 
                   contentStyle={{ 
                     background: '#fff', 
@@ -243,25 +243,33 @@ const AnalyticsViewNew = () => {
           
           <div className="support-stats">
             <div className="support-stat">
-              <div className="support-stat-value">--</div>
+              <div className="support-stat-label">ADMIN</div>
+              <div className="support-stat-value">{data?.ticketsData?.adminOpen}</div>
               <div className="support-stat-label">Open Tickets</div>
             </div>
             <div className="support-stat">
-              <div className="support-stat-value">--</div>
-              <div className="support-stat-label">Resolved</div>
+              <div className="support-stat-label">ADMIN</div>
+              <div className="support-stat-value">{data?.ticketsData?.adminResolved}</div>
+              <div className="support-stat-label">Resolved Tickets</div>
+            </div>
+            <div className="support-stat">  
+              <div className="support-stat-label">USER</div>
+              <div className="support-stat-value">{data?.ticketsData?.userOpen}</div>
+              <div className="support-stat-label">Open Tickets</div>
             </div>
             <div className="support-stat">
-              <div className="support-stat-value">--</div>
-              <div className="support-stat-label">Avg Response</div>
+              <div className="support-stat-label">USER</div>
+              <div className="support-stat-value">{data?.ticketsData?.userResolved}</div>
+              <div className="support-stat-label">Resolved Tickets</div>
             </div>
           </div>
 
-          <div className="chart-container">
+          {/* <div className="chart-container">
             <ResponsiveContainer width="100%" height={180}>
               <LineChart data={generateTrendData(15, 7)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                <XAxis dataKey="label" stroke="#9ca3af" style={{ fontSize: 12 }} />
-                <YAxis stroke="#9ca3af" style={{ fontSize: 12 }} />
+                <XAxis dataKey="label" stroke="black" style={{ fontSize: 12 }} />
+                <YAxis stroke="black" style={{ fontSize: 12 }} />
                 <Tooltip />
                 <Line
                   type="monotone"
@@ -271,9 +279,18 @@ const AnalyticsViewNew = () => {
                   dot={{ fill: '#ef4444', r: 4 }}
                   activeDot={{ r: 6 }}
                 />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#ef4444"
+                  strokeWidth={2}
+                  dot={{ fill: '#ef4444', r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
               </LineChart>
+              
             </ResponsiveContainer>
-          </div>
+          </div> */}
         </div>
       </div>
 

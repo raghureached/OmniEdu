@@ -72,6 +72,9 @@ import Completed from './pages/user/Completed/Completed';
 import AnalyticsViewNew from './pages/globalAdmin/Analyticsview/AnalyticsViewNew';
 import LearnerAnalytics from './pages/user/Analytics/Analytics';
 import useLearningTracker from './hooks/LearningActivity';
+import AdminAnalyticsDashboard from './pages/admin/AdminAnalytics/AdminAnalytics';
+import TicketsTable from './pages/admin/AdminSupport/TicketsTable';
+import UserTicketsTable from './pages/user/Support/UserTicketsTable';
 // import Enrolled from './pages/user/Enrolled/Enrolled';
 function App() {
   const dispatch = useDispatch();
@@ -125,6 +128,7 @@ function App() {
           <Route path="completed" element={<Completed />} />
           <Route path="mandatory" element={<Mandatory />} />
           <Route path="change-password" element={<ChangePassword />} />
+          <Route path='support' element={<UserTicketsTable />} />
         </Route>
         <Route path="/admin/*" element={<AdminLayout />}>
           <Route index element={<AdminHome />} />
@@ -134,7 +138,7 @@ function App() {
           <Route path="content-assessments" element={<AdminAssessments />} />
           <Route path="learning-paths" element={<LearningPaths />} />
           <Route path='learning-paths/preview' element={<LearningPath />} />
-
+          <Route path='analytics' element={<AdminAnalyticsDashboard />} />
           <Route path="manage-surveys" element={<AdminSurveys />} />
           <Route path="create-assignment" element={<CreateAssignmentEnhanced />} />
           <Route path="manage-assignments" element={<ManageAssignment />} />
@@ -144,6 +148,7 @@ function App() {
           <Route path="profile" element={<AdminProfile />} />
           <Route path="activity-log" element={<AdminActivityLog />} />
           <Route path="change-password" element={<ChangePassword />} />
+          <Route path='support' element={<TicketsTable />} />
         </Route>
         <Route path="/global-admin/*" element={<GlobalAdminLayout />}>
           <Route index element={<GlobalAdminHome />} />

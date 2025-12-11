@@ -901,6 +901,16 @@ const AdminSurveys = () => {
 
 
   const handleDeleteAssessment = async (id) => {
+    const confirmed = await confirm({
+      title: `Are you sure you want to delete this Survey?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger', // or 'warning', 'info'
+      showCheckbox: true,
+      checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
+      note: 'Associated items will be removed.',
+    });
+    if (!confirmed) return;
     try {
       const res = await dispatch(deleteSurvey(id));
       if (deleteSurvey.fulfilled.match(res)) {

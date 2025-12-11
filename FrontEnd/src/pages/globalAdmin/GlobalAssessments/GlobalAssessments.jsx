@@ -9,6 +9,7 @@ import QuestionsForm from './QuestionsForm';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import api from '../../../services/api';
 import { useNotification } from '../../../components/common/Notification/NotificationProvider.jsx';
+import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog.jsx';
 const GlobalAssessments = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
@@ -52,7 +53,7 @@ const GlobalAssessments = () => {
 
   }]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
-  //filters
+  const {confirm} = useConfirm();
   const [showFilters, setShowFilters] = useState(false);
   const [showBulkAction, setShowBulkAction] = useState(false);
   const [filters, setFilters] = useState({
@@ -451,7 +452,16 @@ const GlobalAssessments = () => {
 
   const bulkDelete = async () => {
     if (selectedIds.length === 0) return;
-    if (!window.confirm(`Delete ${selectedIds.length} assessment(s)? This cannot be undone.`)) return;
+    const confirmed = await confirm({
+      title: `Are you sure you want to delete this Assessments?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger', // or 'warning', 'info'
+      showCheckbox: true,
+      checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
+      note: 'Associated items will be removed.',
+    });
+    if (!confirmed) return;
     try {
       await Promise.all(
         selectedIds.map(id => dispatch(deleteGlobalAssessment(id)).catch(() => null))
@@ -930,8 +940,16 @@ const GlobalAssessments = () => {
   };
 
   const handleDeleteAssessment = async (id) => {
-    const confirm = window.confirm('Are you sure you want to delete this assessment?');
-    if (!confirm) return;
+    const confirmed = await confirm({
+      title: `Are you sure you want to delete this Assessment?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger', // or 'warning', 'info'
+      showCheckbox: true,
+      checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
+      note: 'Associated items will be removed.',
+    });
+    if (!confirmed) return;
     try {
       await dispatch(deleteGlobalAssessment(id));
       showNotification({

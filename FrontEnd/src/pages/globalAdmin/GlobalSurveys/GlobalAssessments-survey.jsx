@@ -21,12 +21,14 @@ import QuestionsForm from './QuestionsForm-survey';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import api from '../../../services/api';
 import { notifyError, notifySuccess } from '../../../utils/notification';
+import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
 const GlobalSurveys = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [currentAssessment, setCurrentAssessment] = useState(null);
   // Bulk selection state
+  const {confirm} = useConfirm()
   const [selectedIds, setSelectedIds] = useState([]);
   const [groups,setGroups] = useState([])
   const [showBulkAction, setShowBulkAction] = useState(false);
@@ -401,7 +403,16 @@ const toggleSelectOne = (id, checked) => {
  
   const bulkDelete = async (itemsToDelete = selectedIds) => {
     if (itemsToDelete.length === 0) return;
-    if (!window.confirm(`Delete ${itemsToDelete.length} survey(s)? This cannot be undone.`)) return;
+    const confirmed = await confirm({
+      title: `Are you sure you want to delete these Surveys?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger', // or 'warning', 'info'
+      showCheckbox: true,
+      checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
+      note: 'Associated items will be removed.',
+    });
+    if (!confirmed) return;
    try {
       await Promise.all(
         itemsToDelete.map(id => dispatch(deleteSurvey(id)).unwrap().catch(() => null))
@@ -893,8 +904,16 @@ const toggleSelectOne = (id, checked) => {
 
   const handleDeleteAssessment = async (id) => {
     try {
-      const confirm = window.confirm('Are you sure you want to delete this survey?');
-      if (!confirm) return;
+      const confirmed = await confirm({
+      title: `Are you sure you want to delete this Survey?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger', // or 'warning', 'info'
+      showCheckbox: true,
+      checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
+      note: 'Associated items will be removed.',
+    });
+      if (!confirmed) return;
       const res = await dispatch(deleteSurvey(id));
       if(deleteSurvey.fulfilled.match(res)){
         notifySuccess('Survey deleted successfully');

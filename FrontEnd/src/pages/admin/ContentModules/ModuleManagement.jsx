@@ -429,7 +429,16 @@ const ModuleManagement = () => {
       alert("Please select at least one module to delete.")
       return;
     }
-    if (window.confirm("Are you sure you want to delete these modules?")) {
+    const confirmed = await confirm({
+      title: `Are you sure you want to delete these modules?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger', // or 'warning', 'info'
+      showCheckbox: true,
+      checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
+      note: 'Associated items will be removed.',
+    });
+    if (confirmed) {
       try {
         const res = await dispatch(adminbulkDeleteContent(ids));
         if (adminbulkDeleteContent.fulfilled.match(res)) {

@@ -12,6 +12,8 @@ const {
 const { enroll } = require("../controllers/user_controller/user_enroll")
 const { getCatalog } = require("../controllers/user_controller/user_courseCatalog")
 const { updateAssessmentAttempt } = require("../controllers/user_controller/user_assessment")
+const { getTickets, createTicket, updateTicketStatus, updateTicket, deleteTicket } = require("../controllers/user_controller/user_Tickets")
+const { getTicketStats } = require("../controllers/admin.controller/admin_Tickets")
 
 
 const router = require("express").Router()
@@ -76,5 +78,12 @@ router.route("/analytics").get(getAnalytics)
 
 ///////////NOTIFICATION////////////
 router.route("/getNotification").get(getNotification)
+/////////TICKETS////////////
+router.route("/getTickets").get(getTickets)
+router.route("/getTicketStats").get(getTicketStats)
+router.route("/createTicket").post(createTicket)
+router.route("/updateTicketStatus/:ticketId").put(updateTicketStatus)
+router.route("/updateTicket/:ticketId").put(updateTicket)
+router.route("/deleteTicket/:ticketId").delete(deleteTicket)
 
 module.exports = router

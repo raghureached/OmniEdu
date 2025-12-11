@@ -1,10 +1,12 @@
 
+const adminTicket = require("../../models/adminTicket");
 const ForUserAssignment = require("../../models/forUserAssigments_model");
 const Leaderboard = require("../../models/leaderboard.model");
 const OrganizationAssessmentsAttemps = require("../../models/organizationAssessmentsAttemps_model");
 const UserContentProgress = require("../../models/userContentProgress_model");
 const UserProfile = require("../../models/userProfiles_model");
 const User = require("../../models/users_model");
+const userTickets = require("../../models/userTickets");
 const WeeklyActivity = require("../../models/userWeekly_activity_model");
 const weeklyProgress = require("../../models/userWeekly_activity_model");
 
@@ -80,6 +82,9 @@ const getAnalytics = async (req, res) => {
       .filter((deadline) => deadline.daysOverdue >= 0) // Only include overdue assignments
       .sort((a, b) => a.daysOverdue - b.daysOverdue); // Sort by closest deadline first
 
+
+      
+
     const assessmentScores = await getAssessmentPerformance(req)
     return res.status(200).json({
       isSuccess: true,
@@ -109,7 +114,8 @@ const getAnalytics = async (req, res) => {
         courseCompletion,
         upcomingDeadlines,
         overdueAssignments,
-        assessmentScores
+        assessmentScores,
+        
       }
     })
 

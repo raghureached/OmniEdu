@@ -214,16 +214,16 @@
   font-weight: 600;
 }
 .selection-banner .action-primary {
-  background: #5570f1; /* brand primary */
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 100%);; /* brand primary */
   color: #ffffff;
-  border: 1px solid #4f6af0;
+  border: 1px solid #1C88C7;
   text-decoration: none;
   padding: 6px 12px;
   border-radius: 9999px;
   transition: background 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
 }
 .selection-banner .action-primary:hover:not(:disabled) {
-  background: #4763ee;
+  background:linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 100%);; /* brand primary */
   box-shadow: 0 2px 6px rgba(85, 112, 241, 0.25);
 }
 .selection-banner .action-primary:active:not(:disabled) {

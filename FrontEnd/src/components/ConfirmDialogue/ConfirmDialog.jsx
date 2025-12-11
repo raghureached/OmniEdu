@@ -36,7 +36,7 @@ const ConfirmDialog = ({ config, onConfirm, onCancel }) => {
             onClick={onCancel}
             aria-label="Close dialog"
           >
-            <X size={20} />
+            <X size={20}  style={{color:'black'}}/>
           </button>
         </div>
 
@@ -64,20 +64,21 @@ const ConfirmDialog = ({ config, onConfirm, onCancel }) => {
         </div>
 
         <div className="confirm-actions">
-          <button
-            type="button"
-            className={`confirm-btn confirm-btn-${type}`}
-            onClick={handleConfirm}
-            disabled={showCheckbox && !isChecked}
-          >
-            {confirmText}
-          </button>
+        
           <button
             type="button"
             className="confirm-btn confirm-btn-cancel"
             onClick={onCancel}
           >
             {cancelText}
+          </button>
+            <button
+            type="button"
+            className={`confirm-btn confirm-btn-${type}`}
+            onClick={handleConfirm}
+            disabled={showCheckbox && !isChecked}
+          >
+            {confirmText}
           </button>
         </div>
       </div>
