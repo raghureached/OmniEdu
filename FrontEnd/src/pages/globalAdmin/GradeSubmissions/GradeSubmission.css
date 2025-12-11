@@ -1,0 +1,511 @@
+/* Grade Submission Styles */
+:root {
+  --grade-sub-primary: #011F5B;
+  --grade-sub-accent: #1C88C7;
+  --grade-sub-success: #10b981;
+  --grade-sub-warning: #f59e0b;
+  --grade-sub-text-dark: #0f172a;
+  --grade-sub-text-body: #1e293b;
+  --grade-sub-text-light: #64748b;
+  --grade-sub-bg-main: #f8fafc;
+  --grade-sub-bg-light: #f1f5f9;
+  --grade-sub-border: #e2e8f0;
+  --grade-sub-radius: 8px;
+}
+
+.grade-sub-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  font-family: 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--grade-sub-bg-main);
+  color: var(--grade-sub-text-body);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+.grade-sub-header {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid var(--grade-sub-border);
+}
+
+.grade-sub-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--grade-sub-primary);
+  margin: 0;
+}
+
+/* Loading and Error States */
+.grade-sub-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: var(--grade-sub-radius);
+  border: 1px solid var(--grade-sub-border);
+  box-shadow: 0 1px 3px rgba(1, 31, 91, 0.08);
+}
+
+.grade-sub-loading p {
+  color: var(--grade-sub-text-light);
+  font-size: 16px;
+  margin: 0;
+}
+
+.grade-sub-error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--grade-sub-radius);
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.08);
+}
+
+.grade-sub-error p {
+  color: #dc2626;
+  font-size: 16px;
+  margin: 0;
+}
+
+/* Filters */
+.grade-sub-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 24px;
+  background: white;
+  border-radius: var(--grade-sub-radius);
+  margin-bottom: 32px;
+  border: 1px solid var(--grade-sub-border);
+  box-shadow: 0 1px 3px rgba(1, 31, 91, 0.08);
+}
+
+/* Searchable Dropdown */
+.grade-sub-searchable-dropdown {
+  position: relative;
+  width: 100%;
+}
+
+.grade-sub-dropdown-trigger {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--grade-sub-border);
+  border-radius: var(--grade-sub-radius);
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.3s ease;
+  font-size: 15px;
+  font-family: inherit;
+}
+
+.grade-sub-dropdown-trigger:hover {
+  border-color: var(--grade-sub-accent);
+}
+
+.grade-sub-dropdown-trigger:focus-within {
+  outline: none;
+  border-color: var(--grade-sub-accent);
+  box-shadow: 0 0 0 3px rgba(28, 136, 199, 0.1);
+}
+
+.grade-sub-placeholder {
+  color: var(--grade-sub-text-light);
+}
+
+.grade-sub-selected-value {
+  color: var(--grade-sub-text-body);
+  font-weight: 500;
+}
+
+.grade-sub-dropdown-icons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.grade-sub-clear-icon {
+  color: var(--grade-sub-text-light);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.grade-sub-clear-icon:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--grade-sub-text-body);
+}
+
+.grade-sub-chevron {
+  color: var(--grade-sub-text-light);
+  transition: transform 0.2s ease;
+}
+
+.grade-sub-chevron.open {
+  transform: rotate(180deg);
+}
+
+.grade-sub-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: white;
+  border: 2px solid var(--grade-sub-border);
+  border-radius: var(--grade-sub-radius);
+  box-shadow: 0 4px 12px rgba(1, 31, 91, 0.15);
+  z-index: 100;
+  max-height: 240px;
+  overflow: hidden;
+}
+
+.grade-sub-search-input-wrapper {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid var(--grade-sub-border);
+  background: #fafafa;
+}
+
+.grade-sub-search-icon {
+  color: var(--grade-sub-text-light);
+  margin-right: 8px;
+}
+
+.grade-sub-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: var(--grade-sub-text-body);
+  font-family: inherit;
+}
+
+.grade-sub-search-input::placeholder {
+  color: var(--grade-sub-text-light);
+}
+
+.grade-sub-dropdown-options {
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.grade-sub-dropdown-option {
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-size: 14px;
+  color: var(--grade-sub-text-body);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+.grade-sub-dropdown-option:last-child {
+  border-bottom: none;
+}
+
+.grade-sub-dropdown-option:hover {
+  background-color: rgba(28, 136, 199, 0.08);
+  color: var(--grade-sub-accent);
+}
+
+.grade-sub-dropdown-option:active {
+  background-color: rgba(28, 136, 199, 0.12);
+}
+
+.grade-sub-no-results {
+  padding: 16px;
+  text-align: center;
+  color: var(--grade-sub-text-light);
+  font-size: 14px;
+  font-style: italic;
+}
+
+.grade-sub-filter-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.grade-sub-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--grade-sub-border);
+  border-radius: var(--grade-sub-radius);
+  font-size: 15px;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.grade-sub-input:focus {
+  outline: none;
+  border-color: var(--grade-sub-accent);
+  box-shadow: 0 0 0 3px rgba(28, 136, 199, 0.1);
+}
+
+.grade-sub-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* Table */
+.grade-sub-table-container {
+  background: white;
+  border-radius: var(--grade-sub-radius);
+  overflow-x: auto;
+  border: 1px solid var(--grade-sub-border);
+  box-shadow: 0 1px 3px rgba(1, 31, 91, 0.08);
+}
+
+.grade-sub-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.grade-sub-table th,
+.grade-sub-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--grade-sub-border);
+}
+
+.grade-sub-table th {
+  background: #efefef;
+  color: #666666;
+  font-size: 13px;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.grade-sub-table tbody tr {
+  background: white;
+  transition: background-color 0.2s ease;
+}
+
+.grade-sub-table tbody tr:hover {
+  background-color: rgba(28, 136, 199, 0.04);
+}
+
+.grade-sub-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Status Badge */
+.grade-sub-status {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.grade-sub-status-submitted {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+}
+
+.grade-sub-status-graded {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #065f46;
+}
+
+/* Buttons */
+.grade-sub-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.grade-sub-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.grade-sub-btn:active {
+  transform: translateY(0);
+}
+
+.grade-sub-btn-primary {
+  background: linear-gradient(135deg, var(--grade-sub-accent) 0%, #1570a8 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(28, 136, 199, 0.3);
+}
+
+.grade-sub-btn-primary:hover {
+  background: linear-gradient(135deg, #1570a8 0%, var(--grade-sub-accent) 100%);
+  box-shadow: 0 4px 16px rgba(28, 136, 199, 0.4);
+}
+
+.grade-sub-btn-full {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+}
+
+/* Modal */
+.grade-sub-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(1, 31, 91, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: grade-sub-fadeIn 0.2s ease;
+}
+
+@keyframes grade-sub-fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.grade-sub-modal-content {
+  background: white;
+  padding: 32px;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(1, 31, 91, 0.3);
+  animation: grade-sub-slideUp 0.3s ease;
+}
+
+@keyframes grade-sub-slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.grade-sub-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--grade-sub-border);
+}
+
+.grade-sub-modal-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--grade-sub-primary);
+}
+
+.grade-sub-modal-close {
+  font-size: 28px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: var(--grade-sub-text-light);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.grade-sub-modal-close:hover {
+  background: var(--grade-sub-bg-light);
+  color: var(--grade-sub-primary);
+}
+
+/* Form */
+.grade-sub-form-group {
+  margin-bottom: 24px;
+}
+
+.grade-sub-form-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--grade-sub-text-dark);
+  font-size: 14px;
+}
+
+.grade-sub-submission-link {
+  display: block;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(28, 136, 199, 0.1) 0%, rgba(28, 136, 199, 0.05) 100%);
+  border: 2px solid var(--grade-sub-accent);
+  border-radius: var(--grade-sub-radius);
+  text-decoration: none;
+  color: var(--grade-sub-accent);
+  font-weight: 600;
+  word-break: break-all;
+  transition: all 0.3s ease;
+}
+
+.grade-sub-submission-link:hover {
+  background: linear-gradient(135deg, rgba(28, 136, 199, 0.15) 0%, rgba(28, 136, 199, 0.1) 100%);
+  transform: translateX(4px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .grade-sub-container {
+    padding: 16px;
+  }
+
+  .grade-sub-title {
+    font-size: 24px;
+  }
+
+  .grade-sub-filters {
+    grid-template-columns: 1fr;
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .grade-sub-table-container {
+    font-size: 14px;
+  }
+
+  .grade-sub-table th,
+  .grade-sub-table td {
+    padding: 12px;
+  }
+
+  .grade-sub-modal-content {
+    padding: 24px;
+    width: 95%;
+  }
+
+  .grade-sub-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}

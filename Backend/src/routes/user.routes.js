@@ -13,7 +13,8 @@ const { enroll } = require("../controllers/user_controller/user_enroll")
 const { getCatalog } = require("../controllers/user_controller/user_courseCatalog")
 const { updateAssessmentAttempt } = require("../controllers/user_controller/user_assessment")
 const { getTickets, createTicket, updateTicketStatus, updateTicket, deleteTicket } = require("../controllers/user_controller/user_Tickets")
-const { getTicketStats } = require("../controllers/admin.controller/admin_Tickets")
+const { getTicketStats,getTicketDetails,
+  addTicketComment } = require("../controllers/user_controller/user_Tickets")
 
 
 const router = require("express").Router()
@@ -85,5 +86,7 @@ router.route("/createTicket").post(createTicket)
 router.route("/updateTicketStatus/:ticketId").put(updateTicketStatus)
 router.route("/updateTicket/:ticketId").put(updateTicket)
 router.route("/deleteTicket/:ticketId").delete(deleteTicket)
+router.route("/getTicketDetails/:ticketId").get(getTicketDetails);
+router.route("/addTicketComment/:ticketId").post(addTicketComment);
 
-module.exports = router
+module.exports = router;

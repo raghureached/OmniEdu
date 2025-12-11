@@ -47,17 +47,20 @@ const getCatalog = async (req, res) => {
     const [modules, assessments, surveys, userProgress] = await Promise.all([
       moduleIds.length
         ? GlobalModule.find({ _id: { $in: moduleIds }, status: "Published" })
-            .select("title description duration tags thumbnail credits stars badges uuid category")
+            .populate("team")
+            .populate("subteam")
             .lean()
         : [],
       assessmentIds.length
         ? GlobalAssessments.find({ _id: { $in: assessmentIds }, status: "Published" })
-            .select("title description duration tags thumbnail credits stars badges uuid category")
+            .populate("team")
+            .populate("subteam")              
             .lean()
         : [],
       surveyIds.length
         ? Surveys.find({ _id: { $in: surveyIds }, status: "Published" })
-            .select("title description duration tags thumbnail credits stars badges uuid category")
+            .populate("team")
+            .populate("subteam")
             .lean()
         : [],
       UserContentProgress.find({ user_id: req.user._id }).select("contentId").lean(),

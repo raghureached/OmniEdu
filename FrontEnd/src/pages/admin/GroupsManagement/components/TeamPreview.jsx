@@ -417,7 +417,7 @@ const TeamPreview = ({
         ) : (
           <div className="addOrg-form-section" style={{ padding: 12 }}>
             <div className="table-container" style={{ marginTop: 12 }}>
-              <div className="table-header" style={{ gridTemplateColumns: "50px 250px 250px 250px", color: 'rgb(2,2,2)',paddingLeft:"200px" }}>
+              <div className="table-header" style={{ gridTemplateColumns: "50px 250px 250px 250px", color: 'rgb(2,2,2)' }}>
                 <div style={{ width: 24 }}></div>
                 <div className="col-team">Sub Team Name</div>
                 <div className="col-members">Members</div>
@@ -430,7 +430,7 @@ const TeamPreview = ({
                 </div>
               ) : (
                 sortedSubTeams.map((st) => (
-                  <div key={st._id || st.uuid || st.id} className="table-row" style={{ gridTemplateColumns: "50px 250px 250px 250px",paddingLeft:"200px"  }}>
+                  <div key={st._id || st.uuid || st.id} className="table-row" style={{ gridTemplateColumns: "50px 250px 250px 250px"  }}>
                     <div style={{ width: 24 }}></div>
                     <div className="col-team">{st.name}</div>
                     <button

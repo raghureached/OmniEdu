@@ -352,9 +352,13 @@
 .health-metric {
     background: white;
     border-radius: 16px;
-    padding: 20px;
+    padding: 16px;
     border: 1px solid #e5e7eb;
     transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 120px;
 }
 
 .health-metric:hover {
@@ -365,27 +369,72 @@
 .health-metric-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: 12px;
+    margin-bottom: 8px;
 }
 
 .health-icon {
     color: #011F5B;
-    width: 16px;
-    height: 16px;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
 }
 
 .health-label {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
     color: #374151;
 }
 
 .health-value {
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 700;
     color: #111827;
-    margin-bottom: 12px;
+    margin-bottom: 0;
+    line-height: 1.2;
+}
+
+/* Achievement icon containers */
+.achievement-icon-container {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+}
+
+.credits-icon {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+}
+
+.stars-icon {
+    background: linear-gradient(135deg, #fb923c, #f97316);
+}
+
+.badges-icon {
+    background: linear-gradient(135deg, #60a5fa, #3b82f6);
+}
+
+.achievement-icon {
+    color: white;
+}
+
+.achievement-label {
+    font-size: 18px;
+    font-weight: 600;
+    color: #374151;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.achievement-value {
+    font-size: 36px;
+    font-weight: 700;
+    color: #111827;
+    text-align: center;
+    line-height: 1.1;
 }
 
 .health-percentage {

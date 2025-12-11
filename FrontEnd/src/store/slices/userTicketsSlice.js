@@ -89,11 +89,49 @@ export const updateUserTicket = createAsyncThunk(
   }
 );
 
+// ============ NEW THUNKS FOR USER TICKET DETAILS & COMMENTS ============
+
+/**
+ * Fetch complete user ticket details including conversation thread
+ */
+export const fetchUserTicketDetails = createAsyncThunk(
+  'userTickets/fetchDetails',
+  async (ticketId, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`/api/user/getTicketDetails/${ticketId}`);
+      return res.data?.data; // Should include: ticket info + conversation array
+    } catch (err) {
+      return rejectWithValue(err?.response?.data || { message: 'Failed to fetch ticket details' });
+    }
+  }
+);
+
+/**
+ * Add a comment/reply to a user ticket
+ */
+export const addUserTicketComment = createAsyncThunk(
+  'userTickets/addComment',
+  async ({ ticketId, message, attachments = [] }, { rejectWithValue }) => {
+    try {
+      const res = await api.post(`/api/user/addTicketComment/${ticketId}`, {
+        message,
+        attachments
+      });
+      return res.data?.data; // Should return the full updated ticket
+    } catch (err) {
+      return rejectWithValue(err?.response?.data || { message: 'Failed to add comment' });
+    }
+  }
+);
+
 const userTicketsSlice = createSlice({
   name: 'userTickets',
   initialState: {
     items: [],
+    currentTicket: null, // For storing detailed ticket view
     loading: false,
+    detailsLoading: false,
+    commentSending: false,
     error: null,
     pagination: {
       page: 1,
@@ -107,7 +145,11 @@ const userTicketsSlice = createSlice({
       inProgress: 0,
     },
   },
-  reducers: {},
+  reducers: {
+    clearCurrentTicket: (state) => {
+      state.currentTicket = null;
+    }
+  },
   extraReducers: (builder) => {
     builder
       // fetch
@@ -171,8 +213,47 @@ const userTicketsSlice = createSlice({
       })
       .addCase(fetchUserTicketStats.rejected, (state, action) => {
         state.error = action.payload?.message || 'Failed to fetch ticket stats';
+      })
+      
+      // ============ NEW: Fetch ticket details ============
+      .addCase(fetchUserTicketDetails.pending, (state) => {
+        state.detailsLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchUserTicketDetails.fulfilled, (state, action) => {
+        state.detailsLoading = false;
+        state.currentTicket = action.payload;
+      })
+      .addCase(fetchUserTicketDetails.rejected, (state, action) => {
+        state.detailsLoading = false;
+        state.error = action.payload?.message || 'Failed to fetch ticket details';
+      })
+      
+      // ============ NEW: Add comment ============
+      .addCase(addUserTicketComment.pending, (state) => {
+        state.commentSending = true;
+        state.error = null;
+      })
+      .addCase(addUserTicketComment.fulfilled, (state, action) => {
+        state.commentSending = false;
+        // Update current ticket with full updated ticket data
+        if (state.currentTicket && action.payload) {
+          state.currentTicket = action.payload;
+        }
+        // Also update the ticket in the items list
+        if (action.payload && action.payload.ticketId) {
+          const idx = state.items.findIndex((t) => t.ticketId === action.payload.ticketId);
+          if (idx !== -1) {
+            state.items[idx] = action.payload;
+          }
+        }
+      })
+      .addCase(addUserTicketComment.rejected, (state, action) => {
+        state.commentSending = false;
+        state.error = action.payload?.message || 'Failed to add comment';
       });
   },
 });
 
+export const { clearCurrentTicket } = userTicketsSlice.actions;
 export default userTicketsSlice.reducer;

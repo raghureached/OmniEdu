@@ -541,9 +541,11 @@ const getAssigned = async (req, res) => {
 
 const getLeaderboard = async (req, res) => {
   try {
+    console.log(req.user)
     const leaderboard = await Leaderboard.find({ organization_id: req.user.organization_id }).sort({ noOfhoursCompleted: -1 });
     const totalUsers = await User.find({ organization_id: req.user.organization_id });
-    return res.status(200).json({leaderboard,position:leaderboard.findIndex((l) => l.user_id.toString() === req.user._id.toString()) + 1,totalUsers:totalUsers.length});
+    const position = leaderboard.findIndex((l) => l.user_id.toString() === req.user._id.toString()) + 1;
+    return res.status(200).json({leaderboard,totalUsers:totalUsers.length,position:position === 0 ? 'N/A' : position});
   } catch (error) {
     console.log(error)
     return res.status(500).json({ message: error.message });
@@ -555,7 +557,8 @@ const getLeaderboardinTeam = async (req, res) => {
     const teams = await UserProfile.findOne({ user_id: userId }).select("teams");
     const PrimaryTeam = teams.teams[0].team_id;
     const leaderboard = await Leaderboard.find({ team_id: PrimaryTeam }).sort({ noOfhoursCompleted: -1 });
-    return res.status(200).json({leaderboard,position:leaderboard.findIndex((l) => l.user_id.toString() === req.user._id.toString()) + 1});
+    const position = leaderboard.findIndex((l) => l.user_id.toString() === req.user._id.toString()) + 1;
+    return res.status(200).json({leaderboard,totalUsers:leaderboard.length,position:position === 0 ? 'N/A' : position});
   } catch (error) {
     console.log(error)
     return res.status(500).json({ message: error.message });

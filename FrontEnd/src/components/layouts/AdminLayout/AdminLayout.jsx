@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../../store/slices/authSlice';
 import { fetchNotifications, markNotificationAsRead } from '../../../store/slices/notificationSlice';
 import './AdminLayout.css';
-import { Menu, Home, User2, UserCheck, Shield, BookOpen, CircleUserRound, NotepadText, NotebookPen, LibraryBig, BookOpenCheck, MessageCircleCode, Award, BookCopy, Clock, HelpCircle, LogOut, Bell, X, ChartColumnIncreasing } from 'lucide-react';
+import { Menu, Home, User2, UserCheck, Shield, BookOpen, CircleUserRound, NotepadText, NotebookPen, LibraryBig, BookOpenCheck, MessageCircleCode, Award, BookCopy, Clock, HelpCircle, LogOut, Bell, X, ChartColumnIncreasing,Laptop } from 'lucide-react';
 
 const AdminLayout = () => {
   const dispatch = useDispatch();
@@ -398,7 +398,8 @@ const AdminLayout = () => {
                 isActive("/admin/support") ? "admin_link_active" : ""
               }
             >
-              <HelpCircle size={20} />
+              {/* <HelpCircle size={20} /> */}
+               <Laptop  size={20}/>
               {!sidebarCollapsed && (
                 <span className="admin_sidebar_names">Support</span>
               )}

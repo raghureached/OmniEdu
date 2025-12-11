@@ -267,6 +267,12 @@ const GlobalAdminLayout = () => {
                             {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Activity Log</span>}
                         </Link>
                     </li>
+                    <li>
+                        <Link to="/global-admin/support" className={isActive("/global-admin/support") ? "globaladmin_link_active" : ""}>
+                            <MessageCircle size={20} />
+                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Support</span>}
+                        </Link>
+                    </li>
 
                     {/* Profile */}
                     <li>

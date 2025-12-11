@@ -96,10 +96,32 @@ export default function SupportTicketRaiser({ onClose, ticket, onSuccess }) {
     <div className="ticket-form-container">
       {/* Header */}
       <div className="ticket-header">
+        <div>
         <h1 className="ticket-header-title">Admin Support Ticket</h1>
         <p className="ticket-header-subtitle">
           Submit technical issues or request assistance for LMS administration
         </p>
+        </div>
+         <button 
+                  onClick={onClose}
+                 style={{
+                      position: 'absolute',
+                      top: '22px',
+                      right: '25px',
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: '8px',
+                      width: '53px',
+                      height: '45px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      color: '#fff'
+                    }}
+                >
+                  <X size={20} />
+                </button>
       </div>
 
       {/* Form */}

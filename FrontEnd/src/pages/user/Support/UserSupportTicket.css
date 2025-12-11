@@ -13,6 +13,9 @@
     background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 100%);
     padding: 24px;
     color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
   }
   
   .ticket-header-title {
@@ -25,6 +28,20 @@
     color: rgba(255, 255, 255, 0.9);
     margin: 0;
     font-size: 14px;
+  }
+
+  .ticket-close-button {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+  }
+
+  .ticket-close-button:hover {
+    background: rgba(255, 255, 255, 0.1);
   }
   
   /* Form */

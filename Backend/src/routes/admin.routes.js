@@ -33,8 +33,8 @@ const { enhanceText, enhanceSurvey, enhanceAssessment, createQuestions } = requi
 const { generateSurveyWithSections } = require("../controllers/admin.controller/admin_AI");
 const {addTeam,editTeam,addSubTeam,editSubTeam,deleteSubTeam,addUsersToGroup} = require("../controllers/admin.controller/admin_Groups");
 const { getCourseDistribution, getUsersData, calculateUsageTrend, getAdoption } = require("../controllers/admin.controller/admin_analytics");
-const { createAdminTicket, getAdminTickets, updateAdminTicketStatus, updateAdminTicket, deleteAdminTicket } = require("../controllers/admin.controller/admin_Tickets");
-const { getTicketStats } = require("../controllers/user_controller/user_Tickets");
+const { createAdminTicket, getAdminTickets, updateAdminTicketStatus, updateAdminTicket, deleteAdminTicket , getTicketDetails,
+  addTicketComment, getTicketStats} = require("../controllers/admin.controller/admin_Tickets");
 
 const router = require("express").Router();
 
@@ -157,6 +157,7 @@ router.route('/getTicketStats').get(getTicketStats);
 router.route('/updateTicketStatus/:ticketId').put(updateAdminTicketStatus);
 router.route('/updateTicket/:ticketId').put(updateAdminTicket);
 router.route('/deleteTicket/:ticketId').delete(deleteAdminTicket);
-
+router.route("/getTicketDetails/:ticketId").get(getTicketDetails);
+router.route("/addTicketComment/:ticketId").post(addTicketComment);
 
 module.exports = router;

@@ -343,8 +343,8 @@ const LearnerAnalytics = () => {
                         <ResponsiveContainer width="100%" height={280}>
                             <BarChart data={data.weeklyProgress}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                                <XAxis dataKey="day" stroke="#9ca3af" style={{ fontSize: 12 }} />
-                                <YAxis stroke="#9ca3af" style={{ fontSize: 12 }} />
+                                <XAxis dataKey="day" stroke="black" style={{ fontSize: 12 }} />
+                                <YAxis stroke="black" style={{ fontSize: 12 }} />
                                 <Tooltip
                                     contentStyle={{
                                         background: '#fff',
@@ -386,11 +386,8 @@ const LearnerAnalytics = () => {
                                 <XAxis
                                     dataKey="shortName"
                                     stroke="green"
-                                    style={{ fontSize: 12 }}
-                                    angle={-30}
-                                    textAnchor="end"
-                                    height={100}
-                                    interval={0}
+                                    style={{ fontSize: 12}}
+                                    
                                 />
 
                                 <YAxis type="number" domain={[0, 100]} stroke="black" style={{ fontSize: 12 }} />
@@ -458,7 +455,7 @@ const LearnerAnalytics = () => {
                             <span className="health-label">Leaderboard Rank</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '12px' }}>
-                            <div className="health-value">#{data.leaderboardPosition}</div>
+                            <div className="health-value">#{data.leaderboardPosition === 0 ? 'N/A' : data.leaderboardPosition}</div>
                             <div style={{ fontSize: '16px', color: '#6b7280' }}>of {data.totalParticipants}</div>
                         </div>
                         <div className="progress-bar">
@@ -474,30 +471,29 @@ const LearnerAnalytics = () => {
 
                     {/* Credits Earned */}
                     <div className="health-metric">
-                        <div className="health-metric-header">
-                            <Star size={16} className="health-icon" />
-                            <span className="health-label">Total Credits</span>
+                        <div className="achievement-icon-container credits-icon">
+                            <Award size={32} className="achievement-icon" />
                         </div>
-                        <div className="health-value">{data.credits.toLocaleString()}</div>
-
+                        <div className="achievement-label">Credits</div>
+                        <div className="achievement-value">{data.credits.toLocaleString()}</div>
                     </div>
-                    <div className="health-metric">
-                        <div className="health-metric-header">
-                            <Star size={16} className="health-icon" />
-                            <span className="health-label">Total Stars</span>
-                        </div>
-                        <div className="health-value">{data.stars.toLocaleString()}</div>
 
+                    {/* Stars Earned */}
+                    <div className="health-metric">
+                        <div className="achievement-icon-container stars-icon">
+                            <Star size={32} className="achievement-icon" />
+                        </div>
+                        <div className="achievement-label">Stars</div>
+                        <div className="achievement-value">{data.stars.toLocaleString()}</div>
                     </div>
 
                     {/* Badges Collected */}
                     <div className="health-metric">
-                        <div className="health-metric-header">
-                            <Award size={16} className="health-icon" />
-                            <span className="health-label">Badges Earned</span>
+                        <div className="achievement-icon-container badges-icon">
+                            <Award size={32} className="achievement-icon" />
                         </div>
-                        <div className="health-value">{data.badges}</div>
-
+                        <div className="achievement-label">Badges</div>
+                        <div className="achievement-value">{data.badges}</div>
                     </div>
                 </div>
             </div>

@@ -96,10 +96,32 @@ export default function SupportTicketRaiser({ onClose, ticket, onSuccess }) {
     <div className="ticket-form-container">
       {/* Header */}
       <div className="ticket-header">
-        <h1 className="ticket-header-title">User Support Ticket</h1>
-        <p className="ticket-header-subtitle">
-          Submit issues or request assistance for your learning experience
-        </p>
+        <div>
+          <h1 className="ticket-header-title">User Support Ticket</h1>
+          <p className="ticket-header-subtitle">
+            Submit issues or request assistance for your learning experience
+          </p>
+        </div>
+        <button 
+          onClick={onClose}
+         style={{
+              position: 'absolute',
+              top: '22px',
+              right: '25px',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: '8px',
+              width: '53px',
+              height: '45px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#fff'
+            }}
+        >
+          <X size={20} />
+        </button>
       </div>
 
       {/* Form */}
@@ -196,7 +218,7 @@ export default function SupportTicketRaiser({ onClose, ticket, onSuccess }) {
                     onClick={() => removeAttachment(index)}
                     className="remove-button"
                   >
-                    <X className="remove-icon" />
+                    <X className="remove-icon" size={20}/>
                   </button>
                 </div>
               ))}

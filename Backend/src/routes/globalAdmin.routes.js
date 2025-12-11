@@ -32,6 +32,21 @@ const {
 const { getTeams } = require("../controllers/globalAdmin.controller/globalAdmin_Teams");
 const { enhanceText, enhanceAssessment, enhanceSurvey, createQuestions,generateSurveyWithSections } = require("../controllers/globalAdmin.controller/globalAdmin_AI");
 const { getGroups } = require("../controllers/globalAdmin.controller/globalAdmin_Teams");
+const {
+  // User Tickets
+  getGlobalUserTickets,
+  updateGlobalUserTicketStatus,
+  deleteGlobalUserTicket,
+  updateGlobalUserTicket,
+  getGlobalUserTicketStats,
+  // Admin Tickets
+  getGlobalAdminTickets,
+  updateGlobalAdminTicketStatus,
+  deleteGlobalAdminTicket,
+  updateGlobalAdminTicket,
+  getGlobalAdminTicketStats
+} = require("../controllers/globalAdmin.controller/globalAdmin_tickets");
+const { gradeSubmission, getSubmissions } = require("../controllers/globalAdmin.controller/globalAdmin_grading");
 
 const router = require("express").Router();
 
@@ -138,4 +153,25 @@ router.route('/enhanceSurvey').post(enhanceSurvey)
 router.route('/enhanceAssessment').post(enhanceAssessment)
 router.route('/createQuestions').post(createQuestions)
 router.route('/createSurveyQuestions').post(generateSurveyWithSections)
+
+//////Global Admin Tickets/////////
+// User Tickets
+router.route('/user/getTickets').get(getGlobalUserTickets)
+router.route('/user/updateTicketStatus/:ticketId').put(updateGlobalUserTicketStatus)
+router.route('/user/deleteTicket/:ticketId').delete(deleteGlobalUserTicket)
+router.route('/user/updateTicket/:ticketId').put(updateGlobalUserTicket)
+router.route('/user/getTicketStats').get(getGlobalUserTicketStats)
+
+// Admin Tickets  
+router.route('/admin/getTickets').get(getGlobalAdminTickets)
+router.route('/admin/updateTicketStatus/:ticketId').put(updateGlobalAdminTicketStatus)
+router.route('/admin/deleteTicket/:ticketId').delete(deleteGlobalAdminTicket)
+router.route('/admin/updateTicket/:ticketId').put(updateGlobalAdminTicket)
+router.route('/admin/getTicketStats').get(getGlobalAdminTicketStats)
+
+
+
+router.route('/gradeSubmission').post(gradeSubmission)
+router.route('/getSubmissions').get(getSubmissions)
+
 module.exports = router;

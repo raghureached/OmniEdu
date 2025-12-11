@@ -4,6 +4,7 @@ import api from '../../../services/api';
 import { CourseCard } from '../Cards/ContentCards';
 import { categories } from '../../../utils/constants';
 import LoadingScreen from '../../../components/common/Loading/Loading';
+import ModulePopUp from '../ModuleView/ModulePopUp';
 
 const Catalog = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -11,6 +12,15 @@ const Catalog = () => {
   const [selectedLevel, setSelectedLevel] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
   const [catalogItems, setCatalogItems] = useState([]);
+  const [showModulePopUp,setShowModulePopUp] = useState(false);
+  const [data,setData] = useState({});
+  const [payload,setPayload] = useState({
+    type: "",
+    who: "",
+    model: "",
+    name: "",
+  });
+ 
   useEffect(() => {
     const fetchCatalogItems = async () => {
       setIsLoading(true);
@@ -99,7 +109,7 @@ const Catalog = () => {
         ) : (
           filteredItems.length > 0 ? (
             filteredItems.map(item => (
-              <CourseCard key={item.id} data={item} status={item.inProgress ? "in_progress" : "not_enrolled"} progressPct={-1} contentType={item.type} />
+              <CourseCard key={item.id} data={item} status={item.inProgress ? "in_progress" : "not_enrolled"} progressPct={-1} contentType={item.type} setShowModulePopUp={setShowModulePopUp} setPayload={setPayload} setData={setData}/>
             ))
           ) : (
             <div className="catalog-no-results">
@@ -113,6 +123,8 @@ const Catalog = () => {
           )
         )}
       </div>
+      {showModulePopUp && <ModulePopUp onClose={()=>setShowModulePopUp(false)} isOpen={showModulePopUp} data={data}/>}
+      {/* {showAssessmentPopUp && <AssessmentPopUp onClose={()=>setShowAssessmentPopUp(false)} isOpen={showAssessmentPopUp} data={data}/>} */}
     </div>
   );
 };

@@ -22,7 +22,8 @@ import learningPathReducer from './slices/learningPathSlice'
 import userAssignmentReducer from './slices/userAssignmentSlice'
 import userTicketsReducer from './slices/userTicketsSlice'
 import adminTicketsReducer from './slices/adminTicketsSlice'
-
+import globalTicketsReducer from './slices/globalTicketSlice'
+import globalSubmissionSlice from './slices/globalAdminSubmissionsSlice'
 const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -48,6 +49,8 @@ const store = configureStore({
     userAssignments: userAssignmentReducer,
     userTickets: userTicketsReducer,
     adminTickets: adminTicketsReducer,
+    globalTickets: globalTicketsReducer,
+    globalSubmissions: globalSubmissionSlice
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

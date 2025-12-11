@@ -116,7 +116,7 @@ const SubTeamPreviewMembersModal = ({ isOpen, onClose, title, members = [] }) =>
             <div style={{ textAlign: 'center', color: '#64748b' }}>No members match your search.</div>
           ) : (
             <div className="table-container">
-              <div className="table-header" style={{ gridTemplateColumns: '1fr  1fr' }}>
+              <div className="table-header" style={{ gridTemplateColumns: '1fr  1fr',color:"#000000" }}>
                 <div className="col-team">Name</div>
                 <div className="col-team">Email</div>
                 {/* <div className="col-team">Sub Team</div> */}

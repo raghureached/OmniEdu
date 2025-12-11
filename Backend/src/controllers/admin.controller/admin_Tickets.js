@@ -1,6 +1,6 @@
 const AdminTicket = require("../../models/adminTicket");
 const logAdminActivity = require("./admin_activity");
-
+const mongoose = require("mongoose");
 /**
  * CREATE ADMIN TICKET
  * Only admins inside the same organization can raise tickets.
@@ -206,16 +206,6 @@ const deleteAdminTicket = async (req, res) => {
     });
   }
 };
-
-
-
-module.exports = {
-  createAdminTicket,
-  getAdminTickets,
-  updateAdminTicketStatus,
-  deleteAdminTicket,
-};
-
 /**
  * UPDATE TICKET DETAILS (subject, description, errorMessage, attachments)
  */
@@ -309,5 +299,134 @@ const getTicketStats = async (req, res) => {
   }
 };
 
-module.exports.updateAdminTicket = updateAdminTicket;
-module.exports.getTicketStats = getTicketStats;
+//---------------------------------------------
+// GET TICKET DETAILS
+//---------------------------------------------
+const getTicketDetails = async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    const organizationId = req.user.organization_id;
+
+    if (!ticketId) {
+      return res.status(400).json({
+        isSuccess: false,
+        message: "ticketId is required",
+      });
+    }
+
+    // Find ticket within the organization
+    const ticket = await AdminTicket.findOne({
+      ticketId,
+      organizationId,
+    }).lean();
+
+    if (!ticket) {
+      await logAdminActivity(req, "fetch", `Ticket not found: ${ticketId}`, "failed");
+      return res.status(404).json({
+        isSuccess: false,
+        message: "Ticket not found",
+      });
+    }
+
+    ticket.conversation = ticket.conversation || [];
+
+    await logAdminActivity(req, "fetch", `Fetched details for ticket ${ticketId}`);
+
+    return res.status(200).json({
+      isSuccess: true,
+      message: "Ticket details fetched successfully",
+      data: ticket,
+    });
+
+  } catch (error) {
+    await logAdminActivity(req, "fetch", error.message, "failed");
+    return res.status(500).json({
+      isSuccess: false,
+      message: "Failed to fetch ticket details",
+      error: error.message,
+    });
+  }
+};
+
+//---------------------------------------------
+// ADD COMMENT TO A TICKET
+//---------------------------------------------
+const addTicketComment = async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    const organizationId = req.user.organization_id;
+
+    if (!ticketId) {
+      return res.status(400).json({
+        isSuccess: false,
+        message: "ticketId is required",
+      });
+    }
+
+    const { message = "", attachments = [] } = req.body;
+
+    if (!message && attachments.length === 0) {
+      return res.status(400).json({
+        isSuccess: false,
+        message: "Message or attachments required",
+      });
+    }
+
+    // Determine sender type
+    const sender = req.user.role === "GlobalAdmin" ? "GlobalAdmin" : "Admin";
+
+    const newComment = {
+      _id: new mongoose.Types.ObjectId(),
+      sender,
+      senderId: req.user._id,
+      senderName: req.user.name || req.user.email || "Unknown",
+      message,
+      attachments,
+      createdAt: new Date(),
+    };
+
+    const updatedTicket = await AdminTicket.findOneAndUpdate(
+      { ticketId, organizationId },
+      {
+        $push: { conversation: newComment },
+        $set: { updatedAt: new Date() },
+      },
+      { new: true }
+    );
+
+    if (!updatedTicket) {
+      await logAdminActivity(req, "comment", `Ticket not found: ${ticketId}`, "failed");
+      return res.status(404).json({
+        isSuccess: false,
+        message: "Ticket not found",
+      });
+    }
+
+    await logAdminActivity(req, "comment", `Added comment to ticket ${ticketId}`);
+
+    return res.status(201).json({
+      isSuccess: true,
+      message: "Comment added successfully",
+      data: updatedTicket, // Return the full updated ticket
+    });
+
+  } catch (error) {
+    await logAdminActivity(req, "comment", error.message, "failed");
+    return res.status(500).json({
+      isSuccess: false,
+      message: "Failed to add comment",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = {
+  createAdminTicket,
+  getAdminTickets,
+  updateAdminTicketStatus,
+  deleteAdminTicket,
+  updateAdminTicket,
+  getTicketStats,
+  getTicketDetails,
+  addTicketComment
+};

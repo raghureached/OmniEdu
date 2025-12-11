@@ -10,12 +10,14 @@ const userTicketSchema = new mongoose.Schema(
     },
 
     organizationId: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
       required: true, // Each org sees only its own tickets
     },
 
     createdBy: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true, // userId
     },
 

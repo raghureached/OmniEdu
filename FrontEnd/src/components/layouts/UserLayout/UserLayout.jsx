@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../../store/slices/authSlice';
 import { fetchNotifications, markNotificationAsRead } from '../../../store/slices/notificationSlice';
 import "./UserLayout.css";
-import { Menu, Home, BookOpen, CheckCircle, Award, Shield, BookCopy, Clock, User, HelpCircle, LogOut, Bell, X } from 'lucide-react';
+import { Menu, Home, BookOpen, CheckCircle, Award, Shield, BookCopy, Clock, User, HelpCircle, LogOut, Bell, X,Laptop} from 'lucide-react';
 import { GoGraph } from 'react-icons/go';
 
 const UserLayout = () => {
@@ -192,7 +192,7 @@ const UserLayout = () => {
           </li>
           <li>
             <Link to="/user/support" className={isActive('/user/support') ? 'user_link_active' : ''}>
-              <HelpCircle size={20} />
+              <Laptop size={20} />
               {!sidebarCollapsed && <span className='user_sidebar_names'>Support</span>}
             </Link>
           </li>

@@ -1,5 +1,6 @@
 const UserTicket = require("../../models/userTickets");
 const logUserActivity = require("./user_activity");
+const mongoose = require("mongoose");
 
 // Get all tickets for the authenticated user with pagination
 const getTickets = async (req, res) => {
@@ -265,11 +266,134 @@ const getTicketStats = async (req, res) => {
   }
 };
 
+//---------------------------------------------
+// GET USER TICKET DETAILS
+//---------------------------------------------
+const getTicketDetails = async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    const organizationId = req.user.organization_id;
+    const userId = req.user._id;
+
+    if (!ticketId) {
+      return res.status(400).json({
+        isSuccess: false,
+        message: "ticketId is required",
+      });
+    }
+
+    const ticket = await UserTicket.findOne({
+      ticketId,
+      organizationId,
+      createdBy: userId
+    });
+
+    if (!ticket) {
+      await logUserActivity(req, "view", `Ticket not found: ${ticketId}`, "failed");
+      return res.status(404).json({
+        isSuccess: false,
+        message: "Ticket not found",
+      });
+    }
+
+    await logUserActivity(req, "view", `Viewed ticket details: ${ticketId}`);
+
+    return res.status(200).json({
+      isSuccess: true,
+      message: "Ticket details fetched successfully",
+      data: ticket,
+    });
+
+  } catch (error) {
+    await logUserActivity(req, "view", error.message, "failed");
+    return res.status(500).json({
+      isSuccess: false,
+      message: "Failed to fetch ticket details",
+      error: error.message,
+    });
+  }
+};
+
+//---------------------------------------------
+// ADD COMMENT TO A USER TICKET
+//---------------------------------------------
+const addTicketComment = async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    const organizationId = req.user.organization_id;
+    const userId = req.user._id;
+
+    if (!ticketId) {
+      return res.status(400).json({
+        isSuccess: false,
+        message: "ticketId is required",
+      });
+    }
+
+    const { message = "", attachments = [] } = req.body;
+
+    if (!message && attachments.length === 0) {
+      return res.status(400).json({
+        isSuccess: false,
+        message: "Message or attachments required",
+      });
+    }
+
+    // Determine sender type - users are always "User"
+    const sender = "User";
+
+    const newComment = {
+      _id: new mongoose.Types.ObjectId(),
+      sender,
+      senderId: userId,
+      senderName: req.user.name || req.user.email || "Unknown",
+      message,
+      attachments,
+      createdAt: new Date(),
+    };
+
+    const updatedTicket = await UserTicket.findOneAndUpdate(
+      { ticketId, organizationId, createdBy: userId },
+      {
+        $push: { conversation: newComment },
+        $set: { updatedAt: new Date() },
+      },
+      { new: true }
+    );
+
+    if (!updatedTicket) {
+      await logUserActivity(req, "comment", `Ticket not found: ${ticketId}`, "failed");
+      return res.status(404).json({
+        isSuccess: false,
+        message: "Ticket not found",
+      });
+    }
+
+    await logUserActivity(req, "comment", `Added comment to ticket ${ticketId}`);
+
+    return res.status(201).json({
+      isSuccess: true,
+      message: "Comment added successfully",
+      data: updatedTicket, // Return the full updated ticket
+    });
+
+  } catch (error) {
+    await logUserActivity(req, "comment", error.message, "failed");
+    return res.status(500).json({
+      isSuccess: false,
+      message: "Failed to add comment",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getTickets,
   createTicket,
   updateTicketStatus,
   updateTicket,
   deleteTicket,
-  getTicketStats
+  getTicketStats,
+  getTicketDetails,
+  addTicketComment
 };

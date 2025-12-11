@@ -75,6 +75,8 @@ import useLearningTracker from './hooks/LearningActivity';
 import AdminAnalyticsDashboard from './pages/admin/AdminAnalytics/AdminAnalytics';
 import TicketsTable from './pages/admin/AdminSupport/TicketsTable';
 import UserTicketsTable from './pages/user/Support/UserTicketsTable';
+import GlobalTicketsTable from './pages/globalAdmin/Tickets/TicketsTable';
+import GradeSubmission from './pages/globalAdmin/GradeSubmissions/GradeSubmission';
 // import Enrolled from './pages/user/Enrolled/Enrolled';
 function App() {
   const dispatch = useDispatch();
@@ -169,6 +171,8 @@ function App() {
           <Route path="portal-library-admin" element={<GlobalPortalActivity />} />
           <Route path="analytics-view" element={<AnalyticsViewNew />} />
           <Route path="change-password" element={<ChangePassword />} />
+          <Route path='support' element={<GlobalTicketsTable />} />
+          <Route path='grade-submissions' element={<GradeSubmission />} />
           {/* <Route path='test' element={<AnalyticsViewNew />} /> */}
         </Route>
         <Route element={<NavbarOnly />}>

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Search, Plus, Calendar,Edit3, Trash2,FileText, CheckCircle, CheckCircle2, AlertCircle } from "lucide-react";
+import { Search,X, Plus, Calendar,Edit3, Trash2,FileText, CheckCircle, CheckCircle2, AlertCircle, Eye } from "lucide-react";
 import "./UserTicketsTable.css";
 import SupportTicketRaiser from "./UserSupportTicket"; // popup component
+import TicketDetailsModal from "./TicketDetailsModal"; // NEW IMPORT
 import { useDispatch, useSelector } from "react-redux";
-import { fetchUserTickets, updateUserTicketStatus, deleteUserTicket, fetchUserTicketStats } from "../../../store/slices/userTicketsSlice";
+import { fetchUserTickets, updateUserTicketStatus, deleteUserTicket, fetchUserTicketStats, clearCurrentTicket } from "../../../store/slices/userTicketsSlice";
 
 import LoadingScreen from '../../../components/common/Loading/Loading';
 const UserTicketsTable = () => {
@@ -12,6 +13,8 @@ const UserTicketsTable = () => {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [createdTicketId, setCreatedTicketId] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false); // NEW
+  const [selectedTicketId, setSelectedTicketId] = useState(null); // NEW
   const [page, setPage] = useState(1);
   const limit = 6;
   const dispatch = useDispatch();
@@ -48,6 +51,19 @@ const UserTicketsTable = () => {
   const openEditForm = (ticket) => {
     setSelectedTicket(ticket);
     setShowPopup(true);
+  };
+
+  // NEW: Open ticket details modal
+  const openTicketDetails = (ticketId) => {
+    setSelectedTicketId(ticketId);
+    setShowDetailsModal(true);
+  };
+
+  // NEW: Close ticket details modal
+  const closeDetailsModal = () => {
+    setShowDetailsModal(false);
+    setSelectedTicketId(null);
+    dispatch(clearCurrentTicket());
   };
 
   const closeModal = () => {
@@ -124,7 +140,7 @@ const UserTicketsTable = () => {
           <Search size={16} className="user-support-search-icon" />
           <input
             type="text"
-            placeholder="Search tickets by subject"
+            placeholder="Search tickets"
             className="user-support-search-input"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -166,7 +182,7 @@ const UserTicketsTable = () => {
               <th>Ticket Details</th>
               <th>Status</th>
               <th>Date Created</th>
-              {/* <th>Actions</th> */}
+              <th>Actions</th>
             </tr>
             
           </thead>
@@ -211,31 +227,42 @@ const UserTicketsTable = () => {
                     </div>
                   </td>
                   {/* ACTIONS */}
-              {/* <td className="col-actions">
-                <div className="actions-wrapper">
-                  <button
-                    className="tickets-action-btn edit"
-                    title="Edit Ticket"
-                    onClick={() => openEditForm(ticket)}
-                  >
-                    <Edit3 size={14} />
-                  </button>
+                  <td className="col-actions">
+                    <div className="actions-wrapper">
+                      <button
+                        className="tickets-action-btn view"
+                        title="View Ticket Details"
+                        onClick={() => openTicketDetails(ticket.ticketId)}
+                      >
+                        <Eye size={14} />
+                      </button>
 
-                  <button
-                    className="tickets-action-btn delete"
-                    title="Delete Ticket"
-                    onClick={() => handleDelete(ticket)}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </td> */}
+                      <button
+                        className="tickets-action-btn edit"
+                        title="Edit Ticket"
+                        onClick={() => openEditForm(ticket)}
+                      >
+                        <Edit3 size={14} />
+                      </button>
+
+                      {/* Delete Button - Only for "Open" status */}
+                      {/* {ticket.status === "Open" && (
+                        <button
+                          className="tickets-action-btn delete"
+                          title="Delete Ticket"
+                          onClick={() => handleDelete(ticket)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )} */}
+                    </div>
+                  </td>
                 </tr>
               ))}
           </tbody>
           {/* ============== PAGINATION ROW (ADD THIS) ============== */}
 <tr className="user-tickets-pagination-row">
-  <td colSpan={4}>
+  <td colSpan={5}>
     <div
       style={{
         display: "flex",
@@ -331,7 +358,7 @@ const UserTicketsTable = () => {
               className="user-support-popup-close"
               onClick={() => setShowSuccess(false)}
             >
-              ×
+              <X size={20}/>
             </button>
             <div className="success-container">
               <div className="success-icon">
@@ -347,7 +374,7 @@ const UserTicketsTable = () => {
               <p className="success-message">
                 Our support team will review your ticket and respond within 24 hours. You'll receive email notifications for any updates.
               </p>
-              <div className="success-details">
+              {/* <div className="success-details">
                 <p className="success-details-title">
                   <AlertCircle style={{ width: 16, height: 16 }} />
                   What happens next?
@@ -358,7 +385,7 @@ const UserTicketsTable = () => {
                   <li>Initial response based on priority level</li>
                   <li>Regular updates until resolution</li>
                 </ul>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
@@ -368,12 +395,12 @@ const UserTicketsTable = () => {
       {showPopup && (
         <div className="user-support-popup-overlay">
           <div className="user-support-popup-container">
-            <button
+            {/* <button
               className="user-support-popup-close"
               onClick={() => setShowPopup(false)}
             >
               ×
-            </button>
+            </button> */}
 
             <SupportTicketRaiser 
               onClose={closeModal} 
@@ -382,6 +409,14 @@ const UserTicketsTable = () => {
             />
           </div>
         </div>
+      )}
+
+      {/* NEW: Ticket Details Modal */}
+      {showDetailsModal && selectedTicketId && (
+        <TicketDetailsModal 
+          ticketId={selectedTicketId}
+          onClose={closeDetailsModal}
+        />
       )}
     </div>
   );

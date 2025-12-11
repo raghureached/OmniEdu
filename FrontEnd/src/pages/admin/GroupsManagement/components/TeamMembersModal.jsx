@@ -129,7 +129,7 @@ const TeamMembersModal = ({ isOpen, onClose, team, members = [] }) => {
           ) : (
             <>
               <div className="table-container">
-                <div className="table-header" style={{ gridTemplateColumns: '1fr 1.5fr 1fr 1fr' }}>
+                <div className="table-header" style={{ gridTemplateColumns: '1fr 1.5fr 1fr 1fr' ,color:"#000000"}}>
                   <div className="col-team">Name</div>
                   <div className="col-team">Email</div>
                   <div className="col-team">Team</div>
