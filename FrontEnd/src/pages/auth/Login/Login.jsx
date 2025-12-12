@@ -27,7 +27,7 @@ const Login = () => {
   useEffect(() => {
     if (isAuthenticated && role) {
       if (role === 'GlobalAdmin') {
-        navigate('/global-admin/organizations', { replace: true });
+        navigate('/global-admin', { replace: true });
       } else if (role === 'Administrator') {
         navigate('/admin', { replace: true });
       } else {

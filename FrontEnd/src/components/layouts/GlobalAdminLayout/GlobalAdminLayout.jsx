@@ -168,18 +168,17 @@ const GlobalAdminLayout = () => {
                     </div>
                 </div>
                 <ul className="globaladmin_sidebar_menu">
-                    {/* Home */}
+               
                     <li>
                         <Link
-                            to="/global-admin"
-                            className={isActive("/global-admin") ? "globaladmin_link_active" : ""}
+                            to="/global-admin/dashboard"
+                            className={isActive("/global-admin/dashboard") ? "globaladmin_link_active" : ""}
                         >
                             <Home size={20} />
                             {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Global Admin Home</span>}
                         </Link>
                     </li>
 
-                    {/* MANAGE Section */}
                     <li className="globaladmin_menu_section">
                         {!sidebarCollapsed && <div className="globaladmin_section_title">MANAGE</div>}
                     </li>

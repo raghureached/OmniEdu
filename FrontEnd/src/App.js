@@ -77,19 +77,22 @@ import TicketsTable from './pages/admin/AdminSupport/TicketsTable';
 import UserTicketsTable from './pages/user/Support/UserTicketsTable';
 import GlobalTicketsTable from './pages/globalAdmin/Tickets/TicketsTable';
 import GradeSubmission from './pages/globalAdmin/GradeSubmissions/GradeSubmission';
-// import Enrolled from './pages/user/Enrolled/Enrolled';
+import { fetchPermissions } from './store/slices/RolePermissionSlice';
+import NotAllowed from './pages/NotAllowed/NotAllowed';
+
 function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   useLearningTracker();
-  useEffect(() => {
-    dispatch(checkAuth());
-    const interval = setInterval(() => {
-      dispatch(updateSessionTime());
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [dispatch]);
+  // useEffect(() => {
+  //   dispatch(checkAuth());
+  //   const interval = setInterval(() => {
+  //     dispatch(updateSessionTime());
+  //   }, 60000);
+  //   return () => clearInterval(interval);
+  // }, [dispatch]);
   const { isAuthenticated, role, loading } = useSelector((state) => state.auth);
+  const {permissions} = useSelector((state)=>state.rolePermissions)
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -102,6 +105,11 @@ function App() {
       }
     }
   }, [isAuthenticated, role, navigate]);
+
+  useEffect(() => {
+    if(role !== 'global-admin')
+    dispatch(fetchPermissions());
+  }, [dispatch]);
   if (loading) {
     return <LoadingScreen text={"Please Wait..."} />
   }
@@ -144,16 +152,17 @@ function App() {
           <Route path="manage-surveys" element={<AdminSurveys />} />
           <Route path="create-assignment" element={<CreateAssignmentEnhanced />} />
           <Route path="manage-assignments" element={<ManageAssignment />} />
-          <Route path="help-center" element={<AdminHelpCenter />} />
+          <Route path="help-center" element={permissions.includes("Help Center Access") ? <AdminHelpCenter /> : <NotAllowed />} />
           <Route path="message-board" element={<AdminMessageBoard />} />
           <Route path="portal-library" element={<AdminPortalActivity />} />
-          <Route path="profile" element={<AdminProfile />} />
-          <Route path="activity-log" element={<AdminActivityLog />} />
+          <Route path="profile" element={permissions.includes("Profile Access") ? <AdminProfile /> : <NotAllowed />} />
+          <Route path="activity-log" element={permissions.includes("Activity History Access") ? <AdminActivityLog /> : <NotAllowed />} />
           <Route path="change-password" element={<ChangePassword />} />
-          <Route path='support' element={<TicketsTable />} />
+          <Route path='support' element={permissions.includes("Support Button Access") ? <TicketsTable /> : <NotAllowed />}/>
         </Route>
         <Route path="/global-admin/*" element={<GlobalAdminLayout />}>
           <Route index element={<GlobalAdminHome />} />
+          <Route path='dashboard' element={<GlobalAdminHome />} />
           <Route path="organizations" element={<OrganizationManagement />} />
           <Route path="message-board" element={<GlobalMessageBoard />} />
           <Route path="roles" element={<GlobalRolesManagement />} />
@@ -204,7 +213,7 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="*" element={<div>Page Not Found</div>} />
-        <Route path='test' element={<LearningPath />} />
+        <Route path='test' element={<NotAllowed />} />
     
 
 

@@ -41,7 +41,7 @@ const GlobalRolesManagement = () => {
 
   }, [dispatch, currentOrg]);
 
-
+  const userSections = ["Course Catalog Section","Learning Hub Section"]
   const fetchPermissions = async () => {
     const response = await api.get("/api/globalAdmin/getPermissions");
     setAvailablePermissions(response.data.data);
@@ -290,7 +290,7 @@ const GlobalRolesManagement = () => {
                 <div className="permissions-sections">
                   {availablePermissions.map((section) => (
                     <div key={section.sectionId} className="permission-section">
-                      <div className="section-title">{section.name}</div>
+                      <div className="section-title">{section.name} {userSections.includes(section.name) && <p style={{fontSize:"10px",color:"red"}}>NOTE : Only for users</p>} </div>
                       <div className="permissions-list">
                         {section.permissions.map((perm) => {
                           const isChecked = permissions.some(
@@ -412,7 +412,7 @@ const GlobalRolesManagement = () => {
                   </td>
                     }
                   </tr>
-                ))}
+                ))} 
             </tbody>
           </table>
         </div>

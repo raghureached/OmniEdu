@@ -24,7 +24,7 @@ const createRoleSchema = z.object({
 
 const addRole = async (req, res) => {
   try {
-    const { name, description, permissions } = req.body;
+    const { name, description, permissions,isDefault } = req.body;
     for (const permBlock of permissions) {
       const sectionExists = await Section.findById(permBlock.section);
       if (!sectionExists) {
@@ -46,7 +46,8 @@ const addRole = async (req, res) => {
     const newRole = await Role.create({
       name,
       description,
-      permissions
+      permissions,
+      isDefault
     });
     res.status(201).json({
       success: true,
@@ -243,32 +244,31 @@ const addPermissions = async (req, res) => {
     // Define sections and permissions
     const availablePermissions = [
       {
-        section: "User Home Section",
+        section: "Dashboard",
         permissions: ["Training Calendar", "Message Board"]
       },
       {
-        section: "Learning Hub Section",
+        section: "Learning Hub",
         permissions: [
           "My Training / Leaderboard",
           "Assigned Training",
-          "Additional Training",
-          "Mandatory Training"
+          "Recommended Training",
         ]
       },
       {
-        section: "Course Catalog Section",
+        section: "Course Catalog",
         permissions: ["Course Catalog Access"]
       },
       {
-        section: "Activity History Section",
+        section: "Activity History",
         permissions: ["Activity History Access"]
       },
       {
-        section: "User Profile Section",
+        section: "User Profile",
         permissions: ["Profile Access", "Change Password Button"]
       },
       {
-        section: "Help Center Section",
+        section: "Help Center",
         permissions: ["Help Center Access"]
       },
       {

@@ -14,6 +14,7 @@ const AdminHome = () => {
   const { currentMessages, loading } = useSelector((state) => state.globalMessage);
   const userName = user?.name || 'Admin';
   const currentHour = new Date().getHours();
+  const {permissions} = useSelector((state)=>state.rolePermissions)
   // Try to infer organization id/uuid from user payload (supports multiple backend shapes)
   const orgId = user?.organization?.uuid
     || user?.organizationUuid
@@ -148,7 +149,7 @@ const AdminHome = () => {
           </div>
         </div>
 
-        {/* Message Board (from Global Admin) */}
+        
         <div className="admin-message-card">
           <div className="admin-message-card-header">
             <h2 className="admin-message-card-title">Message Board</h2>

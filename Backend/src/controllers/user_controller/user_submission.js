@@ -4,12 +4,10 @@ const createSubmission = async(req,res) => {
     try {
         const userId = req.user._id;
         const uploadedFile = req.uploadedFile;
-        const {moduleId,grade,feedback,refPath} = req.body;
+        const {moduleId,refPath} = req.body;
         const newSubmission = new submissionModel({
             userId,
             moduleId,
-            grade,
-            feedback,
             refPath,
             file_url:uploadedFile?.url  
         })

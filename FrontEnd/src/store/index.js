@@ -24,6 +24,7 @@ import userTicketsReducer from './slices/userTicketsSlice'
 import adminTicketsReducer from './slices/adminTicketsSlice'
 import globalTicketsReducer from './slices/globalTicketSlice'
 import globalSubmissionSlice from './slices/globalAdminSubmissionsSlice'
+import rolePermissionsReducer from './slices/RolePermissionSlice'
 const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -50,7 +51,9 @@ const store = configureStore({
     userTickets: userTicketsReducer,
     adminTickets: adminTicketsReducer,
     globalTickets: globalTicketsReducer,
-    globalSubmissions: globalSubmissionSlice
+    globalSubmissions: globalSubmissionSlice,
+    rolePermissions: rolePermissionsReducer,
+    
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

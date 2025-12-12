@@ -35,6 +35,8 @@ const {addTeam,editTeam,addSubTeam,editSubTeam,deleteSubTeam,addUsersToGroup} = 
 const { getCourseDistribution, getUsersData, calculateUsageTrend, getAdoption } = require("../controllers/admin.controller/admin_analytics");
 const { createAdminTicket, getAdminTickets, updateAdminTicketStatus, updateAdminTicket, deleteAdminTicket , getTicketDetails,
   addTicketComment, getTicketStats} = require("../controllers/admin.controller/admin_Tickets");
+const { getPermissions } = require("../controllers/permissions.controller");
+
 
 const router = require("express").Router();
 
@@ -159,5 +161,8 @@ router.route('/updateTicket/:ticketId').put(updateAdminTicket);
 router.route('/deleteTicket/:ticketId').delete(deleteAdminTicket);
 router.route("/getTicketDetails/:ticketId").get(getTicketDetails);
 router.route("/addTicketComment/:ticketId").post(addTicketComment);
+
+
+router.route('/getPermissions').get(getPermissions)
 
 module.exports = router;

@@ -17,6 +17,9 @@ const AdminLayout = () => {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(location.pathname);
+
+  const {permissions} = useSelector((state) => state.rolePermissions);
+  // console.log(permissions)
   
   // Fetch notifications on component mount
   useEffect(() => {
@@ -189,18 +192,6 @@ const AdminLayout = () => {
               )}
             </Link>
           </li>
-          
-          {/* <li>
-            <Link
-              to="/admin/roles"
-              className={isActive("/admin/roles") ? "admin_link_active" : ""}
-            >
-              <Shield size={20} />
-              {!sidebarCollapsed && (
-                <span className="admin_sidebar_names">Roles</span>
-              )}
-            </Link>
-          </li> */}
           <li className="admin_menu_section">
             {!sidebarCollapsed && (
               <div className="admin_section_title">Content</div>
@@ -279,19 +270,6 @@ const AdminLayout = () => {
               )}
             </Link>
           </li>
-          {/* <li>
-            <Link
-              to="/admin/manage-assignments"
-              className={
-                isActive("/admin/manage-assignments") ? "admin_link_active" : ""
-              }
-            >
-              <NotebookText size={20} />
-              {!sidebarCollapsed && (
-                <span className="admin_sidebar_names">Manage Assignments</span>
-              )}
-            </Link>
-          </li> */}
           <li className="admin_menu_section">
             {!sidebarCollapsed && (
               <div className="admin_section_title">Library</div>
@@ -353,19 +331,18 @@ const AdminLayout = () => {
               <div className="admin_section_title">Other</div>
             )}
           </li>
-          <li>
+          {permissions.includes("Profile Access") &&<li>
             <Link
               to="/admin/profile"
               className={isActive("/admin/profile") ? "admin_link_active" : ""}
             >
-              {/* <Clock size={20} /> */}
               <CircleUserRound size={20} />
               {!sidebarCollapsed && (
                 <span className="admin_sidebar_names">Admin Profile</span>
               )}
             </Link>
-          </li>
-          <li>
+          </li>}
+          {permissions.includes("Activity History Access") && <li>
             <Link
               to="/admin/activity-log"
               className={
@@ -377,8 +354,8 @@ const AdminLayout = () => {
                 <span className="admin_sidebar_names">Activity Log</span>
               )}
             </Link>
-          </li>
-          <li>
+          </li>}
+          {permissions.includes("Help Center Access") && <li>
             <Link
               to="/admin/help-center"
               className={
@@ -390,8 +367,8 @@ const AdminLayout = () => {
                 <span className="admin_sidebar_names">Help Center</span>
               )}
             </Link>
-          </li>
-          <li>
+          </li>}
+          {permissions.includes("Support Button Access") && <li>
             <Link
               to="/admin/support"
               className={
@@ -404,7 +381,7 @@ const AdminLayout = () => {
                 <span className="admin_sidebar_names">Support</span>
               )}
             </Link>
-          </li>
+          </li>}
         </ul>
 
         <div className="admin_sidebar_footer">

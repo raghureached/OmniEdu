@@ -55,6 +55,7 @@ app.use('/dev',devRouter)
 app.use('/api/user',authenticate,userRouter)
 app.post('/api/sendOtp', require('./src/controllers/OTP').sendOTP)
 app.post('/api/verifyOtp', require('./src/controllers/OTP').verifyOTP)
+app.get('/api/getPermissions', authenticate,require('./src/controllers/permissions.controller').getPermissions)
 app.listen(PORT, () => {
   console.log(`Server is running at PORT:${PORT}`);
 });
