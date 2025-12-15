@@ -9,6 +9,7 @@ import { deleteLearningPath } from '../../../store/slices/learningPathSlice';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import { GoX } from 'react-icons/go';
 import { RiDeleteBinFill } from 'react-icons/ri';
+import { categories } from '../../../utils/constants';
 
 const LearningPaths = () => {
   const dispatch = useDispatch();
@@ -23,10 +24,12 @@ const LearningPaths = () => {
   const bulkPanelRef = useRef(null);
   const [showBulkAction, setShowBulkAction] = useState(false);
   const [tempFilters, setTempFilters] = useState({
-    status: ''
+    status: '',
+    category: ''
   });
   const [filters, setFilters] = useState({
-    status: ''
+    status: '',
+    category: ''
   });
   // State for filters
   const [nameSearch, setNameSearch] = useState('');
@@ -53,7 +56,7 @@ const LearningPaths = () => {
   };
 
   const resetFilters = () => {
-    const reset = { status: '' };
+    const reset = { status: '', category: '' };
     setTempFilters(reset);
     setFilters(reset);
   };
@@ -62,8 +65,9 @@ const LearningPaths = () => {
     const matchesClassification = classificationFilter === 'all' || path.classification === classificationFilter;
     const statusActive = (filters.status && filters.status.length > 0) ? filters.status : statusFilter;
     const matchesStatus = statusActive === 'all' || statusActive === '' || path.status === statusActive;
+    const matchesCategory = !filters.category || filters.category === '' || path.category === filters.category;
 
-    return matchesName && matchesClassification && matchesStatus;
+    return matchesName && matchesClassification && matchesStatus && matchesCategory;
   });
   const total = filteredPaths.length;
   const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
@@ -414,6 +418,22 @@ const LearningPaths = () => {
 
                 </select>
               </div>
+              <div className="filter-group">
+                <label>Category</label>
+                <select
+                  name="category"
+                  value={tempFilters?.category || ""}
+                  onChange={handleFilterChange}
+                >
+                  <option value="">All</option>
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="filter-actions">
                 <button className="btn-primary" onClick={handleFilter}>
                   Apply

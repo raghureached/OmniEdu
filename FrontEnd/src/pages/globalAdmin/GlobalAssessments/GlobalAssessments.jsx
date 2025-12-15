@@ -10,6 +10,7 @@ import LoadingScreen from '../../../components/common/Loading/Loading';
 import api from '../../../services/api';
 import { useNotification } from '../../../components/common/Notification/NotificationProvider.jsx';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog.jsx';
+import { categories } from '../../../utils/constants.js';
 const GlobalAssessments = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,12 +59,14 @@ const GlobalAssessments = () => {
   const [showBulkAction, setShowBulkAction] = useState(false);
   const [filters, setFilters] = useState({
     status: '',
-    search: ''
+    search: '',
+    category: '',
   });
 
   const [tempFilters, setTempFilters] = useState({
     status: '',
-    search: ''
+    search: '',
+    category: '',
   });
   const filterButtonRef = useRef(null);
   const bulkButtonRef = useRef(null);
@@ -1119,15 +1122,31 @@ const GlobalAssessments = () => {
               <option value="Published">Published</option>
             </select>
           </div>
+          <div className="filter-group">
+            <label>Category</label>
+            <select
+              name="category"
+              value={tempFilters?.category || ""}
+              onChange={handleFilterChange}
+            >
+              <option value="">All</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
 
 
           <div className="filter-actions">
-            <button className="btn-primary" onClick={handleFilter}>
-              Apply
-            </button>
-            <button className="reset-btn" onClick={resetFilters}>
+            <button className="btn-secondary" onClick={resetFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>
               Clear
             </button>
+            <button className="btn-primary" onClick={handleFilter} style={{ padding: '6px 12px', fontSize: '14px' }}>
+              Apply
+            </button>
+            
 
 
           </div>
@@ -1403,14 +1422,14 @@ const GlobalAssessments = () => {
                   .filter(assessment => {
                     // Apply search filter
                     const matchesSearch = !filters.search ||
-                      assessment.title?.toLowerCase().includes(filters.search.toLowerCase()) ||
-                      assessment.description?.toLowerCase().includes(filters.search.toLowerCase());
-
+                      assessment.title?.toLowerCase().includes(filters.search.toLowerCase())
+                
                     // Apply status filter
                     const matchesStatus = !filters.status ||
                       assessment.status?.toLowerCase() === filters.status.toLowerCase();
-
-                    return matchesSearch && matchesStatus;
+                    const matchCategory = !filters.category || 
+                      assessment?.category?.toLowerCase() === filters.category.toLowerCase();
+                    return matchesSearch && matchesStatus && matchCategory;
                   })
                   .map(assessment => (
                     <tr key={assessment.uuid || assessment._id || assessment.id} className="assess-table-row">

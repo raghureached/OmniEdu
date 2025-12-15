@@ -7,29 +7,60 @@ import { createGlobalAssignment } from '../../../store/slices/globalAssignmentSl
 import { fetchGlobalAssessments, updateGlobalAssessment } from '../../../store/slices/globalAssessmentSlice';
 import { fetchOrganizations } from '../../../store/slices/organizationSlice';
 import { fetchSurveys, updateSurvey, getSurveyById } from '../../../store/slices/surveySlice';
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Filter, Search } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import { useNotification } from '../../../components/common/Notification/NotificationProvider.jsx';
+import {categories} from '../../../utils/constants.js'
+import { GoX } from 'react-icons/go';
+import { useRef } from 'react';
 
 const GlobalCreateAssignment = () => {
     const dispatch = useDispatch();
     const { showNotification } = useNotification();
+    
+    // State declarations
+    const [currentStep, setCurrentStep] = useState(1);
+    const [showFilters, setShowFilters] = useState(false);
+    const [tempContentType, setTempContentType] = useState('');
+    const [tempCategory, setTempCategory] = useState('');
+    const filterPanelRef = useRef(null);
+    const [showAssignDatePicker, setShowAssignDatePicker] = useState(false);
+    const [showDueDatePicker, setShowDueDatePicker] = useState(false);
+    const [contentType, setContentType] = useState('');
+    const [category, setCategory] = useState('');
+    const [contentSearchTerm, setContentSearchTerm] = useState('');
+    const [orgSearchTerm, setOrgSearchTerm] = useState('');
+    const [selectedOrgs, setSelectedOrgs] = useState([]);
+    
+    const { organizations, loading } = useSelector(state => state.organizations);
+    const { surveys } = useSelector(state => state.surveys);
+    const { items: content } = useSelector(state => state.content);
+    const { assessments } = useSelector(state => state.globalAssessments);
+
+    // Effects
     useEffect(() => {
         dispatch(fetchContent());
         dispatch(fetchGlobalAssessments());
         dispatch(fetchOrganizations());
         dispatch(fetchSurveys());
     }, [dispatch]);
-    const [currentStep, setCurrentStep] = useState(1);
-    const [showAssignDatePicker, setShowAssignDatePicker] = useState(false);
-    const [showDueDatePicker, setShowDueDatePicker] = useState(false);
-    const [contentType, setContentType] = useState('');
-    const { organizations,loading } = useSelector(state => state.organizations);
-    const { surveys } = useSelector(state => state.surveys);
-    const { items: content } = useSelector(state => state.content);
-    const { assessments } = useSelector(state => state.globalAssessments);
-    const [orgSearchTerm, setOrgSearchTerm] = useState('');
-    const [selectedOrgs, setSelectedOrgs] = useState([]);
+
+    // Click outside to close filter panel
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (filterPanelRef.current && !filterPanelRef.current.contains(event.target)) {
+                setShowFilters(false);
+            }
+        };
+
+        if (showFilters) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showFilters]);
 
     const [formData, setFormData] = useState({
         contentType: '',
@@ -74,12 +105,12 @@ const GlobalCreateAssignment = () => {
         try {
             // Create the assignment first
             const res = await dispatch(createGlobalAssignment(formData));
-            if(createGlobalAssignment.fulfilled.match(res)){
-              showNotification({
-                type: "success",
-                message: "Assignment created successfully",
-                title: "Assignment Created"
-              });
+            if (createGlobalAssignment.fulfilled.match(res)) {
+                showNotification({
+                    type: "success",
+                    message: "Assignment created successfully",
+                    title: "Assignment Created"
+                });
             }
             // Publish the content if it's an Assessment or Survey
             // if (formData.contentId) {
@@ -108,9 +139,9 @@ const GlobalCreateAssignment = () => {
             // swallow here; existing slice handles error state
             // console.error('Create assignment or publish failed', err);
             showNotification({
-              type: "error",
-              message: err?.message,
-              title: "Assignment Creation Failed"
+                type: "error",
+                message: err?.message,
+                title: "Assignment Creation Failed"
             });
         }
         setFormData({
@@ -130,13 +161,38 @@ const GlobalCreateAssignment = () => {
         setCurrentStep(1);
     };
     const handleFilterChange = (e) => {
-        setContentType(e.target.value);
+        const { name, value } = e.target;
+        if (name === 'contentType') {
+            setTempContentType(value);
+        } else if (name === 'category') {
+            setTempCategory(value);
+        }
+    };
+
+    const handleApplyFilters = () => {
+        setContentType(tempContentType);
+        setCategory(tempCategory);
         setContentSearchTerm('');
-    }
+        setShowFilters(false);
+    };
+
+    const handleClearFilters = () => {
+        setTempContentType('');
+        setTempCategory('');
+        setContentType('');
+        setCategory('');
+        setContentSearchTerm('');
+        setShowFilters(false);
+    };
+
+    const handleOpenFilters = () => {
+        setTempContentType(contentType);
+        setTempCategory(category);
+        setShowFilters(true);
+    };
     const handleNextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 5));
     const handlePrevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
-    const [contentSearchTerm, setContentSearchTerm] = useState('');
     let allContentItems;
     if (contentType === 'Module') {
         allContentItems = content;
@@ -147,9 +203,13 @@ const GlobalCreateAssignment = () => {
     } else {
         allContentItems = [...content, ...assessments, ...surveys];
     }
-    const filteredContentItems = allContentItems.filter(item =>
-        item.title.toLowerCase().includes(contentSearchTerm.toLowerCase())
-    );
+    const filteredContentItems = allContentItems.filter(item => {
+        const matchesSearch = !contentSearchTerm || 
+            item.title.toLowerCase().includes(contentSearchTerm.toLowerCase());
+        const matchesType = !contentType || item.type === contentType;
+        const matchesCategory = !category || item.category === category;
+        return matchesSearch && matchesType && matchesCategory;
+    });
     const handleAddOrg = (orgId) => {
         if (selectedOrgs.includes(orgId)) {
             setSelectedOrgs(selectedOrgs.filter(org => org !== orgId));
@@ -174,8 +234,8 @@ const GlobalCreateAssignment = () => {
         }
         formData.orgIds = selectedOrgs
     };
-    if(loading){
-        return <LoadingScreen text="Loading Content..."/>
+    if (loading) {
+        return <LoadingScreen text="Loading Content..." />
     }
     return (
         <div className="global-assign-create-assignment-container">
@@ -337,18 +397,58 @@ const GlobalCreateAssignment = () => {
                                     onChange={(e) => setContentSearchTerm(e.target.value)}
                                     className="global-assign-content-search-input"
                                 />
-                                <select
-                                    value={contentType}
-                                    onChange={handleFilterChange}
-                                    name="contentType"
-                                    className="global-assign-type-select"
-                                    style={{ cursor: 'pointer', border: '1px solid #ccc', padding: '8px 12px', borderRadius: '10px', backgroundColor: '#f5f5f5', width: '160px' }}
-                                >
-                                    <option value="">All Types</option>
-                                    <option value="Module">Module</option>
-                                    <option value="Assessment">Assessment</option>
-                                    <option value="Survey">Survey</option>
-                                </select>
+                                <button type='button' style={{ display: "flex", alignItems: "center", gap: "10px" }} className='btn-secondary' onClick={handleOpenFilters}>
+                                    <Filter size={20} /> <span>Filters</span>
+                                </button>
+                                {showFilters && <div className="global-assign-filter-panel" ref={filterPanelRef}>
+                                    <span style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px" }} onClick={() => setShowFilters(false)}><GoX size={20} color="#6b7280" /></span>
+                                    <div className='filter-group'>
+                                        <label>Type</label>
+                                        <select
+                                            value={tempContentType}
+                                            onChange={handleFilterChange}
+                                            name="contentType"
+                                            style={{ cursor: 'pointer', border: '1px solid #ccc', padding: '8px 12px', borderRadius: '10px', backgroundColor: '#f5f5f5', width: '160px' }}
+                                        >
+                                            <option value="">All Types</option>
+                                            <option value="Module">Module</option>
+                                            <option value="Assessment">Assessment</option>
+                                            <option value="Survey">Survey</option>
+                                        </select>
+                                    </div>
+                                    <div className='filter-group'>
+                                        <label>Category</label>
+                                        <select
+                                            value={tempCategory}
+                                            onChange={handleFilterChange}
+                                            name="category"
+                                            style={{ cursor: 'pointer', border: '1px solid #ccc', padding: '8px 12px', borderRadius: '10px', backgroundColor: '#f5f5f5', width: '160px' }}
+                                        >
+                                            <option value="">All Categories</option>
+                                            {categories.map((c) => (
+                                                <option key={c} value={c}>{c}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '10px', marginTop: '15px', justifyContent: 'flex-end' }}>
+                                        <button 
+                                            type='button' 
+                                            className='btn-secondary' 
+                                            onClick={handleClearFilters}
+                                            style={{ padding: '6px 12px', fontSize: '14px' }}
+                                        >
+                                            Clear
+                                        </button>
+                                        <button 
+                                            type='button' 
+                                            className='btn-primary' 
+                                            onClick={handleApplyFilters}
+                                            style={{ padding: '6px 12px', fontSize: '14px' }}
+                                        >
+                                            Apply
+                                        </button>
+                                    </div>
+                                </div>}
                             </div>
                             <div className="global-assign-content-items-list">
                                 {filteredContentItems.length > 0 ? (
@@ -361,20 +461,20 @@ const GlobalCreateAssignment = () => {
                                             ].filter(Boolean).join(' ')}
                                             onClick={() => handleContentSelection(item)}
                                         >
-                                            <div style={{display:'flex',alignItems:'center',gap:'10px',justifyContent:'space-between'}}>
-                                            <div>
-                                                <div className="global-assign-content-item-type">
-                                                    {assessments.includes(item)
-                                                        ? 'Assessment'
-                                                        : surveys.includes(item)
-                                                            ? 'Survey'
-                                                            : 'Module'}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between' }}>
+                                                <div>
+                                                    <div className="global-assign-content-item-type">
+                                                        {assessments.includes(item)
+                                                            ? 'Assessment'
+                                                            : surveys.includes(item)
+                                                                ? 'Survey'
+                                                                : 'Module'}
+                                                    </div>
+                                                    <div className="global-assign-content-item-name">{item.title.toUpperCase()}</div>
                                                 </div>
-                                                <div className="global-assign-content-item-name">{item.title.toUpperCase()}</div>
-                                            </div>
-                                            <div>
-                                                {/* <button className="btn-secondary">Preview</button> */}
-                                            </div>
+                                                <div>
+                                                    {/* <button className="btn-secondary">Preview</button> */}
+                                                </div>
                                             </div>
 
                                         </div>
@@ -447,7 +547,7 @@ const GlobalCreateAssignment = () => {
                                     </div>
                                 </div>
                                 <div style={{ display: "flex", gap: "30px", alignItems: "center" }}>
-                                <div className="global-assign-date-field">
+                                    <div className="global-assign-date-field">
                                         <label>Due Date:<span style={{ color: "red" }}>*</span></label>
                                         <input
                                             type="text"

@@ -1901,6 +1901,7 @@ const UsersManagement = () => {
                     className="btn-secondary"
                     onClick={resetFilters}
                     type="button"
+                    style={{ padding: '6px 12px', fontSize: '14px' }}
                   >
                     Clear
                   </button>
@@ -1909,6 +1910,7 @@ const UsersManagement = () => {
                     onClick={handleFilter}
                     // style={{ marginRight: '8px' }}
                     type="button"
+                    style={{ padding: '6px 12px', fontSize: '14px' }}
                   >
                     Apply
                   </button>

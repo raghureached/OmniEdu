@@ -39,6 +39,7 @@
   min-width: 100px;
 }
 
+
 .global-assign-assignment-step:not(:last-child)::after {
   content: "";
   position: absolute;
@@ -456,4 +457,17 @@ input[type="checkbox"]{
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     border-radius: 10px;
     width: 300px;
+}
+
+.global-assign-filter-panel{
+   position: absolute;
+  top: 300px  ; /* adjust based on header height */
+  right: 180px; /* align with Filter button */
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  width: 220px;
+  z-index: 1000;
 }

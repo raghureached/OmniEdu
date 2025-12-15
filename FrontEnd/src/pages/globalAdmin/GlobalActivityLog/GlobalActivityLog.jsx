@@ -18,14 +18,19 @@ const GlobalActivityLog = () => {
   const [roleFilter, setRoleFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [tempFilters, setTempFilters] = useState({
+    action: "",
+    role: "",
+    date: ""
+  });
   const [currentPage, setCurrentPage] = useState(1);
 
   // Debug logging
-  console.log('Current state:', { logs, loading, error, pagination });
+  // console.log('Current state:', { logs, loading, error, pagination });
 
   useEffect(() => {
     fetchLogsData();
-  }, [currentPage, actionFilter, roleFilter, dateFilter, search]);
+  }, [currentPage]); // Only fetch on page change, not on filter changes
 
   const fetchLogsData = () => {
     const queryParams = {
@@ -33,20 +38,7 @@ const GlobalActivityLog = () => {
       limit: 8,
     };
 
-    if (search.trim()) {
-      queryParams.search = search.trim();
-    }
-    if (actionFilter && actionFilter !== 'all') {
-      queryParams.action = actionFilter;
-    }
-    if (roleFilter && roleFilter !== 'all') {
-      queryParams.userRole = roleFilter;
-    }
-    if (dateFilter && dateFilter !== 'all') {
-      queryParams.date = dateFilter;
-    }
-
-    console.log('Fetching logs with params:', queryParams);
+    // console.log('Fetching logs with params:', queryParams);
     dispatch(fetchActivityLogs(queryParams));
   };
 
@@ -55,30 +47,83 @@ const GlobalActivityLog = () => {
   };
 
   const handleFilterChange = (filterName, value) => {
-    switch(filterName) {
-      case 'action':
-        setActionFilter(value);
-        break;
-      case 'role':
-        setRoleFilter(value);
-        break;
-      case 'date':
-        setDateFilter(value);
-        break;
-      default:
-        break;
-    }
-    setCurrentPage(1); // Reset to first page when filters change
+    setTempFilters(prev => ({
+      ...prev,
+      [filterName]: value
+    }));
+  };
+
+  const handleApplyFilters = () => {
+    console.log('Applying filters:', tempFilters);
+    setActionFilter(tempFilters.action);
+    setRoleFilter(tempFilters.role);
+    setDateFilter(tempFilters.date);
+    setCurrentPage(1);
     setShowFilters(false);
   };
 
   const resetFilters = () => {
+    setTempFilters({
+      action: "",
+      role: "",
+      date: ""
+    });
     setActionFilter("");
     setRoleFilter("");
     setDateFilter("");
     setSearch("");
     setCurrentPage(1);
+    setShowFilters(false);
   };
+
+  const handleOpenFilters = () => {
+    setTempFilters({
+      action: actionFilter,
+      role: roleFilter,
+      date: dateFilter
+    });
+    setShowFilters(true);
+  };
+
+  // Client-side filtering logic
+  const filteredLogs = logs?.filter(log => {
+    // Search filter
+    const matchesSearch = !search.trim() || 
+      log.action?.toLowerCase().includes(search.toLowerCase()) ||
+      log.details?.toLowerCase().includes(search.toLowerCase()) ||
+      log.userName?.toLowerCase().includes(search.toLowerCase())
+      // log.user?.email?.toLowerCase().includes(search.toLowerCase());
+
+    // Action filter
+    const matchesAction = !actionFilter || actionFilter === 'all' || log.action === actionFilter;
+
+    // Role filter
+    const matchesRole = !roleFilter || roleFilter === 'all' || log.user?.role === roleFilter;
+
+    // Date filter
+    let matchesDate = true;
+    if (dateFilter) {
+      // Skip if createdAt is missing or invalid
+      if (!log.createdAt) {
+        matchesDate = false;
+      } else {
+        try {
+          const logDate = new Date(log.createdAt);
+          // Check if date is valid
+          if (isNaN(logDate.getTime())) {
+            matchesDate = false; // Invalid date, exclude from results
+          } else {
+            const formattedLogDate = logDate.toISOString().split('T')[0];
+            matchesDate = formattedLogDate === dateFilter;
+          }
+        } catch (error) {
+          matchesDate = false; // Error parsing date, exclude from results
+        }
+      }
+    }
+
+    return matchesSearch && matchesAction && matchesRole && matchesDate;
+  }) || [];
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
@@ -118,7 +163,7 @@ const GlobalActivityLog = () => {
               </div>
 
               <div className="act-log-controls-right">
-                <button className="act-log-control-btn" onClick={() => setShowFilters((prev) => !prev)}>
+                <button className="btn-secondary" onClick={handleOpenFilters}>
                   <Filter size={16} />
                   Filter
                 </button>
@@ -137,26 +182,27 @@ const GlobalActivityLog = () => {
                 <div className="act-log-filter-group">
                   <label>Action</label>
                   <select
-                    value={actionFilter}
+                    className="act-log-filter-select"
+                    value={tempFilters.action || actionFilter}
                     onChange={(e) => handleFilterChange('action', e.target.value)}
                   >
                     <option value="">All</option>
-                    <option value="Created">Created</option>
-                    <option value="Updated">Updated</option>
-                    <option value="Deleted">Deleted</option>
+                    <option value="Create">Create</option>
+                    <option value="Update">Update</option>
+                    <option value="Delete">Delete</option>
                   </select>
                 </div>
 
                 <div className="act-log-filter-group">
                   <label>Role</label>
                   <select
-                    value={roleFilter}
+                    value={tempFilters.role || roleFilter}
                     onChange={(e) => handleFilterChange('role', e.target.value)}
                   >
                     <option value="">All</option>
-                    <option value="Admin">Admin</option>
-                    <option value="Manager">Manager</option>
-                    <option value="User">User</option>
+                    <option value="Administrator">Admin</option>
+                    {/* <option value="Manager">Manager</option> */}
+                    <option value="General User">User</option>
                   </select>
                 </div>
 
@@ -164,14 +210,17 @@ const GlobalActivityLog = () => {
                   <label>Date</label>
                   <input
                     type="date"
-                    value={dateFilter}
+                    value={tempFilters.date || dateFilter}
                     onChange={(e) => handleFilterChange('date', e.target.value)}
                   />
                 </div>
 
-                <div className="act-log-filter-actions">
-                  <button className="act-log-btn-primary" onClick={resetFilters}>
+                <div className="act-log-filter-actions"> 
+                  <button className="btn-secondary" onClick={resetFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>
                     Clear
+                  </button>
+                  <button className="btn-primary" onClick={handleApplyFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>
+                    Apply
                   </button>
                 </div>
               </div>
@@ -189,7 +238,7 @@ const GlobalActivityLog = () => {
                   <div>Time</div>
                 </div>
 
-                {logs.length === 0 && !loading ? (
+                {filteredLogs.length === 0 && !loading ? (
                   <div style={{ 
                     textAlign: 'center', 
                     padding: '48px', 
@@ -199,7 +248,7 @@ const GlobalActivityLog = () => {
                     No activity logs found
                   </div>
                 ) : (
-                  logs.map((log) => (
+                  filteredLogs.map((log) => (
                     <div key={log.id} className="act-log-table-row">
                       <div className="act-log-action-cell">
                         <span className={`act-log-action-badge ${log.status}`}>

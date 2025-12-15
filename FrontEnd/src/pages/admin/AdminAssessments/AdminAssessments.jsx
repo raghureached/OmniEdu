@@ -12,6 +12,7 @@ import LoadingScreen from '../../../components/common/Loading/Loading';
 import api from '../../../services/api';
 import { notifyError, notifySuccess } from '../../../utils/notification';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
+import { categories } from '../../../utils/constants';
 
 const AdminAssessments = () => {
   const dispatch = useDispatch()
@@ -62,12 +63,14 @@ const AdminAssessments = () => {
   const [showBulkAction, setShowBulkAction] = useState(false);
   const [filters, setFilters] = useState({
     status: '',
-    search: ''
+    search: '',
+    category: ''
   });
 
   const [tempFilters, setTempFilters] = useState({
     status: '',
-    search: ''
+    search: '',
+    category: ''
   });
   const filterButtonRef = useRef(null);
   const bulkButtonRef = useRef(null);
@@ -79,7 +82,7 @@ const AdminAssessments = () => {
   const { assessments, loading, pagination } = useSelector((state) => state.adminAssessments)
   const { user: authUser } = useSelector((state) => state.auth || { user: null });
   const [page, setPage] = useState(pagination?.page || 1);
-  const limit = 6;
+  const limit = 10;
   // Gmail-style selection like UsersManagement
   const [allSelected, setAllSelected] = useState(false);
   const [excludedIds, setExcludedIds] = useState([]);
@@ -396,7 +399,8 @@ const AdminAssessments = () => {
   const resetFilters = () => {
     const resetFilters = {
       status: '',
-      search: ''
+      search: '',
+      category: ''
     };
     setTempFilters(resetFilters);
     setFilters(resetFilters);
@@ -1104,6 +1108,21 @@ const AdminAssessments = () => {
             </select>
           </div>
 
+          <div className="filter-group">
+            <label>Category</label>
+            <select
+              name="category"
+              value={tempFilters?.category || ""}
+              onChange={handleFilterChange}
+            >
+              <option value="">All</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="filter-actions">
             <button className="btn-primary" onClick={handleFilter}>
@@ -1383,7 +1402,10 @@ const AdminAssessments = () => {
                     const matchesStatus = !filters.status ||
                       assessment.status?.toLowerCase() === filters.status.toLowerCase();
 
-                    return matchesSearch && matchesStatus;
+                    // Apply category filter
+                    const matchesCategory = !filters.category || filters.category === '' || assessment.category === filters.category;
+
+                    return matchesSearch && matchesStatus && matchesCategory;
                   })
                   .map(assessment => (
                     <tr key={assessment.uuid || assessment._id || assessment.id} className="assess-table-row">

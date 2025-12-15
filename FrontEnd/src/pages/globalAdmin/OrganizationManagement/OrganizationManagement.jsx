@@ -42,6 +42,7 @@ const OrganizationManagement = () => {
   const [showOrgModal, setShowOrgModal] = useState(false);
   const [plan, setPlan] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [tempFilters, setTempFilters] = useState({});
   const {showNotification} = useNotification()
   const [showBulkAction, setShowBulkAction] = useState(false)
   const {confirm} = useConfirm()
@@ -244,12 +245,21 @@ const OrganizationManagement = () => {
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    dispatch(
-      setFilters({
-        [name]: value,
-      })
-    );
-    setShowFilters(false)
+    setTempFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleApplyFilters = () => {
+    dispatch(setFilters(tempFilters));
+    setShowFilters(false);
+  };
+
+  const handleClearFilters = () => {
+    setTempFilters({});
+    dispatch(clearFilters());
+    setShowFilters(false);
   };
   const getStatus = (org) => {
     const today = new Date();
@@ -261,10 +271,7 @@ const OrganizationManagement = () => {
     }
   };
 
-  const resetFilters = () => {
-    dispatch(clearFilters());
-  };
-
+  
   const handleOpenOrg = (org) => {
     setOrg(org);
     setShowOrgModal(true);
@@ -426,7 +433,7 @@ const OrganizationManagement = () => {
                     <label>Status</label>
                     <select
                       name="status"
-                      value={filters?.status || ""}
+                      value={tempFilters?.status || filters?.status || ""}
                       onChange={handleFilterChange}
                     >
                       <option value="">All</option>
@@ -441,7 +448,7 @@ const OrganizationManagement = () => {
                     <label>Plan</label>
                     <select
                       name="plan"
-                      value={filters?.plan || ""}
+                      value={tempFilters?.plan || filters?.plan || ""}
                       onChange={handleFilterChange}
                     >
                       <option value="">All</option>
@@ -454,8 +461,11 @@ const OrganizationManagement = () => {
                   </div>
 
                   <div className="filter-actions">
-                    <button className="btn-primary"  onClick={resetFilters}>
+                    <button className="btn-secondary"  onClick={handleClearFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>
                       Clear
+                    </button>
+                    <button className="btn-primary"  onClick={handleApplyFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>
+                      Apply
                     </button>
                   </div>
                 </div>

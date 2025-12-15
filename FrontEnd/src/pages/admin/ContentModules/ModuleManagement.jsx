@@ -13,6 +13,7 @@ import { toast } from 'react-toastify';
 import { notifyError, notifySuccess } from '../../../utils/notification';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
 import api from '../../../services/api';
+import { categories } from '../../../utils/constants';
 
 
 const ModuleManagement = () => {
@@ -30,10 +31,12 @@ const ModuleManagement = () => {
   const [selectAllLoading, setSelectAllLoading] = useState(false);
   // console.log(items)
   const [filters, setFilters] = useState({
-    status: ''
+    status: '',
+    category: ''
   });
   const [tempFilters, setTempFilters] = useState({
-    status: ''
+    status: '',
+    category: ''
   });
   const [showFilters, setShowFilters] = useState(false);
   const filterButtonRef = useRef(null);
@@ -125,6 +128,7 @@ const ModuleManagement = () => {
   const resetFilters = () => {
     const resetFilters = {
       status: '',
+      category: '',
       search: ''
     };
     setTempFilters(resetFilters);
@@ -138,15 +142,15 @@ const ModuleManagement = () => {
       (item.title?.toLowerCase().includes(filters.search.toLowerCase()) ||
         item.description?.toLowerCase().includes(filters.search.toLowerCase()));
 
-    const matchesType = contentType === "all" || item.type === contentType;
+    const matchesCategory = !filters.category || filters.category === '' || item.category === filters.category;
     const matchesStatus = !filters.status || item.status === filters.status;
 
-    return matchesSearch && matchesType && matchesStatus;
+    return matchesSearch && matchesCategory && matchesStatus;
   }) || [];
 
   //pagination code
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6; // show 5 surveys per page
+  const itemsPerPage = 10; // show 5 surveys per page
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentContent = filteredContent.slice(indexOfFirstItem, indexOfLastItem);
@@ -332,13 +336,6 @@ const ModuleManagement = () => {
     setSelectionMenuOpen(false);
   };
 
-
-
-
-
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
   const handleInputChange = (e) => {
     const { name, value, files, type, checked } = e.target;
     // console.log(name, value, files, type, checked)
@@ -616,14 +613,28 @@ const ModuleManagement = () => {
                     <option value="Saved">Saved</option>
                     <option value="Draft">Draft</option>
                     <option value="Published">Published</option>
-
+                  </select>
+                </div>
+                <div className="filter-group">
+                  <label>Category</label>
+                  <select
+                    name="category"
+                    value={tempFilters?.category || ""}
+                    onChange={handleFilterChange}
+                  >
+                    <option value="">All</option>
+                    {categories.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className="filter-actions">
-                <button className="btn-secondary" onClick={resetFilters}>
+                <button className="btn-secondary" onClick={resetFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>
                     Clear
                   </button>
-                  <button className="btn-primary" onClick={handleFilter}>
+                  <button className="btn-primary" onClick={handleFilter} style={{ padding: '6px 12px', fontSize: '14px' }}>
                     Apply
                   </button>
                   

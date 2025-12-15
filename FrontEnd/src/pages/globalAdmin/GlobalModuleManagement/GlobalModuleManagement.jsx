@@ -10,6 +10,7 @@ import GlobalModuleModal from './GlobalModuleModal';
 import { GoX } from 'react-icons/go';
 import { useNotification } from '../../../components/common/Notification/NotificationProvider.jsx';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog.jsx';
+import { categories } from '../../../utils/constants.js';
 
 const GlobalModuleManagement = () => {
   const dispatch = useDispatch();
@@ -118,9 +119,9 @@ const GlobalModuleManagement = () => {
     const matchesSearch = !filters.search ||
       (item.title?.toLowerCase().includes(filters.search.toLowerCase()) ||
         item.description?.toLowerCase().includes(filters.search.toLowerCase()));
-    const matchesType = contentType === "all" || item.type === contentType;
     const matchesStatus = !filters.status || item.status === filters.status;
-    return matchesSearch && matchesType && matchesStatus;
+    const matchCategory = !filters.category || item.category === filters.category;
+    return matchesSearch && matchesStatus && matchCategory;
   }) || [];
 
   //pagination code
@@ -567,13 +568,30 @@ const GlobalModuleManagement = () => {
 
                   </select>
                 </div>
+                <div className="filter-group">
+                  <label>Category</label>
+                  <select
+                    name="category"
+                    value={tempFilters?.category || ""}
+                    onChange={handleFilterChange}
+                  >
+                    <option value="">All</option>
+                    {categories?.map((category) => (
+                      <option key={category._id} value={category}>
+                        {category}
+                      </option>
+                    ))}
+
+                  </select>
+                </div>
                 <div className="filter-actions">
-                  <button className="btn-primary" onClick={handleFilter}>
-                    Apply
-                  </button>
-                  <button className="reset-btn" onClick={resetFilters}>
+                  <button className="btn-secondary" onClick={resetFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>
                     Clear
                   </button>
+                  <button className="btn-primary" onClick={handleFilter} style={{ padding: '6px 12px', fontSize: '14px' }}>
+                    Apply
+                  </button>
+                  
                 </div>
               </div>
             )}
@@ -618,7 +636,7 @@ const GlobalModuleManagement = () => {
               </div>
             )}
 
-            <button className="btn-primary" onClick={() => handleOpenModal()}> + Add Module</button>
+            <button className="btn-primary"  onClick={() => handleOpenModal()}> + Create Module</button>
           </div>
         </div>
       </div>

@@ -282,10 +282,10 @@ const GroupsFilter = ({
             </select>
           </div>
           <div className="filter-actions">
-            <button className="btn-secondary" onClick={handleClearFilter}>
+            <button className="btn-secondary" onClick={handleClearFilter} style={{ padding: '6px 12px', fontSize: '14px' }}>
               Clear
             </button>
-            <button className="btn-primary" onClick={handleFilter}>
+            <button className="btn-primary" onClick={handleFilter} style={{ padding: '6px 12px', fontSize: '14px' }}>
               Apply
             </button>
 
