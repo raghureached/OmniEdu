@@ -166,14 +166,10 @@ const roleSlice = createSlice({
       })
       .addCase(updateRole.fulfilled, (state, action) => {
         state.loading = false;
-        // console.log(action.payload) 
-        // console.log(state.globalRoles)
-          const index = state.globalRoles.findIndex(
-            (role) => String(role.uuid) === String(action.payload.uuid)
-          );
-          // console.log(state.globalRoles.map(role=>role.uuid))
-          // console.log(action.payload.uuid)
-          if (index !== -1) state.globalRoles[index] = action.payload;
+          // const index = state.globalRoles.findIndex(
+          //   (role) => String(role.uuid) === String(action.payload.uuid)
+          // );
+          // if (index !== -1) state.globalRoles[index] = action.payload;
       })
       .addCase(updateRole.rejected, (state, action) => {
         state.loading = false;

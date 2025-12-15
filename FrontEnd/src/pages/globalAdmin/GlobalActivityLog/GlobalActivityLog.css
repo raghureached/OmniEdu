@@ -1,141 +1,431 @@
 /* ==============================
-   Global Admin Activity Logs Page
+   Global Activity Log - Based on Organization Management
    ============================== */
 
-   .global-activity-admin-activity {
-    padding: 24px;
-    background: #f9fafb;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #f9fafb;
+}
+
+/* Layout */
+.act-log-app-container {
+    display: flex;
     min-height: 100vh;
-    font-family: "Segoe UI", Roboto, Arial, sans-serif;
-    color: #1e293b;
-  }
-  
-  /* Filters Section */
-  .global-activity-filters-form {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 16px;
-    background: #fff;
-    padding: 16px;
-    border-radius: 12px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Main content */
+.act-log-main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Page content */
+.act-log-page-content {
+    flex: 1;
+    padding: 32px;
+}
+
+/* Controls */
+.act-log-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     margin-bottom: 24px;
-  }
-  
-  @media (min-width: 768px) {
-    .global-activity-filters-form {
-      grid-template-columns: repeat(4, 1fr);
-    }
-  }
-  
-  .global-activity-filters-form input,
-  .global-activity-filters-form select {
-    padding: 10px 12px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    transition: all 0.2s ease;
-  }
-  
-  .global-activity-filters-form input:focus,
-  .global-activity-filters-form select:focus {
+}
+
+.act-log-roles-search-bar {
+    position: relative;
+    flex: 1;
+    max-width: 320px;
+}
+
+.act-log-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.act-log-search-input {
+    width: 100%;
+    padding: 8px 12px 8px 36px;
+    border: 1px solid #787a7b;
+    border-radius: 6px;
+    font-size: 14px;
+    color: black;
     outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.act-log-search-input:focus {
+    border-color: var(--color-accent);
+}
+
+.act-log-controls-right {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+}
+
+.act-log-control-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #fff;
+    color: #374151;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.act-log-control-btn:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.act-log-btn-primary {
+    background: var(--color-accent);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.act-log-btn-primary:hover {
+    background: var(--color-primary);
+}
+
+/* Table */
+.act-log-table-container {
+    background-color: white;
+    border-radius: 12px;
+    border: 2px solid #cecece;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.act-log-table-header {
+    padding: 12px 24px;
+    border-bottom: 1px solid #e5e7eb;
+    display: grid;
+    text-align: start;   
+    grid-template-columns: 100px 300px 200px 100px 140px 100px 80px;
+    align-items: center;
+    background-color: #efefef;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #666666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.act-log-table-row {
+    padding: 10px 24px;
+    border-bottom: 1px solid #f3f4f6;
+    display: grid;
+    text-align: start; 
+    grid-template-columns: 100px 300px 200px 100px 140px 100px 80px;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #434343;
+    transition: background-color 0.2s ease;
+}
+
+.act-log-table-row:hover {
+    background-color: #d6dee6;
+}
+
+.act-log-table-row:last-child {
+    border-bottom: none;
+}
+
+/* Action Cell */
+.act-log-action-cell {
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    padding-left: 8px;
+}
+
+.act-log-status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.act-log-status-badge.created {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.act-log-status-badge.updated {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.act-log-status-badge.deleted {
+    background-color: #fef2f2;
+    color: #991b1b;
+}
+
+/* Action badges */
+.act-log-action-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.act-log-action-badge.success {
+    background-color: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.act-log-action-badge.failed {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.act-log-action-badge.Create {
+    background-color: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+}
+
+.act-log-action-badge.Update {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.act-log-action-badge.Delete {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.act-log-action-badge.View {
+    background-color: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+/* Details Cell */
+.act-log-details-cell {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    color: #374151;
+    /* border-right: 1px solid #e5e7eb; */
+    min-width: 200px;
+}
+
+.act-log-details-text {
+    font-size: 13px;
+    line-height: 1.3;
+    word-break: break-word;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* IP Cell */
+.act-log-ip-cell {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    padding-left: 8px;
+    /* border-right: 1px solid #e5e7eb; */
+}
+
+.act-log-ip-badge {
+    padding: 4px 8px;
+    background-color: #f8fafc;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    font-weight: 500;
+}
+
+/* User Cell */
+.act-log-user-cell {
+    display: flex;
+    align-items: center;
+    text-align: start;  
+    gap: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.act-log-user-cell:hover {
+    background-color: #d6dee6;
+}
+
+.act-log-user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.act-log-user-info {
+    flex: 1;
+}
+
+.act-log-user-name {
+    font-weight: 500;
+    color: #111827;
+}
+
+/* Role Cell */
+.act-log-role-cell {
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    padding-left: 8px;
+}
+
+.act-log-role-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.act-log-role-badge.admin {
+    background-color: #f3e8ff;
+    color: #6b21a8;
+}
+
+.act-log-role-badge.manager {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.act-log-role-badge.user {
+    background-color: #e0e7ff;
+    color: #3730a3;
+}
+
+/* Date and Time Cells */
+.act-log-date-cell,
+.act-log-time-cell {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+/* Filter Panel */
+.act-log-filter-panel {
+    position: absolute;
+    top: 150px;
+    right: 180px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    width: 220px;
+    z-index: 1000;
+}
+
+.act-log-filter-group {
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+.act-log-filter-group label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: #374151;
+}
+
+.act-log-filter-group select,
+.act-log-filter-group input {
+    padding: 6px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: #374151;
+    outline: none;
+}
+
+.act-log-filter-group select:focus,
+.act-log-filter-group input:focus {
     border-color: var(--color-accent);
     box-shadow: 0 0 0 2px rgba(28, 136, 199, 0.3);
-  }
-  
-  .global-activity-filters-form button {
-    background: var(--color-accent);
-    color: white;
-    font-weight: 500;
-    padding: 10px 16px;
-    border-radius: 8px;
-    transition: background 0.2s ease;
-    cursor: pointer;
-  }
-  
-  .global-activity-filters-form button:hover {
-    background: var(--color-primary);
-  }
-  
-  /* Date Range Section */
-  .global-activity-date-range {
+}
+
+.act-log-filter-actions {
     display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-  
-  /* Table Styling */
-  .global-activity-activity-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #fff;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  }
-  
-  .global-activity-activity-table thead {
-    background: var(--color-accent);
-    color: #fff;
-  }
-  
-  .global-activity-activity-table th,
-  .global-activity-activity-table td {
-    padding: 12px 16px;
-    text-align: left;
-    font-size: 0.95rem;
-  }
-  
-  .global-activity-activity-table tbody tr {
-    border-bottom: 1px solid #e5e7eb;
-    transition: background 0.2s ease;
-  }
-  
-  .global-activity-activity-table tbody tr:hover {
-    background: #f3f4f6;
-  }
-  
-  .global-activity-empty-row {
-    text-align: center;
-    color: #6b7280;
-    padding: 24px;
-    font-size: 0.95rem;
-  }
-  
-  /* Pagination */
-  .global-activity-pagination {
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+/* Pagination */
+.act-log-pagination {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-top: 24px;
-  }
-  
-  .global-activity-pagination button {
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-weight: 500;
+    justify-content: center;
+    margin-top: 20px;
+    padding: 0 4px;
+}
+
+.act-log-pagination button {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background-color: white;
+    font-size: 14px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
     transition: all 0.2s ease;
-  }
-  
-  .global-activity-pagination button:disabled {
-    background: #d1d5db;
-    color: #6b7280;
+}
+
+.act-log-pagination button:hover:not(:disabled) {
+    background-color: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.act-log-pagination button:disabled {
     cursor: not-allowed;
-  }
-  
-  .global-activity-pagination button:not(:disabled) {
-    background: var(--color-accent);
-    color: white;
-  }
-  
-  .global-activity-pagination button:not(:disabled):hover {
-    background: var(--color-primary);
-  }
-  
-  .global-activity-pagination span {
-    font-size: 0.95rem;
-    color: #374151;
-  }
+    opacity: 0.5;
+}
   

@@ -15,6 +15,7 @@ const { updateAssessmentAttempt } = require("../controllers/user_controller/user
 const { getTickets, createTicket, updateTicketStatus, updateTicket, deleteTicket } = require("../controllers/user_controller/user_Tickets")
 const { getTicketStats,getTicketDetails,
   addTicketComment } = require("../controllers/user_controller/user_Tickets")
+const { getUserActivity } = require("../controllers/user_controller/user_activity")
 
 
 const router = require("express").Router()
@@ -88,5 +89,8 @@ router.route("/updateTicket/:ticketId").put(updateTicket)
 router.route("/deleteTicket/:ticketId").delete(deleteTicket)
 router.route("/getTicketDetails/:ticketId").get(getTicketDetails);
 router.route("/addTicketComment/:ticketId").post(addTicketComment);
+
+
+router.route("/getActivity").get(getUserActivity)
 
 module.exports = router;

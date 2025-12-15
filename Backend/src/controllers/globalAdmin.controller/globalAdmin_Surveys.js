@@ -2,7 +2,7 @@ const SurveyResponses = require("../../models/global_surveyResponses_model");
 const Surveys = require("../../models/global_surveys_model");
 const GlobalSurveyQuestion = require("../../models/global_surveys_Questions_model");
 const { v4: uuidv4 } = require("uuid");
-const { logGlobalAdminActivity } = require("./globalAdmin_activity");
+const { logActivity } = require("../../utils/activityLogger");
 const GlobalSurveyFeedback = require("../../models/global_surveys_feedback");
 const GlobalSurveySection = require("../../models/globalSurvey_Section_model");
 
@@ -201,7 +201,15 @@ const editSurvey = async (req, res) => {
       })
      
 
-    await logGlobalAdminActivity(req, "Edit Survey", "survey", `Survey updated successfully ${updatedSurvey.title}`);
+    await logActivity({
+        userId: req.user._id,
+        action: "Update",
+        details: `Updated global survey: ${updatedSurvey.title}`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "success",
+    });
 
     return res.status(200).json({
       success: true,
@@ -265,12 +273,15 @@ const deleteSurvey = async (req, res) => {
     await session.commitTransaction();
 
     // --- Step 5: Log admin activity ---
-    await logGlobalAdminActivity(
-      req,
-      "Delete Survey",
-      "survey",
-      `Survey deleted successfully: ${deletedSurvey.title}`
-    );
+    await logActivity({
+      userId: req.user._id,
+      action: "Delete",
+      details: `Deleted global survey: ${deletedSurvey.title}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    });
 
     return res.status(200).json({
       success: true,

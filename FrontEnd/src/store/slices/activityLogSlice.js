@@ -5,7 +5,7 @@ export const fetchActivityLogs = createAsyncThunk(
   'activityLog/fetchActivityLogs',
   async (filters, { rejectWithValue }) => {
     try {
-      const response = await api.get('/api/globalAdmin/getActivityLog', { params: filters });
+      const response = await api.get('/api/activity/activity-logs', { params: filters });
       console.log(response.data)
       return response.data;
     } catch (error) {
@@ -46,9 +46,9 @@ const activityLogSlice = createSlice({
       })
       .addCase(fetchActivityLogs.fulfilled, (state, action) => {
         state.loading = false;
-        state.logs = action.payload.data;
-        console.log(action.payload.data)
-        state.pagination = action.payload.pagination;
+        state.logs = action.payload.data.logs;
+        console.log(action.payload)
+        state.pagination = action.payload.data.pagination;
       })
       .addCase(fetchActivityLogs.rejected, (state, action) => {
         state.loading = false;

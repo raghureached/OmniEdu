@@ -368,8 +368,95 @@
   background-color: #f9fafb;
 }
 
-.activity-table tr:last-child td {
+.activity-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+/* Filter Panel */
+.act-log-filter-panel {
+  position: absolute;
+  top: 150px;
+  right: 180px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  width: 220px;
+  z-index: 1000;
+}
+
+.act-log-filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.act-log-filter-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.act-log-btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.act-log-btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+.act-log-filter-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.act-log-filter-group {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.act-log-filter-group label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: #374151;
+}
+
+.act-log-filter-select,
+.act-log-filter-group input {
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #374151;
+  outline: none;
+}
+
+.act-log-filter-select:focus,
+.act-log-filter-group input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(28, 136, 199, 0.3);
+}
+
+.act-log-filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 /* Status badge styles */

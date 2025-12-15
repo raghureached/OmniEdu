@@ -2,9 +2,9 @@ const OrganizationSurveyResponses = require("../../models/organizationSurveyResp
 const OrganizationSurveys = require("../../models/organizationSurveys_model");
 const OrganizationSurveyQuestion = require("../../models/organizationSurveysQuestions_model");
 const { v4: uuidv4 } = require("uuid");
-const logAdminActivity = require("./admin_activity");
 const GlobalSurveyFeedback = require("../../models/global_surveys_feedback");
 const OrganizationSurveySection = require("../../models/organizationSurveySection_model");
+const { logActivity } = require("../../utils/activityLogger");
 
 /// aligned with new question and survey models, with adapter for `elements`
 const mongoose = require("mongoose");
@@ -83,7 +83,16 @@ const createSurvey = async (req, res) => {
     await session.commitTransaction();
     transactionCommitted = true; // Mark as committed
 
-    await logAdminActivity(req,"Create Survey","survey",`Survey created successfully ${createdSurvey[0].title}`)
+    await logActivity({
+      userId: req.user._id,
+      action: "Create",
+      details: `Created survey: ${title}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    });
+
     return res.status(201).json({
       success: true,
       message: "Survey created successfully",
@@ -96,6 +105,16 @@ const createSurvey = async (req, res) => {
     }
 
     console.error("Error creating survey:", error);
+
+    await logActivity({
+      userId: req.user._id,
+      action: "Create",
+      details: `Failed to create survey`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    });
 
     return res.status(500).json({
       success: false,
@@ -217,7 +236,16 @@ const editSurvey = async (req, res) => {
       })
 
 
-    await logAdminActivity(req, "Edit Survey", "survey", `Survey updated successfully ${updatedSurvey.title}`);
+
+    await logActivity({
+      userId: req.user._id,
+      action: "Update",
+      details: `Updated survey: ${title}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    });
 
     return res.status(200).json({
       success: true,
@@ -230,6 +258,17 @@ const editSurvey = async (req, res) => {
       await session.abortTransaction();
     }
     console.error("Error updating survey:", error);
+    
+    await logActivity({
+      userId: req.user._id,
+      action: "Update",
+      details: `Failed to update survey`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    });
+    
     return res.status(500).json({
       success: false,
       message: "Failed to update survey",
@@ -291,13 +330,15 @@ const deleteSurvey = async (req, res) => {
     await session.commitTransaction();
     transactionCommitted = true; // Mark as committed
 
-    // --- Step 5: Log admin activity ---
-    await logAdminActivity(
-      req,
-      "Delete Survey",
-      "survey",
-      `Survey deleted successfully: ${deletedSurvey.title}`
-    );
+    await logActivity({
+      userId: req.user._id,
+      action: "Delete",
+      details: `Deleted survey: ${survey?.title || 'unknown'}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    });
 
     return res.status(200).json({
       success: true,
@@ -310,6 +351,17 @@ const deleteSurvey = async (req, res) => {
       await session.abortTransaction();
     }
     console.error("Error deleting survey:", error);
+    
+    await logActivity({
+      userId: req.user._id,
+      action: "Delete",
+      details: `Failed to delete survey`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    });
+    
     return res.status(500).json({
       success: false,
       message: "Failed to delete survey",

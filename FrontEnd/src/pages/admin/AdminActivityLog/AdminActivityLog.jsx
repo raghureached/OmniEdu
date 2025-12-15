@@ -8,9 +8,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchActivityLogs } from "../../../store/slices/activityLogSlice";
 import LoadingScreen from "../../../components/common/Loading/Loading";
 import { GoX } from "react-icons/go";
-import './GlobalActivityLog.css';
+import './AdminActivityLog.css';
 
-const GlobalActivityLog = () => {
+const AdminActivityLog = () => {
   const dispatch = useDispatch();
   const { logs, loading, error, pagination } = useSelector((state) => state.activityLog);
   const [search, setSearch] = useState("");
@@ -99,26 +99,26 @@ const GlobalActivityLog = () => {
           Error: {error}
         </div>
       )}
-      <div className="act-log-app-container">
+      <div className="ad-act-log-app-container">
         {/* Main Content */}
-        <div className="act-log-main-content">
+        <div className="ad-act-log-main-content">
           {/* Page Content */}
-          <div className="act-log-page-content">
+          <div className="ad-act-log-page-content">
             {/* Controls */}
-            <div className="act-log-controls">
-              <div className="act-log-roles-search-bar">
-                <Search size={16} color="#6b7280" className="act-log-search-icon" />
+            <div className="ad-act-log-controls">
+              <div className="ad-act-log-roles-search-bar">
+                <Search size={16} color="#6b7280" className="ad-act-log-search-icon" />
                 <input
                   type="text"
                   placeholder="Search"
-                  className="act-log-search-input"
+                  className="ad-act-log-search-input"
                   value={search}
                   onChange={handleSearch}
                 />
               </div>
 
-              <div className="act-log-controls-right">
-                <button className="act-log-control-btn" onClick={() => setShowFilters((prev) => !prev)}>
+              <div className="ad-act-log-controls-right">
+                <button className="ad-act-log-control-btn" onClick={() => setShowFilters((prev) => !prev)}>
                   <Filter size={16} />
                   Filter
                 </button>
@@ -126,7 +126,7 @@ const GlobalActivityLog = () => {
             </div>
 
             {showFilters && (
-              <div className="act-log-filter-panel">
+              <div className="ad-act-log-filter-panel">
                 <span 
                   style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px"}} 
                   onClick={() => setShowFilters(false)}
@@ -134,7 +134,7 @@ const GlobalActivityLog = () => {
                   <GoX size={20} color="#6b7280" />
                 </span>
                 
-                <div className="act-log-filter-group">
+                <div className="ad-act-log-filter-group">
                   <label>Action</label>
                   <select
                     value={actionFilter}
@@ -147,7 +147,7 @@ const GlobalActivityLog = () => {
                   </select>
                 </div>
 
-                <div className="act-log-filter-group">
+                <div className="ad-act-log-filter-group">
                   <label>Role</label>
                   <select
                     value={roleFilter}
@@ -160,7 +160,7 @@ const GlobalActivityLog = () => {
                   </select>
                 </div>
 
-                <div className="act-log-filter-group">
+                <div className="ad-act-log-filter-group">
                   <label>Date</label>
                   <input
                     type="date"
@@ -169,8 +169,8 @@ const GlobalActivityLog = () => {
                   />
                 </div>
 
-                <div className="act-log-filter-actions">
-                  <button className="act-log-btn-primary" onClick={resetFilters}>
+                <div className="ad-act-log-filter-actions">
+                  <button className="ad-act-log-btn-primary" onClick={resetFilters}>
                     Clear
                   </button>
                 </div>
@@ -178,8 +178,8 @@ const GlobalActivityLog = () => {
             )}
 
             <>
-              <div className="act-log-table-container">
-                <div className="act-log-table-header">
+              <div className="ad-act-log-table-container">
+                <div className="ad-act-log-table-header">
                   <div>Action</div>
                   <div>Details</div>
                   <div>User</div>
@@ -200,45 +200,45 @@ const GlobalActivityLog = () => {
                   </div>
                 ) : (
                   logs.map((log) => (
-                    <div key={log.id} className="act-log-table-row">
-                      <div className="act-log-action-cell">
-                        <span className={`act-log-action-badge ${log.status}`}>
+                    <div key={log.id} className="ad-act-log-table-row">
+                      <div className="ad-act-log-action-cell">
+                        <span className={`ad-act-log-action-badge ${log.status}`}>
                           {log.action}
                         </span>
                       </div>
                       
-                      <div className="act-log-details-cell">
-                        <div className="act-log-details-text">
+                      <div className="ad-act-log-details-cell">
+                        <div className="ad-act-log-details-text">
                           {log.details}
                         </div>
                       </div>
                       
-                      <div className="act-log-user-cell">
-                        <div className="act-log-user-avatar" style={{ backgroundColor: "#FFC107" }}>
+                      <div className="ad-act-log-user-cell">
+                        <div className="ad-act-log-user-avatar" style={{ backgroundColor: "#FFC107" }}>
                           {log.userName?.charAt(0).toUpperCase() || 'U'}
                         </div>
-                        <div className="act-log-user-info">
-                          <div className="act-log-user-name">{log.userName}</div>
+                        <div className="ad-act-log-user-info">
+                          <div className="ad-act-log-user-name">{log.userName}</div>
                         </div>
                       </div>
 
-                      <div className="act-log-role-cell">
+                      <div className="ad-act-log-role-cell">
                         <span className={`users-role-badge ${log.userRole?.toLowerCase()}`}>
                           {log.userRole}
                         </span>
                       </div>
 
-                      <div className="act-log-ip-cell">
-                        <span className="act-log-ip-badge">
+                      <div className="ad-act-log-ip-cell">
+                        <span className="ad-act-log-ip-badge">
                           {log.ip}
                         </span>
                       </div>
 
-                      <div className="act-log-date-cell">
+                      <div className="ad-act-log-date-cell">
                         {log.date}
                       </div>
 
-                      <div className="act-log-time-cell">
+                      <div className="ad-act-log-time-cell">
                         {log.time}
                       </div>
                     </div>
@@ -248,7 +248,7 @@ const GlobalActivityLog = () => {
 
               {/* Pagination */}
               {pagination.totalPages > 1 && (
-                <div className="act-log-pagination" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                <div className="ad-act-log-pagination" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <button
                       type="button"
@@ -280,4 +280,4 @@ const GlobalActivityLog = () => {
   );
 };
 
-export default GlobalActivityLog;
+export default AdminActivityLog;

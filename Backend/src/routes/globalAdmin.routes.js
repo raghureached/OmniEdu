@@ -47,6 +47,7 @@ const {
   getGlobalAdminTicketStats
 } = require("../controllers/globalAdmin.controller/globalAdmin_tickets");
 const { gradeSubmission, getSubmissions } = require("../controllers/globalAdmin.controller/globalAdmin_grading");
+const { getActivityLogs, getActivityLogStats, testDatabase } = require("../controllers/globalAdmin.controller/globalAdmin_activityLogs");
 
 const router = require("express").Router();
 
@@ -173,5 +174,10 @@ router.route('/admin/getTicketStats').get(getGlobalAdminTicketStats)
 
 router.route('/gradeSubmission').post(gradeSubmission)
 router.route('/getSubmissions').get(getSubmissions)
+
+//////Activity Logs/////////
+router.route('/activity-logs').get(getActivityLogs)
+router.route('/activity-logs/stats').get(getActivityLogStats)
+router.route('/activity-logs/test').get(testDatabase)
 
 module.exports = router;

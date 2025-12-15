@@ -3,7 +3,7 @@ const ForAdminMessage = require("../../models/messageforAdmin");
 const {z} =require("zod");
 const User = require("../../models/users_model.js");
 // const Notification = require("../../models/notification_model.js");
-const { logGlobalAdminActivity } = require("./globalAdmin_activity");
+const { logActivity } = require("../../utils/activityLogger");
 const ForUserMessage = require("../../models/messageForUser.js");
 
 const MessageSchema=z.object({
@@ -41,14 +41,30 @@ const setMessage = async(req,res)=>{
                     isGlobal:true
                 })
             
-            await logGlobalAdminActivity(req,"Set Message","message","Message set successfully")
+            await logActivity({
+                userId: req.user._id,
+                action: "Create",
+                details: `Set global message: ${message?.substring(0, 50) || 'unknown'}...`,
+                userRole: req.user.role,
+                ip: req.ip,
+                userAgent: req.headers['user-agent'],
+                status: "success",
+            })
             return res.status(201).json({
                 success:true,
                 message:"Message set successfully for users and admin",
                 data:messageSet
             })
         }
-        await logGlobalAdminActivity(req,"Set Message","message","Message set successfully")
+        await logActivity({
+            userId: req.user._id,
+            action: "Create",
+            details: `Set global message: ${message?.substring(0, 50) || 'unknown'}...`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "success",
+        })
         return res.status(201).json({
             success:true,
             message:"Message set successfully for admin",
@@ -83,7 +99,15 @@ const editMessage = async(req,res)=>{
                 message:"Message not found"
             })
         }
-        await logGlobalAdminActivity(req,"Edit Message","message","Message edited successfully")
+        await logActivity({
+            userId: req.user._id,
+            action: "Update",
+            details: `Edited global message: ${message?.substring(0, 50) || 'unknown'}...`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "success",
+        })
         return res.status(201).json({
             success:true,
             message:"Message edited successfully",
@@ -107,7 +131,15 @@ const deleteMessage = async(req,res)=>{
                 message:"Message not found"
             })
         }
-        await logGlobalAdminActivity(req,"Delete Message","message","Message deleted successfully")
+        await logActivity({
+            userId: req.user._id,
+            action: "Delete",
+            details: `Deleted global message: ${deletedMessage?.message_text?.substring(0, 50) || 'unknown'}...`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "success",
+        })
         return res.status(200).json({
             success:true,
             message:"Message deleted successfully",

@@ -1,6 +1,5 @@
 const OrganizationModule = require("../../models/moduleOrganization_model");
 const { z } = require("zod");
-const logAdminActivity = require("./admin_activity");
 const UserProfile = require("../../models/userProfiles_model");
 
 const CONTENT_TYPES = ["PDF", "DOCX", "Theory"];
@@ -65,7 +64,6 @@ const addModule = async (req, res) => {
     });
 
     await newModule.save();
-    await logAdminActivity(req,"Create Content","content",`Content created successfully ${newModule.title}`)
     return res.status(201).json({
       success: true,
       message: 'Module added successfully.',
@@ -123,7 +121,6 @@ const getModuleById = async (req, res) => {
 const bulkDelete = async(req,res) => {
   try {
     const deletedModules = await OrganizationModule.deleteMany({ uuid: { $in: req.body } })
-    await logAdminActivity(req,"Bulk Delete Content","content",`Content deleted successfully ${deletedModules.deletedCount}`)
     return res.status(200).json({ success: true, message: 'Content deleted successfully.', data: deletedModules })
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to delete content.', error: error.message })
@@ -195,12 +192,7 @@ const editModule = async (req, res) => {
       });
     }
 
-    await logAdminActivity(
-      req,
-      "Edit Content",
-      "content",
-      `Content updated successfully: ${updatedModule.title}`
-    );
+    
 
     return res.status(200).json({
       success: true,
@@ -227,7 +219,6 @@ const deleteModule = async (req, res) => {
         message: "Content not found"
       })
     }
-    await logAdminActivity(req,"Delete Content","content",`Content deleted successfully ${deletedModule.title}`)
     return res.status(200).json({
       success: true,
       message: "Content deleted successfully",

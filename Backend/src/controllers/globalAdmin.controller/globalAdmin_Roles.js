@@ -5,7 +5,7 @@ const Permission = require("../../models/permissions_model");
 const { z } = require("zod");
 const Section = require("../../models/sections_model");
 const OrganizationRole = require("../../models/organizationRoles_model");
-const { logGlobalAdminActivity } = require("./globalAdmin_activity");
+const { logActivity } = require("../../utils/activityLogger");
 const Organization = require("../../models/organization_model");
 
 // ✅ Validation
@@ -107,7 +107,15 @@ const editRole = async (req, res) => {
         message: "Role not found",
       });
     }
-    await logGlobalAdminActivity(req,"Edit Role","role",`Updated ${updatedRole.name} role for ${updatedRole.organization_id}`)
+    await logActivity({
+        userId: req.user._id,
+        action: "Update",
+        details: `Updated global role: ${updatedRole.name}`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "success",
+    })
     return res.status(200).json({
       success: true,
       message: "Role updated successfully",
@@ -127,7 +135,15 @@ const editRole = async (req, res) => {
 const deleteRole = async(req, res) => {
     try {
         const deletedRole = await Role.findOneAndDelete({ uuid: req.params.id })
-        await logGlobalAdminActivity(req,"Delete Role","role",`Role deleted successfully ${deletedRole.name}`)
+        await logActivity({
+            userId: req.user._id,
+            action: "Delete",
+            details: `Deleted global role: ${deletedRole.name}`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "success",
+        })
         return res.status(200).json({
             success: true,
             message: "Role deleted successfully",
@@ -211,12 +227,15 @@ const editOrgRole = async (req, res) => {
     await organization.save();
 
     // Log the role update
-    await logGlobalAdminActivity(
-      req, 
-      "Edit Role", 
-      "role", 
-      `${roleExists ? "Removed" : "Added"} ${role.name} role for organization ${organization.uuid}`
-    );
+    await logActivity({
+      userId: req.user._id,
+      action: "Update",
+      details: `${roleExists ? "Removed" : "Added"} ${role.name} role for organization ${organization.uuid}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    });
 
     return res.status(200).json({
       success: true,
@@ -297,7 +316,15 @@ const addPermissions = async (req, res) => {
       savedSections.push(savedSection);
       savedPermissions.push(...permissionDocs);
     }
-    await logGlobalAdminActivity(req,"Add Permissions","permissions","Permissions added successfully")
+    await logActivity({
+      userId: req.user._id,
+      action: "Create",
+      details: `Added global permissions and sections`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    })
     res.status(200).json({
       success: true,
       message: "Sections & Permissions added successfully.",

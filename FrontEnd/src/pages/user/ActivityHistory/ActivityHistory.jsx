@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import './ActivityHistory.css';
+import api from '../../../services/api';
+import { Filter, Search, X } from 'lucide-react';
 
 const ActivityHistory = () => {
   const location = useLocation();
@@ -13,125 +15,137 @@ const ActivityHistory = () => {
   const [showCustomDateFilter, setShowCustomDateFilter] = useState(false);
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
   const [currentActivity, setCurrentActivity] = useState(null);
+  const [activities, setActivities] = useState([]);
   const [feedbackData, setFeedbackData] = useState({
     rating: 5,
     comment: ''
   });
-  
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
   // Parse URL parameters on component mount
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
-    
+
     // Get status parameter (for filtering by completion status)
     const status = queryParams.get('status');
     if (status) {
       setStatusFilter(status);
     }
-    
+
     // Get type parameter (for filtering by activity type)
     const type = queryParams.get('type');
     if (type) {
       setTypeFilter(type);
     }
-    
+
     // Get time parameter (for filtering by time period)
     const time = queryParams.get('time');
     if (time) {
       setTimeFilter(time);
       setShowCustomDateFilter(time === 'custom');
     }
-    
+
     // Get date range parameters if present
     const start = queryParams.get('startDate');
     const end = queryParams.get('endDate');
     if (start) setStartDate(start);
     if (end) setEndDate(end);
-    
+
   }, [location.search]);
-  
+
   // Simulate loading data from API
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 800);
-    
+
     return () => clearTimeout(timer);
   }, []);
-  
-  // Mock data for activity history with all required fields
-  const activities = [
-    { 
-      id: 1, 
-      type: 'course', 
-      name: 'Introduction to React', 
-      assignedOn: '2023-11-01', 
-      startedOn: '2023-11-05', 
-      completedOn: '2023-11-15', 
-      status: 'Completed', 
-      progress: 100, 
-      score: 95, 
-      credits: 10, 
-      stars: 4, 
-      badges: ['React Master', 'Quick Learner'],
-    },
-    { 
-      id: 2, 
-      type: 'assessment', 
-      name: 'JavaScript Fundamentals Quiz', 
-      assignedOn: '2023-11-05', 
-      startedOn: '2023-11-10', 
-      completedOn: '2023-11-10', 
-      status: 'Completed', 
-      progress: 100, 
-      score: 85, 
-      credits: 5, 
-      stars: 3, 
-      badges: ['JS Enthusiast'],
-    },
-    { 
-      id: 3, 
-      type: 'course', 
-      name: 'Advanced JavaScript Concepts', 
-      assignedOn: '2023-11-01', 
-      startedOn: '2023-11-05', 
-      completedOn: null, 
-      status: 'In Progress', 
-      progress: 30, 
-      score: null, 
-      credits: 0, 
-      stars: 0, 
-      badges: [],
-    },
-    { 
-      id: 4, 
-      type: 'certificate', 
-      name: 'Web Development Fundamentals', 
-      assignedOn: '2023-10-01', 
-      startedOn: '2023-10-05', 
-      completedOn: '2023-10-20', 
-      status: 'Completed', 
-      progress: 100, 
-      score: 92, 
-      credits: 20, 
-      stars: 5, 
-      badges: ['Web Dev Pro', 'Top Performer'],
-    },
-    { 
-      id: 5, 
-      type: 'course', 
-      name: 'CSS Grid Mastery', 
-      assignedOn: '2023-10-01', 
-      startedOn: '2023-10-10', 
-      completedOn: '2023-10-15', 
-      status: 'Completed', 
-      progress: 100, 
-      score: 92, 
-      credits: 8, 
-      stars: 4, 
-      badges: ['CSS Expert'],
-    },
-  ];
-  
+  useEffect(() => {
+    const fetchActivityLogs = async () => {
+      const res = await api.get('/api/user/getActivity')
+      console.log(res)
+      if (res.status === 200) {
+        setActivities(res.data.data)
+      }
+    }
+    fetchActivityLogs()
+  }, []);
+  // // Mock data for activity history with all required fields
+  // const activities = [
+  //   { 
+  //     id: 1, 
+  //     type: 'course', 
+  //     name: 'Introduction to React', 
+  //     assignedOn: '2023-11-01', 
+  //     startedOn: '2023-11-05', 
+  //     completedOn: '2023-11-15', 
+  //     status: 'Completed', 
+  //     progress: 100, 
+  //     score: 95, 
+  //     credits: 10, 
+  //     stars: 4, 
+  //     badges: ['React Master', 'Quick Learner'],
+  //   },
+  //   { 
+  //     id: 2, 
+  //     type: 'assessment', 
+  //     name: 'JavaScript Fundamentals Quiz', 
+  //     assignedOn: '2023-11-05', 
+  //     startedOn: '2023-11-10', 
+  //     completedOn: '2023-11-10', 
+  //     status: 'Completed', 
+  //     progress: 100, 
+  //     score: 85, 
+  //     credits: 5, 
+  //     stars: 3, 
+  //     badges: ['JS Enthusiast'],
+  //   },
+  //   { 
+  //     id: 3, 
+  //     type: 'course', 
+  //     name: 'Advanced JavaScript Concepts', 
+  //     assignedOn: '2023-11-01', 
+  //     startedOn: '2023-11-05', 
+  //     completedOn: null, 
+  //     status: 'In Progress', 
+  //     progress: 30, 
+  //     score: null, 
+  //     credits: 0, 
+  //     stars: 0, 
+  //     badges: [],
+  //   },
+  //   { 
+  //     id: 4, 
+  //     type: 'certificate', 
+  //     name: 'Web Development Fundamentals', 
+  //     assignedOn: '2023-10-01', 
+  //     startedOn: '2023-10-05', 
+  //     completedOn: '2023-10-20', 
+  //     status: 'Completed', 
+  //     progress: 100, 
+  //     score: 92, 
+  //     credits: 20, 
+  //     stars: 5, 
+  //     badges: ['Web Dev Pro', 'Top Performer'],
+  //   },
+  //   { 
+  //     id: 5, 
+  //     type: 'course', 
+  //     name: 'CSS Grid Mastery', 
+  //     assignedOn: '2023-10-01', 
+  //     startedOn: '2023-10-10', 
+  //     completedOn: '2023-10-15', 
+  //     status: 'Completed', 
+  //     progress: 100, 
+  //     score: 92, 
+  //     credits: 8, 
+  //     stars: 4, 
+  //     badges: ['CSS Expert'],
+  //   },
+  // ];
+
   // Activity types for filter
   const activityTypes = [
     { value: 'all', label: 'All Activities' },
@@ -139,7 +153,7 @@ const ActivityHistory = () => {
     { value: 'assessment', label: 'Assessments' },
     { value: 'certificate', label: 'Certificates' }
   ];
-  
+
   // Time periods for filter
   const timePeriods = [
     { value: 'all', label: 'All Time' },
@@ -148,25 +162,28 @@ const ActivityHistory = () => {
     { value: 'year', label: 'Last Year' },
     { value: 'custom', label: 'Custom Date Range' }
   ];
-  
+
   // Handle time filter change
   const handleTimeFilterChange = (e) => {
     const value = e.target.value;
     setTimeFilter(value);
     setShowCustomDateFilter(value === 'custom');
   };
-  
-  // Filter activities based on time, type, status, and custom date range
+
+  // Filter activities based on search, time, type, status, and custom date range
   const filteredActivities = activities.filter(activity => {
+    // Search filter
+    const matchesSearch = searchTerm === '' || 
+      activity.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      activity.type.toLowerCase().includes(searchTerm.toLowerCase());
+    
     // Type filter
-    const matchesType = typeFilter === 'all' || activity.type === typeFilter;
+    const matchesType = typeFilter === 'all' || activity.type.toLowerCase() === typeFilter.toLowerCase();
     
-    // Status filter
-    const matchesStatus = statusFilter === 'all' || 
-                          (statusFilter === 'completed' && activity.status === 'Completed') ||
-                          (statusFilter === 'in-progress' && activity.status === 'In Progress') ||
-                          (statusFilter === 'not-started' && !activity.completedOn && activity.startedOn === null);
-    
+    const matchesStatus = statusFilter === 'all' ||
+      (statusFilter.toLowerCase() === activity.status.toLowerCase())
+      
+
     // Time filter
     if (timeFilter === 'custom') {
       // Custom date range filter
@@ -175,33 +192,33 @@ const ActivityHistory = () => {
         const start = new Date(startDate);
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999); // Include the entire end day
-        
-        return activityDate >= start && activityDate <= end && matchesType && matchesStatus;
+
+        return activityDate >= start && activityDate <= end && matchesType && matchesStatus && matchesSearch;
       }
-      return matchesType && matchesStatus;
+      return matchesType && matchesStatus && matchesSearch;
     }
-    
-    if (timeFilter === 'all') return matchesType && matchesStatus;
-    
+
+    if (timeFilter === 'all') return matchesType && matchesStatus && matchesSearch;
+
     const activityDate = new Date(activity.completedOn || activity.startedOn || activity.assignedOn);
     const currentDate = new Date();
     const diffTime = Math.abs(currentDate - activityDate);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (timeFilter === 'week') return diffDays <= 7 && matchesType && matchesStatus;
-    if (timeFilter === 'month') return diffDays <= 30 && matchesType && matchesStatus;
-    if (timeFilter === 'year') return diffDays <= 365 && matchesType && matchesStatus;
-    
-    return matchesType && matchesStatus;
+
+    if (timeFilter === 'week') return diffDays <= 7 && matchesType && matchesStatus && matchesSearch;
+    if (timeFilter === 'month') return diffDays <= 30 && matchesType && matchesStatus && matchesSearch;
+    if (timeFilter === 'year') return diffDays <= 365 && matchesType && matchesStatus && matchesSearch;
+
+    return matchesType && matchesStatus && matchesSearch;
   });
-  
+
   // Format date to be more readable
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
-  
+
   // Render loading skeleton for table
   const renderTableSkeleton = () => {
     return Array(5).fill(0).map((_, index) => (
@@ -221,7 +238,7 @@ const ActivityHistory = () => {
       </tr>
     ));
   };
-  
+
   // Render badges with count
   const renderBadges = (badges) => {
     if (!badges || badges.length === 0) return '-';
@@ -231,20 +248,20 @@ const ActivityHistory = () => {
       </div>
     );
   };
-  
+
   // Open feedback form for a specific activity
   const openFeedbackForm = (activity) => {
     setCurrentActivity(activity);
     setShowFeedbackForm(true);
   };
-  
+
   // Close feedback form
   const closeFeedbackForm = () => {
     setShowFeedbackForm(false);
     setCurrentActivity(null);
     setFeedbackData({ rating: 5, comment: '' });
   };
-  
+
   // Handle feedback form input changes
   const handleFeedbackChange = (e) => {
     const { name, value } = e.target;
@@ -253,7 +270,7 @@ const ActivityHistory = () => {
       [name]: name === 'rating' ? parseInt(value) : value
     }));
   };
-  
+
   // Submit feedback
   const submitFeedback = (e) => {
     e.preventDefault();
@@ -263,20 +280,20 @@ const ActivityHistory = () => {
       activityName: currentActivity.name,
       ...feedbackData
     });
-    
+
     // Show success message or notification
     alert('Thank you for your feedback!');
-    
+
     // Close the form
     closeFeedbackForm();
   };
-  
+
   // Render actions
   const renderActions = (activity) => {
     return (
       <div className="activity-actions-container">
-        <button 
-          className="activity-action-btn feedback-btn" 
+        <button
+          className="activity-action-btn feedback-btn"
           title="Provide Feedback"
           onClick={() => openFeedbackForm(activity)}
         >
@@ -285,17 +302,17 @@ const ActivityHistory = () => {
       </div>
     );
   };
-  
+
   // Get tooltip text based on activity status
   const getTooltipText = (activity) => {
     return activity.completedOn ? 'View Training' : 'Resume Training';
   };
-  
+
   return (
     <div className="activity-history-container">
       <div className="activity-history-header">
         <p>Track your learning journey and achievements</p>
-        {(statusFilter !== 'all' || typeFilter !== 'all' || timeFilter !== 'all') && (
+        {/* {(statusFilter !== 'all' || typeFilter !== 'all' || timeFilter !== 'all') && (
           <div className="active-filters-container">
             {statusFilter !== 'all' && (
               <div className="active-filter-badge">
@@ -338,11 +355,12 @@ const ActivityHistory = () => {
                 </button>
               </div>
             )}
+           
           </div>
-        )}
+        )} */}
       </div>
-      
-      <div className="activity-filter-section">
+
+        {/* <div className="activity-filter-section">
         <div className="activity-filter-row">
           <div className="activity-filter-dropdown">
             <label>Activity Type:</label>
@@ -393,8 +411,124 @@ const ActivityHistory = () => {
             </div>
           )}
         </div>
+      </div> */}
+      <div className="act-log-controls">
+        <div className="act-log-roles-search-bar">
+          <Search size={16} color="#6b7280" className="act-log-search-icon" />
+          <input
+            type="text"
+            placeholder="Search activities..."
+            className="act-log-search-input"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <div className="act-log-controls-right">
+          <button className="act-log-control-btn" onClick={() => setFilterPanelOpen(true)}>
+            <Filter size={16} />
+            Filter
+          </button>
+        </div>
       </div>
-      
+
+      {/* Filter Dropdown */}
+      {filterPanelOpen && (
+        <div className="act-log-filter-panel">
+          <div className="act-log-filter-header">
+            <h3>Filters</h3>
+            <button className="act-log-btn-secondary" onClick={() => setFilterPanelOpen(false)}>
+              <X size={16} />
+            </button>
+          </div>
+          
+          <div className="act-log-filter-content">
+            <div className="act-log-filter-group">
+              <label>Activity Type</label>
+              <select 
+                className="act-log-filter-select"
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+              >
+                <option value="all">All Types</option>
+                <option value="module">Module</option>
+                <option value="assessment">Assessment</option>
+                <option value="survey">Survey</option>
+                <option value="learning-path">Learning Path</option>
+              </select>
+            </div>
+
+            <div className="act-log-filter-group">
+              <label>Status</label>
+              <select 
+                className="act-log-filter-select"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="all">All Status</option>
+                <option value="completed">Completed</option>
+                <option value="in-progress">In Progress</option>
+                <option value="not-started">Not Started</option>
+              </select>
+            </div>
+
+            <div className="act-log-filter-group">
+              <label>Time Period</label>
+              <select 
+                className="act-log-filter-select"
+                value={timeFilter}
+                onChange={handleTimeFilterChange}
+              >
+                <option value="all">All Time</option>
+                <option value="week">Last Week</option>
+                <option value="month">Last Month</option>
+                <option value="year">Last Year</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+
+            {showCustomDateFilter && (
+              <>
+                <div className="act-log-filter-group">
+                  <label>Start Date</label>
+                  <input 
+                    type="date" 
+                    className="act-log-filter-group input"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+                <div className="act-log-filter-group">
+                  <label>End Date</label>
+                  <input 
+                    type="date" 
+                    className="act-log-filter-group input"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
+
+            <div className="act-log-filter-actions">
+              <button 
+                className="act-log-btn-secondary" 
+                onClick={() => {
+                  setTypeFilter('all');
+                  setStatusFilter('all');
+                  setTimeFilter('all');
+                  setStartDate('');
+                  setEndDate('');
+                  setShowCustomDateFilter(false);
+                }}
+              >
+                Clear All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="activity-table-container">
         <table className="activity-table">
           <thead>
@@ -410,7 +544,7 @@ const ActivityHistory = () => {
               <th>Credits</th>
               <th>Stars</th>
               <th>Badges</th>
-              <th>Actions</th>
+
             </tr>
           </thead>
           <tbody>
@@ -425,7 +559,7 @@ const ActivityHistory = () => {
                       <div className="activity-name-with-icon">
                         <span>{activity.name}</span>
                         <div className="activity-info-icon-wrapper" title={getTooltipText(activity)}>
-                          <span className="activity-info-icon">ℹ️</span>
+                          {/* <span className="activity-info-icon">ℹ️</span> */}
                         </div>
                       </div>
                     </td>
@@ -443,8 +577,7 @@ const ActivityHistory = () => {
                     <td>
                       {activity.stars}
                     </td>
-                    <td>{renderBadges(activity.badges)}</td>
-                    <td>{renderActions(activity)}</td>
+                    <td>{activity.badges}</td>
                   </tr>
                 ))
               ) : (
@@ -465,7 +598,7 @@ const ActivityHistory = () => {
           </tbody>
         </table>
       </div>
-      
+
       {/* Feedback Modal */}
       {showFeedbackForm && currentActivity && (
         <div className="activity-feedback-modal-overlay">

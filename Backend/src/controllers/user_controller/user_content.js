@@ -172,7 +172,8 @@ const markComplete = async (req, res) => {
       { user_id: userId, contentId: id },
       {
         status: "completed",
-        progress_pct: 100
+        progress_pct: 100,
+        completed_at:Date.now()
       },
       { new: true }
     );

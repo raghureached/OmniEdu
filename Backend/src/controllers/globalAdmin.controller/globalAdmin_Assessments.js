@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const mongoose = require("mongoose");
+const { logActivity } = require("../../utils/activityLogger");
 
 const UPLOADS_DIR = path.join(__dirname, '../../../uploads');
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -180,6 +181,16 @@ const createAssessment = async (req, res) => {
 
         const populatedAssessment = await GlobalAssessment.findById(savedAssessment._id)
             .populate('questions');
+        
+        await logActivity({
+            userId: req.user._id,
+            action: "Create",
+            details: `Created global assessment: ${savedAssessment.title}`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "success",
+        });
 
         res.status(201).json({
             success: true,
@@ -189,6 +200,17 @@ const createAssessment = async (req, res) => {
 
     } catch (error) {
         console.error("Error creating assessment:", error);
+        
+        await logActivity({
+            userId: req.user._id,
+            action: "Create",
+            details: `Failed to create global assessment`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "failed",
+        });
+        
         res.status(500).json({ success: false, message: "Failed to create assessment", error: error.message });
     };
 
@@ -730,12 +752,32 @@ const editAssessment = async (req, res) => {
         // Return populated assessment so frontend can display latest question values
         const populated = await GlobalAssessment.findOne({ uuid: req.params.id }).populate('questions');
 
+        await logActivity({
+            userId: req.user._id,
+            action: "Update",
+            details: `Updated global assessment: ${req.body.title || assessment.title || 'unknown'}`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "success",
+        });
+
         return res.status(200).json({
             isSuccess: true,
             message: "Assessment updated successfully",
             data: populated || assessment,
         });
     } catch (error) {
+        await logActivity({
+            userId: req.user._id,
+            action: "Update",
+            details: `Failed to update global assessment`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "failed",
+        });
+
         return res.status(500).json({
             isSuccess: false,
             message: "Failed to update assessment",
@@ -834,6 +876,16 @@ const deleteAssessment = async (req, res) => {
         await session.commitTransaction();
         session.endSession();
 
+        await logActivity({
+            userId: req.user._id,
+            action: "Delete",
+            details: `Deleted global assessment: ${assessment.title || id}`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "success",
+        });
+
         res.status(200).json({
             success: true,
             message: "Assessment and its questions deleted successfully"
@@ -841,6 +893,17 @@ const deleteAssessment = async (req, res) => {
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
+        
+        await logActivity({
+            userId: req.user._id,
+            action: "Delete",
+            details: `Failed to delete global assessment`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "failed",
+        });
+        
         res.status(500).json({
             success: false,
             message: "Failed to delete assessment",
@@ -901,12 +964,33 @@ const editQuestion = async (req, res) => {
             payload,
             { new: true }
         );
+        
+        await logActivity({
+            userId: req.user._id,
+            action: "Update",
+            details: `Updated global question: ${payload.question_text?.substring(0, 50) || 'unknown'}...`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "success",
+        });
+        
         return res.status(200).json({
             isSuccess: true,
             message: "Question updated successfully",
             data: question
         })
     } catch (error) {
+        await logActivity({
+            userId: req.user._id,
+            action: "Update",
+            details: `Failed to update global question`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "failed",
+        });
+        
         return res.status(500).json({
             isSuccess: false,
             message: "Failed to update question",
@@ -918,12 +1002,33 @@ const editQuestion = async (req, res) => {
 const deleteQuestion = async (req, res) => {
     try {
         const question = await GlobalQuestion.findOneAndDelete({ uuid: req.params.id })
+        
+        await logActivity({
+            userId: req.user._id,
+            action: "Delete",
+            details: `Deleted global question: ${question?.question_text?.substring(0, 50) || 'unknown'}...`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "success",
+        });
+        
         return res.status(200).json({
             isSuccess: true,
             message: "Question deleted successfully",
             data: question
         })
     } catch (error) {
+        await logActivity({
+            userId: req.user._id,
+            action: "Delete",
+            details: `Failed to delete global question`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "failed",
+        });
+        
         return res.status(500).json({
             isSuccess: false,
             message: "Failed to delete question",

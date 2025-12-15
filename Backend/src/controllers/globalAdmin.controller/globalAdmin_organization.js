@@ -1,7 +1,7 @@
 const Organization = require("../../models/organization_model");
 const Plan = require("../../models/plans_model");
 const { z } = require("zod");
-const { logGlobalAdminActivity } = require("./globalAdmin_activity");
+const { logActivity } = require("../../utils/activityLogger");
 const Role = require("../../models/globalRoles_model");
 const OrganizationRole = require("../../models/organizationRoles_model");
 const mongoose = require("mongoose");
@@ -155,7 +155,15 @@ const addOrganization = async (req, res) => {
 
     await session.commitTransaction();
     await session.endSession();
-    await logGlobalAdminActivity(req, "Add Organization", "organization", `Organization added successfully ${org.name}`);
+    await logActivity({
+        userId: req.user._id,
+        action: "Create",
+        details: `Created organization: ${org.name}`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "success",
+    });
     
 
     return res.status(201).json({
@@ -262,12 +270,15 @@ const editOrganization = async (req, res) => {
     }
 
     // 6. Log admin activity asynchronously (no need to await blocking here)
-    logGlobalAdminActivity(
-      req,
-      "Edit Organization",
-      "organization",
-      `Organization updated successfully ${updatedOrg.name}`
-    ).catch(console.error);
+    logActivity({
+      userId: req.user._id,
+      action: "Update",
+      details: `Updated organization: ${updatedOrg.name}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    }).catch(console.error);
 
     // 7. Send success response
     return res.status(200).json({
@@ -316,7 +327,15 @@ const deleteOrganization = async (req, res) => {
     const deletedAdmin = await User.findOneAndDelete({ email: deletedOrg.email }, { session })
     await session.commitTransaction();
     await session.endSession();
-    await logGlobalAdminActivity(req, "Delete Organization", "organization", `Organization deleted successfully ${deletedOrg.name}`)
+    await logActivity({
+        userId: req.user._id,
+        action: "Delete",
+        details: `Deleted organization: ${deletedOrg.name}`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "success",
+    })
     return res.status(200).json({
       success: true,
       message: "Organization deleted successfully",
@@ -341,7 +360,15 @@ const deleteOrganizations = async (req, res) => {
     const deletedAdmins = await User.deleteMany({ email: deletedOrgs.email }, { session })
     await session.commitTransaction();
     await session.endSession();
-    await logGlobalAdminActivity(req, "Delete Organizations", "organization", `Organizations deleted successfully ${deletedOrgs.deletedCount}`)
+    await logActivity({
+        userId: req.user._id,
+        action: "Delete",
+        details: `Deleted multiple organizations: ${deletedOrgs.deletedCount} organizations`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "success",
+    })
     return res.status(200).json({
       success: true,
       message: "Organizations deleted successfully",

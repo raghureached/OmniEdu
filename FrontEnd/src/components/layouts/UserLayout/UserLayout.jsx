@@ -17,6 +17,7 @@ const UserLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const {permissions} = useSelector((state) => state.rolePermissions);
   
   // Fetch notifications on component mount
   useEffect(() => {
@@ -147,22 +148,22 @@ const UserLayout = () => {
               {!sidebarCollapsed && <span className='user_sidebar_names'>Dashboard</span>}
             </Link>
           </li>
-          <li>
+          {permissions?.includes("Learning Hub") && <li>
             <Link to="/user/learning-hub" className={isActive('/user/learning-hub') ? 'user_link_active' : ''}>
               <BookOpen size={20} />
               {!sidebarCollapsed && <span className='user_sidebar_names'>Learning Hub</span>}
             </Link>
-          </li>
+          </li>}
           <li className="user_menu_section">
             {/* {!sidebarCollapsed && <div className="user_section_title">Training</div>} */}
           </li>
           
-          <li>
+          {permissions?.includes("Global Library") && <li>
             <Link to="/user/catalog" className={isActive('/user/catalog') ? 'user_link_active' : ''}>
               <BookCopy size={20} />
               {!sidebarCollapsed && <span className='user_sidebar_names'>Global Library</span>}
             </Link>
-          </li>
+          </li>}
           <li className="user_menu_section">
             {!sidebarCollapsed && <div className="user_section_title">Settings</div>}
           </li>
@@ -172,30 +173,30 @@ const UserLayout = () => {
               {!sidebarCollapsed && <span className='user_sidebar_names'>Analytics</span>}
             </Link>
           </li>
-          <li>
+          {permissions?.includes("Activity History Access") && <li>
             <Link to="/user/activity-history" className={isActive('/user/activity-history') ? 'user_link_active' : ''}>
               <Clock size={20} />
               {!sidebarCollapsed && <span className='user_sidebar_names'>Activity History</span>}
             </Link>
-          </li>
-          <li>
+          </li>}
+          {permissions?.includes("Profile Access") && <li>
             <Link to="/user/profile" className={isActive('/user/profile') ? 'user_link_active' : ''}>
               <User size={20} />
               {!sidebarCollapsed && <span className='user_sidebar_names'>User Profile</span>}
             </Link>
-          </li>
-          <li>
+          </li>}
+          {permissions?.includes("Help Center Access") && <li>
             <Link to="/user/help-center" className={isActive('/user/help-center') ? 'user_link_active' : ''}>
               <HelpCircle size={20} />
               {!sidebarCollapsed && <span className='user_sidebar_names'>Help Center</span>}
             </Link>
-          </li>
-          <li>
+          </li>}
+          {permissions?.includes("Support Button Access") && <li>
             <Link to="/user/support" className={isActive('/user/support') ? 'user_link_active' : ''}>
               <Laptop size={20} />
               {!sidebarCollapsed && <span className='user_sidebar_names'>Support</span>}
             </Link>
-          </li>
+          </li>}
         </ul>
         
         <div className="user_sidebar_footer">

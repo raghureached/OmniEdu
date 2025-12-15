@@ -1,5 +1,7 @@
 
 
+const { logActivity } = require("../../utils/activityLogger");
+
 // Add users to a team/sub-team with per-user results and no overwrite of different existing teams
 const addUsersToGroup = async (req, res) => {
   try {
@@ -238,6 +240,16 @@ const addGroup = async (req, res) => {
         created_by: req.user._id
       });
 
+      await logActivity({
+        userId: req.user._id,
+        action: "Create",
+        details: `Created group: ${teamName || 'unknown'}`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "success",
+      });
+
       return res.status(201).json({
         isSuccess: true,
         message: "Subteam added successfully",
@@ -267,6 +279,16 @@ const addGroup = async (req, res) => {
     });
 
   } catch (error) {
+    await logActivity({
+      userId: req.user._id,
+      action: "Create",
+      details: `Failed to create group`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    });
+    
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to add group",
@@ -299,6 +321,17 @@ const editGroup = async (req, res) => {
     const team = await Team.findByIdAndUpdate(req.params.id, { name: teamName, description });
 
     const subTeam = await SubTeam.findOneAndUpdate({ team_id: req.params.id }, { name: subTeamName, description: subTeamDescription });
+    
+    await logActivity({
+      userId: req.user._id,
+      action: "Update",
+      details: `Updated group: ${teamName || 'unknown'}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    });
+    
     return res.status(200).json({
       isSuccess: true,
       message: "Group updated successfully",
@@ -306,6 +339,16 @@ const editGroup = async (req, res) => {
     });
 
   } catch (error) {
+    await logActivity({
+      userId: req.user._id,
+      action: "Update",
+      details: `Failed to update group`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    });
+    
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to update group",
@@ -317,12 +360,33 @@ const deleteGroup = async (req, res) => {
   try {
     const group = await Team.findByIdAndDelete(req.params.id);
     const subGroup = await SubTeam.findOneAndDelete({ team_id: req.params.id });
+    
+    await logActivity({
+      userId: req.user._id,
+      action: "Delete",
+      details: `Deleted group: ${group?.name || 'unknown'}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    });
+    
     return res.status(200).json({
       isSuccess: true,
       message: "Group deleted successfully",
       data: { group, subGroup }
     });
   } catch (error) {
+    await logActivity({
+      userId: req.user._id,
+      action: "Delete",
+      details: `Failed to delete group`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    });
+    
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to delete group",

@@ -1,5 +1,4 @@
 const LearningPath = require("../../models/learningPath_model");
-const logAdminActivity = require("./admin_activity");
 
 const addLearningPath = async (req, res) => {
   try {
@@ -68,7 +67,6 @@ const addLearningPath = async (req, res) => {
     });
 
     await learningPath.save();
-    await logAdminActivity(req, 'add', `Learning path added successfully: ${learningPath.title}`);
     return res.status(201).json({
       isSuccess: true,
       message: 'Learning path added successfully.',
@@ -87,7 +85,6 @@ const getLearningPaths = async (req, res) => {
   try {
     // const orgId = req.user.orgId || "68bc0898fdb4a64d5a727a60";
     const learningPath = await LearningPath.find({ organization_id: req.user.organization_id }).populate('lessons.id').lean().populate('team').populate('subteam')
-    await logAdminActivity(req, "view", `Learning paths fetched successfully: ${learningPath.length}`);
     return res.status(200).json({
       isSuccess: true,
       message: 'Learning paths fetched successfully.',
@@ -108,13 +105,11 @@ const getContentsOfLearningPath = async (req, res) => {
       .populate('lessons.id');
 
     if (!learningPath) {
-      await logAdminActivity(req, 'view', `Learning path not found: ${req.params.id}`);
       return res.status(404).json({
         isSuccess: false,
         message: 'Learning path not found',
       });
     }
-    await logAdminActivity(req, 'view', `Learning path fetched successfully: ${learningPath.title}`);
     return res.status(200).json({
       isSuccess: true,
       message: 'Learning path fetched successfully',
@@ -200,14 +195,6 @@ const editLearningPath = async (req, res) => {
       updateDoc,
       { new: true }
     );
-    if (!learningPath) {
-      await logAdminActivity(req, 'edit', `Learning path not found: ${req.params.id}`);
-      return res.status(404).json({
-        isSuccess: false,
-        message: 'Learning path not found',
-      });
-    }
-    await logAdminActivity(req, 'edit', `Learning path updated successfully: ${learningPath.title}`);
     return res.status(200).json({
       isSuccess: true,
       message: 'Learning path updated successfully.',
@@ -226,13 +213,11 @@ const getLearningPathById = async (req, res) => {
   try {
     const learningPath = await LearningPath.findOne({ uuid: req.params.id }).populate('lessons.id').lean()
     if (!learningPath) {
-      await logAdminActivity(req, "view", `Learning path not found: ${req.params.id}`);
       return res.status(404).json({
         isSuccess: false,
         message: "Learning path not found"
       })
     }
-    await logAdminActivity(req, "view", `Learning path fetched successfully: ${learningPath.title}`);
     return res.status(200).json({
       isSuccess: true,
       message: "Learning path fetched successfully",
@@ -250,13 +235,11 @@ const getLearningPathById = async (req, res) => {
 const deleteLearningPath = async (req, res) => {
   const deletedLearningPath = await LearningPath.findOneAndDelete({ uuid: req.params.id })
   if (!deletedLearningPath) {
-    await logAdminActivity(req, "delete", `Learning path not found: ${req.params.id}`);
     return res.status(404).json({
       isSuccess: false,
       message: "Learning path not found"
     })
   }
-  await logAdminActivity(req, "delete", `Learning path deleted successfully: ${deletedLearningPath.title}`);
   return res.status(200).json({
     isSuccess: true,
     message: "Learning path deleted successfully",

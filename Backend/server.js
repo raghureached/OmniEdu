@@ -15,7 +15,7 @@ const devRouter = require("./src/routes/dev.routes");
 const userRouter = require("./src/routes/user.routes");
 const cookieParser = require("cookie-parser");
 const { authenticate, authorize } = require("./src/middleware/auth_middleware");
-
+const activityLogRouter = require("./src/routes/globalAdmin.activityLogs.routes");
 connectDB;
 
 // Session middleware for Passport
@@ -56,6 +56,7 @@ app.use('/api/user',authenticate,userRouter)
 app.post('/api/sendOtp', require('./src/controllers/OTP').sendOTP)
 app.post('/api/verifyOtp', require('./src/controllers/OTP').verifyOTP)
 app.get('/api/getPermissions', authenticate,require('./src/controllers/permissions.controller').getPermissions)
+app.use('/api/activity',authenticate,activityLogRouter)
 app.listen(PORT, () => {
   console.log(`Server is running at PORT:${PORT}`);
 });

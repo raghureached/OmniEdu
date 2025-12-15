@@ -7,6 +7,7 @@ const SubTeam = require("../../models/subTeams_model");
 const Designation = require("../../models/desginations_model");
 const User = require("../../models/users_model");
 const Organization = require("../../models/organization_model");
+const { logActivity } = require("../../utils/activityLogger");
 // --- Validation helpers ---
 async function ensureActiveTeam(teamId) {
   if (!teamId) return;
@@ -106,7 +107,6 @@ const addUser = async (req, res) => {
     // ✅ Commit both if all good
     await session.commitTransaction();
     session.endSession();
-    await logAdminActivity(req, "add", `User added successfully: ${name}`);
 
 
     // Fetch created user + populated relations to match getUsers shape
@@ -144,6 +144,16 @@ Welcome aboard!`
       );
     }
 
+    await logActivity({
+      userId: req.user._id,
+      action: "Create",
+      details: `Created user: ${name || email || 'unknown'}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    });
+
     return res.status(201).json({
       isSuccess: true,
       message: 'User and profile created successfully',
@@ -155,7 +165,16 @@ Welcome aboard!`
 
     await session.abortTransaction();
     session.endSession();
-    await logAdminActivity(req, "add", `User addition failed: ${error.message}`);
+
+    await logActivity({
+      userId: req.user._id,
+      action: "Create",
+      details: `Failed to create user`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    });
 
     res.status(400).json({
       isSuccess: false,
@@ -258,7 +277,6 @@ const editUser = async (req, res) => {
 
     await UserProfile.updateOne({ user_id: user._id }, profileUpdate);
 
-    await logAdminActivity(req, 'edit', `User edited successfully: ${user.name}`);
 
     // Fetch updated user + populated relations
     const updatedUser = await User
@@ -272,13 +290,32 @@ const editUser = async (req, res) => {
       .populate('teams.sub_team_id', 'name')
       .lean();
 
+    await logActivity({
+      userId: req.user._id,
+      action: "Update",
+      details: `Updated user: ${name || email || 'unknown'}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    });
+
     return res.status(200).json({
       isSuccess: true,
       message: 'User updated successfully',
       data: { ...updatedUser, profile: updatedProfile },
     });
   } catch (error) {
-    await logAdminActivity(req, 'edit', `User editing failed: ${error.message}`);
+    await logActivity({
+      userId: req.user._id,
+      action: "Update",
+      details: `Failed to update user`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    });
+    
     return res.status(500).json({
       isSuccess: false,
       message: 'Failed to update user',
@@ -312,7 +349,17 @@ const deleteUser = async (req, res) => {
 
     // Commit the transaction
     await session.commitTransaction();
-    await logAdminActivity(req, "delete", `User deleted successfully: ${deletedUser.name}`);
+    
+    await logActivity({
+      userId: req.user._id,
+      action: "Delete",
+      details: `Deleted user: ${deletedUser?.name || deletedUser?.email || 'unknown'}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    });
+    
     return res.status(200).json({
       isSuccess: true,
       message: "User deleted successfully",
@@ -321,7 +368,17 @@ const deleteUser = async (req, res) => {
   } catch (error) {
     // Rollback transaction in case of error
     await session.abortTransaction();
-    await logAdminActivity(req, "delete", `User deletion failed: ${error.message}`);
+    
+    await logActivity({
+      userId: req.user._id,
+      action: "Delete",
+      details: `Failed to delete user`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    });
+    
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to delete user",
@@ -422,12 +479,7 @@ const getUsers = async (req, res) => {
 
     const pagination = { page, limit, total, totalPages, hasMore };
 
-    await logAdminActivity(
-      req,
-      "view",
-      `Users fetched successfully: ${usersWithProfiles.length}`
-    );
-
+   
     return res.status(200).json({
       isSuccess: true,
       message: "Users fetched successfully",
@@ -435,7 +487,6 @@ const getUsers = async (req, res) => {
       pagination,
     });
   } catch (error) {
-    await logAdminActivity(req, "view", `Users fetching failed: ${error.message}`);
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to fetch users",
@@ -525,14 +576,12 @@ const getUserbyId = async (req, res) => {
       sub_team: subTeamDoc,
       organization_role: organizationRoleDoc,
     };
-    await logAdminActivity(req, "view", `User fetched successfully: ${user.name}`);
     return res.status(200).json({
       isSuccess: true,
       message: "User fetched successfully",
       data: result,
     });
   } catch (error) {
-    await logAdminActivity(req, "view", `User fetching failed: ${error.message}`);
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to fetch user",
@@ -566,7 +615,6 @@ const bulkDeleteUsers = async (req, res) => {
     const deletedProfiles = await UserProfile.deleteMany({
       user_id: { $in: objectIdsToDelete },
     });
-    await logAdminActivity(req, "delete", `Users and their profiles deleted successfully: ${deletedUsers.deletedCount}`);
     return res.status(200).json({
       isSuccess: true,
       message: "Users and their profiles deleted successfully",
@@ -576,7 +624,6 @@ const bulkDeleteUsers = async (req, res) => {
       },
     });
   } catch (error) {
-    await logAdminActivity(req, "delete", `Users and their profiles deletion failed: ${error.message}`);
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to delete users and profiles",
@@ -587,7 +634,6 @@ const bulkDeleteUsers = async (req, res) => {
 
 
 const bcrypt = require("bcrypt");
-const logAdminActivity = require("./admin_activity");
 const { sendMail } = require("../../utils/Emailer");
 
 const bulkEditUsers = async (req, res) => {
@@ -643,7 +689,6 @@ const bulkEditUsers = async (req, res) => {
         { $set: profileUpdates }
       );
     }
-    await logAdminActivity(req, "edit", `Users and their profiles updated successfully: ${updatedUsers.modifiedCount}`);
     return res.status(200).json({
       isSuccess: true,
       message: "Users and their profiles updated successfully",
@@ -653,7 +698,6 @@ const bulkEditUsers = async (req, res) => {
       },
     });
   } catch (error) {
-    await logAdminActivity(req, "edit", `Users and their profiles update failed: ${error.message}`);
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to update users and profiles",
@@ -668,14 +712,12 @@ const importUsers = async (req, res) => {
 
     const users = await User.insertMany(req.body)
 
-    await logAdminActivity(req, "import", `Users imported successfully: ${users.length}`);
     return res.status(200).json({
       isSuccess: true,
       message: "Users imported successfully",
       data: users
     })
   } catch (error) {
-    await logAdminActivity(req, "import", `Users import failed: ${error.message}`);
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to import users",
@@ -765,12 +807,10 @@ const exportUsers = async (req, res) => {
     // Set CSV headers for response
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename=users.csv');
-    await logAdminActivity(req, "export", `Users exported successfully: ${users.length}`);
     // Send CSV content
     return res.send(header + csvRecords);
 
   } catch (error) {
-    await logAdminActivity(req, "export", `Users export failed: ${error.message}`);
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to export users to CSV",

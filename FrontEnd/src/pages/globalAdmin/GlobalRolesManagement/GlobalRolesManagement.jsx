@@ -157,6 +157,7 @@ const GlobalRolesManagement = () => {
           message: "Role updated successfully",
           duration: 5000,
         });
+        dispatch(fetchRoles(currentOrg));
       }else{
         showNotification({
           type: "error",

@@ -11,4 +11,6 @@ router.route('/changePassword').post(changePassword)
 router.get('/google', googleAuth);
 router.get('/google/callback', googleAuthCallback);
 
+
+
 module.exports = router;

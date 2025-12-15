@@ -1,5 +1,5 @@
 const ForUserMessage = require("../../models/messageForUser");
-const logAdminActivity = require("./admin_activity");
+const { logActivity } = require("../../utils/activityLogger");
 const setMessage = async(req,res)=>{
     try {
         const {message,status} = req.body;
@@ -10,13 +10,32 @@ const setMessage = async(req,res)=>{
             organization_id:req.user.organization_id,
             created_by
         })
-        await logAdminActivity(req, "add", `Message set successfully: ${messageSet.message_text}`);
+        await logActivity({
+            userId: req.user._id,
+            action: "Create",
+            details: `Set message: ${message?.substring(0, 50) || 'unknown'}...`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "success",
+        });
+
         return res.status(201).json({
             isSuccess:true,
             message:"Message set successfully",
             data:messageSet
         })
     } catch (error) {
+        await logActivity({
+            userId: req.user._id,
+            action: "Create",
+            details: `Failed to set message`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "failed",
+        });
+
         return res.status(500).json({
             isSuccess:false,
             message:"Failed to set message",
@@ -35,13 +54,33 @@ const editMessage = async(req,res)=>{
                 message:"Message not found"
             })
         }
-        await logAdminActivity(req, "edit", `Message edited successfully: ${editedMessage.message_text}`);
+        
+        await logActivity({
+            userId: req.user._id,
+            action: "Update",
+            details: `Updated message: ${message?.substring(0, 50) || 'unknown'}...`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "success",
+        });
+        
         return res.status(201).json({
             isSuccess:true,
             message:"Message edited successfully",
             data:editedMessage
         })
     } catch (error) {
+        await logActivity({
+            userId: req.user._id,
+            action: "Update",
+            details: `Failed to update message`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "failed",
+        });
+        
         return res.status(500).json({
             isSuccess:false,
             message:"Failed to set message",
@@ -59,13 +98,33 @@ const deleteMessage = async(req,res)=>{
                 message:"Message not found"
             })
         }
-        await logAdminActivity(req, "delete", `Message deleted successfully: ${deletedMessage.message_text}`);
+        
+        await logActivity({
+            userId: req.user._id,
+            action: "Delete",
+            details: `Deleted message: ${deletedMessage?.message_text?.substring(0, 50) || 'unknown'}...`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "success",
+        });
+        
         return res.status(200).json({
             isSuccess:true,
             message:"Message deleted successfully",
             data:deletedMessage
         })
     } catch (error) {
+        await logActivity({
+            userId: req.user._id,
+            action: "Delete",
+            details: `Failed to delete message`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "failed",
+        });
+        
         return res.status(500).json({
             isSuccess:false,
             message:"Failed to delete message",

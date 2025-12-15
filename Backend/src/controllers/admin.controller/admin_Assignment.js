@@ -8,6 +8,7 @@ const Module = require("../../models/moduleOrganization_model");
 const OrganizationSurveys = require("../../models/organizationSurveys_model");
 const { sendMail } = require("../../utils/Emailer");
 const Notification = require("../../models/Notification_model");
+const { logActivity } = require("../../utils/activityLogger");
 // If you also track user progress
 // const Progress = require("../models/progress.model");
 
@@ -302,6 +303,16 @@ const createAssignment = async (req, res) => {
       console.log("Email sending failed:", error);
     }
 
+    await logActivity({
+      userId: req.user._id,
+      action: "Create",
+      details: `Created assignment: ${contentName || 'unknown'}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    });
+
     return res.status(201).json({
       isSuccess: true,
       message: "Assignment created successfully",
@@ -310,6 +321,17 @@ const createAssignment = async (req, res) => {
   } catch (error) {
     await session.abortTransaction();
     console.error("Transaction error:", error);
+    
+    await logActivity({
+      userId: req.user._id,
+      action: "Create",
+      details: `Failed to create assignment`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    });
+    
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to create assignment",
@@ -398,12 +420,33 @@ const editAssignment = async (req, res) => {
       updateDoc,
       { new: true }
     );
+    
+    await logActivity({
+      userId: req.user._id,
+      action: "Update",
+      details: `Updated assignment: ${contentName || 'unknown'}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    });
+    
     return res.status(200).json({
       isSuccess: true,
       message: "Assignment edited successfully",
       data: assignment,
     });
   } catch (error) {
+    await logActivity({
+      userId: req.user._id,
+      action: "Update",
+      details: `Failed to update assignment`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    });
+    
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to edit assignment",
@@ -416,12 +459,33 @@ const deleteAssignment = async (req, res) => {
   try {
     const { id } = req.params
     const assignment = await ForUserAssignment.findOneAndDelete({ uuid: id })
+    
+    await logActivity({
+      userId: req.user._id,
+      action: "Delete",
+      details: `Deleted assignment: ${assignment?.contentName || 'unknown'}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    });
+    
     return res.status(200).json({
       isSuccess: true,
       message: "Assignment deleted successfully",
       data: assignment
     })
   } catch (error) {
+    await logActivity({
+      userId: req.user._id,
+      action: "Delete",
+      details: `Failed to delete assignment`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    });
+    
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to delete assignment",

@@ -163,6 +163,6 @@ router.route("/getTicketDetails/:ticketId").get(getTicketDetails);
 router.route("/addTicketComment/:ticketId").post(addTicketComment);
 
 
-router.route('/getPermissions').get(getPermissions)
+
 
 module.exports = router;

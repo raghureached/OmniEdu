@@ -127,18 +127,18 @@ function App() {
         <Route path="/user/*" element={<UserLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
-          <Route path="profile" element={<UserProfile />} />
+          <Route path="profile" element={permissions.includes("Profile Access") ? <UserProfile /> : <NotAllowed />} />
           <Route path='analytics' element={<LearnerAnalytics />} />
-          <Route path="learning-hub" element={<LearningHub />} />
-          <Route path="catalog" element={<Catalog />} />
-          <Route path="activity-history" element={<ActivityHistory />} />
-          <Route path="help-center" element={<HelpCenter />} />
-          <Route path="assigned" element={<Assigned  />} />
+          <Route path="learning-hub" element={permissions.includes("Learning Hub") ? <LearningHub /> : <NotAllowed />} />
+          <Route path="catalog" element={permissions.includes("Global Library") ? <Catalog /> : <NotAllowed />} />
+          <Route path="activity-history" element={permissions.includes("Activity History Access") ?  <ActivityHistory /> : <NotAllowed />} />
+          <Route path="help-center" element={permissions.includes("Help Center Access") ? <HelpCenter /> : <NotAllowed />} />
+          <Route path="assigned" element={permissions.includes("Assigned Training") ? <Assigned  /> : <NotAllowed />} />
           <Route path="inProgress" element={<InProgress />} />
           <Route path="completed" element={<Completed />} />
           <Route path="mandatory" element={<Mandatory />} />
           <Route path="change-password" element={<ChangePassword />} />
-          <Route path='support' element={<UserTicketsTable />} />
+          <Route path='support' element={permissions.includes("Support Button Access") ? <UserTicketsTable /> : <NotAllowed />} />
         </Route>
         <Route path="/admin/*" element={<AdminLayout />}>
           <Route index element={<AdminHome />} />
@@ -182,7 +182,6 @@ function App() {
           <Route path="change-password" element={<ChangePassword />} />
           <Route path='support' element={<GlobalTicketsTable />} />
           <Route path='grade-submissions' element={<GradeSubmission />} />
-          {/* <Route path='test' element={<AnalyticsViewNew />} /> */}
         </Route>
         <Route element={<NavbarOnly />}>
           {/* ORG ASSIGNMENTS */}

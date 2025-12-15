@@ -1,6 +1,6 @@
 const GlobalModule = require("../../models/globalModule_model");
 const { z } = require("zod");
-const { logGlobalAdminActivity } = require("./globalAdmin_activity");
+const { logActivity } = require("../../utils/activityLogger");
 
 const CONTENT_TYPES = ["PDF", "DOCX", "Theory"];
 
@@ -53,7 +53,7 @@ const addContent = async (req, res) => {
     const additionalFile = req.uploadedFiles?.additionalFile?.[0]?.url;
     const thumbnail = req.uploadedFiles?.thumbnail?.[0]?.url;
     // console.log(req.body)
-    const { title,trainingType,team,subteam,category,submissionEnabled,feedbackEnabled,instructions, badges,stars,credits,description,externalResource, pushable_to_orgs, tags, duration,learningOutcomes,prerequisites,richText } = req.body;
+    const { title, trainingType, team, subteam, category, submissionEnabled, feedbackEnabled, instructions, badges, stars, credits, description, externalResource, pushable_to_orgs, tags, duration, learningOutcomes, prerequisites, richText } = req.body;
     const created_by = req.user?._id || null;
     const newModule = new GlobalModule({
       title,
@@ -72,8 +72,8 @@ const addContent = async (req, res) => {
       additionalFile,
       thumbnail,
       pushable_to_orgs,
-      learning_outcomes:learningOutcomes,
-      prerequisites:prerequisites.split(","),
+      learning_outcomes: learningOutcomes,
+      prerequisites: prerequisites.split(","),
       instructions,
       tags,
       duration,
@@ -82,7 +82,15 @@ const addContent = async (req, res) => {
     });
 
     await newModule.save();
-    await logGlobalAdminActivity(req,"Create Content","content",`Content created successfully ${newModule.title}`)
+    await logActivity({
+      userId: req.user._id,
+      action: "Create",
+      details: `Created global content: ${newModule.title}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    })
     return res.status(201).json({
       success: true,
       message: 'Module added successfully.',
@@ -90,6 +98,15 @@ const addContent = async (req, res) => {
     });
   } catch (error) {
     console.log(error)
+    await logActivity({
+      userId: req.user._id,
+      action: "Create",
+      details: `Failed to create global content`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    });
     return res.status(500).json({
       success: false,
       message: 'Failed to add module.',
@@ -134,15 +151,32 @@ const getContentById = async (req, res) => {
     return res.status(200).json({ success: true, message: 'Module fetched successfully.', data: content });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to fetch module.', error: error.message });
-  } 
+  }
 }
-const bulkDelete = async(req,res) => {
+const bulkDelete = async (req, res) => {
   try {
     // console.log(req.body)
     const deletedModules = await GlobalModule.deleteMany({ uuid: { $in: req.body } })
-    await logGlobalAdminActivity(req,"Bulk Delete Content","content",`Content deleted successfully ${deletedModules.deletedCount}`)
+    await logActivity({
+      userId: req.user._id,
+      action: "Delete",
+      details: `Bulk deleted global content: ${deletedModules.deletedCount} items`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    })
     return res.status(200).json({ success: true, message: 'Content deleted successfully.', data: deletedModules })
   } catch (error) {
+    await logActivity({
+      userId: req.user._id,
+      action: "Delete",
+      details: `Failed to bulk delete global content`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    });
     return res.status(500).json({ success: false, message: 'Failed to delete content.', error: error.message })
   }
 }
@@ -219,12 +253,15 @@ const editContent = async (req, res) => {
     }
 
     // 📝 Log admin action
-    await logGlobalAdminActivity(
-      req,
-      "Edit Content",
-      "content",
-      `Content updated successfully: ${updatedModule.title}`
-    );
+    await logActivity({
+      userId: req.user._id,
+      action: "Update",
+      details: `Updated global content: ${updatedModule.title}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    })
 
     return res.status(200).json({
       success: true,
@@ -233,6 +270,15 @@ const editContent = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Edit Content Error:", error);
+    await logActivity({
+      userId: req.user._id,
+      action: "Update",
+      details: `Failed to update global content: ${req.body?.title || req.params.id}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    })
     return res.status(500).json({
       success: false,
       message: "Failed to update content",
@@ -251,13 +297,30 @@ const deleteContent = async (req, res) => {
         message: "Content not found"
       })
     }
-    await logGlobalAdminActivity(req,"Delete Content","content",`Content deleted successfully ${deletedModule.title}`)
+    await logActivity({
+      userId: req.user._id,
+      action: "Delete",
+      details: `Deleted global content: ${deletedModule.title}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    })
     return res.status(200).json({
       success: true,
       message: "Content deleted successfully",
       data: deletedModule
     })
   } catch (error) {
+    await logActivity({
+      userId: req.user._id,
+      action: "Delete",
+      details: `Failed to delete global content: ${req.params.id}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    })
     return res.status(500).json({
       success: false,
       message: "Failed to delete content",

@@ -1,11 +1,11 @@
 const OrganizationAssessments = require("../../models/organizationAssessments_model")
 const OrganizationAssessmentQuestion = require("../../models/organizationAssessmentQuestions_model")
-const logAdminActivity = require("./admin_activity");
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const mongoose = require("mongoose");
 const csv = require("csv-parser");
+const { logActivity } = require("../../utils/activityLogger");
 
 const UPLOADS_DIR = path.join(__dirname, '../../../uploads');
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -202,8 +202,15 @@ const createAssessment = async (req, res) => {
         const populatedAssessment = await OrganizationAssessments.findById(savedAssessment._id)
             .populate('questions');
 
-        await logAdminActivity(req, "Create Assessment", "assessment", `Assessment created successfully ${newAssessment.title}`);
-
+        await logActivity({
+            userId:req.user._id,
+            action:"Create",
+            details:`Created assessment ${savedAssessment.title}`,
+            userRole:req.user.role,
+            ip:req.ip,
+            userAgent:req.headers['user-agent'],
+            status:"success",
+        })
         res.status(201).json({
             success: true,
             message: "Assessment created successfully",
@@ -215,7 +222,15 @@ const createAssessment = async (req, res) => {
         if (session && !transactionCommitted) {
             await session.abortTransaction();
         }
-        console.error("Error creating assessment:", error);
+        await logActivity({
+            userId:req.user._id,
+            action:"Create",
+            details:`Failed to create assessment`,
+            userRole:req.user.role,
+            ip:req.ip,
+            userAgent:req.headers['user-agent'],
+            status:"failed",
+        })
         res.status(500).json({ success: false, message: "Failed to create assessment", error: error.message });
     } finally {
         if (session) {
@@ -223,111 +238,6 @@ const createAssessment = async (req, res) => {
         }
     }
 };
-
-// const createAssessment = async (req, res) => {
-//     const session = await mongoose.startSession();
-//     session.startTransaction();
-//     try {
-//       const {
-//         title, description, tags, duration, team, subteam,
-//         attempts, unlimited_attempts, percentage_to_pass,
-//         display_answers, status, credits, stars, badges,
-//         category, feedbackEnabled, shuffle_questions,
-//         shuffle_options, questions = [], instructions
-//       } = req.body;
-
-//       if (!Array.isArray(questions) || questions.length === 0) {
-//         await session.abortTransaction();
-//         session.endSession();
-//         return res.status(400).json({ success: false, message: "At least one question is required" });
-//       }
-
-//       const questionIds = [];
-
-//       for (let index = 0; index < questions.length; index++) {
-//         const q = questions[index];
-//         if (!q?.question_text || !q?.type)
-//           throw new Error(`Invalid question at index ${index}`);
-
-//         const type = q.type.trim();
-//         if (!['Multiple Choice', 'Multi Select'].includes(type))
-//           throw new Error(`Invalid type for question ${index}`);
-
-//         const options = Array.isArray(q.options)
-//           ? q.options.filter(o => typeof o === 'string' && o.trim().length > 0)
-//           : [];
-
-//         if (options.length < 2)
-//           throw new Error(`Question ${index} must have at least two options`);
-
-//         const normalizedCorrect = normalizeCorrectOption(q.correct_option);
-//         const maxIndex = options.length - 1;
-//         if (normalizedCorrect.some(n => n < 0 || n > maxIndex))
-//           throw new Error(`Question ${index}: correct_option out of range`);
-
-//         const newQuestion = new OrganizationAssessmentQuestion({
-//           question_text: q.question_text.trim(),
-//           type,
-//           options,
-//           correct_option: normalizedCorrect,
-//           total_points: Number.isFinite(Number(q.total_points)) ? Number(q.total_points) : 1,
-//           file_url: q.file_url?.trim() || null,
-//         });
-
-//         const savedQuestion = await newQuestion.save({ session });
-//         questionIds.push(savedQuestion._id);
-//       }
-
-//       const newAssessment = new OrganizationAssessments({
-//         title,
-//         description,
-//         tags,
-//         duration,
-//         team,
-//         subteam,
-//         attempts,
-//         unlimited_attempts,
-//         percentage_to_pass,
-//         display_answers,
-//         status,
-//         credits,
-//         stars,
-//         badges,
-//         category,
-//         feedbackEnabled,
-//         shuffle_questions,
-//         shuffle_options,
-//         questions: questionIds,
-//         instructions
-//       });
-
-//       const savedAssessment = await newAssessment.save({ session });
-
-//       await session.commitTransaction();
-//       session.endSession();
-
-//       const populatedAssessment = await OrganizationAssessments.findById(savedAssessment._id).populate("questions");
-//       res.status(201).json({
-//         success: true,
-//         message: "Assessment created successfully",
-//         assessment: populatedAssessment
-//       });
-
-//     } catch (error) {
-//       await session.abortTransaction();
-//       session.endSession();
-//       console.error("Transaction failed:", error);
-//       res.status(500).json({ success: false, message: "Failed to create assessment", error: error.message });
-//     }
-//   };
-
-
-
-
-// const csv = require("csv-parser");
-// const GlobalAssesmentSection = require("../../models/globalAssesment_section_model");
-// const GlobalAssessments = require("../../models/globalAssessments_model");
-
 
 const uploadAssessmentCSV = async (req, res) => {
     let session;
@@ -453,7 +363,15 @@ const uploadAssessmentCSV = async (req, res) => {
                     await session.commitTransaction();
                     transactionCommitted = true; // Mark as committed
 
-                    await logAdminActivity(req, "Create Assessment CSV", "assessment", `Assessment created from CSV successfully: ${savedAssessment.title}`);
+                    await logActivity({
+                        userId:req.user._id,
+                        action:"Create",
+                        details:`Created assessment from CSV: ${assessment.title}`,
+                        userRole:req.user.role,
+                        ip:req.ip,
+                        userAgent:req.headers['user-agent'],
+                        status:"success",
+                    })
 
                     fs.unlinkSync(file.path);
                     return res.status(201).json({
@@ -493,6 +411,17 @@ const uploadAssessmentCSV = async (req, res) => {
     } catch (error) {
         console.error("CSV upload error:", error);
         if (req.file) fs.unlinkSync(req.file.path);
+        
+        await logActivity({
+            userId:req.user._id,
+            action:"Create",
+            details:`Failed to create assessment from CSV`,
+            userRole:req.user.role,
+            ip:req.ip,
+            userAgent:req.headers['user-agent'],
+            status:"failed",
+        })
+        
         return res.status(500).json({ isSuccess: false, message: error.message });
     } finally {
         if (session && !transactionCommitted) {
@@ -683,7 +612,7 @@ const editAssessment = async (req, res) => {
         const unlimited = req.body.unlimited_attempts === true || req.body.unlimited_attempts === 'true';
         const tagsArr = Array.isArray(req.body.tags) ? req.body.tags : (typeof req.body.tags === 'string' ? req.body.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined);
         const thumbnail = req.uploadedFile?.url;
-        console.log(thumbnail)
+        // console.log(thumbnail)
         const updateDoc = {
             ...(typeof req.body.title === 'string' ? { title: req.body.title } : {}),
             ...(typeof req.body.description === 'string' ? { description: req.body.description } : {}),
@@ -834,8 +763,15 @@ const editAssessment = async (req, res) => {
         transactionCommitted = true; // Mark as committed
 
         const populated = await OrganizationAssessments.findOne({ uuid: req.params.id, organization_id }).populate('questions');
-
-        await logAdminActivity(req, "Edit Assessment", "assessment", `Assessment updated successfully: ${assessment.title}`);
+        await logActivity({
+            userId:req.user._id,
+            action:"Update",
+            details:`Updated assessment ${assessment?.title || req.body.title || 'unknown'}`,
+            userRole:req.user.role,
+            ip:req.ip,
+            userAgent:req.headers['user-agent'],
+            status:"success",
+        })
 
         return res.status(200).json({
             isSuccess: true,
@@ -847,6 +783,15 @@ const editAssessment = async (req, res) => {
         if (session && !transactionCommitted) {
             await session.abortTransaction();
         }
+        await logActivity({
+            userId:req.user._id,
+            action:"Update",
+            details:`Updated assessment ${req.body.title || 'unknown'}`,
+            userRole:req.user.role,
+            ip:req.ip,
+            userAgent:req.headers['user-agent'],
+            status:"failed",
+        })
         return res.status(500).json({
             isSuccess: false,
             message: "Failed to update assessment",
@@ -965,7 +910,15 @@ const deleteAssessment = async (req, res) => {
         await session.commitTransaction();
         transactionCommitted = true; // Mark as committed
 
-        await logAdminActivity(req, "Delete Assessment", "assessment", `Assessment deleted successfully: ${assessment.title}`);
+        await logActivity({
+            userId:req.user._id,
+            action:"Delete",
+            details:`Deleted assessment: ${assessment.title}`,
+            userRole:req.user.role,
+            ip:req.ip,
+            userAgent:req.headers['user-agent'],
+            status:"success",
+        })
 
         res.status(200).json({
             success: true,
@@ -976,6 +929,17 @@ const deleteAssessment = async (req, res) => {
         if (session && !transactionCommitted) {
             await session.abortTransaction();
         }
+        
+        await logActivity({
+            userId:req.user._id,
+            action:"Delete",
+            details:`Failed to delete assessment`,
+            userRole:req.user.role,
+            ip:req.ip,
+            userAgent:req.headers['user-agent'],
+            status:"failed",
+        })
+        
         res.status(500).json({
             success: false,
             message: "Failed to delete assessment",
@@ -1055,12 +1019,33 @@ const editQuestion = async (req, res) => {
             payload,
             { new: true }
         );
+        
+        await logActivity({
+            userId:req.user._id,
+            action:"Update",
+            details:`Updated question: ${existing.question_text?.substring(0, 50)}...`,
+            userRole:req.user.role,
+            ip:req.ip,
+            userAgent:req.headers['user-agent'],
+            status:"success",
+        })
+        
         return res.status(200).json({
             isSuccess: true,
             message: "Question updated successfully",
             data: question
         })
     } catch (error) {
+        await logActivity({
+            userId:req.user._id,
+            action:"Update",
+            details:`Failed to update question`,
+            userRole:req.user.role,
+            ip:req.ip,
+            userAgent:req.headers['user-agent'],
+            status:"failed",
+        })
+        
         return res.status(500).json({
             isSuccess: false,
             message: "Failed to update question",
@@ -1098,7 +1083,15 @@ const deleteQuestion = async (req, res) => {
 
         const deletedQuestion = await OrganizationAssessmentQuestion.findOneAndDelete({ uuid: req.params.id });
 
-        await logAdminActivity(req, "Delete Question", "assessment", `Question deleted successfully: ${deletedQuestion.question_text}`);
+        await logActivity({
+            userId:req.user._id,
+            action:"Delete",
+            details:`Deleted question: ${question.question_text?.substring(0, 50)}...`,
+            userRole:req.user.role,
+            ip:req.ip,
+            userAgent:req.headers['user-agent'],
+            status:"success",
+        })
 
         return res.status(200).json({
             isSuccess: true,
@@ -1106,6 +1099,16 @@ const deleteQuestion = async (req, res) => {
             data: deletedQuestion
         })
     } catch (error) {
+        await logActivity({
+            userId:req.user._id,
+            action:"Delete",
+            details:`Failed to delete question`,
+            userRole:req.user.role,
+            ip:req.ip,
+            userAgent:req.headers['user-agent'],
+            status:"failed",
+        })
+        
         return res.status(500).json({
             isSuccess: false,
             message: "Failed to delete question",

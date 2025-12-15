@@ -1,5 +1,4 @@
 const OrganizationRole = require("../../models/organizationRoles_model");
-const logAdminActivity = require("./admin_activity")
 const Organization = require("../../models/organization_model");
 const Role = require("../../models/globalRoles_model");
 const addOrgRole = async(req,res)=>{
@@ -12,7 +11,6 @@ const addOrgRole = async(req,res)=>{
             //change this when authentication is added
             organization_id:req.user.organization_id
         })
-        await logAdminActivity(req, "add", `Organization role added successfully: ${orgRole.name}`);
         return res.status(201).json({
             isSuccess:true,
             message:"Organization role added successfully",
@@ -35,7 +33,6 @@ const editOrgRole = async(req,res)=>{
             description,
             permissions
         })
-        await logAdminActivity(req, "edit", `Organization role edited successfully: ${orgRole.name}`);
         return res.status(200).json({
             isSuccess:true,
             message:"Organization role updated successfully",
@@ -53,7 +50,6 @@ const editOrgRole = async(req,res)=>{
 const deleteOrgRole = async(req,res)=>{
     try {
         const deletedRole = await OrganizationRole.findOneAndDelete({uuid:req.params.id})
-        await logAdminActivity(req, "delete", `Organization role deleted successfully: ${deletedRole.name}`);
         return res.status(200).json({
             isSuccess:true,
             message:"Organization role deleted successfully",

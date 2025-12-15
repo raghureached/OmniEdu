@@ -3,7 +3,7 @@ const GlobalModule = require("../../models/globalModule_model")
 const GlobalAssessment = require("../../models/globalAssessments_model")
 const Surveys = require("../../models/global_surveys_model")
 const Organization = require("../../models/organization_model")
-const { logGlobalAdminActivity } = require("./globalAdmin_activity")
+const { logActivity } = require("../../utils/activityLogger")
 const mongoose = require("mongoose")
 const createAssignment = async (req, res) => {
     let session;
@@ -92,12 +92,15 @@ const createAssignment = async (req, res) => {
 
         await session.commitTransaction();
 
-        await logGlobalAdminActivity(
-            req,
-            "Create Assignment",
-            "assignment",
-            "Assignment created successfully"
-        );
+        await logActivity({
+            userId: req.user._id,
+            action: "Create",
+            details: `Created global assignment`,
+            userRole: req.user.role,
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            status: "success",
+        });
 
         return res.status(201).json({
             isSuccess: true,

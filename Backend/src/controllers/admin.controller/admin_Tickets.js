@@ -1,6 +1,6 @@
 const AdminTicket = require("../../models/adminTicket");
-const logAdminActivity = require("./admin_activity");
 const mongoose = require("mongoose");
+const { logActivity } = require("../../utils/activityLogger");
 /**
  * CREATE ADMIN TICKET
  * Only admins inside the same organization can raise tickets.
@@ -35,11 +35,17 @@ const createAdminTicket = async (req, res) => {
       createdBy,
     });
 
-    await logAdminActivity(
-      req,
-      "create",
-      `Support ticket created successfully - ${ticket.ticketId}`
-    );
+   
+
+    await logActivity({
+      userId: req.user._id,
+      action: "Create",
+      details: `Created support ticket: ${subject || 'unknown'}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    });
 
     return res.status(201).json({
       isSuccess: true,
@@ -47,7 +53,15 @@ const createAdminTicket = async (req, res) => {
       data: ticket,
     });
   } catch (error) {
-    await logAdminActivity(req, "create", error.message, "failed");
+    await logActivity({
+      userId: req.user._id,
+      action: "Create",
+      details: `Failed to create support ticket`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    });
 
     return res.status(500).json({
       isSuccess: false,
@@ -81,11 +95,6 @@ const getAdminTickets = async (req, res) => {
       .limit(limit)
       .sort({ createdAt: -1 });
 
-    await logAdminActivity(
-      req,
-      "fetch",
-      `Fetched support tickets for organization ${organizationId}`
-    );
 
     return res.status(200).json({
       isSuccess: true,
@@ -96,7 +105,6 @@ const getAdminTickets = async (req, res) => {
       total: await AdminTicket.countDocuments({ organizationId }),
     });
   } catch (error) {
-    await logAdminActivity(req, "fetch", error.message, "failed");
 
     return res.status(500).json({
       isSuccess: false,
@@ -134,18 +142,23 @@ const updateAdminTicketStatus = async (req, res) => {
     );
 
     if (!ticket) {
-      await logAdminActivity(req, "edit", `Ticket not found: ${ticketId}`, "failed");
       return res.status(404).json({
         isSuccess: false,
         message: "Ticket not found",
       });
     }
 
-    await logAdminActivity(
-      req,
-      "edit",
-      `Updated ticket ${ticketId} status to ${status}`
-    );
+  
+
+    await logActivity({
+      userId: req.user._id,
+      action: "Update",
+      details: `Updated ticket status: ${ticketId || 'unknown'}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    });
 
     return res.status(200).json({
       isSuccess: true,
@@ -153,7 +166,15 @@ const updateAdminTicketStatus = async (req, res) => {
       data: ticket,
     });
   } catch (error) {
-    await logAdminActivity(req, "edit", error.message, "failed");
+    await logActivity({
+      userId: req.user._id,
+      action: "Update",
+      details: `Failed to update ticket status`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    });
 
     return res.status(500).json({
       isSuccess: false,
@@ -185,11 +206,16 @@ const deleteAdminTicket = async (req, res) => {
       });
     }
 
-    await logAdminActivity(
-      req,
-      "delete",
-      `Support ticket deleted successfully: ${ticket.ticketId}`
-    );
+   
+    await logActivity({
+      userId: req.user._id,
+      action: "Delete",
+      details: `Deleted ticket: ${ticket?.subject || ticketId || 'unknown'}`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    });
 
     return res.status(200).json({
       isSuccess: true,
@@ -197,7 +223,15 @@ const deleteAdminTicket = async (req, res) => {
       data: ticket,
     });
   } catch (error) {
-    await logAdminActivity(req, "delete", error.message, "failed");
+    await logActivity({
+      userId: req.user._id,
+      action: "Delete",
+      details: `Failed to delete ticket`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    });
 
     return res.status(500).json({
       isSuccess: false,
@@ -229,11 +263,8 @@ const updateAdminTicket = async (req, res) => {
     );
 
     if (!ticket) {
-      await logAdminActivity(req, "edit", `Ticket not found: ${ticketId}`, "failed");
       return res.status(404).json({ isSuccess: false, message: "Ticket not found" });
     }
-
-    await logAdminActivity(req, "edit", `Updated ticket details ${ticketId}`);
 
     return res.status(200).json({
       isSuccess: true,
@@ -241,7 +272,6 @@ const updateAdminTicket = async (req, res) => {
       data: ticket,
     });
   } catch (error) {
-    await logAdminActivity(req, "edit", error.message, "failed");
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to update ticket",
@@ -279,19 +309,12 @@ const getTicketStats = async (req, res) => {
 
     const result = stats[0] || { open: 0, inProgress: 0, resolved: 0 };
 
-    await logAdminActivity(
-      req,
-      "fetch",
-      `Fetched ticket statistics for organization ${organizationId}`
-    );
-
     return res.status(200).json({
       isSuccess: true,
       message: "Ticket statistics fetched successfully",
       data: result,
     });
   } catch (error) {
-    await logAdminActivity(req, "fetch", error.message, "failed");
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to fetch ticket statistics",
@@ -321,7 +344,6 @@ const getTicketDetails = async (req, res) => {
     }).lean();
 
     if (!ticket) {
-      await logAdminActivity(req, "fetch", `Ticket not found: ${ticketId}`, "failed");
       return res.status(404).json({
         isSuccess: false,
         message: "Ticket not found",
@@ -330,7 +352,6 @@ const getTicketDetails = async (req, res) => {
 
     ticket.conversation = ticket.conversation || [];
 
-    await logAdminActivity(req, "fetch", `Fetched details for ticket ${ticketId}`);
 
     return res.status(200).json({
       isSuccess: true,
@@ -339,7 +360,6 @@ const getTicketDetails = async (req, res) => {
     });
 
   } catch (error) {
-    await logAdminActivity(req, "fetch", error.message, "failed");
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to fetch ticket details",
@@ -395,14 +415,11 @@ const addTicketComment = async (req, res) => {
     );
 
     if (!updatedTicket) {
-      await logAdminActivity(req, "comment", `Ticket not found: ${ticketId}`, "failed");
       return res.status(404).json({
         isSuccess: false,
         message: "Ticket not found",
       });
     }
-
-    await logAdminActivity(req, "comment", `Added comment to ticket ${ticketId}`);
 
     return res.status(201).json({
       isSuccess: true,
@@ -411,7 +428,6 @@ const addTicketComment = async (req, res) => {
     });
 
   } catch (error) {
-    await logAdminActivity(req, "comment", error.message, "failed");
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to add comment",

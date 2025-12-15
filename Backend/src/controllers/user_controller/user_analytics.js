@@ -199,8 +199,10 @@ const updateLearningActivity = async (req, res) => {
   try {
     const userId = req.user._id; // from JWT middleware
     const { date, hours } = req.body;
-    console.log(req.data)
-
+    // console.log(req.data)
+    if(req.user.role === "General User"){
+      return;
+    }
     if (!date || !hours)
       return res.status(400).json({ success: false, message: "Date and hours required" });
 

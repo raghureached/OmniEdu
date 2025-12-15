@@ -1,6 +1,6 @@
 const UserTicket = require("../../models/userTickets");
 const AdminTicket = require("../../models/adminTicket");
-const logUserActivity = require("../admin.controller/admin_activity");
+const { logActivity } = require("../../utils/activityLogger");
 
 // User Tickets APIs for Global Admin
 
@@ -21,7 +21,15 @@ const getGlobalUserTickets = async (req, res) => {
 
     const total = await UserTicket.countDocuments({});
 
-    await logUserActivity(req, "VIEW_GLOBAL_USER_TICKETS", `Viewed ${tickets.length} global user tickets`, "success");
+    await logActivity({
+        userId: req.user._id,
+        action: "View",
+        details: `Viewed ${tickets.length} global user tickets`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "success",
+    });
 
     res.status(200).json({
       isSuccess: true,
@@ -34,7 +42,15 @@ const getGlobalUserTickets = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching global user tickets:", error);
-    await logUserActivity(req, "VIEW_GLOBAL_USER_TICKETS", "Failed to fetch global user tickets", "error");
+    await logActivity({
+        userId: req.user._id,
+        action: "View",
+        details: "Failed to fetch global user tickets",
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "failed",
+    });
     res.status(500).json({
       isSuccess: false,
       message: "Failed to fetch global user tickets",
@@ -68,7 +84,15 @@ const updateGlobalUserTicketStatus = async (req, res) => {
       });
     }
 
-    await logUserActivity(req, "UPDATE_GLOBAL_USER_TICKET_STATUS", `Updated global user ticket ${ticketId} status to ${status}`, "success");
+    await logActivity({
+        userId: req.user._id,
+        action: "Update",
+        details: `Updated global user ticket ${ticketId} status to ${status}`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "success",
+    });
 
     res.status(200).json({
       isSuccess: true,
@@ -77,7 +101,15 @@ const updateGlobalUserTicketStatus = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating global user ticket status:", error);
-    await logUserActivity(req, "UPDATE_GLOBAL_USER_TICKET_STATUS", `Failed to update global user ticket status: ${req.params.ticketId}`, "error");
+    await logActivity({
+        userId: req.user._id,
+        action: "Update",
+        details: `Failed to update global user ticket status: ${req.params.ticketId}`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "failed",
+    });
     res.status(500).json({
       isSuccess: false,
       message: "Failed to update global user ticket status",
@@ -100,7 +132,15 @@ const deleteGlobalUserTicket = async (req, res) => {
       });
     }
 
-    await logUserActivity(req, "DELETE_GLOBAL_USER_TICKET", `Deleted global user ticket ${ticketId}`, "success");
+    await logActivity({
+        userId: req.user._id,
+        action: "Delete",
+        details: `Deleted global user ticket ${ticketId}`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "success",
+    });
 
     res.status(200).json({
       isSuccess: true,
@@ -109,7 +149,15 @@ const deleteGlobalUserTicket = async (req, res) => {
     });
   } catch (error) {
     console.error("Error deleting global user ticket:", error);
-    await logUserActivity(req, "DELETE_GLOBAL_USER_TICKET", `Failed to delete global user ticket: ${req.params.ticketId}`, "error");
+    await logActivity({
+        userId: req.user._id,
+        action: "Delete",
+        details: `Failed to delete global user ticket: ${req.params.ticketId}`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "failed",
+    });
     res.status(500).json({
       isSuccess: false,
       message: "Failed to delete global user ticket",
@@ -137,7 +185,15 @@ const updateGlobalUserTicket = async (req, res) => {
       });
     }
 
-    await logUserActivity(req, "UPDATE_GLOBAL_USER_TICKET", `Updated global user ticket ${ticketId}`, "success");
+    await logActivity({
+        userId: req.user._id,
+        action: "Update",
+        details: `Updated global user ticket ${ticketId}`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "success",
+    });
 
     res.status(200).json({
       isSuccess: true,
@@ -146,7 +202,15 @@ const updateGlobalUserTicket = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating global user ticket:", error);
-    await logUserActivity(req, "UPDATE_GLOBAL_USER_TICKET", `Failed to update global user ticket: ${req.params.ticketId}`, "error");
+    await logActivity({
+        userId: req.user._id,
+        action: "Update",
+        details: `Failed to update global user ticket: ${req.params.ticketId}`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "failed",
+    });
     res.status(500).json({
       isSuccess: false,
       message: "Failed to update global user ticket",
@@ -197,7 +261,15 @@ const getGlobalAdminTickets = async (req, res) => {
 
     const total = await AdminTicket.countDocuments({});
 
-    await logUserActivity(req, "VIEW_GLOBAL_ADMIN_TICKETS", `Viewed ${tickets.length} global admin tickets`, "success");
+    await logActivity({
+        userId: req.user._id,
+        action: "View",
+        details: `Viewed ${tickets.length} global admin tickets`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "success",
+    });
 
     res.status(200).json({
       isSuccess: true,
@@ -210,7 +282,15 @@ const getGlobalAdminTickets = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching global admin tickets:", error);
-    await logUserActivity(req, "VIEW_GLOBAL_ADMIN_TICKETS", "Failed to fetch global admin tickets", "error");
+    await logActivity({
+        userId: req.user._id,
+        action: "View",
+        details: "Failed to fetch global admin tickets",
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "failed",
+    });
     res.status(500).json({
       isSuccess: false,
       message: "Failed to fetch global admin tickets",
@@ -245,7 +325,15 @@ const updateGlobalAdminTicketStatus = async (req, res) => {
       });
     }
 
-    await logUserActivity(req, "UPDATE_GLOBAL_ADMIN_TICKET_STATUS", `Updated global admin ticket ${ticketId} status to ${status}`, "success");
+    await logActivity({
+        userId: req.user._id,
+        action: "Update",
+        details: `Updated global admin ticket ${ticketId} status to ${status}`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "success",
+    });
 
     res.status(200).json({
       isSuccess: true,
@@ -254,7 +342,15 @@ const updateGlobalAdminTicketStatus = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating global admin ticket status:", error);
-    await logUserActivity(req, "UPDATE_GLOBAL_ADMIN_TICKET_STATUS", `Failed to update global admin ticket status: ${req.params.ticketId}`, "error");
+    await logActivity({
+        userId: req.user._id,
+        action: "Update",
+        details: `Failed to update global admin ticket status: ${req.params.ticketId}`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "failed",
+    });
     res.status(500).json({
       isSuccess: false,
       message: "Failed to update global admin ticket status",
@@ -277,7 +373,15 @@ const deleteGlobalAdminTicket = async (req, res) => {
       });
     }
 
-    await logUserActivity(req, "DELETE_GLOBAL_ADMIN_TICKET", `Deleted global admin ticket ${ticketId}`, "success");
+    await logActivity({
+        userId: req.user._id,
+        action: "Delete",
+        details: `Deleted global admin ticket ${ticketId}`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "success",
+    });
 
     res.status(200).json({
       isSuccess: true,
@@ -286,7 +390,15 @@ const deleteGlobalAdminTicket = async (req, res) => {
     });
   } catch (error) {
     console.error("Error deleting global admin ticket:", error);
-    await logUserActivity(req, "DELETE_GLOBAL_ADMIN_TICKET", `Failed to delete global admin ticket: ${req.params.ticketId}`, "error");
+    await logActivity({
+        userId: req.user._id,
+        action: "Delete",
+        details: `Failed to delete global admin ticket: ${req.params.ticketId}`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "failed",
+    });
     res.status(500).json({
       isSuccess: false,
       message: "Failed to delete global admin ticket",
@@ -314,7 +426,15 @@ const updateGlobalAdminTicket = async (req, res) => {
       });
     }
 
-    await logUserActivity(req, "UPDATE_GLOBAL_ADMIN_TICKET", `Updated global admin ticket ${ticketId}`, "success");
+    await logActivity({
+        userId: req.user._id,
+        action: "Update",
+        details: `Updated global admin ticket ${ticketId}`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "success",
+    });
 
     res.status(200).json({
       isSuccess: true,
@@ -323,7 +443,15 @@ const updateGlobalAdminTicket = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating global admin ticket:", error);
-    await logUserActivity(req, "UPDATE_GLOBAL_ADMIN_TICKET", `Failed to update global admin ticket: ${req.params.ticketId}`, "error");
+    await logActivity({
+        userId: req.user._id,
+        action: "Update",
+        details: `Failed to update global admin ticket: ${req.params.ticketId}`,
+        userRole: req.user.role,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        status: "failed",
+    });
     res.status(500).json({
       isSuccess: false,
       message: "Failed to update global admin ticket",

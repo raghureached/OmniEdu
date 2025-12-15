@@ -2,7 +2,7 @@ const Role = require("../models/globalRoles_model");
 
 const getPermissions = async (req, res) => {
     try {
-        console.log(req.user)
+        // console.log(req.user)
         const roles = await Role.findOne({name:req.user.role})
             .populate("permissions.section")
             .populate("permissions.allowed");
