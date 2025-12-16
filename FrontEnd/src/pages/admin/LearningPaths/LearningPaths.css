@@ -1,4 +1,5 @@
 .learning-paths-container {
+  
   padding: 20px;
   font-family: Arial, sans-serif;
 }
@@ -260,6 +261,7 @@ button:hover {
 /* ========================= */
 
 .learnpath-container {
+  min-height: 100vh;
   padding: 24px;
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
 }
@@ -349,8 +351,8 @@ button:hover {
   /* background: #ffffff; */
   /* border: 1px solid #e5e7eb; */
   /* border-radius: 12px; */
-  padding: 16px;
-  margin-bottom: 16px;
+  /* padding: 16px; */
+  margin-bottom: 24px;
 }
 
 .learnpath-filter-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: end; }

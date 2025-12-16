@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDown, ChevronUp, Eye, Plus, Edit3, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Plus, Edit3, Trash2, User, Users } from 'lucide-react';
 import '../UsersManagement.css';
 const UsersTable = ({
   users,
@@ -27,6 +27,10 @@ const UsersTable = ({
   onSelectionOption,
   selectionScope,
   selectAllLoading,
+  handleCreateUser,
+  // Count props for dropdown
+  pageSelectionCount,
+  totalFilteredCount,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -75,6 +79,19 @@ const UsersTable = ({
   }, [menuOpen]);
 
   return (
+    users.length==0?(
+      <div className="users-empty-state">
+        <div className="users-empty-icon">
+          <Users size={48} />
+        </div>
+        <h3>No Users found</h3>
+        <p>Start by adding your first user</p>
+        <button className="btn-primary" onClick={handleCreateUser}>
+          <Plus size={16} />
+          Add User
+        </button>
+      </div>
+    ):(
     <div className="users-table-container">
       <div className="users-table-header">
         {/* checkbox */}
@@ -126,21 +143,7 @@ const UsersTable = ({
           </button>
         </div>
 
-        {/* <div style={{ justifySelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span className='users-header-cell'>Email</span>
-          <button
-            type="button"
-            className="users-header-cell"
-            style={{ justifySelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-            onClick={() => onSortChange && onSortChange('email')}
-          >
-
-            <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1 }}>
-              <ChevronUp size={14} color={sortKey === 'email' && sortDir === 'asc' ? '#111827' : '#cbd5e1'} strokeWidth={3} />
-              <ChevronDown size={14} color={sortKey === 'email' && sortDir === 'desc' ? '#111827' : '#cbd5e1'} strokeWidth={3} />
-            </span>
-          </button>
-        </div> */}
+      
         <div style={{ justifySelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <span className='users-header-cell'>Designation</span>
           <button
@@ -173,18 +176,7 @@ const UsersTable = ({
         </div>
 
         <span className='users-header-cell'>Status</span>
-        {/* <button
-          type="button"
-          className="users-header-cell"
-          style={{ display:'inline-flex', alignItems:'center', gap:6, background:'none', border:'none', padding:0, cursor:'pointer' }}
-          onClick={() => onSortChange && onSortChange('status')}
-        >
-          
-          <span style={{ display:'inline-flex', flexDirection:'column', lineHeight:1 }}>
-            <ChevronUp size={14} color={sortKey==='status' && sortDir==='asc' ? '#111827' : '#cbd5e1'} />
-            <ChevronDown size={14} color={sortKey==='status' && sortDir==='desc' ? '#111827' : '#cbd5e1'} />
-          </span>
-        </button> */}
+      
         <div className="users-header-cell">Actions</div>
       </div>
 
@@ -205,7 +197,7 @@ const UsersTable = ({
             }}
             className={selectionScope === "all" ? "selected" : ""}
           >
-            <span>{selectAllLoading ? 'Selecting all…' : 'Select all pages'}</span>
+            <span>{selectAllLoading ? 'Selecting all…' : `Select all pages (${totalFilteredCount || 0})`}</span>
             {selectionScope === 'all' && (
               <img
                 src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"
@@ -224,7 +216,7 @@ const UsersTable = ({
             className={selectionScope === "page" ? "selected" : ""}
 
           >
-            <span>Select this page</span>
+            <span>Select this page ({pageSelectionCount || users?.length || 0})</span>
             {selectionScope === 'page' && (
               <img
                 src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"
@@ -236,100 +228,97 @@ const UsersTable = ({
         </div>
       )}
 
-      {users.length ? (
-        users.map((user) => {
-          const statusLabel = getStatusLabel(user?.status);
-          const userId = resolveUserId(user) || user?._id;
-          const nameInitial = (user?.name || user?.email || '?').charAt(0).toUpperCase();
-          const tagLabels = buildUserTagLabels(user);
-          const rawDesignation = user?.profile?.designation;
-          const normalizedDesignation = typeof rawDesignation === 'string' && rawDesignation.trim()
-            ? rawDesignation.trim()
-            : 'N/A';
-          const designationCellClass = normalizedDesignation === 'N/A'
-            ? 'users-designation-cell users-designation-cell--empty'
-            : 'users-designation-cell';
+      {users.map((user) => {
+        const statusLabel = getStatusLabel(user?.status);
+        const userId = resolveUserId(user) || user?._id;
+        const nameInitial = (user?.name || user?.email || '?').charAt(0).toUpperCase();
+        const tagLabels = buildUserTagLabels(user);
+        const rawDesignation = user?.profile?.designation;
+        const normalizedDesignation = typeof rawDesignation === 'string' && rawDesignation.trim()
+          ? rawDesignation.trim()
+          : 'N/A';
+        const designationCellClass = normalizedDesignation === 'N/A'
+          ? 'users-designation-cell users-designation-cell--empty'
+          : 'users-designation-cell';
 
-          return (
-            <div className="users-table-row" key={userId}>
-              <div className="users-checkbox-cell">
-                <input
-                  type="checkbox"
-                  checked={selectedItems.includes(userId)}
-                  onChange={(e) => onSelectItem && onSelectItem(e, userId)}
-                />
-              </div>
-              <div></div>
-              <div className="users-user-cell">
-                <div>
-                  <div className="users-user-avatar">{nameInitial}</div>
-                </div>
-                <div className="users-user-info">
-                  <div className="users-user-name">{user?.name || '-'}</div>
-                  <div className="users-email-cell">{user?.email || '-'}</div>
-
-                </div>
-              </div>
-
-              {/* <div className="users-email-cell">{user?.email || '-'}</div> */}
-              <div className={designationCellClass}>{normalizedDesignation}</div>
-              <div className="users-role-cell">
-                <span className="users-role-badge">
-                  {typeof user?.global_role_id === 'string'
-                    ? user?.global_role_id
-                    : (user?.global_role_id?.name || user?.global_role_id?.title || '-')}
-                </span>
-              </div>
-
-              <div className="users-status-cell">
-                <span className={`users-status-badge status-${(statusLabel || '').toLowerCase()}`}>
-                  {statusLabel === 'Active' ? '✓ Active' : '✗ Inactive'}
-                </span>
-              </div>
-              <div className="users-actions-cell">
-                <button
-                  className="global-action-btn view"
-                  onClick={() => openPreview && openPreview(user)}
-                  title="View"
-                  type="button"
-                >
-                  <Eye size={16} />
-                </button>
-                <button
-                  className="global-action-btn"
-                  onClick={() => handleAssignToTeam && handleAssignToTeam(userId)}
-                  title="Assign to Team"
-                  type="button"
-                >
-                  <Plus size={16} />
-                </button>
-                <button
-                  className="global-action-btn edit"
-                  onClick={() => openForm && openForm(user)}
-                  title="Edit"
-                  type="button"
-                >
-                  <Edit3 size={16} />
-                </button>
-                <button
-                  className="global-action-btn delete"
-                  onClick={() => handleDelete && handleDelete(userId)}
-                  title="Delete"
-                  type="button"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-
-              {tagLabels.length ? (
-                <div className="users-row-tags">{tagLabels.join(', ')}</div>
-              ) : null}
+        return (
+          <div className="users-table-row" key={userId}>
+            <div className="users-checkbox-cell">
+              <input
+                type="checkbox"
+                checked={selectedItems.includes(userId)}
+                onChange={(e) => onSelectItem && onSelectItem(e, userId)}
+              />
             </div>
-          );
-        })
-      ) : (
-        <div className="users-table-empty">No users found</div>
-      )}
+            <div></div>
+            <div className="users-user-cell">
+              <div>
+                <div className="users-user-avatar">{nameInitial}</div>
+              </div>
+              <div className="users-user-info">
+                <div className="users-user-name">{user?.name || '-'}</div>
+                <div className="users-email-cell">{user?.email || '-'}</div>
+
+              </div>
+            </div>
+
+            {/* <div className="users-email-cell">{user?.email || '-'}</div> */}
+            <div className={designationCellClass}>{normalizedDesignation}</div>
+            <div className="users-role-cell">
+              <span className="users-role-badge">
+                {typeof user?.global_role_id === 'string'
+                  ? user?.global_role_id
+                  : (user?.global_role_id?.name || user?.global_role_id?.title || '-')}
+              </span>
+            </div>
+
+            <div className="users-status-cell">
+              <span className={`users-status-badge status-${(statusLabel || '').toLowerCase()}`}>
+                {statusLabel === 'Active' ? '✓ Active' : '✗ Inactive'}
+              </span>
+            </div>
+            <div className="users-actions-cell">
+              <button
+                className="global-action-btn view"
+                onClick={() => openPreview && openPreview(user)}
+                title="View"
+                type="button"
+              >
+                <Eye size={16} />
+              </button>
+              <button
+                className="global-action-btn"
+                onClick={() => handleAssignToTeam && handleAssignToTeam(userId)}
+                title="Assign to Team"
+                type="button"
+              >
+                <Plus size={16} />
+              </button>
+              <button
+                className="global-action-btn edit"
+                onClick={() => openForm && openForm(user)}
+                title="Edit"
+                type="button"
+              >
+                <Edit3 size={16} />
+              </button>
+              <button
+                className="global-action-btn delete"
+                onClick={() => handleDelete && handleDelete(userId)}
+                title="Delete"
+                type="button"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+
+            {tagLabels.length ? (
+              <div className="users-row-tags">{tagLabels.join(', ')}</div>
+            ) : null}
+          </div>
+        );
+      })
+      }
 
       <div className="users-pagination">
         <button
@@ -349,6 +338,7 @@ const UsersTable = ({
         </button>
       </div>
     </div>
+    )
   );
 };
 

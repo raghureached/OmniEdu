@@ -11,7 +11,7 @@ const { getGlobalAdminActivity } = require("../controllers/globalAdmin.controlle
 const { getGlobalProfile, changeGlobalPassword } = require("../controllers/globalAdmin.controller/globalAdmin_profile");
 const { userDashBoardSettings, getUserDashBoardSettings, updateUserDashBoardConfig, getUserDashBoardConfig, getUserDashBoardPermissions } = require("../controllers/globalAdmin.controller/globalAdmin_userDashBoard");
 const { updateAdminDashboardConfig, getAdminDashboardConfig, getAdminDashboardPermissions } = require("../controllers/globalAdmin.controller/globalAdmin_adminDashboard");
-const { getAnalyticsData } = require("../controllers/globalAdmin.controller/globalAdmin_analytics");
+const { getAnalyticsData, getOrganizationAnalytics } = require("../controllers/globalAdmin.controller/globalAdmin_analytics");
 
 //const { createAssessment, editAssessment, deleteAssessment, getAssessments, getAssessmentById, getQuestions, getQuestionsRandom, editQuestion, deleteQuestion, uploadAssessmentCSV } = require("../controllers/globalAdmin.controller/globalAdmin_Assessments");
 // const csvStream = require("../utils/csvParser");
@@ -146,6 +146,7 @@ router.route('/getGroups').get(getGroups)
 
 
 router.route('/getAnalytics').get(getAnalyticsData)
+router.route('/getAnalytics/:organizationId').get(getOrganizationAnalytics)
 
 //////AI/////////
 router.route('/enhanceText').post(enhanceText)

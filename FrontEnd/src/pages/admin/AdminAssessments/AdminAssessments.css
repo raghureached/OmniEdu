@@ -370,9 +370,11 @@ background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary)
 
 /* Empty State */
 .assess-empty-state {
-  padding: 64px 32px;
+  padding: 128px 32px;
   text-align: center;
   color: #64748b;
+  height: 447px;
+
 }
 
 .assess-empty-icon {

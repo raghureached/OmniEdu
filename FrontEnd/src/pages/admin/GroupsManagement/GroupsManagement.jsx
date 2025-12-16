@@ -34,6 +34,7 @@ import LoadingScreen from '../../../components/common/Loading/Loading';
 import { Users } from 'lucide-react';
 import { notifyError, notifyInfo, notifySuccess, notifyWarning } from '../../../utils/notification';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
+import SelectionBanner from '../../../components/Banner/SelectionBanner';
 
 const GroupsManagement = () => {
   const dispatch = useDispatch();
@@ -1593,7 +1594,7 @@ const GroupsManagement = () => {
             </div>
           )}
 
-          {selectionScope !== 'none' && derivedSelectedCount > 0 && (
+          {/* {selectionScope !== 'none' && derivedSelectedCount > 0 && (
             <div className="selection-banner sticky" style={{ justifyContent: "center" }} >
               {selectionScope === 'page' ? (
                 < >
@@ -1645,7 +1646,19 @@ const GroupsManagement = () => {
                 </  >
               )}
             </div>
-          )}
+          )} */}
+           <SelectionBanner
+            selectionScope={selectionScope}
+            selectedCount={derivedSelectedCount}
+            currentPageCount={currentPageIds.length}
+            totalCount={totalItems}
+            onClearSelection={clearSelection}
+            onSelectAllPages={handleSelectAllPages}
+            selectAllLoading={selectAllLoading}
+            itemType="group"
+            variant="default"
+            showWelcomeMessage={true}
+          />
 
           {loading && !showForm ? (
             <div className="groups-management-loading">
@@ -1677,6 +1690,7 @@ const GroupsManagement = () => {
               sortKey={sortKey}
               sortDir={sortDir}
               onSortChange={handleSortChange}
+              handleCreateGroup={handleCreateGroup}
               renderExpandedContent={(group) => {
                 const teamId = group.id || group._id;
                 const originalTeam = Array.isArray(groups)

@@ -204,7 +204,7 @@ const GlobalTicketsTable = () => {
                     <Search size={16} className="support-search-icon" />
                     <input
                         type="text"
-                        placeholder={`Search ${activeTab} tickets by subject`}
+                        placeholder={`Search ${activeTab} tickets`}
                         className="support-search-input"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -212,16 +212,16 @@ const GlobalTicketsTable = () => {
                 </div>
                 
             </div>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"20px"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"20px",gap:"20px"}}>
                 <button
-                    className={`tab-button ${activeTab === "user" ? "active" : ""}`}
+                    className={`${activeTab === "user" ? "btn-primary" : "tab-button"}`}
                     onClick={() => setActiveTab("user")}
                 >
                     <Users size={16} />
                     User Tickets
                 </button>
                 <button
-                    className={`tab-button ${activeTab === "admin" ? "active" : ""}`}
+                    className={`${activeTab === "admin" ? "btn-primary" : "tab-button"}`}
                     onClick={() => setActiveTab("admin")}
                 >
                     <Shield size={16} />

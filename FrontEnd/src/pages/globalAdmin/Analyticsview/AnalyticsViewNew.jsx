@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from "react-redux";
+
 import {
   LineChart,
   Line,
@@ -42,24 +44,26 @@ const AnalyticsViewNew = () => {
   const [range, setRange] = useState('30d');
   const [orgId, setOrgId] = useState('all');
   const [data, setData] = useState(null);
+  const { organizations } = useSelector((state) => state.organizations);
+  
 
   // Generate trend data based on current values
   const generateTrendData = (currentValue, days = 7) => {
     const trend = [];
     const baseValue = currentValue * 0.8; // Start from 80% of current value
-    
+
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const variation = (Math.random() - 0.5) * 0.3; // ±15% variation
       const value = Math.round(baseValue + (currentValue - baseValue) * (1 - i / (days - 1)) + (baseValue * variation));
-      
+
       trend.push({
         label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         value: Math.max(0, value)
       });
     }
-    
+
     return trend;
   };
 
@@ -67,7 +71,10 @@ const AnalyticsViewNew = () => {
     const fetchAnalyticsData = async () => {
       try {
         setIsLoading(true);
-        const response = await api.get('/api/globalAdmin/getAnalytics');
+        const endpoint = orgId === 'all' 
+          ? '/api/globalAdmin/getAnalytics'
+          : `/api/globalAdmin/getAnalytics/${orgId}`;
+        const response = await api.get(endpoint);
         setData(response.data);
       } catch (error) {
         console.error('Error fetching analytics data:', error);
@@ -79,11 +86,12 @@ const AnalyticsViewNew = () => {
     fetchAnalyticsData();
   }, [range, orgId]);
 
+
   const formatNumber = (n) => (n != null ? n.toLocaleString('en-IN') : '--');
 
   // Metric Card Component
   const MetricCard = ({ icon: Icon, label, value, subtitle, trend, trendValue, color, delay = 0 }) => (
-    <div 
+    <div
       className="metric-card-enhanced"
       style={{ animationDelay: `${delay}ms` }}
     >
@@ -124,26 +132,18 @@ const AnalyticsViewNew = () => {
             Real-time insights into system health, user engagement, and organizational performance
           </p>
         </div>
-        
-        {/* <div className="header-filters">
-          <div className="filter-group-enhanced">
-            <label>Date Range</label>
-            <select value={range} onChange={(e) => setRange(e.target.value)} className="filter-select-enhanced">
-              <option value="7d">Last 7 days</option>
-              <option value="30d">Last 30 days</option>
-              <option value="90d">Last 90 days</option>
-            </select>
-          </div>
+
+        <div className="header-filters">
           <div className="filter-group-enhanced">
             <label>Organization</label>
             <select value={orgId} onChange={(e) => setOrgId(e.target.value)} className="filter-select-enhanced">
               <option value="all">All Organizations</option>
-              {data?.organizations?.map((org, index) => (
-                <option key={index} value={org.name}>{org.name}</option>
+              {organizations?.map((org, index) => (
+                <option key={index} value={org._id}>{org.name}</option>
               ))}
             </select>
           </div>
-        </div> */}
+        </div>
       </div>
 
       {/* Key Metrics Grid */}
@@ -204,20 +204,20 @@ const AnalyticsViewNew = () => {
               <AreaChart data={generateTrendData(data?.stats?.dau?.value || 0)}>
                 <defs>
                   <linearGradient id="colorDau" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                 <XAxis dataKey="label" stroke="black" style={{ fontSize: 12 }} />
                 <YAxis stroke="black" style={{ fontSize: 12 }} />
-                <Tooltip 
-                  contentStyle={{ 
-                    background: '#fff', 
+                <Tooltip
+                  contentStyle={{
+                    background: '#fff',
                     border: '1px solid #e5e7eb',
                     borderRadius: '8px',
                     boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                  }} 
+                  }}
                 />
                 <Area
                   type="monotone"
@@ -240,7 +240,7 @@ const AnalyticsViewNew = () => {
             </div>
             <LifeBuoy size={20} className="panel-icon" />
           </div>
-          
+
           <div className="support-stats">
             <div className="support-stat">
               <div className="support-stat-label">ADMIN</div>
@@ -252,7 +252,7 @@ const AnalyticsViewNew = () => {
               <div className="support-stat-value">{data?.ticketsData?.adminResolved}</div>
               <div className="support-stat-label">Resolved Tickets</div>
             </div>
-            <div className="support-stat">  
+            <div className="support-stat">
               <div className="support-stat-label">USER</div>
               <div className="support-stat-value">{data?.ticketsData?.userOpen}</div>
               <div className="support-stat-label">Open Tickets</div>
@@ -305,7 +305,7 @@ const AnalyticsViewNew = () => {
             </div>
             <Database size={20} className="panel-icon" />
           </div>
-          
+
           <div className="health-metrics">
             <div className="health-metric">
               <div className="health-metric-header">
@@ -316,7 +316,7 @@ const AnalyticsViewNew = () => {
                 {formatNumber(data?.systemHealth?.bandwidthUsedGB)} / {formatNumber(data?.systemHealth?.totalBandwidthGB)} GB
               </div>
               <div className="progress-bar">
-                <div 
+                <div
                   className="progress-fill progress-primary"
                   style={{ width: `${data?.systemHealth?.totalBandwidthGB > 0 ? (data?.systemHealth?.bandwidthUsedGB / data?.systemHealth?.totalBandwidthGB) * 100 : 0}%` }}
                 />
@@ -333,7 +333,7 @@ const AnalyticsViewNew = () => {
               </div>
               <div className="health-value">{formatNumber(data?.systemHealth?.bandwidthUsedGB)} GB</div>
               <div className="progress-bar">
-                <div 
+                <div
                   className="progress-fill progress-success"
                   style={{ width: `${Math.min(data?.systemHealth?.bandwidthUsedGB || 0, 100)}%` }}
                 />
@@ -348,7 +348,7 @@ const AnalyticsViewNew = () => {
               </div>
               <div className="health-value">{data?.systemHealth?.cpuLoad}%</div>
               <div className="progress-bar">
-                <div 
+                <div
                   className={`progress-fill ${data?.systemHealth?.cpuLoad > 70 ? 'progress-warning' : 'progress-success'}`}
                   style={{ width: `${data?.systemHealth?.cpuLoad || 0}%` }}
                 />
@@ -379,7 +379,7 @@ const AnalyticsViewNew = () => {
             </div>
             <Building2 size={20} className="panel-icon" />
           </div>
-          
+
           <div className="top-orgs-content">
             <div className="orgs-table-wrapper">
               <table className="orgs-table">
@@ -389,7 +389,7 @@ const AnalyticsViewNew = () => {
                     <th>Organization</th>
                     <th>Users</th>
                     <th>Total Hours</th>
-                    
+
                   </tr>
                 </thead>
                 <tbody>
@@ -403,7 +403,7 @@ const AnalyticsViewNew = () => {
                       <td className="org-name">{org.name}</td>
                       <td>{formatNumber(org.users)}</td>
                       <td>{formatNumber(org.totalHours)}</td>
-                      
+
                     </tr>
                   ))}
                 </tbody>
@@ -422,7 +422,7 @@ const AnalyticsViewNew = () => {
           </div>
           <Users size={20} className="panel-icon" />
         </div>
-        
+
         <div className="distribution-layout">
           <div className="distribution-chart">
             <ResponsiveContainer width="100%" height={300}>
@@ -445,7 +445,7 @@ const AnalyticsViewNew = () => {
               </PieChart>
             </ResponsiveContainer>
           </div>
-          
+
           <div className="distribution-bars">
             {data?.organizations?.map((org, idx) => (
               <div key={idx} className="distribution-bar-item">
@@ -457,9 +457,9 @@ const AnalyticsViewNew = () => {
                   <span className="bar-value">{formatNumber(org.totalHours)}h</span>
                 </div>
                 <div className="bar-track">
-                  <div 
+                  <div
                     className="bar-fill"
-                    style={{ 
+                    style={{
                       width: `${data?.organizations?.[0]?.totalHours > 0 ? (org.totalHours / data?.organizations[0].totalHours) * 100 : 0}%`,
                       background: COLORS[idx]
                     }}

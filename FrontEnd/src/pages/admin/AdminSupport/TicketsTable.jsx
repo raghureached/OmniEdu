@@ -109,34 +109,34 @@ const TicketsTable = () => {
   }
 
   return (
-    <div className="support-container">
+    <div className="admin-support-container">
       {/* Header */}
-      <div className="support-header">
-        <div className="support-header-content">
+      <div className="admin-support-header">
+        <div className="admin-support-header-content">
           <div>
-            <h1 className="support-title">Support Tickets</h1>
-            <p className="support-subtitle">View and manage user support tickets</p>
+            <h1 className="admin-support-title">Support Tickets</h1>
+            <p className="admin-support-subtitle">View and manage user support tickets</p>
           </div>
           
           {/* Stat Cards */}
-          <div className="ticket-stats">
-            <div className="ticket-stat-card">
-              <div className="ticket-stat-icon open">
+          <div className="admin-ticket-stats">
+            <div className="admin-ticket-stat-card">
+              <div className="admin-ticket-stat-icon open">
                 <FileText size={20} />
               </div>
-              <div className="ticket-stat-info">
-                <span className="ticket-stat-number">{stats.open}</span>
-                <span className="ticket-stat-label">Open Tickets</span>
+              <div className="admin-ticket-stat-info">
+                <span className="admin-ticket-stat-number">{stats.open}</span>
+                <span className="admin-ticket-stat-label">Open Tickets</span>
               </div>
             </div>
 
-            <div className="ticket-stat-card">
-              <div className="ticket-stat-icon resolved">
+            <div className="admin-ticket-stat-card">
+              <div className="admin-ticket-stat-icon resolved">
                 <CheckCircle size={20} />
               </div>
-              <div className="ticket-stat-info">
-                <span className="ticket-stat-number">{stats.resolved}</span>
-                <span className="ticket-stat-label">Resolved</span>
+              <div className="admin-ticket-stat-info">
+                <span className="admin-ticket-stat-number">{stats.resolved}</span>
+                <span className="admin-ticket-stat-label">Resolved</span>
               </div>
             </div>
           </div>
@@ -150,12 +150,12 @@ const TicketsTable = () => {
         alignItems: 'center',
         width: '100%',
       }}>
-        <div className="support-search">
-          <Search size={16} className="support-search-icon" />
+        <div className="admin-support-search">
+          <Search size={16} className="admin-support-search-icon" />
           <input
             type="text"
             placeholder="Search tickets"
-            className="support-search-input"
+            className="admin-support-search-input"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -169,10 +169,10 @@ const TicketsTable = () => {
       </div>
 
       {/* Tickets Table */}
-      <div className="support-table-section">
+      <div className="admin-support-table-section">
         {tickets.length === 0 && !loading ? (
-          <div className="ticket-empty-state">
-            <div className="ticket-empty-icon">
+          <div className="admin-ticket-empty-state">
+            <div className="admin-ticket-empty-icon">
               <FileText size={48} />
             </div>
             <h3>No tickets found</h3>
@@ -183,7 +183,7 @@ const TicketsTable = () => {
             </button>
           </div>
         ) : (
-          <table className="support-table">
+          <table className="admin-support-table">
             <thead>
               <tr>
                 <th>Ticket ID</th>
@@ -198,18 +198,18 @@ const TicketsTable = () => {
               {tickets
                 .filter((t) => t.subject.toLowerCase().includes(searchTerm.toLowerCase()))
                 .map((ticket) => (
-                  <tr key={ticket.ticketId} className="support-row">
+                  <tr key={ticket.ticketId} className="admin-support-row">
                     <td>
-                      <span className="ticket-id-display">#{ticket.ticketId}</span>
+                      <span className="admin-ticket-id-display">#{ticket.ticketId}</span>
                     </td>
                     <td>
-                      <div className="support-cell">
-                        <h4 className="support-ticket-title">
+                      <div className="admin-support-cell">
+                        <h4 className="admin-support-ticket-title">
                           {ticket.subject.length > 50 
                             ? `${ticket.subject.substring(0, 50)}...` 
                             : ticket.subject}
                         </h4>
-                        <p className="support-ticket-description">
+                        <p className="admin-support-ticket-description">
                           {ticket.description.length > 150 
                             ? `${ticket.description.substring(0, 150)}...` 
                             : ticket.description}
@@ -218,13 +218,13 @@ const TicketsTable = () => {
                     </td>
 
                     <td>
-                      <span className={`support-badge ${ticket.status.toLowerCase()}`}>
+                      <span className={`admin-support-badge ${ticket.status.toLowerCase()}`}>
                         {ticket.status}
                       </span>
                     </td>
 
                     <td>
-                      <div className="support-date">
+                      <div className="admin-support-date">
                         <Calendar size={14} />
                         <span>
                           {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString("en-US") : "-"}
@@ -233,11 +233,11 @@ const TicketsTable = () => {
                     </td>
                     
                     {/* Actions Column */}
-                    <td className="col-actions">
-                      <div className="actions-wrapper">
+                    <td className="admin-col-actions">
+                      <div className="admin-actions-wrapper">
                         {/* View Details Button - ALWAYS VISIBLE */}
                         <button
-                          className="tickets-action-btn view"
+                          className="admin-tickets-action-btn view"
                           title="View Details"
                           onClick={() => openTicketDetails(ticket.ticketId)}
                         >
@@ -247,7 +247,7 @@ const TicketsTable = () => {
                         {/* Edit Button - Only for "Open" status */}
                         {ticket.status === "Open" && (
                           <button
-                            className="tickets-action-btn edit"
+                            className="admin-tickets-action-btn edit"
                             title="Edit Ticket"
                             onClick={() => openEditForm(ticket)}
                           >
@@ -271,7 +271,7 @@ const TicketsTable = () => {
                 ))}
                 
               {/* Pagination Row */}
-              <tr className="tickets-pagination-row">
+              <tr className="admin-tickets-pagination-row">
                 <td colSpan={5}>
                   <div style={{
                     display: "flex",
@@ -356,21 +356,21 @@ const TicketsTable = () => {
 
       {/* Success Popup */}
       {showSuccess && (
-        <div className="support-popup-overlay">
-          <div className="support-popup-container success-popup">
-            <button className="support-popup-close" onClick={() => setShowSuccess(false)}><X size={20}/></button>
-            <div className="success-container">
-              <div className="success-icon">
+        <div className="admin-support-popup-overlay">
+          <div className="admin-support-popup-container success-popup">
+            <button className="admin-support-popup-close" onClick={() => setShowSuccess(false)}><X size={20}/></button>
+            <div className="admin-success-container">
+              <div className="admin-success-icon">
                 <CheckCircle2 className="icon-large" />
               </div>
-              <h2 className="success-title">Ticket Submitted Successfully!</h2>
-              <div className="success-ticket-id">
-                <span className="ticket-id-label">Your Ticket ID</span>
+              <h2 className="admin-success-title">Ticket Submitted Successfully!</h2>
+              <div className="admin-success-ticket-id">
+                <span className="admin-ticket-id-label">Your Ticket ID</span>
                 <div>
-                  <span className="ticket-id-value">#{createdTicketId || `TKT-${Math.floor(Math.random() * 10000)}`}</span>
+                  <span className="admin-ticket-id-value">#{createdTicketId || `TKT-${Math.floor(Math.random() * 10000)}`}</span>
                 </div>
               </div>
-              <p className="success-message">
+              <p className="admin-success-message">
                 Our support team will review your ticket and respond within 24 hours. You'll receive email notifications for any updates.
               </p>
             </div>
@@ -380,8 +380,8 @@ const TicketsTable = () => {
 
       {/* Add/Edit Ticket Popup */}
       {showPopup && (
-        <div className="support-popup-overlay">
-          <div className="support-popup-container">
+        <div className="admin-support-popup-overlay">
+          <div className="admin-support-popup-container">
             {/* <button className="support-popup-close" onClick={() => setShowPopup(false)}>×</button> */}
             <SupportTicketRaiser 
               onClose={closeModal} 

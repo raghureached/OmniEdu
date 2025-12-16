@@ -247,6 +247,245 @@ const generateBandwidthTrend = () => {
   return trend;
 };
 
+const getOrganizationAnalytics = async (req, res) => {
+  try {
+    const { organizationId } = req.params;
+    const now = new Date();
+    const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    // Verify organization exists
+    const organization = await Organization.findById(organizationId);
+    if (!organization) {
+      return res.status(404).json({ error: 'Organization not found' });
+    }
+
+    // Get total users for this organization
+    const totalUsers = await User.countDocuments({ organization_id: organizationId });
+
+    // Get Daily Active Users (DAU) - users who logged in last 24 hours
+    const dau = await User.countDocuments({
+      organization_id: organizationId,
+      last_login: { $gte: last24Hours }
+    });
+
+    // Get Monthly Active Users (MAU) - users who logged in last 30 days
+    const mau = await User.countDocuments({
+      organization_id: organizationId,
+      last_login: { $gte: last30Days }
+    });
+
+    // Calculate stickiness score (DAU/MAU ratio)
+    const stickinessScore = mau > 0 ? ((dau / mau) * 100).toFixed(1) : 0;
+
+    // Get previous period data for comparison
+    const previous24Hours = new Date(last24Hours.getTime() - 24 * 60 * 60 * 1000);
+    const previous30Days = new Date(last30Days.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const previousDAU = await User.countDocuments({
+      organization_id: organizationId,
+      last_login: { $gte: previous24Hours, $lt: last24Hours }
+    });
+
+    const previousMAU = await User.countDocuments({
+      organization_id: organizationId,
+      last_login: { $gte: previous30Days, $lt: last30Days }
+    });
+
+    // Calculate percentage changes
+    const dauChange = previousDAU > 0 ? (((dau - previousDAU) / previousDAU) * 100).toFixed(1) : 0;
+    const mauChange = previousMAU > 0 ? (((mau - previousMAU) / previousMAU) * 100).toFixed(1) : 0;
+    const totalChange = previousDAU > 0 ? (((totalUsers - previousDAU) / previousDAU) * 100).toFixed(1) : 0;
+
+    // Get organization-specific leaderboard data
+    const orgLeaderboardData = await Leaderboard.aggregate([
+      {
+        $match: { organization_id: organization._id }
+      },
+      {
+        $group: {
+          _id: '$organization_id',
+          totalHours: { $sum: '$noOfhoursCompleted' },
+          userCount: { $addToSet: '$user_id' }
+        }
+      },
+      {
+        $addFields: {
+          userCount: { $size: '$userCount' }
+        }
+      }
+    ]);
+
+    const totalHours = orgLeaderboardData.length > 0 ? orgLeaderboardData[0].totalHours / 60 : 0; // Convert to hours
+    const activeUsers = orgLeaderboardData.length > 0 ? orgLeaderboardData[0].userCount : 0;
+
+    // Get previous period data for comparison (last 30 days before current period)
+    const previousPeriodStart = new Date(last30Days.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const previousPeriodHours = await Leaderboard.aggregate([
+      {
+        $match: {
+          organization_id: organization._id,
+          updatedAt: { $gte: previousPeriodStart, $lt: last30Days }
+        }
+      },
+      {
+        $group: {
+          _id: '$organization_id',
+          totalHours: { $sum: '$noOfhoursCompleted' }
+        }
+      }
+    ]);
+
+    const previousHours = previousPeriodHours.length > 0 ? previousPeriodHours[0].totalHours / 60 : 0; // Convert to hours
+    const hoursChange = previousHours > 0 ? (((totalHours - previousHours) / previousHours) * 100).toFixed(0) : 0;
+
+    // Create organization data in same format as global analytics
+    const orgData = [{
+      name: organization.name,
+      users: activeUsers,
+      totalHours: totalHours,
+      change: hoursChange >= 0 ? `↑ ${Math.abs(hoursChange)}%` : `↓ ${Math.abs(hoursChange)}%`,
+      changeType: hoursChange >= 0 ? 'badge-up' : 'badge-down'
+    }];
+
+    // Get organization-specific ticket data
+    const adminTickets = await adminTicket.find({ organization_id: organizationId });
+    const userTicketss = await userTickets.find({ organization_id: organizationId });
+    
+    const ticketsData = {
+      adminOpen: adminTickets.filter((t) => t.status === "Open").length,
+      adminResolved: adminTickets.filter((t) => t.status === "Resolved").length,
+      userOpen: userTicketss.filter((t) => t.status === "Open").length,
+      userResolved: userTicketss.filter((t) => t.status === "Resolved").length
+    };
+
+    // Get organization-specific system health metrics
+    const systemHealth = await getOrganizationSystemHealthMetrics(organizationId);
+
+    res.json({
+      stats: {
+        dau: {
+          value: dau,
+          change: dauChange,
+          label: 'Daily Active Users (DAU)',
+          sublabel: 'Last 24 hours'
+        },
+        mau: {
+          value: mau,
+          change: mauChange,
+          label: 'Monthly Active Users (MAU)',
+          sublabel: 'Last 30 days'
+        },
+        stickiness: {
+          value: stickinessScore,
+          label: 'Stickiness Score',
+          sublabel: 'DAU/MAU Ratio'
+        },
+        totalUsers: {
+          value: totalUsers,
+          change: totalChange,
+          label: 'Total Organization Users',
+          sublabel: 'All registered accounts in organization'
+        }
+      },
+      organizations: orgData,
+      systemHealth: systemHealth,
+      ticketsData,
+      timestamp: now
+    });
+
+  } catch (error) {
+    console.error('Error fetching organization analytics data:', error);
+    res.status(500).json({ error: 'Failed to fetch organization analytics data' });
+  }
+};
+
+// Helper function to get organization-specific system health metrics
+const getOrganizationSystemHealthMetrics = async (organizationId) => {
+  try {
+    // Get total bandwidth usage for this organization from leaderboard
+    const totalBandwidthResult = await Leaderboard.aggregate([
+      {
+        $match: { organization_id: organizationId }
+      },
+      {
+        $group: {
+          _id: null,
+          totalHours: { $sum: '$noOfhoursCompleted' }
+        }
+      }
+    ]);
+
+    const totalBandwidthGB = totalBandwidthResult.length > 0 ?
+      Math.round((totalBandwidthResult[0].totalHours * 0.001) * 100) / 100 : 0; // Convert to GB
+
+    // Get CPU load (simulated - in production you'd get this from system monitoring)
+    const cpuLoad = Math.round(Math.random() * 30 + 20); // 20-50% typical range
+
+    // Get uptime (simulated - in production you'd get this from system monitoring)
+    const uptime = 99.8; // Typical high uptime
+
+    // Get bandwidth for current month for this organization
+    const currentMonthStart = new Date();
+    currentMonthStart.setDate(1);
+    currentMonthStart.setHours(0, 0, 0, 0);
+
+    const monthlyBandwidthResult = await Leaderboard.aggregate([
+      {
+        $match: {
+          organization_id: organizationId,
+          updatedAt: { $gte: currentMonthStart }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          monthlyHours: { $sum: '$noOfhoursCompleted' }
+        }
+      }
+    ]);
+
+    const monthlyBandwidthGB = monthlyBandwidthResult.length > 0 ?
+      Math.round((monthlyBandwidthResult[0].monthlyHours * 0.001) * 100) / 100 : 0;
+
+    return {
+      bandwidthUsedGB: monthlyBandwidthGB,
+      totalBandwidthGB: totalBandwidthGB,
+      cpuLoad: cpuLoad,
+      uptime: uptime,
+      bandwidthTrend: generateOrganizationBandwidthTrend(organizationId)
+    };
+  } catch (error) {
+    console.error('Error getting organization system health metrics:', error);
+    return {
+      bandwidthUsedGB: 0,
+      totalBandwidthGB: 0,
+      cpuLoad: 0,
+      uptime: 0,
+      bandwidthTrend: []
+    };
+  }
+};
+
+// Helper function to generate organization-specific bandwidth trend data
+const generateOrganizationBandwidthTrend = (organizationId) => {
+  const trend = [];
+  const now = new Date();
+
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - i);
+    trend.push({
+      label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      value: Math.round(Math.random() * 20 + 5) // 5-25 GB per day for single org
+    });
+  }
+
+  return trend;
+};
+
 module.exports = {
-  getAnalyticsData
+  getAnalyticsData,
+  getOrganizationAnalytics
 };

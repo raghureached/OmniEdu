@@ -3,13 +3,15 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchContent, deleteContent } from '../../../store/slices/contentSlice';
 import LearningPathModal from './LearningPathModal';
 import './LearningPaths.css';
-import { ChevronDown, Edit3, FileText, Filter, Search, Trash2, Users } from 'lucide-react';
+import { ChevronDown, Edit3, FileText, Filter, Plus, Search, Trash2, Users } from 'lucide-react';
 import { getLearningPaths } from '../../../store/slices/learningPathSlice';
 import { deleteLearningPath } from '../../../store/slices/learningPathSlice';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import { GoX } from 'react-icons/go';
 import { RiDeleteBinFill } from 'react-icons/ri';
+import SelectionBanner from '../../../components/Banner/SelectionBanner';
 import { categories } from '../../../utils/constants';
+
 
 const LearningPaths = () => {
   const dispatch = useDispatch();
@@ -486,7 +488,7 @@ const LearningPaths = () => {
         </div>
 
       </div>
-      {selectionScope !== 'none' && derivedSelectedCount > 0 && (
+      {/* {selectionScope !== 'none' && derivedSelectedCount > 0 && (
         <div
           className="LearningPath-selection-banner"
           style={{ margin: '12px 0', justifyContent: 'center' }}
@@ -502,7 +504,7 @@ const LearningPaths = () => {
                   type="button"
                   className="selection-action action-primary"
                   onClick={handleSelectAllAcrossPages}
-                  disabled={false /* no async yet */}
+                  disabled={false }
                 >
                   {`Select all ${totalItems} LearningPaths`}
                 </button>
@@ -555,10 +557,35 @@ const LearningPaths = () => {
             </>
           )}
         </div>
-      )}
+      )}  */}
+      
+      <SelectionBanner
+        selectionScope={selectionScope}
+        selectedCount={derivedSelectedCount}
+        currentPageCount={visibleIds.length}
+        totalCount={totalItems}
+        onClearSelection={clearSelection}
+        onSelectAllPages={handleSelectAllAcrossPages}
+        selectAllLoading={false}
+        itemType="learning path"
+        variant="default"
+        showWelcomeMessage={true}
+      />
       <div className="learnpath-table-wrapper">
         {filteredPaths.length === 0 ? (
-          <div className="learnpath-empty">No learning paths found</div>
+          <div className="assess-empty-state">
+            <div className="assess-empty-icon" style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
+              <FileText size={48} />
+            </div>
+            <h3>No learning paths found</h3>
+            <p>Get started by creating your first learning path</p>
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+              <button className="assess-btn-primary" onClick={openCreateModal} >
+                <Plus size={16} />
+                Create Learning Path
+              </button>
+            </div>
+          </div>
         ) : (
           <table className="learnpath-table">
             <thead>
@@ -641,7 +668,7 @@ const LearningPaths = () => {
                         className={selectionScope === 'all' ? 'selected' : ''}
                        
                       >
-                        <span>Select all pages</span>
+                        <span>Select all pages ({totalItems})</span>
                         {selectionScope === 'all' && (
                           <img
                             src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"
@@ -659,7 +686,7 @@ const LearningPaths = () => {
                         className={selectionScope === 'page' ? 'selected' : ''}
                        
                       >
-                        <span>Select this page</span>
+                        <span>Select this page ({visibleIds.length})</span>
                         {selectionScope === 'page' && (
                           <img
                             src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"

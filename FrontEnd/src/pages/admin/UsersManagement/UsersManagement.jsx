@@ -44,6 +44,8 @@ import UsersTable from './components/UsersTable';
 import * as XLSX from 'xlsx';
 import { notify, notifyError, notifySuccess, notifyWarning } from '../../../utils/notification';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
+import SelectionBanner from '../../../components/Banner/SelectionBanner';
+import { Users } from 'lucide-react';
 
 const UsersManagement = () => {
   const dispatch = useDispatch();
@@ -453,7 +455,7 @@ const UsersManagement = () => {
     return value.trim().length <= max;
   };
 
-  
+
   const exportFailedUsersCSV = (failed) => {
     if (!Array.isArray(failed) || failed.length === 0) return;
 
@@ -1403,7 +1405,7 @@ const UsersManagement = () => {
 
   const handleBulkAction = async (action) => {
     if (selectedIds.length === 0) {
-     
+
       notifyError('Please select at least one user')
       return;
     }
@@ -1418,7 +1420,7 @@ const UsersManagement = () => {
         checkboxLabel: 'I understand that this data cannot be retrieved after deleting.',
         note: 'All associated items will be removed.',
       });
-  
+
       if (confirmed) {
         try {
           // Convert UUID → MongoDB _id
@@ -1427,7 +1429,7 @@ const UsersManagement = () => {
             .map((uuid) => uuidToMongoId.get(uuid))
             .filter(Boolean);
 
-            const res =await dispatch(bulkDeleteUsers(mongoIds)).unwrap();
+          const res = await dispatch(bulkDeleteUsers(mongoIds)).unwrap();
           notifySuccess(res?.message || "Users deleted successfully");
           clearAllSelections();
           setRefetchIndex(i => i + 1);
@@ -1783,7 +1785,7 @@ const UsersManagement = () => {
   return (
     <div className="main-content">
       <div className="page-content">
-       
+
 
 
         {/* Search and Filter Controls */}
@@ -1963,7 +1965,7 @@ const UsersManagement = () => {
             Add User
           </button>
         </div>
-        {selectionScope !== 'none' && derivedSelectedCount > 0 && (
+        {/* {selectionScope !== 'none' && derivedSelectedCount > 0 && (
           <div className="users-selection-banner" style={{ margin: '12px 0px', justifyContent: 'center' }}>
             {selectionScope === 'page' ? (
               <>
@@ -2014,7 +2016,39 @@ const UsersManagement = () => {
               </>
             )}
           </div>
-        )}
+        )} */}
+
+     <SelectionBanner
+  selectionScope={selectionScope}
+  selectedCount={derivedSelectedCount}
+  currentPageCount={currentPageUserIds.length}
+  totalCount={totalCount}
+  onClearSelection={clearSelection}
+  onSelectAllPages={handleSelectAllPages}
+  selectAllLoading={selectAllLoading}
+  itemType="user"
+  variant="default"
+  leftActions={[
+    // {
+    //   label: 'Export',
+    //   onClick: () => setShowExportModal(true),
+    //   icon: <Share size={14} />
+    // },
+    // {
+    //   label: 'Assign to Team',
+    //   onClick: handleOpenAssignForSelected,
+    //   icon: <Users size={14} />
+    // },
+    // {
+    //   label: 'Delete',
+    //   onClick: () => handleBulkAction('delete'),
+    //   variant: 'danger',
+    //   icon: <Trash2 size={14} />
+    // }
+  ]}
+/>
+      
+        
         {/* selection flyout now handled inside UsersTable */}
         {/* Users Table */}
         <UsersTable
@@ -2040,6 +2074,9 @@ const UsersManagement = () => {
           onSelectionOption={handleSelectionOption}
           selectionScope={selectionScope}
           selectAllLoading={selectAllLoading}
+          handleCreateUser={openForm}
+          pageSelectionCount={currentPageUserIds.length}
+          totalFilteredCount={totalCount}
         />
         <BulkAssignToTeam
           isOpen={assignTeamOpen}

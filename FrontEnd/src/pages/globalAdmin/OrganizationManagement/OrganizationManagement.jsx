@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useRef,useState,useEffect } from "react";
 import {
   Search,
   Filter,
@@ -46,6 +46,8 @@ const OrganizationManagement = () => {
   const {showNotification} = useNotification()
   const [showBulkAction, setShowBulkAction] = useState(false)
   const {confirm} = useConfirm()
+  const filterRef = useRef(null);
+  const bulkActionRef = useRef(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -72,6 +74,23 @@ const OrganizationManagement = () => {
   useEffect(() => {
     fetchPlans();
   }, []);
+
+  // Close panels when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showFilters && filterRef.current && !filterRef.current.contains(event.target)) {
+        setShowFilters(false);
+      }
+      if (showBulkAction && bulkActionRef.current && !bulkActionRef.current.contains(event.target)) {
+        setShowBulkAction(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showFilters, showBulkAction]);
 
   const fetchPlans = async () => {
     const response = await api.get("/api/globalAdmin/getPlans");
@@ -427,7 +446,7 @@ const OrganizationManagement = () => {
                 </div>
               </div>
               {showFilters && (
-                <div className="filter-panel">
+                <div className="filter-panel" ref={filterRef}>
                   <span style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px",hover:{color:"#6b7280"}}} onClick={() => setShowFilters(false)}><GoX size={20} color="#6b7280" /></span>
                   <div className="filter-group">
                     <label>Status</label>
@@ -471,7 +490,7 @@ const OrganizationManagement = () => {
                 </div>
               )}
               {showBulkAction && (
-                <div className="bulk-action-panel">
+                <div className="bulk-action-panel" ref={bulkActionRef}>
                   <div className="bulk-action-header">
                     <label className="bulk-action-title">Items Selected: {selectedItems.length}</label>
                     <GoX

@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import React, { useEffect, useState,useRef,useMemo, useCallback } from 'react';
 import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, ChevronDown, Filter } from 'lucide-react';
 import { GoX } from 'react-icons/go';
 import { RiDeleteBinFill } from 'react-icons/ri';
 import './GlobalAssessments-survey.css'
 import { useDispatch, useSelector } from 'react-redux';
 //import { uploadAssessmentFile } from '../../../store/slices/globalAssessmentSlice'; 
-import { fetchGroups } from '../../../store/slices/groupSlice';
+import { fetchGroups } from '../../../store/slices/groupSlice'; 
 
 
 import {
@@ -22,109 +22,110 @@ import LoadingScreen from '../../../components/common/Loading/Loading';
 import api from '../../../services/api';
 import { notifyError, notifySuccess } from '../../../utils/notification';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
+import SelectionBanner from '../../../components/Banner/SelectionBanner';
 const GlobalSurveys = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [currentAssessment, setCurrentAssessment] = useState(null);
   // Bulk selection state
-  const { confirm } = useConfirm()
+  const {confirm} = useConfirm()
   const [selectedIds, setSelectedIds] = useState([]);
-  const [groups, setGroups] = useState([])
+  const [groups,setGroups] = useState([])
   const [showBulkAction, setShowBulkAction] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({
-    status: ''
-  });
-  const [tempFilters, setTempFilters] = useState({
-    status: ''
-  });
-  const filterButtonRef = useRef(null);
-  const bulkButtonRef = useRef(null);
-  const filterPanelRef = useRef(null);
-  const bulkPanelRef = useRef(null);
-  const [filterPanelStyle, setFilterPanelStyle] = useState({ top: 0, left: 0 });
-  const [bulkPanelStyle, setBulkPanelStyle] = useState({ top: 0, left: 0 });
-
-  const updateFilterPanelPosition = () => {
-    const rect = filterButtonRef.current?.getBoundingClientRect();
-    if (rect) {
-      setFilterPanelStyle({
-        top: rect.bottom + window.scrollY + 8,
-        left: rect.left + window.scrollX,
-      });
-    }
-  };
-
-  const updateBulkPanelPosition = () => {
-    const rect = bulkButtonRef.current?.getBoundingClientRect();
-    if (rect) {
-      const panelWidth = bulkPanelRef.current?.offsetWidth || 0;
-      const fallbackLeft = rect.left + window.scrollX;
-      setBulkPanelStyle({
-        top: rect.bottom + window.scrollY + 8,
-        left: panelWidth ? rect.right + window.scrollX - panelWidth : fallbackLeft,
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      const target = event.target;
-      const filterBtn = filterButtonRef.current;
-      const bulkBtn = bulkButtonRef.current;
-      const filterPanel = filterPanelRef.current;
-      const bulkPanel = bulkPanelRef.current;
-
-      if (
-        (showFilters || showBulkAction) &&
-        !(
-          (filterPanel && filterPanel.contains(target)) ||
-          (bulkPanel && bulkPanel.contains(target)) ||
-          (filterBtn && filterBtn.contains(target)) ||
-          (bulkBtn && bulkBtn.contains(target))
-        )
-      ) {
-        setShowFilters(false);
-        setShowBulkAction(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showFilters, showBulkAction]);
-
-  useEffect(() => {
-    if (showFilters) {
-      updateFilterPanelPosition();
-    }
-    if (showBulkAction) {
-      updateBulkPanelPosition();
-    }
-  }, [showFilters, showBulkAction]);
-
-  useEffect(() => {
-    const handleScrollOrResize = () => {
-      if (showFilters) {
-        updateFilterPanelPosition();
-      }
-      if (showBulkAction) {
-        updateBulkPanelPosition();
-      }
-    };
-
-    window.addEventListener('scroll', handleScrollOrResize, true);
-    window.addEventListener('resize', handleScrollOrResize);
-
-    return () => {
-      window.removeEventListener('scroll', handleScrollOrResize, true);
-      window.removeEventListener('resize', handleScrollOrResize);
-    };
-  }, [showFilters, showBulkAction]);
-  // "Select all pages / Select this page" dropdown (like GroupsTable)
+    const [showFilters, setShowFilters] = useState(false);
+    const [filters, setFilters] = useState({
+      status: ''
+    });
+    const [tempFilters, setTempFilters] = useState({
+      status: ''
+    });
+    const filterButtonRef = useRef(null);
+      const bulkButtonRef = useRef(null);
+      const filterPanelRef = useRef(null);
+      const bulkPanelRef = useRef(null);
+      const [filterPanelStyle, setFilterPanelStyle] = useState({ top: 0, left: 0 });
+      const [bulkPanelStyle, setBulkPanelStyle] = useState({ top: 0, left: 0 });
+    
+      const updateFilterPanelPosition = () => {
+        const rect = filterButtonRef.current?.getBoundingClientRect();
+        if (rect) {
+          setFilterPanelStyle({
+            top: rect.bottom + window.scrollY + 8,
+            left: rect.left + window.scrollX,
+          });
+        }
+      };
+    
+      const updateBulkPanelPosition = () => {
+        const rect = bulkButtonRef.current?.getBoundingClientRect();
+        if (rect) {
+          const panelWidth = bulkPanelRef.current?.offsetWidth || 0;
+          const fallbackLeft = rect.left + window.scrollX;
+          setBulkPanelStyle({
+            top: rect.bottom + window.scrollY + 8,
+            left: panelWidth ? rect.right + window.scrollX - panelWidth : fallbackLeft,
+          });
+        }
+      };
+    
+      useEffect(() => {
+        const handleClickOutside = (event) => {
+          const target = event.target;
+          const filterBtn = filterButtonRef.current;
+          const bulkBtn = bulkButtonRef.current;
+          const filterPanel = filterPanelRef.current;
+          const bulkPanel = bulkPanelRef.current;
+    
+          if (
+            (showFilters || showBulkAction) &&
+            !(
+              (filterPanel && filterPanel.contains(target)) ||
+              (bulkPanel && bulkPanel.contains(target)) ||
+              (filterBtn && filterBtn.contains(target)) ||
+              (bulkBtn && bulkBtn.contains(target))
+            )
+          ) {
+            setShowFilters(false);
+            setShowBulkAction(false);
+          }
+        };
+    
+        document.addEventListener('mousedown', handleClickOutside);
+    
+        return () => {
+          document.removeEventListener('mousedown', handleClickOutside);
+        };
+      }, [showFilters, showBulkAction]);
+    
+      useEffect(() => {
+        if (showFilters) {
+          updateFilterPanelPosition();
+        }
+        if (showBulkAction) {
+          updateBulkPanelPosition();
+        }
+      }, [showFilters, showBulkAction]);
+    
+      useEffect(() => {
+        const handleScrollOrResize = () => {
+          if (showFilters) {
+            updateFilterPanelPosition();
+          }
+          if (showBulkAction) {
+            updateBulkPanelPosition();
+          }
+        };
+    
+        window.addEventListener('scroll', handleScrollOrResize, true);
+        window.addEventListener('resize', handleScrollOrResize);
+    
+        return () => {
+          window.removeEventListener('scroll', handleScrollOrResize, true);
+          window.removeEventListener('resize', handleScrollOrResize);
+        };
+      }, [showFilters, showBulkAction]);
+      // "Select all pages / Select this page" dropdown (like GroupsTable)
   const [selectionMenuOpen, setSelectionMenuOpen] = useState(false);
   const selectionMenuRef = useRef(null);
   const selectionTriggerRef = useRef(null);
@@ -170,35 +171,35 @@ const GlobalSurveys = () => {
       document.removeEventListener('keydown', handleEsc);
     };
   }, [selectionMenuOpen]);
-
-  // Map dropdown options -> existing Gmail selection logic
-  const handleSelectionOption = (option) => {
-    switch (option) {
-      case 'all':   // "Select all pages"
-        handleSelectAllAcrossPages();
-        break;
-      case 'page':  // "Select this page"
-        handleSelectAllToggle(true);
-        break;
-      case 'none':
-      default:
-        clearSelection();
-        break;
-    }
-
-    setSelectionMenuOpen(false);
-  };
-
-
-
+  
+    // Map dropdown options -> existing Gmail selection logic
+    const handleSelectionOption = (option) => {
+      switch (option) {
+        case 'all':   // "Select all pages"
+          handleSelectAllAcrossPages();
+          break;
+        case 'page':  // "Select this page"
+          handleSelectAllToggle(true);
+          break;
+        case 'none':
+        default:
+          clearSelection();
+          break;
+      }
+  
+      setSelectionMenuOpen(false);
+    };
+  
+  
+ 
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     status: 'Saved',
     duration: '',            // NEW
     tags: [],                // NEW
-    team: '',
-    subteam: '',          // NEW    
+    team: '',  
+    subteam:'',          // NEW    
     // attempts: 1,             // NEW
     // unlimited_attempts: false,
     // percentage_to_pass: 0,   // NEW
@@ -246,7 +247,7 @@ const GlobalSurveys = () => {
     fetchGroups(); // fetch teams/subteams
   }, [dispatch]);
 
-
+ 
 
   const handleAddAssessment = () => {
     setCurrentAssessment(null);
@@ -275,132 +276,132 @@ const GlobalSurveys = () => {
       question_text: '',
       options: ['', '']
     }]);
-    // setFeedback({ instructionTop: '', instruction_header_top: '', question_text: '', instructionBottom: '', instruction_header_bottom: '' });
+   // setFeedback({ instructionTop: '', instruction_header_top: '', question_text: '', instructionBottom: '', instruction_header_bottom: '' });
     setShowForm(true);
   };
   // Filter the assessments based on search term and status filter
   const filteredAssessments = assessments.filter(assessment => {
-    const matchesSearch = searchTerm === '' ||
+    const matchesSearch = searchTerm === '' || 
       (assessment.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        assessment.description?.toLowerCase().includes(searchTerm.toLowerCase()));
-
+       assessment.description?.toLowerCase().includes(searchTerm.toLowerCase()));
+    
     const matchesStatus = !filters.status || assessment.status === filters.status;
-
+    
     return matchesSearch && matchesStatus;
   });
   // -------------------- Gmail-style Selection Model --------------------
 
 
-  const [allSelected, setAllSelected] = useState(false);
-  const [excludedIds, setExcludedIds] = useState([]);
-  const [selectionScope, setSelectionScope] = useState("none");
-  const [selectedPageRef, setSelectedPageRef] = useState(null);
-  const [allSelectionCount, setAllSelectionCount] = useState(null);
+const [allSelected, setAllSelected] = useState(false);
+const [excludedIds, setExcludedIds] = useState([]);
+const [selectionScope, setSelectionScope] = useState("none");
+const [selectedPageRef, setSelectedPageRef] = useState(null);
+const [allSelectionCount, setAllSelectionCount] = useState(null);
 
-  // Normalize ID
-  const resolveId = (a) => a?.uuid || a?._id || a?.id;
+// Normalize ID
+const resolveId = (a) => a?.uuid || a?._id || a?.id;
 
-  // Visible IDs on current page (use filteredAssessments — correct)
-  const visibleIds = useMemo(
-    () => (filteredAssessments || []).map(resolveId).filter(Boolean),
-    [filteredAssessments]
-  );
+// Visible IDs on current page (use filteredAssessments — correct)
+const visibleIds = useMemo(
+  () => (filteredAssessments || []).map(resolveId).filter(Boolean),
+  [filteredAssessments]
+);
 
-  // Total items across all pages
-  const totalItems = pagination?.total || filteredAssessments?.length || 0;
+// Total items across all pages
+const totalItems = pagination?.total || filteredAssessments?.length || 0;
 
-  // Row selected?
-  const isRowSelected = useCallback(
-    (id) => {
-      if (!id) return false;
-      return allSelected ? !excludedIds.includes(id) : selectedIds.includes(id);
-    },
-    [allSelected, excludedIds, selectedIds]
-  );
+// Row selected?
+const isRowSelected = useCallback(
+  (id) => {
+    if (!id) return false;
+    return allSelected ? !excludedIds.includes(id) : selectedIds.includes(id);
+  },
+  [allSelected, excludedIds, selectedIds]
+);
 
-  // Selected counts
-  const derivedSelectedCount = useMemo(
-    () => (allSelected ? totalItems - excludedIds.length : selectedIds.length),
-    [allSelected, excludedIds.length, selectedIds.length, totalItems]
-  );
+// Selected counts
+const derivedSelectedCount = useMemo(
+  () => (allSelected ? totalItems - excludedIds.length : selectedIds.length),
+  [allSelected, excludedIds.length, selectedIds.length, totalItems]
+);
 
-  const derivedSelectedOnPage = useMemo(
-    () => visibleIds.filter(isRowSelected),
-    [visibleIds, isRowSelected]
-  );
+const derivedSelectedOnPage = useMemo(
+  () => visibleIds.filter(isRowSelected),
+  [visibleIds, isRowSelected]
+);
 
-  // Header checkbox state
-  const topCheckboxChecked =
-    visibleIds.length > 0 &&
-    visibleIds.every((id) => isRowSelected(id));
+// Header checkbox state
+const topCheckboxChecked =
+  visibleIds.length > 0 &&
+  visibleIds.every((id) => isRowSelected(id));
 
-  const topCheckboxIndeterminate =
-    visibleIds.some((id) => isRowSelected(id)) && !topCheckboxChecked;
+const topCheckboxIndeterminate =
+  visibleIds.some((id) => isRowSelected(id)) && !topCheckboxChecked;
 
-  // Reset selection completely
-  const clearSelection = useCallback(() => {
-    setSelectedIds([]);
+// Reset selection completely
+const clearSelection = useCallback(() => {
+  setSelectedIds([]);
+  setAllSelected(false);
+  setExcludedIds([]);
+  setSelectionScope("none");
+  setSelectedPageRef(null);
+  setAllSelectionCount(null);
+}, []);
+
+// Select-all on page
+const handleSelectAllToggle = (checked) => {
+  if (checked) {
+    setSelectedIds(visibleIds);
+    setExcludedIds([]);
     setAllSelected(false);
-    setExcludedIds([]);
-    setSelectionScope("none");
-    setSelectedPageRef(null);
-    setAllSelectionCount(null);
-  }, []);
-
-  // Select-all on page
-  const handleSelectAllToggle = (checked) => {
-    if (checked) {
-      setSelectedIds(visibleIds);
-      setExcludedIds([]);
-      setAllSelected(false);
-      setSelectionScope("page");
-      setSelectedPageRef(page);
-    } else {
-      if (allSelected) {
-        setExcludedIds((prev) => [...new Set([...prev, ...visibleIds])]);
-      } else {
-        setSelectedIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
-      }
-
-      const remaining = allSelected
-        ? totalItems - (excludedIds.length + visibleIds.length)
-        : selectedIds.length - visibleIds.length;
-
-      if (remaining <= 0) clearSelection();
-      else setSelectionScope("custom");
-    }
-  };
-
-  // Select-all across ALL PAGES
-  const handleSelectAllAcrossPages = () => {
-    setAllSelected(true);
-    setExcludedIds([]);
-    setSelectionScope("all");
-    setAllSelectionCount(totalItems);
-  };
-
-  // Row checkbox toggle
-  const toggleSelectOne = (id, checked) => {
+    setSelectionScope("page");
+    setSelectedPageRef(page);
+  } else {
     if (allSelected) {
-      if (checked) {
-        setExcludedIds((prev) => prev.filter((x) => x !== id));
-      } else {
-        setExcludedIds((prev) => [...new Set([...prev, id])]);
-      }
-      return;
+      setExcludedIds((prev) => [...new Set([...prev, ...visibleIds])]);
+    } else {
+      setSelectedIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
     }
 
-    setSelectedIds((prev) => {
-      const next = checked ? [...prev, id] : prev.filter((x) => x !== id);
+    const remaining = allSelected
+      ? totalItems - (excludedIds.length + visibleIds.length)
+      : selectedIds.length - visibleIds.length;
 
-      if (next.length === 0) clearSelection();
-      else setSelectionScope("custom");
+    if (remaining <= 0) clearSelection();
+    else setSelectionScope("custom");
+  }
+};
 
-      return next;
-    });
-  };
+// Select-all across ALL PAGES
+const handleSelectAllAcrossPages = () => {
+  setAllSelected(true);
+  setExcludedIds([]);
+  setSelectionScope("all");
+  setAllSelectionCount(totalItems);
+};
 
+// Row checkbox toggle
+const toggleSelectOne = (id, checked) => {
+  if (allSelected) {
+    if (checked) {
+      setExcludedIds((prev) => prev.filter((x) => x !== id));
+    } else {
+      setExcludedIds((prev) => [...new Set([...prev, id])]);
+    }
+    return;
+  }
 
+  setSelectedIds((prev) => {
+    const next = checked ? [...prev, id] : prev.filter((x) => x !== id);
+
+    if (next.length === 0) clearSelection();
+    else setSelectionScope("custom");
+
+    return next;
+  });
+};
+
+ 
   const bulkDelete = async (itemsToDelete = selectedIds) => {
     if (itemsToDelete.length === 0) return;
     const confirmed = await confirm({
@@ -413,10 +414,10 @@ const GlobalSurveys = () => {
       note: 'Associated items will be removed.',
     });
     if (!confirmed) return;
-    try {
+   try {
       await Promise.all(
         itemsToDelete.map(id => dispatch(deleteSurvey(id)).unwrap().catch(() => null))
-      );
+    );
       clearSelection();
       setShowBulkAction(false);
       dispatch(fetchSurveys({ page, limit }));
@@ -448,7 +449,7 @@ const GlobalSurveys = () => {
   const handleEditAssessment = async (assessment) => {
     // Always fetch the latest populated assessment so questions are available
     const id = assessment?.uuid || assessment?._id || assessment?.id;
-
+   
     try {
       const full = await dispatch(getSurveyById(id)).unwrap();
       // Fallback if thunk returns nothing (shouldn't)
@@ -489,7 +490,7 @@ const GlobalSurveys = () => {
               question_type: q.type || '',
               question_text: q.question_text || '',
               options: (() => {
-                const arr = Array.isArray(q.options) && q.options.length ? [...q.options] : ['', ''];
+                const arr = Array.isArray(q.options) && q.options.length ? [...q.options] : ['',''];
                 return arr.length >= 2 ? arr : [...arr, ''].slice(0, 2);
               })()
             });
@@ -509,7 +510,7 @@ const GlobalSurveys = () => {
             question_type: q.type || '',
             question_text: q.question_text || '',
             options: (() => {
-              const arr = Array.isArray(q.options) && q.options.length ? [...q.options] : ['', ''];
+              const arr = Array.isArray(q.options) && q.options.length ? [...q.options] : ['',''];
               return arr.length >= 2 ? arr : [...arr, ''].slice(0, 2);
             })()
           }))
@@ -537,7 +538,7 @@ const GlobalSurveys = () => {
         noOfSections: assessment.noOfSections || 0,
         noOfQuestions: assessment.noOfQuestions || 0,
       });
-      // setFeedback({ instructionTop: '', instruction_header_top: '', question_text: '', instructionBottom: '', instruction_header_bottom: '' });
+     // setFeedback({ instructionTop: '', instruction_header_top: '', question_text: '', instructionBottom: '', instruction_header_bottom: '' });
       setFormElements([
         {
           type: 'section',
@@ -596,7 +597,7 @@ const GlobalSurveys = () => {
         currentSection.questions.push({
           question_text: question_text,
           type: question_type,
-          // instruction_text: element.instruction_text || '',
+         // instruction_text: element.instruction_text || '',
           options: options,
           order: currentSection.questions.length + 1
         });
@@ -620,15 +621,15 @@ const GlobalSurveys = () => {
       noOfSections: noOfSections,
       noOfQuestions: noOfQuestions,
     };
-    //  console.log(sections )
+//  console.log(sections )
     try {
       const res = await dispatch(createSurvey(payload)).unwrap();
-      if (createSurvey.fulfilled.match(res)) {
+      if(createSurvey.fulfilled.match(res)){
         setShowForm(false);
         notifySuccess('Survey created successfully');
         dispatch(fetchSurveys({ page, limit }));
       }
-      if (createSurvey.rejected.match(res)) {
+      if(createSurvey.rejected.match(res)){
         notifyError('Failed to create survey:', {
           title: 'Failed to create survey',
           message: res?.error?.message,
@@ -645,126 +646,126 @@ const GlobalSurveys = () => {
   };
 
   const handleUpdateAssessment = async (statusOverride) => {
-    // Validate that we have a current assessment to update
-
-    if (!currentAssessment) {
-      console.error('❌ currentAssessment is null/undefined');
-      alert('Error: No assessment selected for update. Please select an assessment to edit first.');
-      return;
-    }
-
-    if (typeof currentAssessment !== 'object') {
-      console.error('❌ currentAssessment is not an object:', currentAssessment);
-      alert('Error: Invalid assessment data. Please try again.');
-      return;
-    }
-
-    if (!currentAssessment.uuid && !currentAssessment._id && !currentAssessment.id) {
-      console.error('❌ currentAssessment missing ID fields');
-      console.error('Available fields:', Object.keys(currentAssessment));
-      alert('Error: Assessment ID fields missing. Please try editing again.');
-      return;
-    }
-
-    // Group formElements by sections and extract questions for update
-    const sections = [];
-    let currentSection = null;
-    let surveyTitle = formData.title || '';
-    let surveyDescription = formData.description || '';
-    let noOfSections = formData.noOfSections || 0;
-    let noOfQuestions = formData.noOfQuestions || 0;
-
-    for (const element of formElements) {
-      if (element.type === 'section') {
-        // Save previous section if it exists
-        if (currentSection && currentSection.questions.length > 0) {
-          sections.push(currentSection);
-        }
-        // Start new section
-        currentSection = {
-          description: element.description || '',
-          questions: []
-        };
-      } else if (element.type === 'question') {
-        const question_type = (element.question_type || '').trim();
-        const question_text = (element.question_text || '').trim();
-        const options = (Array.isArray(element.options) ? element.options : []).map(o => (o || '').trim()).filter(Boolean);
-
-        if (!question_type || !['Multiple Choice', 'Multi Select'].includes(question_type)) {
-          alert('Each question must have a valid type: Multiple Choice or Multi Select');
-          return;
-        }
-        if (!question_text) {
-          alert('Each question must have non-empty text');
-          return;
-        }
-        if (options.length < 2) {
-          alert('Each question must have at least two non-empty options');
-          return;
-        }
-        currentSection.questions.push({
-          _id: element._id || element.uuid,
-          question_text: question_text,
-          type: question_type,
-          //instruction_text: element.instruction_text || '',
-          options: options,
-          order: currentSection.questions.length + 1
-        });
+      // Validate that we have a current assessment to update
+     
+      if (!currentAssessment) {
+        console.error('❌ currentAssessment is null/undefined');
+        alert('Error: No assessment selected for update. Please select an assessment to edit first.');
+        return;
       }
-    }
 
-    // Don't forget the last section
-    if (currentSection && currentSection.questions.length > 0) {
-      sections.push(currentSection);
-    }
-
-    const data = {
-      title: surveyTitle,
-      description: surveyDescription,
-      status: statusOverride ?? formData.status,
-      tags: Array.isArray(formData.tags) ? formData.tags : [],
-      // duration: formData.duration,
-      team: formData.team,
-      subteam: formData.subteam,
-      // Send questions with identifiers so backend can update GlobalQuestion
-      sections: sections,
-      noOfSections: formData.noOfSections,
-      noOfQuestions: formData.noOfQuestions,
-
-    };
-
-    const id = currentAssessment?.uuid || currentAssessment?._id || currentAssessment?.id;
-
-
-    if (!id) {
-      console.error('❌ No valid ID found for current assessment:', currentAssessment);
-      alert('Error: Assessment ID not found. Please try again.');
-      return;
-    }
-    try {
-      const res = await dispatch(updateSurvey({ uuid: id, data }));
-      if (updateSurvey.fulfilled.match(res)) {
-        setShowForm(false);
-        notifySuccess('Survey updated successfully');
-        dispatch(fetchSurveys({ page, limit }));
+      if (typeof currentAssessment !== 'object') {
+        console.error('❌ currentAssessment is not an object:', currentAssessment);
+        alert('Error: Invalid assessment data. Please try again.');
+        return;
       }
-      if (updateSurvey.rejected.match(res)) {
+
+      if (!currentAssessment.uuid && !currentAssessment._id && !currentAssessment.id) {
+        console.error('❌ currentAssessment missing ID fields');
+        console.error('Available fields:', Object.keys(currentAssessment));
+        alert('Error: Assessment ID fields missing. Please try editing again.');
+        return;
+      }
+     
+      // Group formElements by sections and extract questions for update
+      const sections = [];
+      let currentSection = null;
+      let surveyTitle = formData.title || '';
+      let surveyDescription = formData.description || '';
+      let noOfSections = formData.noOfSections || 0;
+      let noOfQuestions = formData.noOfQuestions || 0;
+
+      for (const element of formElements) {
+        if (element.type === 'section') {
+          // Save previous section if it exists
+          if (currentSection && currentSection.questions.length > 0) {
+            sections.push(currentSection);
+          }
+          // Start new section
+          currentSection = {
+            description: element.description || '',
+            questions: []
+          };
+        } else if (element.type === 'question') {
+          const question_type = (element.question_type || '').trim();
+          const question_text = (element.question_text || '').trim();
+          const options = (Array.isArray(element.options) ? element.options : []).map(o => (o || '').trim()).filter(Boolean);
+
+          if (!question_type || !['Multiple Choice', 'Multi Select'].includes(question_type)) {
+            alert('Each question must have a valid type: Multiple Choice or Multi Select');
+            return;
+          }
+          if (!question_text) {
+            alert('Each question must have non-empty text');
+            return;
+          }
+          if (options.length < 2) {
+            alert('Each question must have at least two non-empty options');
+            return;
+          }
+          currentSection.questions.push({
+            _id: element._id || element.uuid,
+            question_text: question_text,
+            type: question_type,
+            //instruction_text: element.instruction_text || '',
+            options: options,
+            order: currentSection.questions.length + 1
+          });
+        }
+      }
+
+      // Don't forget the last section
+      if (currentSection && currentSection.questions.length > 0) {
+        sections.push(currentSection);
+      }
+
+      const data = {
+        title: surveyTitle,
+        description: surveyDescription,
+        status: statusOverride ?? formData.status,
+        tags: Array.isArray(formData.tags) ? formData.tags : [],
+        // duration: formData.duration,
+        team: formData.team,
+        subteam: formData.subteam,
+        // Send questions with identifiers so backend can update GlobalQuestion
+        sections: sections,
+        noOfSections: formData.noOfSections,
+        noOfQuestions: formData.noOfQuestions,
+
+      };
+     
+      const id = currentAssessment?.uuid || currentAssessment?._id || currentAssessment?.id;
+
+
+      if (!id) {
+        console.error('❌ No valid ID found for current assessment:', currentAssessment);
+        alert('Error: Assessment ID not found. Please try again.');
+        return;
+      }
+      try {
+        const res = await dispatch(updateSurvey({ uuid: id, data }));
+        if(updateSurvey.fulfilled.match(res)){
+          setShowForm(false);
+          notifySuccess('Survey updated successfully');
+          dispatch(fetchSurveys({ page, limit }));
+        }
+        if(updateSurvey.rejected.match(res)){
+          notifyError('Failed to update survey:', {
+            title: 'Failed to update survey',
+            message: res?.error?.message,
+            type: 'error',
+          });
+        }
+      } catch (err) {
         notifyError('Failed to update survey:', {
           title: 'Failed to update survey',
-          message: res?.error?.message,
+          message: err?.response?.data || err.message,
           type: 'error',
         });
       }
-    } catch (err) {
-      notifyError('Failed to update survey:', {
-        title: 'Failed to update survey',
-        message: err?.response?.data || err.message,
-        type: 'error',
-      });
-    }
-  };
+    };
 
-  const updateFormElementField = (elementIndex, field, value) => {
+    const updateFormElementField = (elementIndex, field, value) => {
     const updated = [...formElements];
     updated[elementIndex][field] = value;
     setFormElements(updated);
@@ -905,21 +906,21 @@ const GlobalSurveys = () => {
   const handleDeleteAssessment = async (id) => {
     try {
       const confirmed = await confirm({
-        title: `Are you sure you want to delete this Survey?`,
-        confirmText: 'Delete',
-        cancelText: 'Cancel',
-        type: 'danger', // or 'warning', 'info'
-        showCheckbox: true,
-        checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
-        note: 'Associated items will be removed.',
-      });
+      title: `Are you sure you want to delete this Survey?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger', // or 'warning', 'info'
+      showCheckbox: true,
+      checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
+      note: 'Associated items will be removed.',
+    });
       if (!confirmed) return;
       const res = await dispatch(deleteSurvey(id));
-      if (deleteSurvey.fulfilled.match(res)) {
+      if(deleteSurvey.fulfilled.match(res)){
         notifySuccess('Survey deleted successfully');
         dispatch(fetchSurveys({ page, limit }));
       }
-      if (deleteSurvey.rejected.match(res)) {
+      if(deleteSurvey.rejected.match(res)){
         notifyError('Failed to delete survey:', {
           title: 'Failed to delete survey',
           message: res?.error?.message,
@@ -930,17 +931,17 @@ const GlobalSurveys = () => {
       console.error('Failed to delete assessment:', err?.response?.data || err.message);
     }
   };
-  if (creating) {
+  if(creating){
     return <LoadingScreen text="Creating Surveys..." />
   }
-  if (updating) {
+  if(updating){
     return <LoadingScreen text="Updating Surveys..." />
   }
-  if (loading) {
-    return <LoadingScreen text="Loading Surveys..." />
+  if(loading){
+    return <LoadingScreen text="Loading Surveys..."/>
   }
 
-
+  
   return (
     <div className="assess-container">
       {/* Header Section */}
@@ -972,141 +973,140 @@ const GlobalSurveys = () => {
           </div>
         </div>
       </div>
-      {/* Controls */}
-      <div className="controls">
-        <div className="roles-search-bar">
-          <Search size={16} color="#6b7280" className="search-icon" />
-          <input
-            type="text"
-            name="name"
-            placeholder="Search Surveys"
-            className="search-input"
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-
-        <div className="controls-right">
-          <button
-            ref={filterButtonRef}
-            className="control-btn"
-            onClick={() => {
-              setShowFilters(prev => {
-                const next = !prev;
-                if (next) {
-                  setShowBulkAction(false);
-                  const rect = filterButtonRef.current?.getBoundingClientRect();
-                  if (rect) {
-                    setFilterPanelStyle({
-                      top: rect.bottom + window.scrollY + 8,
-                      left: rect.left + window.scrollX,
+       {/* Controls */}
+            <div className="controls">
+              <div className="roles-search-bar">
+                <Search size={16} color="#6b7280" className="search-icon" />
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="Search Surveys"
+                  className="search-input"
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+      
+              <div className="controls-right">
+                <button
+                  ref={filterButtonRef}
+                  className="control-btn"
+                  onClick={() => {
+                    setShowFilters(prev => {
+                      const next = !prev;
+                      if (next) {
+                        setShowBulkAction(false);
+                        const rect = filterButtonRef.current?.getBoundingClientRect();
+                        if (rect) {
+                          setFilterPanelStyle({
+                            top: rect.bottom + window.scrollY + 8,
+                            left: rect.left + window.scrollX,
+                          });
+                        }
+                      }
+                      return next;
                     });
-                  }
-                }
-                return next;
-              });
-            }}
-          >
-            <Filter size={16} />
-            Filter
-          </button>
-
-          {/* <button className="control-btn">
+                  }}
+                >
+                  <Filter size={16} />
+                  Filter
+                </button>
+      
+                {/* <button className="control-btn">
                         <Share size={16} />
                         Share
                       </button> */}
-          <button
-            ref={bulkButtonRef}
-            className="control-btn"
-            onClick={() => {
-              setShowBulkAction(prev => {
-                const next = !prev;
-                if (next) {
-                  setShowFilters(false);
-                  const rect = bulkButtonRef.current?.getBoundingClientRect();
-                  if (rect) {
-                    setBulkPanelStyle({
-                      top: rect.bottom + window.scrollY + 8,
-                      left: rect.left + window.scrollX,
+                <button
+                  ref={bulkButtonRef}
+                  className="control-btn"
+                  onClick={() => {
+                    setShowBulkAction(prev => {
+                      const next = !prev;
+                      if (next) {
+                        setShowFilters(false);
+                        const rect = bulkButtonRef.current?.getBoundingClientRect();
+                        if (rect) {
+                          setBulkPanelStyle({
+                            top: rect.bottom + window.scrollY + 8,
+                            left: rect.left + window.scrollX,
+                          });
+                        }
+                      }
+                      return next;
                     });
-                  }
-                }
-                return next;
-              });
-            }}
-          >
-            Bulk Action <ChevronDown size={16} />
-          </button>
-          <button className="assess-btn-primary" onClick={handleAddAssessment}>
-            <Plus size={16} />
-            <span>Create Survey</span>
-          </button>
-        </div>
-      </div>
-      {showFilters && (
-        <div
-          ref={filterPanelRef}
-          className="adminsurvey-filter-panel"
-          style={{ top: filterPanelStyle.top, left: filterPanelStyle.left, position: 'absolute' }}
-        >
-          <span style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px", hover: { color: "#6b7280" } }} onClick={() => setShowFilters(false)}><GoX size={20} color="#6b7280" /></span>
-          <div className="filter-group">
-            <label>Status</label>
-            <select
-              name="status"
-              value={tempFilters?.status || ""}
-              onChange={handleFilterChange}
-            >
-              <option value="">All</option>
-              <option value="Saved">Saved</option>
-              <option value="Draft">Draft</option>
-              <option value="Published">Published</option>
-            </select>
-          </div>
-
-
-          <div className="filter-actions">
-            <button className="reset-btn" onClick={resetFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>
-              Clear
-            </button>
-            <button className="btn-primary" onClick={handleFilter} style={{ padding: '6px 12px', fontSize: '14px' }}>
-              Apply
-            </button>
-            
-
-
-          </div>
-        </div>
-      )}
-      {showBulkAction && (
-        <div
-          ref={bulkPanelRef}
-          className="adminsurvey-bulk-action-panel"
-          style={{ top: bulkPanelStyle.top, left: bulkPanelStyle.left, position: 'absolute' }}
-        >
-          <div className="bulk-action-header">
-            <label className="bulk-action-title">Items Selected: {selectedIds.length}</label>
-            <GoX
-              size={20}
-              title="Close"
-              aria-label="Close bulk action panel"
-              onClick={() => setShowBulkAction(false)}
-              className="bulk-action-close"
-            />
-          </div>
-          <div className="bulk-action-actions">
-            <button
-              className="bulk-action-delete-btn"
-              disabled={selectedIds.length === 0}
-              onClick={() => handleBulkDelete(selectedIds)}
-            >
-              <RiDeleteBinFill size={16} color="#fff" />
-              <span>Delete</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {selectionScope !== 'none' && derivedSelectedCount > 0 && (
+                  }}
+                >
+                  Bulk Action <ChevronDown size={16} />
+                </button>
+                <button className="assess-btn-primary" onClick={handleAddAssessment}>
+                  <Plus size={16} />
+                  <span>Create Survey</span>
+                </button>
+              </div>
+            </div>
+            {showFilters && (
+              <div
+                ref={filterPanelRef}
+                className="adminsurvey-filter-panel"
+                style={{ top: filterPanelStyle.top, left: filterPanelStyle.left, position: 'absolute' }}
+              >
+                <span style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px", hover: { color: "#6b7280" } }} onClick={() => setShowFilters(false)}><GoX size={20} color="#6b7280" /></span>
+                <div className="filter-group">
+                  <label>Status</label>
+                  <select
+                    name="status"
+                    value={tempFilters?.status || ""}
+                    onChange={handleFilterChange}
+                  >
+                    <option value="">All</option>
+                    <option value="Saved">Saved</option>
+                    <option value="Draft">Draft</option>
+                    <option value="Published">Published</option>
+                  </select>
+                </div>
+      
+      
+                <div className="filter-actions">
+                <button className="btn-primary" onClick={handleFilter}>
+                    Apply
+                  </button>
+                  <button className="reset-btn" onClick={resetFilters}>
+                    Clear
+                  </button>
+                  
+                 
+                </div>
+              </div>
+            )}
+            {showBulkAction && (
+              <div
+                ref={bulkPanelRef}
+                className="adminsurvey-bulk-action-panel"
+                style={{ top: bulkPanelStyle.top, left: bulkPanelStyle.left, position: 'absolute' }}
+              >
+                <div className="bulk-action-header">
+                  <label className="bulk-action-title">Items Selected: {selectedIds.length}</label>
+                  <GoX
+                    size={20}
+                    title="Close"
+                    aria-label="Close bulk action panel"
+                    onClick={() => setShowBulkAction(false)}
+                    className="bulk-action-close"
+                  />
+                </div>
+                <div className="bulk-action-actions">
+                  <button
+                    className="bulk-action-delete-btn"
+                    disabled={selectedIds.length === 0}
+                    onClick={() => handleBulkDelete(selectedIds)}
+                  >
+                    <RiDeleteBinFill size={16} color="#fff" />
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </div>
+            )}
+         
+      {/* {selectionScope !== 'none' && derivedSelectedCount > 0 && (
         <div
           className="globalsurvey-selection-banner"
           style={{ margin: '12px 0', justifyContent: 'center' }}
@@ -1122,7 +1122,7 @@ const GlobalSurveys = () => {
                   type="button"
                   className="selection-action action-primary"
                   onClick={handleSelectAllAcrossPages}
-                  disabled={false /* no async yet */}
+                  disabled={false }
                 >
                   {`Select all ${totalItems} surveys`}
                 </button>
@@ -1175,7 +1175,20 @@ const GlobalSurveys = () => {
             </>
           )}
         </div>
-      )}
+      )} 
+       */}
+      <SelectionBanner
+        selectionScope={selectionScope}
+        selectedCount={derivedSelectedCount}
+        currentPageCount={visibleIds.length}
+        totalCount={totalItems}
+        onClearSelection={clearSelection}
+        onSelectAllPages={handleSelectAllAcrossPages}
+        selectAllLoading={false}
+        itemType="survey"
+        variant="default"
+        showWelcomeMessage={true}
+      />
       {/* survey Table */}
       <div className="assess-table-section">
         <div className="assess-table-container">
@@ -1186,7 +1199,7 @@ const GlobalSurveys = () => {
               </div>
               <h3>No Survey found</h3>
               <p>Get started by creating your first Survey</p>
-              <button className="assess-btn-primary" style={{ marginLeft: "36%" }} onClick={handleAddAssessment} >
+              <button className="assess-btn-primary" style={{marginLeft:"36%"}} onClick={handleAddAssessment} >
                 <Plus size={16} />
                 Create Survey
               </button>
@@ -1200,112 +1213,112 @@ const GlobalSurveys = () => {
   ref={(el) => el && (el.indeterminate = topCheckboxIndeterminate)}
   onChange={(e) => handleSelectAllToggle(e.target.checked)} aria-label="Select all" />
                   </th> */}
-                  <th>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        position: 'relative',
-                      }}
-                    >
-                      {/* Master checkbox (same behaviour as before) */}
-                      <input
-                        type="checkbox"
-                        checked={topCheckboxChecked}
-                        ref={(el) => {
-                          if (el) {
-                            el.indeterminate = topCheckboxIndeterminate;
-                          }
-                        }}
-                        onChange={(e) => handleSelectAllToggle(e.target.checked)}
-                        aria-label="Select all"
-                      />
+                   <th>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          position: 'relative',
+        }}
+      >
+        {/* Master checkbox (same behaviour as before) */}
+        <input
+          type="checkbox"
+          checked={topCheckboxChecked}
+          ref={(el) => {
+            if (el) {
+              el.indeterminate = topCheckboxIndeterminate;
+            }
+          }}
+          onChange={(e) => handleSelectAllToggle(e.target.checked)}
+          aria-label="Select all"
+        />
 
-                      {/* Dropdown trigger (Chevron) — same UX as GroupsTable */}
-                      <button
-                        type="button"
-                        ref={selectionTriggerRef}
-                        className={`survey-select-all-menu-toggle ${selectionMenuOpen ? 'open' : ''}`}
-                        aria-haspopup="menu"
-                        aria-expanded={selectionMenuOpen}
-                        aria-label="Selection options"
-                        onClick={() => {
-                          const btn = selectionTriggerRef.current;
-                          if (btn) {
-                            const rect = btn.getBoundingClientRect();
-                            const offset = 8;
-                            setSelectionMenuPos({
-                              top: rect.bottom + offset,
-                              left: rect.left,
-                            });
-                          }
-                          setSelectionMenuOpen((prev) => !prev);
-                        }}
-                        style={{
-                          padding: 0,
-                          border: 'none',
-                          background: 'transparent',
-                          cursor: 'pointer',
+        {/* Dropdown trigger (Chevron) — same UX as GroupsTable */}
+        <button
+          type="button"
+          ref={selectionTriggerRef}
+          className={`survey-select-all-menu-toggle ${selectionMenuOpen ? 'open' : ''}`}
+          aria-haspopup="menu"
+          aria-expanded={selectionMenuOpen}
+          aria-label="Selection options"
+          onClick={() => {
+            const btn = selectionTriggerRef.current;
+            if (btn) {
+              const rect = btn.getBoundingClientRect();
+              const offset = 8;
+              setSelectionMenuPos({
+                top: rect.bottom + offset,
+                left: rect.left,
+              });
+            }
+            setSelectionMenuOpen((prev) => !prev);
+          }}
+          style={{
+            padding: 0,
+            border: 'none',
+            background: 'transparent',
+            cursor: 'pointer',
+            
+          }}
+        >
+          <ChevronDown size={15} className="chevron" />
+        </button>
+      </div>
 
-                        }}
-                      >
-                        <ChevronDown size={15} className="chevron" />
-                      </button>
-                    </div>
+      {/* Flyout menu (fixed position, like GroupsTable) */}
+      {selectionMenuOpen && (
+        <div
+          ref={selectionMenuRef}
+          className="survey-select-all-flyout"
+          role="menu"
+          style={{
+            position: 'fixed',
+            top: selectionMenuPos.top,
+            left: selectionMenuPos.left,
+            gap: '5px',
+           
+          }}
+        >
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => handleSelectionOption('all')}
+            className={selectionScope === 'all' ? 'selected' : ''}
+          
+          >
+            <span>Select all pages ({totalItems})</span>
+            {selectionScope === 'all' && (
+              <img
+                src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"
+                alt="selected"
+                className="check-icon"
+                style={{ width: 16, height: 16 }}
+              />
+            )}
+          </button>
 
-                    {/* Flyout menu (fixed position, like GroupsTable) */}
-                    {selectionMenuOpen && (
-                      <div
-                        ref={selectionMenuRef}
-                        className="survey-select-all-flyout"
-                        role="menu"
-                        style={{
-                          position: 'fixed',
-                          top: selectionMenuPos.top,
-                          left: selectionMenuPos.left,
-                          gap: '5px',
-
-                        }}
-                      >
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => handleSelectionOption('all')}
-                          className={selectionScope === 'all' ? 'selected' : ''}
-
-                        >
-                          <span>Select all pages</span>
-                          {selectionScope === 'all' && (
-                            <img
-                              src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"
-                              alt="selected"
-                              className="check-icon"
-                              style={{ width: 16, height: 16 }}
-                            />
-                          )}
-                        </button>
-
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => handleSelectionOption('page')}
-                          className={selectionScope === 'page' ? 'selected' : ''}
-
-                        >
-                          <span>Select this page</span>
-                          {selectionScope === 'page' && (
-                            <img
-                              src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"
-                              alt="selected"
-                              className="check-icon"
-                              style={{ width: 16, height: 16 }}
-                            />
-                          )}
-                        </button>
-                      </div>
-                    )}
-                  </th>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => handleSelectionOption('page')}
+            className={selectionScope === 'page' ? 'selected' : ''}
+           
+          >
+            <span>Select this page ({visibleIds.length})</span>
+            {selectionScope === 'page' && (
+              <img
+                src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"
+                alt="selected"
+                className="check-icon"
+                style={{ width: 16, height: 16 }}
+              />
+            )}
+          </button>
+        </div>
+      )}
+    </th>
 
                   <th>Survey Details</th>
                   <th>Questions</th>
@@ -1316,117 +1329,115 @@ const GlobalSurveys = () => {
               </thead>
               <tbody>
                 {
-                  // assessments
-                  //   .filter(a => a.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                  //                a.description?.toLowerCase().includes(searchTerm.toLowerCase()))
-                  filteredAssessments.map(assessment => (
-                    <tr key={assessment.uuid || assessment._id || assessment.id} className="assess-table-row">
-                      <td>
-                        {(() => {
-                          const rowId = assessment.uuid || assessment._id || assessment.id; const checked = selectedIds.includes(rowId); return (
-                            <input type="checkbox" checked={isRowSelected(rowId)}
-                              onChange={(e) => toggleSelectOne(rowId, e.target.checked)} aria-label="Select row" />
-                          );
-                        })()}
-                      </td>
-                      <td>
-                        <div className="assess-cell-content">
-                          <div className="assess-title-container">
-                            <h4 className="assess-title">{assessment.title}</h4>
-                            <p className="assess-description">{assessment.description || "No description provided"}</p>
-                            {Array.isArray(assessment.tags) && assessment.tags.length > 0 && (
-                              <div className="assess-tags">
-                                {assessment.tags.slice(0, 3).map((t, idx) => (
-                                  <span key={`${assessment.id}-tag-${idx}`} className="assess-classification">{t}</span>
-                                ))}
-                                {assessment.tags.length > 3 && (
-                                  <span className="assess-classification">+ {assessment.tags.length - 3} more</span>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                // assessments
+                //   .filter(a => a.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                //                a.description?.toLowerCase().includes(searchTerm.toLowerCase()))
+                filteredAssessments.map(assessment => (
+                  <tr key={assessment.uuid || assessment._id || assessment.id} className="assess-table-row">
+                    <td>
+                      {(() => { const rowId = assessment.uuid || assessment._id || assessment.id; const checked = selectedIds.includes(rowId); return (
+                        <input type="checkbox" checked={isRowSelected(rowId)}
+                        onChange={(e) => toggleSelectOne(rowId, e.target.checked)} aria-label="Select row" />
+                      ); })()}
+                    </td>
+                    <td>
+                      <div className="assess-cell-content">
+                        <div className="assess-title-container">
+                          <h4 className="assess-title">{assessment.title}</h4>
+                          <p className="assess-description">{assessment.description || "No description provided"}</p>
+                          {Array.isArray(assessment.tags) && assessment.tags.length > 0 && (
+                            <div className="assess-tags">
+                              {assessment.tags.slice(0,3).map((t, idx) => (
+                                <span key={`${assessment.id}-tag-${idx}`} className="assess-classification">{t}</span>
+                              ))}
+                              {assessment.tags.length > 3 && (
+                                <span className="assess-classification">+ {assessment.tags.length - 3} more</span>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      </td>
-                      <td>
-                        <div className="assess-questions-info">
-                          <span className="assess-question-count">{Array.isArray(assessment.sections) ? assessment.sections.reduce((acc, section) => acc + ((section && Array.isArray(section.questions)) ? section.questions.length : 0), 0) : 0}</span>
-                          <span className="assess-question-label">{(Array.isArray(assessment.sections) ? assessment.sections.reduce((acc, section) => acc + ((section && Array.isArray(section.questions)) ? section.questions.length : 0), 0) : 0) <= 1 ? 'Question' : 'Questions'}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`assess-status-badge ${assessment.status?.toLowerCase()}`}>
-                          {assessment.status}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="assess-date-info">
-                          <Calendar size={14} />
-                          <span>{assessment.createdAt ? new Date(assessment.createdAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          }) : ""}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="assess-actions">
-                          <button
-                            className="assess-action-btn edit"
-                            onClick={() => handleEditAssessment(assessment)}
-                            title="Edit Assessment"
-                          >
-                            <Edit3 size={14} />
-                          </button>
-                          <button
-                            className="assess-action-btn delete"
-                            onClick={() => handleDeleteAssessment(assessment.uuid)}
-                            title="Delete Assessment"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-
-
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                {/* Pagination row */}
-                <tr className="assess-table-row">
-                  <td colSpan={6}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <button
-                          type="button"
-                          onClick={() => setPage(p => Math.max(1, p - 1))}
-                          disabled={page <= 1 || loading}
-                          style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: page <= 1 || loading ? 'not-allowed' : 'pointer' }}
-                        >
-                          Prev
-                        </button>
-                        <span style={{ color: '#0f172a' }}>
-                          {(() => {
-                            const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1)));
-                            return `Page ${page} of ${totalPages}`;
-                          })()}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1)));
-                            setPage(p => Math.min(totalPages, p + 1));
-                          }}
-                          disabled={loading || (pagination && page >= Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1))))}
-                          style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: loading || (pagination && page >= Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1)))) ? 'not-allowed' : 'pointer' }}
-                        >
-                          Next
-                        </button>
                       </div>
+                    </td>
+                    <td>
+                      <div className="assess-questions-info">
+                        <span className="assess-question-count">{Array.isArray(assessment.sections) ? assessment.sections.reduce((acc, section) => acc + ((section && Array.isArray(section.questions)) ? section.questions.length : 0), 0) : 0}</span>
+                        <span className="assess-question-label">{(Array.isArray(assessment.sections) ? assessment.sections.reduce((acc, section) => acc + ((section && Array.isArray(section.questions)) ? section.questions.length : 0), 0) : 0) <= 1 ? 'Question' : 'Questions'}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`assess-status-badge ${assessment.status?.toLowerCase()}`}>
+                        {assessment.status}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="assess-date-info">
+                        <Calendar size={14} />
+                        <span>{assessment.createdAt ? new Date(assessment.createdAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        }) : ""}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="assess-actions">
+                        <button 
+                          className="assess-action-btn edit" 
+                          onClick={() => handleEditAssessment(assessment)}
+                          title="Edit Assessment"
+                        >
+                          <Edit3 size={14} />
+                        </button>
+                      <button 
+                          className="assess-action-btn delete" 
+                          onClick={() => handleDeleteAssessment(assessment.uuid)}
+                          title="Delete Assessment"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        
+                        
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              {/* Pagination row */}
+              <tr className="assess-table-row">
+                <td colSpan={6}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                   
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <button
+                        type="button"
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page <= 1 || loading}
+                        style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: page <= 1 || loading ? 'not-allowed' : 'pointer' }}
+                      >
+                        Prev
+                      </button>
+                      <span style={{ color: '#0f172a' }}>
+                        {(() => {
+                          const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1)));
+                          return `Page ${page} of ${totalPages}`;
+                        })()}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1)));
+                          setPage(p => Math.min(totalPages, p + 1));
+                        }}
+                        disabled={loading || (pagination && page >= Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1))))}
+                        style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', color: '#0f172a', cursor: loading || (pagination && page >= Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 1)))) ? 'not-allowed' : 'pointer' }}
+                      >
+                        Next
+                      </button>
                     </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
           )}
         </div>
       </div>
@@ -1445,14 +1456,14 @@ const GlobalSurveys = () => {
         handleDeleteAssessment={handleDeleteAssessment}
         updateFormElementField={updateFormElementField}
         addFormElement={addFormElement}
-        removeFormElement={removeFormElement}
+        removeFormElement={removeFormElement}   
         addOption={addOption}
         updateOption={updateOption}
         removeOption={removeOption}
         // handleFileUpload={handleFileUpload}
         duplicateFormElement={duplicateFormElement}
         groups={groups}
-
+       
       />}
     </div>
   );

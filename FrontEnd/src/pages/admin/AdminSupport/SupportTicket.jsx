@@ -93,12 +93,12 @@ export default function SupportTicketRaiser({ onClose, ticket, onSuccess }) {
   const isFormValid = formData.subject && formData.description;
 
   return (
-    <div className="ticket-form-container">
+    <div className="admin-ticket-form-container">
       {/* Header */}
-      <div className="ticket-header">
+      <div className="admin-ticket-header">
         <div>
-        <h1 className="ticket-header-title">Admin Support Ticket</h1>
-        <p className="ticket-header-subtitle">
+        <h1 className="admin-ticket-header-title">Admin Support Ticket</h1>
+        <p className="admin-ticket-header-subtitle">
           Submit technical issues or request assistance for LMS administration
         </p>
         </div>
@@ -125,14 +125,14 @@ export default function SupportTicketRaiser({ onClose, ticket, onSuccess }) {
       </div>
 
       {/* Form */}
-      <div className="ticket-form">
+      <div className="admin-ticket-form">
         {error && (
           <div style={{ color: 'crimson', marginBottom: 12 }}>{error}</div>
         )}
         {/* Subject */}
-        <div className="ticket-form-group">
-          <label className="ticket-form-label">
-            Subject <span className="ticket-required">*</span>
+        <div className="admin-ticket-form-group">
+          <label className="admin-ticket-form-label">
+            Subject <span className="admin-ticket-required">*</span>
           </label>
           <input
             type="text"
@@ -140,15 +140,15 @@ export default function SupportTicketRaiser({ onClose, ticket, onSuccess }) {
             value={formData.subject}
             onChange={handleInputChange}
             placeholder="Brief description of the issue"
-            className="ticket-form-input"
+            className="admin-ticket-form-input"
             required
           />
         </div>
 
         {/* Description */}
-        <div className="ticket-form-group">
-          <label className="ticket-form-label">
-            Detailed Description <span className="ticket-required">*</span>
+        <div className="admin-ticket-form-group">
+          <label className="admin-ticket-form-label">
+            Detailed Description <span className="admin-ticket-required">*</span>
           </label>
           <textarea
             name="description"
@@ -156,14 +156,14 @@ export default function SupportTicketRaiser({ onClose, ticket, onSuccess }) {
             onChange={handleInputChange}
             placeholder="Please provide detailed information about the issue, including steps to reproduce if applicable"
             rows="5"
-            className="ticket-form-textarea"
+            className="admin-ticket-form-textarea"
             required
           />
         </div>
 
         {/* Error Message */}
-        <div className="ticket-form-group">
-          <label className="ticket-form-label">
+        <div className="admin-ticket-form-group">
+          <label className="admin-ticket-form-label">
             Error Message (if any)
           </label>
           <textarea
@@ -172,53 +172,53 @@ export default function SupportTicketRaiser({ onClose, ticket, onSuccess }) {
             onChange={handleInputChange}
             placeholder="Copy and paste any error messages here"
             rows="3"
-            className="ticket-form-textarea error-textarea"
+            className="admin-ticket-form-textarea error-textarea"
           />
         </div>
 
         {/* File Upload */}
-        <div className="form-group">
-          <label className="form-label">
+        <div className="admin-form-group">
+          <label className="admin-form-label">
             Attachments
           </label>
-          <div className="upload-area">
-            <Upload className="upload-icon" />
-            <label className="upload-label">
-              <span className="upload-link">Click to upload</span>
-              <span className="upload-text"> or drag and drop</span>
+          <div className="admin-upload-area">
+            <Upload className="admin-upload-icon" />
+            <label className="admin-upload-label">
+              <span className="admin-upload-link">Click to upload</span>
+              <span className="admin-upload-text"> or drag and drop</span>
               <input
                 type="file"
                 multiple
                 onChange={handleFileUpload}
-                className="upload-input"
+                className="admin-upload-input"
                 accept=".png,.jpg,.jpeg,.pdf,.doc,.docx,.txt"
               />
             </label>
-            <p className="upload-hint">PNG, JPG, PDF, DOC up to 10MB</p>
+            <p className="admin-upload-hint">PNG, JPG, PDF, DOC up to 10MB</p>
           </div>
 
           {/* Attachment List */}
           {attachments.length > 0 && (
-            <div className="attachment-list">
+            <div className="admin-attachment-list">
               {attachments.map((file, index) => (
-                <div key={index} className="attachment-item">
-                  <div className="attachment-info">
-                    <div className="attachment-icon">
-                      <span className="file-extension">
+                <div key={index} className="admin-attachment-item">
+                  <div className="admin-attachment-info">
+                    <div className="admin-attachment-icon">
+                      <span className="admin-file-extension">
                         {file.name.split('.').pop().toUpperCase()}
                       </span>
                     </div>
                     <div>
-                      <p className="file-name">{file.name}</p>
-                      <p className="file-size">{file.size}</p>
+                      <p className="admin-file-name">{file.name}</p>
+                      <p className="admin-file-size">{file.size}</p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => removeAttachment(index)}
-                    className="remove-button"
+                    className="admin-remove-button"
                   >
-                    <X className="remove-icon" />
+                    <X className="admin-remove-icon" />
                   </button>
                 </div>
               ))}
@@ -227,12 +227,12 @@ export default function SupportTicketRaiser({ onClose, ticket, onSuccess }) {
         </div>
 
         {/* Info Box */}
-        <div className="info-box">
-          <div className="info-content">
-            <AlertCircle className="info-icon" />
-            <div className="info-text">
-              <p className="info-title">Response Time Expectations:</p>
-              <ul className="info-list">
+        <div className="admin-info-box">
+          <div className="admin-info-content">
+            <AlertCircle className="admin-info-icon" />
+            <div className="admin-info-text">
+              <p className="admin-info-title">Response Time Expectations:</p>
+              <ul className="admin-info-list">
                 <li>Critical: 1-2 hours</li>
                 <li>High: 4-6 hours</li>
                 <li>Medium: 24 hours</li>
@@ -243,7 +243,7 @@ export default function SupportTicketRaiser({ onClose, ticket, onSuccess }) {
         </div>
 
         {/* Submit Button */}
-        <div className="ticket-form-actions">
+        <div className="admin-ticket-form-actions">
           <button
             onClick={handleSubmit}
             disabled={!isFormValid || loading}

@@ -22,6 +22,7 @@ import LoadingScreen from '../../../components/common/Loading/Loading';
 import api from '../../../services/api';
 import { notifyError, notifySuccess } from '../../../utils/notification';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
+import SelectionBanner from '../../../components/Banner/SelectionBanner';
 const AdminSurveys = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
@@ -1107,7 +1108,7 @@ const AdminSurveys = () => {
         </div>
       )}
 
-      {selectionScope !== 'none' && derivedSelectedCount > 0 && (
+      {/* {selectionScope !== 'none' && derivedSelectedCount > 0 && (
         <div
           className="survey-selection-banner"
           style={{ margin: '12px 0', justifyContent: 'center' }}
@@ -1123,7 +1124,7 @@ const AdminSurveys = () => {
                   type="button"
                   className="selection-action action-primary"
                   onClick={handleSelectAllAcrossPages}
-                  disabled={false /* no async yet */}
+                  disabled={false}
                 >
                   {`Select all ${totalItems} surveys`}
                 </button>
@@ -1176,7 +1177,21 @@ const AdminSurveys = () => {
             </>
           )}
         </div>
-      )}
+      )} */}
+    
+      
+      <SelectionBanner
+        selectionScope={selectionScope}
+        selectedCount={derivedSelectedCount}
+        currentPageCount={visibleIds.length}
+        totalCount={totalItems}
+        onClearSelection={clearSelection}
+        onSelectAllPages={handleSelectAllAcrossPages}
+        selectAllLoading={false}
+        itemType="survey"
+        variant="default"
+        showWelcomeMessage={true}
+      />
 
       {/* Assessment Table */}
       <div className="assess-table-section">
@@ -1280,7 +1295,7 @@ const AdminSurveys = () => {
                           className={selectionScope === 'all' ? 'selected' : ''}
                          
                         >
-                          <span>Select all pages</span>
+                          <span>Select all pages ({totalItems})</span>
                           {selectionScope === 'all' && (
                             <img
                               src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"
@@ -1298,7 +1313,7 @@ const AdminSurveys = () => {
                           className={selectionScope === 'page' ? 'selected' : ''}
                          
                         >
-                          <span>Select this page</span>
+                          <span>Select this page ({visibleIds.length})</span>
                           {selectionScope === 'page' && (
                             <img
                               src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"

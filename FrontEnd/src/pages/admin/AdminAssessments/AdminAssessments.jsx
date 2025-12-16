@@ -12,7 +12,9 @@ import LoadingScreen from '../../../components/common/Loading/Loading';
 import api from '../../../services/api';
 import { notifyError, notifySuccess } from '../../../utils/notification';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
+import SelectionBanner from '../../../components/Banner/SelectionBanner';
 import { categories } from '../../../utils/constants';
+
 
 const AdminAssessments = () => {
   const dispatch = useDispatch()
@@ -1125,12 +1127,13 @@ const AdminAssessments = () => {
           </div>
 
           <div className="filter-actions">
-            <button className="btn-primary" onClick={handleFilter}>
-              Apply
-            </button>
-            <button className="reset-btn" onClick={resetFilters}>
+            <button className="btn-secondary" onClick={resetFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>
               Clear
             </button>
+            <button className="btn-primary" onClick={handleFilter} style={{ padding: '6px 12px', fontSize: '14px' }}>
+              Apply
+            </button>
+            
 
 
           </div>
@@ -1167,7 +1170,7 @@ const AdminAssessments = () => {
       )}
 
 
-
+{/* 
 {selectionScope !== 'none' && derivedSelectedCount > 0 && (
   <div
     className="assessments-selection-banner"
@@ -1184,7 +1187,7 @@ const AdminAssessments = () => {
             type="button"
             className="selection-action action-primary"
             onClick={handleSelectAllAcrossPages}
-            disabled={false /* no async yet */}
+            disabled={false }
           >
             {`Select all ${totalItems} assessments`}
           </button>
@@ -1237,7 +1240,20 @@ const AdminAssessments = () => {
       </>
     )}
   </div>
-)}
+)} */}
+
+<SelectionBanner
+  selectionScope={selectionScope}
+  selectedCount={derivedSelectedCount}
+  currentPageCount={visibleIds.length}
+  totalCount={totalItems}
+  onClearSelection={clearSelection}
+  onSelectAllPages={handleSelectAllAcrossPages}
+  selectAllLoading={false}
+  itemType="assessment"
+  variant="default"
+  showWelcomeMessage={true}
+/>
 
 
       {/* Assessment Table */}
@@ -1352,7 +1368,7 @@ const AdminAssessments = () => {
                          
                           
                         >
-                          <span>Select all pages</span>
+                          <span>Select all pages ({totalItems})</span>
                           {selectionScope === 'all' && (
                             <img
                               src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"
@@ -1370,7 +1386,7 @@ const AdminAssessments = () => {
                           className={selectionScope === 'page' ? 'selected' : ''}
                          
                         >
-                          <span>Select this page</span>
+                          <span>Select this page ({visibleIds.length})</span>
                           {selectionScope === 'page' && (
                             <img
                               src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"
@@ -1402,10 +1418,7 @@ const AdminAssessments = () => {
                     const matchesStatus = !filters.status ||
                       assessment.status?.toLowerCase() === filters.status.toLowerCase();
 
-                    // Apply category filter
-                    const matchesCategory = !filters.category || filters.category === '' || assessment.category === filters.category;
-
-                    return matchesSearch && matchesStatus && matchesCategory;
+                    return matchesSearch && matchesStatus;
                   })
                   .map(assessment => (
                     <tr key={assessment.uuid || assessment._id || assessment.id} className="assess-table-row">

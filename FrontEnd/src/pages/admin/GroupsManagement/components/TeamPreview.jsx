@@ -417,22 +417,24 @@ const TeamPreview = ({
         ) : (
           <div className="addOrg-form-section" style={{ padding: 12 }}>
             <div className="table-container" style={{ marginTop: 12 }}>
-              <div className="table-header" style={{ gridTemplateColumns: "50px 250px 250px 250px", color: 'rgb(2,2,2)' }}>
-                <div style={{ width: 24 }}></div>
-                <div className="col-team">Sub Team Name</div>
+              <div className="table-header" style={{ gridTemplateColumns: "1fr 1fr 1fr", color: 'rgb(2,2,2)' }}>
+               
+                <div className="col-team" style={{justifySelf:"center"}}>Sub Team Name</div>
                 <div className="col-members">Members</div>
                 <div className="col-actions">Actions</div>
               </div>
 
               {sortedSubTeams.length === 0 ? (
-                <div className="table-row" style={{ gridTemplateColumns: "50px 250px 250px 250px" }}>
-                  <div style={{ gridColumn: '1 / -1', color: '#6b7280' }}>No subteams found.</div>
+                <div className="table-row" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+                  <div className="col-team" style={{justifySelf:"center"}}></div>
+                  <div className="col-members" style={{textAlign: "center", color: "#6b7280"}}>No subteams found.</div>
+                  <div className="col-actions"></div>
                 </div>
               ) : (
                 sortedSubTeams.map((st) => (
-                  <div key={st._id || st.uuid || st.id} className="table-row" style={{ gridTemplateColumns: "50px 250px 250px 250px"  }}>
-                    <div style={{ width: 24 }}></div>
-                    <div className="col-team">{st.name}</div>
+                  <div key={st._id || st.uuid || st.id} className="table-row" style={{ gridTemplateColumns: " 1fr 1fr 1fr"  }}>
+                   
+                    <div className="col-team" style={{paddingLeft:'125px'}}>{st.name}</div>
                     <button
                       type="button"
                       className="col-members"

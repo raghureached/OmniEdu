@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Edit3, Trash2, Eye, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { Edit3, Trash2, Eye, Plus, ChevronDown, ChevronUp, Users } from 'lucide-react';
 import '../GroupsManagement.css';
 const GroupsTable = ({
   groups,
@@ -29,6 +29,7 @@ const GroupsTable = ({
   sortKey,
   sortDir,
   onSortChange,
+  handleCreateGroup,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null); // flyout container
@@ -80,8 +81,16 @@ const GroupsTable = ({
   return (
     <>
       {groups.length === 0 ? (
-        <div style={{ justifyContent: 'center', alignItems: 'center', display: 'flex' }}>
-          No groups found.
+        <div className="groups-empty-state">
+          <div className="groups-empty-icon">
+            <Users size={48} />
+          </div>
+          <h3>No Teams found</h3>
+          <p>Start by creating your first team </p>
+          <button className="btn-primary" onClick={handleCreateGroup}>
+            <Plus size={16} />
+            Add Team
+          </button>
         </div>
       ) : (
         <div className="table-container">
@@ -210,7 +219,7 @@ const GroupsTable = ({
                 }}
                 className={selectionScope === "all" ? "selected" : ""}
               >
-                <span>{selectAllLoading ? 'Selecting all…' : 'Select all pages'}</span>
+                <span>{selectAllLoading ? 'Selecting all…' : `Select all pages (${totalFilteredCount})`}</span>
                 {selectionScope === 'all' && (
                   <img
                     src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"
@@ -228,7 +237,7 @@ const GroupsTable = ({
                 }}
                 className={selectionScope === "page" ? "selected" : ""}
               >
-                <span>Select this page</span>
+                <span>Select this page ({pageSelectionCount})</span>
                 {selectionScope === 'page' && (
                   <img
                     src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"

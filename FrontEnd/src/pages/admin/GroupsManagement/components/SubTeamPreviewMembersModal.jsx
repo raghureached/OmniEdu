@@ -110,27 +110,37 @@ const SubTeamPreviewMembersModal = ({ isOpen, onClose, title, members = [] }) =>
             </div>
           )}
 
-          {members.length === 0 ? (
-            <div style={{ textAlign: 'center', color: '#64748b' }}>No members found for this subteam.</div>
-          ) : filteredMembers.length === 0 ? (
-            <div style={{ textAlign: 'center', color: '#64748b' }}>No members match your search.</div>
-          ) : (
-            <div className="table-container">
-              <div className="table-header" style={{ gridTemplateColumns: '1fr  1fr',color:"#000000" }}>
+          <div className="table-container">
+              <div className="table-header" style={{ gridTemplateColumns: '1fr 1fr 1fr',textAlign:"center",color:"#000000" }}>
                 <div className="col-team">Name</div>
                 <div className="col-team">Email</div>
-                {/* <div className="col-team">Sub Team</div> */}
+                <div className="col-team">Sub Team</div>
               </div>
 
+              {members.length === 0 ? (
+                <div className="table-row" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+                  <div className="col-team"></div>
+                  <div className="col-team" style={{ textAlign: "center", color: "#64748b" }}>No members found for this subteam</div>
+                  <div className="col-team"></div>
+                </div>
+                
+              ) : filteredMembers.length === 0 ? (
+                <div className="table-row" style={{ gridTemplateColumns: '1fr 1fr 1fr'}}>
+                  <div className="col-team"></div>
+                  <div className="col-team" style={{ textAlign: "center", color: "#64748b" }}>No members match your search</div>
+                  <div className="col-team"></div>
+                </div>
+              ) : (
+              <>
               {paginatedMembers.map((member) => (
                 <div
                   key={member.id || `${member.email}|${member.name}`}
                   className="table-row"
-                  style={{ gridTemplateColumns: '1fr  1fr' }}
+                  style={{ gridTemplateColumns: '1fr 1fr 1fr' }}
                 >
                   <div className="col-team">{member.name || '—'}</div>
                   <div className="col-team">{member.email || '—'}</div>
-                  {/* <div className="col-team">{member.subTeamName || '—'}</div> */}
+                  <div className="col-team">{member.subTeamName || '—'}</div>
                 </div>
               ))}
 
@@ -192,8 +202,10 @@ const SubTeamPreviewMembersModal = ({ isOpen, onClose, title, members = [] }) =>
                   </div>
                 </div>
               </div>
+              </>
+                )}
             </div>
-          )}
+          
         </div>
       </div>
     </div>

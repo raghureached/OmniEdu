@@ -6,8 +6,8 @@ const membersPerPage = 100;
 
 
 const TeamMembersModal = ({ isOpen, onClose, team, members = [] }) => {
-  console.log("subteam in Team MEMBER MODEL",members)
-  console.log("groups in Team MEMBER MODEL",team)
+  console.log("subteam in Team MEMBER MODEL", members)
+  console.log("groups in Team MEMBER MODEL", team)
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -44,8 +44,8 @@ const TeamMembersModal = ({ isOpen, onClose, team, members = [] }) => {
     const sorter = (a, b) => {
       const aName = (a?.name || a?.fullName || '').toString().trim().toLowerCase();
       const bName = (b?.name || b?.fullName || '').toString().trim().toLowerCase();
-      if (aName < bName) return  -1;
-      if (aName > bName) return  1;
+      if (aName < bName) return -1;
+      if (aName > bName) return 1;
       return 0;
     };
 
@@ -61,7 +61,7 @@ const TeamMembersModal = ({ isOpen, onClose, team, members = [] }) => {
       })
       .sort(sorter);
   }, [members, searchTerm]);
- console.log('filteredMembers', filteredMembers)
+  console.log('filteredMembers', filteredMembers)
   const totalPages = Math.max(1, Math.ceil(filteredMembers.length / membersPerPage));
 
   useEffect(() => {
@@ -122,32 +122,43 @@ const TeamMembersModal = ({ isOpen, onClose, team, members = [] }) => {
             </div>
           )}
 
-          {members.length === 0 ? (
-            <div style={{ textAlign: 'center', color: '#64748b' }}>No members found for this team.</div>
-          ) : filteredMembers.length === 0 ? (
-            <div style={{ textAlign: 'center', color: '#64748b' }}>No members match your search.</div>
-          ) : (
-            <>
-              <div className="table-container">
-                <div className="table-header" style={{ gridTemplateColumns: '1fr 1.5fr 1fr 1fr' ,color:"#000000"}}>
-                  <div className="col-team">Name</div>
-                  <div className="col-team">Email</div>
-                  <div className="col-team">Team</div>
-                  <div className="col-team">Subteams</div>
-                </div>
 
+          <div className="table-container">
+            <div className="table-header" style={{ gridTemplateColumns: '1fr 1.5fr 1fr 1fr', color: "#000000" }}>
+              <div className="col-team">Name</div>
+              <div className="col-team">Email</div>
+              <div className="col-team">Team</div>
+              <div className="col-team">Subteams</div>
+            </div>
+
+            {members.length === 0 ? (
+              <div className="table-row" style={{ gridTemplateColumns: '1fr 1.5fr 1fr 1fr',paddingLeft:'165px' }}>
+                <div className="col-team"></div>
+                <div className="col-team" style={{ textAlign: "center", color: "#64748b" }}>No members found for this team</div>
+                <div className="col-team"></div>
+                <div className="col-team"></div>
+              </div>
+            ) : filteredMembers.length === 0 ? (
+              <div className="table-row" style={{ gridTemplateColumns: '1fr 1.5fr 1fr 1fr',paddingLeft:'165px' }}>
+                <div className="col-team"></div>
+                <div className="col-team" style={{ textAlign: "center", color: "#64748b" }}>No members match your search</div>
+                <div className="col-team"></div>
+                <div className="col-team"></div>
+              </div>
+            ) : (
+              <>
                 {paginatedMembers.map((member) => {
                   // Debug: Log the full member object to inspect its structure
                   console.log('Member data:', member);
-                  
+
                   // Extract subteam names from the nested structure
-                  
+
                   // const subteamNames = teams
                   //   .filter(st => st.members.some(m => m._id === member._id || m.id === member.id))
                   //   .map(st => st.name)
                   //   .join(', ');
                   //   console.log('subteamNames', subteamNames)
-                   
+
                   const toDisplayName = (val) => {
                     const raw = (val ?? '').toString();
                     if (!raw) return '';
@@ -160,11 +171,11 @@ const TeamMembersModal = ({ isOpen, onClose, team, members = [] }) => {
 
                   return (
                     <div key={member.id || member._id} className="table-row" style={{ gridTemplateColumns: '1fr 1.5fr 1fr 1fr' }}>
-                      <div className="col-team">{member.name || member.fullName || '—'}</div>
-                      <div className="col-team">{member.email || '—'}</div>
-                      <div className="col-team">{team.teamName || team.name || '—'}</div>
-                      <div className={`col-team ${!subteamText ? 'center-dash' : ''}`} title={subteamText}>
-                        {subteamText || '—'}
+                      <div className="col-team">{member.name || member.fullName || 'N/A'}</div>
+                      <div className="col-team">{member.email || 'N/A'}</div>
+                      <div className="col-team">{team.teamName || team.name || 'N/A'}</div>
+                      <div className={"col-team"} title={subteamText}>
+                        {subteamText || 'N/A'}
                       </div>
                     </div>
                   );
@@ -187,8 +198,8 @@ const TeamMembersModal = ({ isOpen, onClose, team, members = [] }) => {
                       justifyContent: 'center',
                       width: '100%',
                       borderTop: 'none',
-                      padding:"0px",
-                      marginTop:"0px"
+                      padding: "0px",
+                      marginTop: "0px"
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -228,9 +239,9 @@ const TeamMembersModal = ({ isOpen, onClose, team, members = [] }) => {
                     </div>
                   </div>
                 </div>
-              </div>
-            </>
+             </>
           )}
+          </div>
         </div>
       </div>
     </div>

@@ -10,7 +10,9 @@ import GlobalModuleModal from './GlobalModuleModal';
 import { GoX } from 'react-icons/go';
 import { useNotification } from '../../../components/common/Notification/NotificationProvider.jsx';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog.jsx';
+import SelectionBanner from '../../../components/Banner/SelectionBanner';
 import { categories } from '../../../utils/constants.js';
+
 
 const GlobalModuleManagement = () => {
   const dispatch = useDispatch();
@@ -119,6 +121,7 @@ const GlobalModuleManagement = () => {
     const matchesSearch = !filters.search ||
       (item.title?.toLowerCase().includes(filters.search.toLowerCase()) ||
         item.description?.toLowerCase().includes(filters.search.toLowerCase()));
+    const matchesType = contentType === "all" || item.type === contentType;
     const matchesStatus = !filters.status || item.status === filters.status;
     const matchCategory = !filters.category || item.category === filters.category;
     return matchesSearch && matchesStatus && matchCategory;
@@ -636,11 +639,11 @@ const GlobalModuleManagement = () => {
               </div>
             )}
 
-            <button className="btn-primary"  onClick={() => handleOpenModal()}> + Create Module</button>
+            <button className="btn-primary" onClick={() => handleOpenModal()}> + Add Module</button>
           </div>
         </div>
       </div>
-      {selectionScope !== 'none' && derivedSelectedCount > 0 && (
+      {/* {selectionScope !== 'none' && derivedSelectedCount > 0 && (
         <div
           className="module-selection-banner"
           style={{ margin: '12px 0', justifyContent: 'center' }}
@@ -656,7 +659,7 @@ const GlobalModuleManagement = () => {
                   type="button"
                   className="selection-action action-primary"
                   onClick={handleSelectAllAcrossPages}
-                  disabled={false /* no async yet */}
+                  disabled={false }
                 >
                   {`Select all ${totalItems} modules`}
                 </button>
@@ -709,7 +712,20 @@ const GlobalModuleManagement = () => {
             </>
           )}
         </div>
-      )}
+      )}  */}
+      
+      <SelectionBanner
+        selectionScope={selectionScope}
+        selectedCount={derivedSelectedCount}
+        currentPageCount={visibleIds.length}
+        totalCount={totalItems}
+        onClearSelection={clearSelection}
+        onSelectAllPages={handleSelectAllAcrossPages}
+        selectAllLoading={false}
+        itemType="module"
+        variant="default"
+        showWelcomeMessage={true}
+      />
       {showModal && <GlobalModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} handleRichInputChange={handleRichInputChange} error={error} />}
       {showEditModal && <GlobalModuleModal showModal={showEditModal} setShowModal={setShowEditModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} showEditModal={showEditModal} setShowEditModal={setShowEditModal} editContentId={editContentId} handleRichInputChange={handleRichInputChange} error={error} />}
       <div className="table-container">
@@ -794,7 +810,7 @@ const GlobalModuleManagement = () => {
             className={selectionScope === 'all' ? 'selected' : ''}
            
           >
-            <span>Select all pages</span>
+            <span>Select all pages ({totalItems})</span>
             {selectionScope === 'all' && (
               <img
                 src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"
@@ -812,7 +828,7 @@ const GlobalModuleManagement = () => {
             className={selectionScope === 'page' ? 'selected' : ''}
            
           >
-            <span>Select this page</span>
+            <span>Select this page ({visibleIds.length})</span>
             {selectionScope === 'page' && (
               <img
                 src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"

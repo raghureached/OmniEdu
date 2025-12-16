@@ -51,7 +51,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  border: none;
+  border: 1px solid #d7d3d3;
   border-radius: 8px;
   background: transparent;
   color: #64748b;
@@ -71,18 +71,18 @@
   color: #475569;
 }
 
-
 .support-search {
-  max-width: 400px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: white;
-  padding: 10px 16px;
-  border-radius: 12px;
-  border: 2px solid rgb(206, 206, 206);
-  width: 280px;
-}
+    max-width: 400px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: 2px solid rgb(206, 206, 206);
+    margin-bottom: 20px;
+    width:280px;
+  }
 
 .support-search-input {
   border: none;
@@ -106,11 +106,11 @@
 }
 
 .support-table th:nth-child(1) {
-  width: 12%; /* Ticket ID */
+  width: 18%; /* Ticket ID */
 }
 
 .support-table th:nth-child(2) {
-  width: 35%; /* Ticket Details */
+  width: 46%; /* Ticket Details */
 }
 
 .support-table th:nth-child(3) {
@@ -118,16 +118,14 @@
 }
 
 .support-table th:nth-child(4) {
-  width: 10%; /* Status */
+  width: 12%; /* Status */
 }
 
 .support-table th:nth-child(5) {
-  width: 15%; /* Date Created */
+  width: 12%; /* Date Created */
 }
 
-.support-table th:nth-child(6) {
-  width: 8%; /* Actions */
-}
+
 
 .support-table th {
   padding: 16px 20px;
@@ -222,11 +220,11 @@
 .ticket-id-display {
   font-family: 'Courier New', monospace;
   font-weight: 600;
-  color: #4f46e5;
+  color:black;
   background: #f0f9ff;
   padding: 4px 8px;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
 }
 
 /* Actions */
@@ -376,7 +374,7 @@
   }
   
   .support-table th:nth-child(2) {
-    width: 45%;
+    width: 41%;
   }
   
   .support-table th:nth-child(4) {

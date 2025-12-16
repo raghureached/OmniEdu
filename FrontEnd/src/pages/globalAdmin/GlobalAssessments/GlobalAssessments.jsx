@@ -11,6 +11,7 @@ import api from '../../../services/api';
 import { useNotification } from '../../../components/common/Notification/NotificationProvider.jsx';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog.jsx';
 import { categories } from '../../../utils/constants.js';
+import SelectionBanner from '../../../components/Banner/SelectionBanner.jsx';
 const GlobalAssessments = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
@@ -1181,7 +1182,7 @@ const GlobalAssessments = () => {
           </div>
         </div>
       )}
-
+{/* 
     {selectionScope !== 'none' && derivedSelectedCount > 0 && (
   <div
     className="globalassessments-selection-banner"
@@ -1198,7 +1199,7 @@ const GlobalAssessments = () => {
             type="button"
             className="selection-action action-primary"
             onClick={handleSelectAllAcrossPages}
-            disabled={false /* no async yet */}
+            disabled={false }
           >
             {`Select all ${totalItems} assessments`}
           </button>
@@ -1251,7 +1252,20 @@ const GlobalAssessments = () => {
       </>
     )}
   </div>
-)}
+)} 
+   */}
+  <SelectionBanner
+    selectionScope={selectionScope}
+    selectedCount={derivedSelectedCount}
+    currentPageCount={visibleIds.length}
+    totalCount={totalItems}
+    onClearSelection={clearSelection}
+    onSelectAllPages={handleSelectAllAcrossPages}
+    selectAllLoading={false}
+    itemType="assessment"
+    variant="default"
+    showWelcomeMessage={true}
+  />
   
 
 
@@ -1354,7 +1368,7 @@ const GlobalAssessments = () => {
             className={selectionScope === 'all' ? 'selected' : ''}
            
           >
-            <span>Select all pages</span>
+            <span>Select all pages ({totalItems})</span>
             {selectionScope === 'all' && (
               <img
                 src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"
@@ -1372,7 +1386,7 @@ const GlobalAssessments = () => {
             className={selectionScope === 'page' ? 'selected' : ''}
           
           >
-            <span>Select this page</span>
+            <span>Select this page ({visibleIds.length})</span>
             {selectionScope === 'page' && (
               <img
                 src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"
@@ -1422,14 +1436,14 @@ const GlobalAssessments = () => {
                   .filter(assessment => {
                     // Apply search filter
                     const matchesSearch = !filters.search ||
-                      assessment.title?.toLowerCase().includes(filters.search.toLowerCase())
-                
+                      assessment.title?.toLowerCase().includes(filters.search.toLowerCase()) ||
+                      assessment.description?.toLowerCase().includes(filters.search.toLowerCase());
+
                     // Apply status filter
                     const matchesStatus = !filters.status ||
                       assessment.status?.toLowerCase() === filters.status.toLowerCase();
-                    const matchCategory = !filters.category || 
-                      assessment?.category?.toLowerCase() === filters.category.toLowerCase();
-                    return matchesSearch && matchesStatus && matchCategory;
+
+                    return matchesSearch && matchesStatus;
                   })
                   .map(assessment => (
                     <tr key={assessment.uuid || assessment._id || assessment.id} className="assess-table-row">

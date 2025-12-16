@@ -145,8 +145,8 @@
 }
 
 .select-all-menu-toggle {
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
+  /* border: 1px solid #e5e7eb; */
+  background: transparent;
   color: #111827;
   padding: 6px 10px;
   border-radius: 9999px;
@@ -478,10 +478,13 @@
 /* Pagination */
 .groups-management-pagination {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  padding: 16px 20px;
+  padding: 16px 24px;
   border-top: 1px solid #e5e7eb;
+  margin-top: 0px;
+  gap: 12px;
+  background-color: #fafafa;
 }
 
 .groups-management-pagination-btn {
@@ -837,4 +840,46 @@ datalist::-webkit-scrollbar-thumb:hover {
     padding: 15px;
     width: 220px;
     z-index: 8;
+}
+
+/* Empty State Styles */
+.groups-empty-state {
+  padding: 210px 60px 210px 60px;
+  text-align: center;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 2px solid rgb(206, 206, 206);
+  margin: 20px 0;
+  height: 619px;
+}
+
+.groups-empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  color: #cbd5e1;
+  margin: 0 auto 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.groups-empty-state h3 {
+  color: #374151;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.groups-empty-state p {
+  font-size: .95rem;
+  margin: 0 0 24px;
+  color: #64748b;
+}
+
+.groups-empty-state .btn-primary {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin: 0 auto;
+  justify-self: center;
 }

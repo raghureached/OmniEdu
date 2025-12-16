@@ -1,0 +1,206 @@
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .table-selection-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 16px;
+    border: 1px solid #bae6fd;
+    border-radius: 8px;
+    background: #f0f9ff;
+    margin: 12px 0;
+    animation: slideDown 0.3s ease-out;
+    transition: all 0.2s ease;
+    color: #0c4a6e;
+    font-size: 0.9rem;
+  }
+
+  .table-selection-banner--compact {
+    padding: 8px 14px;
+  }
+
+  .table-selection-banner--minimal {
+    padding: 6px 12px;
+    border-color: #e0f2fe;
+  }
+
+  .table-selection-banner__left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .table-selection-banner__info {
+    color: #0c4a6e;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .table-selection-banner__info strong {
+    font-weight: 600;
+  }
+
+  .table-selection-banner__left-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .table-selection-banner__right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .table-selection-banner__select-wrapper {
+    position: relative;
+  }
+
+
+
+  .table-selection-banner__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .table-selection-banner__button {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .table-selection-banner__button:hover:not(:disabled) {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+
+  .table-selection-banner__button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .table-selection-banner__button--primary {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    color: #374151;
+  }
+
+  .table-selection-banner__button--primary:hover:not(:disabled) {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+
+  .table-selection-banner__button--danger {
+    background: #ffffff;
+    color: #dc2626;
+    border-color: #fecaca;
+  }
+
+  .table-selection-banner__button--danger:hover:not(:disabled) {
+    background: #fee2e2;
+    border-color: #fca5a5;
+  }
+
+  .table-selection-banner__button--link {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    color: #374151;
+  }
+
+  .table-selection-banner__button--link:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+
+  .table-selection-banner__button--link:active {
+    background: #f1f5f9;
+  }
+
+  .table-selection-banner__spinner {
+    animation: spin 1s linear infinite;
+  }
+
+  .table-selection-banner--compact .table-selection-banner__button {
+    padding: 6px 12px;
+    font-size: 0.8125rem;
+  }
+
+  .table-selection-banner--minimal .table-selection-banner__button {
+    padding: 4px 10px;
+    font-size: 0.8125rem;
+  }
+
+  .table-selection-banner__text-message {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+  }
+
+  @media (max-width: 768px) {
+    .table-selection-banner {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .table-selection-banner__left,
+    .table-selection-banner__right {
+      width: 100%;
+      flex-wrap: wrap;
+    }
+
+    .table-selection-banner__actions {
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    .table-selection-banner__button {
+      flex: 1;
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .table-selection-banner__left-actions,
+    .table-selection-banner__actions {
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .table-selection-banner__button {
+      width: 100%;
+    }
+  }

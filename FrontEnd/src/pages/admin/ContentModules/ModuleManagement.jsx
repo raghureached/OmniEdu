@@ -13,7 +13,9 @@ import { toast } from 'react-toastify';
 import { notifyError, notifySuccess } from '../../../utils/notification';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
 import api from '../../../services/api';
+import SelectionBanner from '../../../components/Banner/SelectionBanner';
 import { categories } from '../../../utils/constants';
+
 
 
 const ModuleManagement = () => {
@@ -336,6 +338,13 @@ const ModuleManagement = () => {
     setSelectionMenuOpen(false);
   };
 
+
+
+
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
   const handleInputChange = (e) => {
     const { name, value, files, type, checked } = e.target;
     // console.log(name, value, files, type, checked)
@@ -684,7 +693,7 @@ const ModuleManagement = () => {
         </div>
       </div>
 
-      {selectionScope !== 'none' && derivedSelectedCount > 0 && (
+      {/* {selectionScope !== 'none' && derivedSelectedCount > 0 && (
         <div
           className="module-selection-banner"
           style={{ margin: '12px 0', justifyContent: 'center' }}
@@ -700,7 +709,7 @@ const ModuleManagement = () => {
                   type="button"
                   className="selection-action action-primary"
                   onClick={handleSelectAllAcrossPages}
-                  disabled={false /* no async yet */}
+                  disabled={false}
                 >
                   {`Select all ${totalItems} modules`}
                 </button>
@@ -753,7 +762,20 @@ const ModuleManagement = () => {
             </>
           )}
         </div>
-      )}
+      )} */}
+
+      <SelectionBanner
+        selectionScope={selectionScope}
+        selectedCount={derivedSelectedCount}
+        currentPageCount={visibleIds.length}
+        totalCount={totalItems}
+        onClearSelection={clearSelection}
+        onSelectAllPages={handleSelectAllAcrossPages}
+        selectAllLoading={selectAllLoading}
+        itemType="module"
+        variant="default"
+        showWelcomeMessage={true}
+      />
       {showModal && <ModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading} handleRichInputChange={handleRichInputChange} error={error} teams={teams}/>}
       {showEditModal && <ModuleModal showModal={showEditModal} setShowModal={setShowEditModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} showEditModal={showEditModal} setShowEditModal={setShowEditModal} editContentId={editContentId} handleRichInputChange={handleRichInputChange} error={error} teams={teams}/>}
       {currentContent.length === 0 ? (
@@ -840,7 +862,7 @@ const ModuleManagement = () => {
                         className={selectionScope === 'all' ? 'selected' : ''}
                     
                       >
-                        <span>Select all pages</span>
+                        <span>Select all pages ({totalItems})</span>
                         {selectionScope === 'all' && (
                           <img
                             src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"
@@ -857,7 +879,7 @@ const ModuleManagement = () => {
                         className={selectionScope === 'page' ? 'selected' : ''}
                        
                       >
-                        <span>Select this page</span>
+                        <span>Select this page ({visibleIds.length})</span>
                         {selectionScope === 'page' && (
                           <img
                             src="https://cdn.dribbble.com/assets/icons/check_v2-dcf55f98f734ebb4c3be04c46b6f666c47793b5bf9a40824cc237039c2b3c760.svg"

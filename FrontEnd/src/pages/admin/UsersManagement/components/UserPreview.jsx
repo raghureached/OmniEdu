@@ -69,7 +69,8 @@ const UserPreview = ({ isOpen, onClose, user, assignments = [] }) => {
                     style={{
                       gridTemplateColumns: '1fr 1fr',
                       textAlign: 'left',
-                      justifyItems: 'flex-start'
+                      justifyItems: 'flex-start',
+                      color:"black"
                     }}
                   >
                     <div>Team Name</div>
@@ -81,12 +82,12 @@ const UserPreview = ({ isOpen, onClose, user, assignments = [] }) => {
                       className="table-row"
                       style={{
                         gridTemplateColumns: '1fr 1fr',
-                        textAlign: 'left',
+                          textAlign: 'left',
                         justifyItems: 'flex-start'
                       }}
                     >
-                      <div>{assignment.teamName || '—'}</div>
-                      <div>{assignment.subTeamName || '—'}</div>
+                      <div >{assignment.teamName || 'N/A'}</div>
+                      <div>{assignment.subTeamName || 'N/A'}</div>
                     </div>
                   ))}
                 </>
