@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchContent, deleteContent } from '../../../store/slices/contentSlice';
 import LearningPathModal from './LearningPathModal';
 import './LearningPaths.css';
-import { ChevronDown, Edit3, FileText, Filter, Plus, Search, Trash2, Users } from 'lucide-react';
+import { ChevronDown, Edit3, FileText, Filter, Plus, Search, Trash2, Users, BarChart3 } from 'lucide-react';
 import { getLearningPaths } from '../../../store/slices/learningPathSlice';
 import { deleteLearningPath } from '../../../store/slices/learningPathSlice';
 import LoadingScreen from '../../../components/common/Loading/Loading';
@@ -11,6 +11,9 @@ import { GoX } from 'react-icons/go';
 import { RiDeleteBinFill } from 'react-icons/ri';
 import SelectionBanner from '../../../components/Banner/SelectionBanner';
 import { categories } from '../../../utils/constants';
+import AnalyticsPop from '../../../components/AnalyticsPopup/AnalyticsPop';
+import api from '../../../services/api';
+import { notifyError, notifySuccess } from '../../../utils/notification';
 
 
 const LearningPaths = () => {
@@ -40,6 +43,9 @@ const LearningPaths = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPath, setEditingPath] = useState(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [page, setPage] = useState(1);
   const itemsPerPage = 7;
 
@@ -310,7 +316,25 @@ const LearningPaths = () => {
     setIsModalOpen(true)
     setEditingPath(path)
     // console.log(path)
-  }
+  };
+
+  const handleLearningPathAnalytics = async (path) => {
+    try {
+      setAnalyticsLoading(true);
+      const response = await api.get(`/api/admin/analytics/learningPath/${path.uuid}`);
+      if (response.data.success) {
+        setAnalyticsData(response.data.data);
+        setShowAnalytics(true);
+      } else {
+        notifyError('Failed to load analytics data');
+      }
+    } catch (error) {
+      console.error('Error fetching learning path analytics:', error);
+      notifyError('Error loading analytics');
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
 
 
 
@@ -705,7 +729,7 @@ const LearningPaths = () => {
                 {/* <th>Version</th> */}
                 <th>Est. Duration</th>
                 <th>Last Updated</th>
-                <th>Actions</th>
+                <th style={{textAlign: 'center'}}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -747,6 +771,14 @@ const LearningPaths = () => {
                     <div style={{ display: "flex", gap: "10px" }}>
                     <button className="global-action-btn edit" onClick={() => handleEditPath(path)}>
                         <Edit3 size={16} />
+                      </button>
+                      <button
+                        className="global-action-btn analytics"
+                        onClick={() => handleLearningPathAnalytics(path)}
+                        disabled={analyticsLoading}
+                        title="View Analytics"
+                      >
+                        <BarChart3 size={16} />
                       </button>
                       <button
                         className="global-action-btn delete"
@@ -796,6 +828,13 @@ const LearningPaths = () => {
         onClose={() => { setIsModalOpen(false); setEditingPath(null); }}
         onSave={handleSavePath}
         initialData={editingPath}
+      />
+      
+      <AnalyticsPop
+        isOpen={showAnalytics}
+        onClose={() => setShowAnalytics(false)}
+        data={analyticsData}
+        loading={analyticsLoading}
       />
     </div>
   );

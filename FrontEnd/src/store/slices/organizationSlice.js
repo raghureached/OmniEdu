@@ -30,38 +30,6 @@ export const fetchOrganizationById = createAsyncThunk(
     }
 );
 
-//     'organizations/createOrganization',
-//     async(organizationData, { rejectWithValue }) => {
-//         try {
-//             // Handle file upload for logo if present
-//             let formData = null;
-//             if (organizationData.logo instanceof File) {
-//                 formData = new FormData();
-//                 Object.keys(organizationData).forEach(key => {
-//                     if (key === 'logo') {
-//                         formData.append('logo', organizationData.logo);
-//                     } else {
-//                         formData.append(key, organizationData[key]);
-//                     }
-//                 });
-//             }
-
-//             const response = await api.post(
-//               "/api/globalAdmin/addOrganization",
-//               formData || organizationData,
-//               formData
-//                 ? { headers: { "Content-Type": "multipart/form-data" } }
-//                 : {}
-//           );
-//           console.log(formData)
-//           console.log(response.data)
-//             return response.data;
-//         } catch (error) {
-//             return rejectWithValue(error.response.data);
-//         }
-//     }
-// );
-
 export const createOrganization = createAsyncThunk(
   "organizations/createOrganization",
   async (organizationData, { rejectWithValue }) => {

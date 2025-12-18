@@ -7,7 +7,12 @@ const { updateProgress, getUserProgress, getUserProgressById } = require("../con
 const { getContentStats, getUserRewards, getNotification } = require("../controllers/user_controller/user_stats")
 const { 
   getAnalytics,
-  updateLearningActivity, 
+  updateLearningActivity,
+  getStats,
+  courseAnalytics,
+  getDeadlinesAndOverDue,
+  getAssessmentPerformance,
+  getWeeklyActivity, 
 } = require("../controllers/user_controller/user_analytics")
 const { enroll } = require("../controllers/user_controller/user_enroll")
 const { getCatalog } = require("../controllers/user_controller/user_courseCatalog")
@@ -71,6 +76,11 @@ router.route("/getUserRewards").get(getUserRewards)
 
 /////////ANALYTICS/////////////
 router.route("/analytics").get(getAnalytics)
+router.route("/analytics/getStats").get(getStats)
+router.route("/analytics/getCourseAnalytics").get(courseAnalytics)
+router.route("/analytics/getDeadlinesAndOverDue").get(getDeadlinesAndOverDue)
+router.route("/analytics/getAssessmentPerformance").get(getAssessmentPerformance)
+router.route("/analytics/getWeeklyActivity").get(getWeeklyActivity)
 // router.route("/analytics/completion").get(getCompletionMetrics)
 // router.route("/analytics/deadlines").get(getDeadlines)
 // router.route("/analytics/time-spent").get(getTimeSpent)

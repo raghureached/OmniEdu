@@ -223,9 +223,9 @@ const googleAuthCallback = async (req, res) => {
                 role = 'GlobalAdmin';
             } else {
                 // Get user profile for organization info
-                const userProfile = await UserProfile.findOne({ user_id: user._id });
-                if (userProfile) {
-                    organization_id = userProfile.organization_id;
+                const userDoc = await User.findOne({ _id: user._id });
+                if (userDoc) {
+                    organization_id = userDoc.organization_id;
                 }
                 
                 // Get role from GlobalRoles if available
@@ -249,7 +249,6 @@ const googleAuthCallback = async (req, res) => {
             } else if (role === 'Administrator') {
                 redirectUrl = '/admin';
             }
-
             return res.redirect(`${process.env.FRONTEND_URL}${redirectUrl}`);
             
         } catch (error) {

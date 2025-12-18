@@ -4,6 +4,7 @@ import FeaturedIcon from "../../../assets/Featured icon.svg";
 import AddOrgDateRangePickerSingle from "../../../components/common/CustomDatePicker/DateRangePicker";
 import { GoOrganization, GoUpload, GoX, GoTrash, GoEye } from "react-icons/go";
 import CustomError from "../../../components/common/Error/Error";
+import CustomSelect from "../../../components/dropdown/DropDown";
 
 const DOCUMENT_FIELDS = [
   { key: "invoice", label: "Invoice" },
@@ -123,6 +124,10 @@ const AddOrganizationModal = ({
     setDragOver(null);
     // Handle file drop logic here
   };
+  const planOptions = plans.map(plan => ({
+    value: plan._id,
+    label: plan.name
+  }));
 
   return (
     <div className="addOrg-modal-overlay">
@@ -141,8 +146,8 @@ const AddOrganizationModal = ({
               {/* {error && <CustomError  error={error} />} */}
             </div>
           </div>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="addOrg-close-btn"
             onClick={closeForm}
             aria-label="Close modal"
@@ -155,7 +160,7 @@ const AddOrganizationModal = ({
         <form onSubmit={handleSubmit} className="addOrg-org-form">
           {/* Basic Information Section */}
           <div className="addOrg-form-section">
-            <h3 className="addOrg-section-title" style={{marginTop:"10px"}}>Basic Information</h3>
+            <h3 className="addOrg-section-title" style={{ marginTop: "10px" }}>Basic Information</h3>
             <div className="addOrg-form-grid">
               <div className="addOrg-form-group">
                 <label className="addOrg-form-label">
@@ -171,7 +176,7 @@ const AddOrganizationModal = ({
                   required
                 />
               </div>
-              
+
               <div className="addOrg-form-group">
                 <label className="addOrg-form-label">
                   Contact Email<span className="addOrg-required">*</span>
@@ -197,7 +202,7 @@ const AddOrganizationModal = ({
                 <label className="addOrg-form-label">
                   Subscription Plan<span className="addOrg-required">*</span>
                 </label>
-                <select
+                {/* <select
                   name="planId"
                   value={formData.planId}
                   onChange={handleInputChange}
@@ -210,14 +215,30 @@ const AddOrganizationModal = ({
                       {plan.name}
                     </option>
                   ))}
-                </select>
+                </select> */}
+                <CustomSelect
+                  value={formData.planId}
+                  options={planOptions}
+                  placeholder="Choose a plan"
+                  onChange={(value) =>
+                    setFormData(prev => ({ ...prev, planId: value }))
+                  }
+                />
               </div>
-              
+
               <div className="addOrg-form-group">
                 <label className="addOrg-form-label">
                   Administrator Role<span className="addOrg-required">*</span>
                 </label>
-                <select
+                <CustomSelect
+                  value={formData.role || "Admin"}
+                  options={[
+                    { value: "Admin", label: "Administrator" }
+                  ]}
+                  disabled
+                />
+
+                {/* <select
                   name="role"
                   value={formData.role || "Admin"}
                   onChange={handleInputChange}
@@ -226,8 +247,8 @@ const AddOrganizationModal = ({
                   disabled={true}
                 >
                   <option value="Admin">Administrator</option>
-                  {/* <option value="SuperAdmin">Super Administrator</option> */}
-                </select>
+                 
+                </select> */}
               </div>
             </div>
           </div>
@@ -246,15 +267,15 @@ const AddOrganizationModal = ({
                   <span>
                     {dateRange[0]
                       ? dateRange[0].toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })
                       : "Select start date"}
                   </span>
                 </button>
               </div>
-              
+
               <div className="addOrg-form-group">
                 <label className="addOrg-form-label">End Date</label>
                 <button
@@ -266,10 +287,10 @@ const AddOrganizationModal = ({
                   <span>
                     {dateRange[1]
                       ? dateRange[1].toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })
                       : "Select end date"}
                   </span>
                 </button>
@@ -280,7 +301,7 @@ const AddOrganizationModal = ({
           {/* File Uploads Section */}
           <div className="addOrg-form-section">
             <h3 className="addOrg-section-title">Required Documents</h3>
-            
+
             {/* Logo Upload - Inline */}
             <div className="addOrg-inline-upload-row">
               <div className="addOrg-upload-info">
@@ -300,16 +321,16 @@ const AddOrganizationModal = ({
                       </div>
                     </div>
                     <div className="addOrg-file-actions">
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => setShowLogoPreview(true)}
                         className="addOrg-action-btn addOrg-view-btn"
                         title="View"
                       >
                         <GoEye size={14} />
                       </button>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={removeLogo}
                         className="addOrg-action-btn addOrg-remove-btn"
                         title="Remove"
@@ -319,15 +340,15 @@ const AddOrganizationModal = ({
                     </div>
                   </div>
                 ) : (
-                  <div 
+                  <div
                     className={`addOrg-inline-upload-zone ${dragOver === 'logo' ? 'addOrg-drag-over' : ''}`}
                     onDragOver={(e) => handleDragOver(e, 'logo')}
                     onDragLeave={handleDragLeave}
                     onDrop={(e) => { handleDrop(e, 'logo') }}
                   >
-                    <input 
-                      type="file" 
-                      accept="image/png, image/jpeg, image/jpg" 
+                    <input
+                      type="file"
+                      accept="image/png, image/jpeg, image/jpg"
                       className="addOrg-file-input"
                       id="logo-upload"
                       onChange={handleLogoUpload}
@@ -341,9 +362,9 @@ const AddOrganizationModal = ({
                 )}
               </div>
             </div>
-            
+
             {/* Document Uploads - Inline per named field */}
-            {DOCUMENT_FIELDS.map(({key, label}, idx) => (
+            {DOCUMENT_FIELDS.map(({ key, label }, idx) => (
               <div className="addOrg-inline-upload-row" key={key}>
                 <div className="addOrg-upload-info">
                   <label className="addOrg-form-label">
@@ -374,16 +395,16 @@ const AddOrganizationModal = ({
                         </div>
                       </div>
                       <div className="addOrg-file-actions">
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={() => viewDocument(formData[key])}
                           className="addOrg-action-btn addOrg-view-btn"
                           title="View"
                         >
                           <GoEye size={14} />
                         </button>
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={() => removeDocument(key)}
                           className="addOrg-action-btn addOrg-remove-btn"
                           title="Remove"
@@ -393,14 +414,14 @@ const AddOrganizationModal = ({
                       </div>
                     </div>
                   ) : (
-                    <div 
+                    <div
                       className={`addOrg-inline-upload-zone ${dragOver === key ? 'addOrg-drag-over' : ''}`}
                       onDragOver={(e) => handleDragOver(e, key)}
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => { handleDrop(e, key) }}
                     >
-                      <input 
-                        type="file" 
+                      <input
+                        type="file"
                         className="addOrg-file-input"
                         accept="application/pdf"
                         id={`doc-upload-${key}`}
@@ -430,7 +451,7 @@ const AddOrganizationModal = ({
             </button>
             <button type="submit" className="btn-primary" disabled={loading}>
               <GoOrganization size={16} />
-             <span>{editMode ? (updating ? 'Updating...' : 'Update Organization') : (creating ? 'Creating...' : 'Create Organization')}</span>
+              <span>{editMode ? (updating ? 'Updating...' : 'Update Organization') : (creating ? 'Creating...' : 'Create Organization')}</span>
             </button>
           </div>
         </form>
@@ -469,13 +490,13 @@ const AddOrganizationModal = ({
         {showLogoPreview && logoToPreview && (
           <div className="addOrg-preview-modal" onClick={() => setShowLogoPreview(false)}>
             <div className="addOrg-preview-content" onClick={(e) => e.stopPropagation()}>
-              <button 
+              <button
                 className="addOrg-preview-close"
                 onClick={() => setShowLogoPreview(false)}
               >
                 <GoX size={20} />
               </button>
-              <img 
+              <img
                 src={typeof logoToPreview === 'string' ? logoToPreview : URL.createObjectURL(logoToPreview)}
                 alt="Logo preview"
                 className="addOrg-preview-image"
@@ -488,13 +509,13 @@ const AddOrganizationModal = ({
         {docPreviewUrl && (
           <div className="addOrg-preview-modal" onClick={closeDocumentPreview}>
             <div className="addOrg-preview-content" onClick={(e) => e.stopPropagation()}>
-              <button 
+              <button
                 className="addOrg-preview-close"
                 onClick={closeDocumentPreview}
               >
                 <GoX size={20} />
               </button>
-              <iframe 
+              <iframe
                 src={docPreviewUrl}
                 className="addOrg-preview-document"
                 title="Document preview"

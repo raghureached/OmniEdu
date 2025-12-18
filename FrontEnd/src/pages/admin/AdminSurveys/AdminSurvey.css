@@ -354,6 +354,12 @@ assess-table th {
   color: var(--color-primary);
 }
 
+.assess-action-btn.analytics:hover {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+  color: #0284c7;
+}
+
 .assess-action-btn.delete:hover {
   background: #fee2e2;
   border-color: #fecaca;

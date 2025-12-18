@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Search, Plus, Calendar, Edit3, Trash2, FileText, CheckCircle, CheckCircle2, AlertCircle, Users, Shield, X, ArrowLeft } from "lucide-react";
+import React, { useEffect, useState, useRef } from "react";
+import { Search, Plus, Calendar, Edit3, Trash2, FileText, CheckCircle, CheckCircle2, AlertCircle, Users, Shield, X, ArrowLeft, Filter } from "lucide-react";
 import "./TicketsTable.css";
 import "./TicketDetails.css";
 import TicketDetails from "./TicketDetails";
@@ -17,6 +17,8 @@ import {
     deleteAdminTicket
 } from "../../../store/slices/globalTicketSlice";
 import LoadingScreen from '../../../components/common/Loading/Loading';
+import { useParams } from "react-router-dom";
+import api from '../../../services/api';
 
 const GlobalTicketsTable = () => {
     const [searchTerm, setSearchTerm] = useState("");
@@ -25,8 +27,14 @@ const GlobalTicketsTable = () => {
     const [showDetails, setShowDetails] = useState(false);
     const [userPage, setUserPage] = useState(1);
     const [adminPage, setAdminPage] = useState(1);
+    const [showFilters, setShowFilters] = useState(false);
+    const [filters, setFilters] = useState({});
+    const [tempFilters, setTempFilters] = useState({});
+    const [plans, setPlans] = useState([]);
+    const filterRef = useRef(null);
     const limit = 6;
     const dispatch = useDispatch();
+    const { role } = useParams()
 
     // In TicketsTable.jsx, update the selector
     const globalTickets = useSelector((state) => state.globalTickets || {
@@ -47,12 +55,79 @@ const GlobalTicketsTable = () => {
     useEffect(() => {
         dispatch(fetchUserTickets({ page: userPage, limit }));
         dispatch(fetchUserTicketStats());
+
     }, [dispatch, userPage]);
 
     useEffect(() => {
         dispatch(fetchAdminTickets({ page: adminPage, limit }));
         dispatch(fetchAdminTicketStats());
     }, [dispatch, adminPage]);
+
+    useEffect(() => {
+        if (role) {
+            setActiveTab(role)
+        }
+    }, [role]);
+
+    // Fetch organizations for filter dropdown
+    useEffect(() => {
+        const fetchOrganizations = async () => {
+            try {
+                const response = await api.get('/globalAdmin/getOrganizations');
+                setPlans(response.data.organizations || []);
+            } catch (error) {
+                console.error('Error fetching organizations:', error);
+                setPlans([]);
+            }
+        };
+        fetchOrganizations();
+    }, []);
+
+    // Close filter dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (filterRef.current && !filterRef.current.contains(event.target)) {
+                setShowFilters(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleFilterClick = () => {
+        setShowFilters(!showFilters);
+    };
+
+    const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        setTempFilters(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleApplyFilters = () => {
+        setFilters(tempFilters);
+        setShowFilters(false);
+        // Reset to first page when applying filters
+        if (activeTab === "user") {
+            setUserPage(1);
+        } else {
+            setAdminPage(1);
+        }
+    };
+
+    const handleClearFilters = () => {
+        setFilters({});
+        setTempFilters({});
+        setShowFilters(false);
+        // Reset to first page when clearing filters
+        if (activeTab === "user") {
+            setUserPage(1);
+        } else {
+            setAdminPage(1);
+        }
+    };
 
     const handleEditUserTicketStatus = async (ticket) => {
         const current = ticket.status;
@@ -195,41 +270,87 @@ const GlobalTicketsTable = () => {
             </div>
 
             {/* === STAT CARDS === */}
-            
+
 
             {/* ------------ Search Bar ------------ */}
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div className="support-search-section">
-                <div className="support-search">
-                    <Search size={16} className="support-search-icon" />
-                    <input
-                        type="text"
-                        placeholder={`Search ${activeTab} tickets`}
-                        className="support-search-input"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-                
-            </div>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"20px",gap:"20px"}}>
-                <button
-                    className={`${activeTab === "user" ? "btn-primary" : "tab-button"}`}
-                    onClick={() => setActiveTab("user")}
-                >
-                    <Users size={16} />
-                    User Tickets
-                </button>
-                <button
-                    className={`${activeTab === "admin" ? "btn-primary" : "tab-button"}`}
-                    onClick={() => setActiveTab("admin")}
-                >
-                    <Shield size={16} />
-                    Admin Tickets
-                </button>
-            </div>
-            </div>
+                    <div className="support-search">
+                        <Search size={16} className="support-search-icon" />
+                        <input
+                            type="text"
+                            placeholder={`Search ${activeTab} tickets`}
+                            className="support-search-input"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
 
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px", gap: "20px" }}>
+                    <button className="btn-secondary" onClick={handleFilterClick}>
+                        <Filter size={16} /> Filters
+                    </button>
+                    <button
+                        className={`${activeTab === "user" ? "btn-primary" : "btn-secondary"}`}
+                        onClick={() => setActiveTab("user")}
+                    >
+                        <Users size={16} />
+                        User Tickets
+                    </button>
+                    <button
+                        className={`${activeTab === "admin" ? "btn-primary" : "btn-secondary"}`}
+                        onClick={() => setActiveTab("admin")}
+                    >
+                        <Shield size={16} />
+                        Admin Tickets
+                    </button>
+                </div>
+            </div>
+            {showFilters && (
+                <div className="filter-panel" style={{top:"300px",right:"300px"}} ref={filterRef}>
+                    <span style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px", hover: { color: "#6b7280" } }} onClick={() => setShowFilters(false)}><X size={20} color="#6b7280" /></span>
+                    <div className="filter-group">
+                        <label>Status</label>
+                        <select
+                            name="status"
+                            value={tempFilters?.status || filters?.status || ""}
+                            onChange={handleFilterChange}
+                        >
+                            <option value="all">All</option>
+                            <option value="Open">Open</option>
+                            <option value="In-Progress">In Progress</option>
+                            <option value="Resolved">Resolved</option>
+                        </select>
+                    </div>
+
+                    {/* Organization Filter */}
+                    <div className="filter-group">
+                        <label>Organization</label>
+                        <select
+                            name="organization"
+                            value={tempFilters?.organization || filters?.organization || ""}
+                            onChange={handleFilterChange}
+                        >
+                            <option value="">All</option>
+                            {plans.map((plan) => (
+                                <option key={plan._id} value={plan._id}>
+                                    {plan.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="filter-actions">
+                        <button className="btn-secondary" onClick={handleClearFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>
+                            Clear
+                        </button>
+                        <button className="btn-primary" onClick={handleApplyFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>
+                            Apply
+                        </button>
+                    </div>
+                </div>
+            )}
             {/* ------------ Tickets Table ------------ */}
             <div className="support-table-section">
                 {currentData.items.length === 0 && !currentLoading ? (

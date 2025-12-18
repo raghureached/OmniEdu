@@ -4,7 +4,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../../store/slices/authSlice';
 import { fetchNotifications, markNotificationAsRead } from '../../../store/slices/notificationSlice';
 import './AdminLayout.css';
-import { Menu, Home, User2, UserCheck, Shield, BookOpen, CircleUserRound, NotepadText, NotebookPen, LibraryBig, BookOpenCheck, MessageCircleCode, Award, BookCopy, Clock, HelpCircle, LogOut, Bell, X, ChartColumnIncreasing,Laptop } from 'lucide-react';
+import { Menu, Home, User2, UserCheck, Shield, BookOpen, CircleUserRound, NotepadText, NotebookPen, LibraryBig, BookOpenCheck, MessageCircleCode, Award, BookCopy, Clock, HelpCircle, LogOut, Bell, X, ChartColumnIncreasing,Laptop, Pen, PenBox } from 'lucide-react';
+import { GoGear, GoPeople } from 'react-icons/go';
 
 const AdminLayout = () => {
   const dispatch = useDispatch();
@@ -167,7 +168,7 @@ const AdminLayout = () => {
           </li>
           <li className="admin_menu_section">
             {!sidebarCollapsed && (
-              <div className="admin_section_title">People</div>
+              <div className="admin_section_title"><span style={{display:"flex",alignItems:"center",gap:"10px"}}><GoPeople size={20} /> <span>People</span></span></div>
             )}
           </li>
           <li>
@@ -192,9 +193,23 @@ const AdminLayout = () => {
               )}
             </Link>
           </li>
+          <li>
+            <Link
+              to="/admin/message-board"
+              className={
+                isActive("/admin/message-board") ? "admin_link_active" : ""
+              }
+            >
+              {/* <BookCopy size={20} /> */}
+              <MessageCircleCode size={20} />
+              {!sidebarCollapsed && (
+                <span className="admin_sidebar_names">Message Board</span>
+              )}
+            </Link>
+          </li>
           <li className="admin_menu_section">
             {!sidebarCollapsed && (
-              <div className="admin_section_title">Content</div>
+              <div className="admin_section_title"><span style={{display:"flex",alignItems:"center",gap:"10px"}}><LibraryBig size={20} /> <span>Library</span></span></div>
             )}
           </li>
           <li>
@@ -254,7 +269,7 @@ const AdminLayout = () => {
           
           <li className="admin_menu_section">
             {!sidebarCollapsed && (
-              <div className="admin_section_title">Assignments</div>
+              <div className="admin_section_title"><span style={{display:"flex",alignItems:"center",gap:"10px"}}><PenBox size={20} /> <span>Assignments</span></span></div>
             )}
           </li>
           <li>
@@ -270,49 +285,35 @@ const AdminLayout = () => {
               )}
             </Link>
           </li>
-          <li className="admin_menu_section">
+          {/* <li className="admin_menu_section">
             {!sidebarCollapsed && (
               <div className="admin_section_title">Library</div>
             )}
-          </li>
-          <li>
+          </li> */}
+          {/* <li>
             <Link
               to="/admin/portal-library"
               className={
                 isActive("/admin/portal-library") ? "admin_link_active" : ""
               }
             >
-              {/* <BookCopy size={20} /> */}
+              
               <LibraryBig size={20} />
               {!sidebarCollapsed && (
                 <span className="admin_sidebar_names">Portal Library</span>
               )}
             </Link>
-          </li>
+          </li> */}
+       
+          
+          
+          
           <li className="admin_menu_section">
             {!sidebarCollapsed && (
-              <div className="admin_section_title">User Dashboard</div>
+              <div className="admin_section_title"><span style={{display:"flex",alignItems:"center",gap:"10px"}}><GoGear size={20} /> <span>Settings</span></span></div>
             )}
           </li>
-          <li>
-            <Link
-              to="/admin/message-board"
-              className={
-                isActive("/admin/message-board") ? "admin_link_active" : ""
-              }
-            >
-              {/* <BookCopy size={20} /> */}
-              <MessageCircleCode size={20} />
-              {!sidebarCollapsed && (
-                <span className="admin_sidebar_names">Message Board</span>
-              )}
-            </Link>
-          </li>
-          <li className="admin_menu_section">
-            {!sidebarCollapsed && (
-              <div className="admin_section_title">Analytics</div>
-            )}
-          </li>
+          
           <li>
             <Link
               to="/admin/analytics"
@@ -322,26 +323,11 @@ const AdminLayout = () => {
             >
               <ChartColumnIncreasing size={20} />
               {!sidebarCollapsed && (
-                <span className="admin_sidebar_names">Overview</span>
+                <span className="admin_sidebar_names">Analytics</span>
               )}
             </Link>
           </li>
-          <li className="admin_menu_section">
-            {!sidebarCollapsed && (
-              <div className="admin_section_title">Other</div>
-            )}
-          </li>
-          {permissions.includes("Profile Access") &&<li>
-            <Link
-              to="/admin/profile"
-              className={isActive("/admin/profile") ? "admin_link_active" : ""}
-            >
-              <CircleUserRound size={20} />
-              {!sidebarCollapsed && (
-                <span className="admin_sidebar_names">Admin Profile</span>
-              )}
-            </Link>
-          </li>}
+          
           {permissions.includes("Activity History Access") && <li>
             <Link
               to="/admin/activity-log"
@@ -352,6 +338,17 @@ const AdminLayout = () => {
               <Clock size={20} />
               {!sidebarCollapsed && (
                 <span className="admin_sidebar_names">Activity Log</span>
+              )}
+            </Link>
+          </li>}
+          {permissions.includes("Profile Access") &&<li>
+            <Link
+              to="/admin/profile"
+              className={isActive("/admin/profile") ? "admin_link_active" : ""}
+            >
+              <CircleUserRound size={20} />
+              {!sidebarCollapsed && (
+                <span className="admin_sidebar_names">Admin Profile</span>
               )}
             </Link>
           </li>}

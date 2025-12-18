@@ -18,7 +18,8 @@ import {
   deleteOrganizations,
 } from "../../../store/slices/organizationSlice";
 import api from "../../../services/api";
-import { useNavigate } from "react-router-dom";
+import CustomSelect from "../../../components/dropdown/DropDown";
+import { useNavigate  , useParams } from "react-router-dom";
 import AddOrganizationFormModal from "./AddOrganizationModal";
 import OrganizationDetails from "./OrganizationDetails";
 import './OrganizationManagement.css'
@@ -31,6 +32,7 @@ import { useConfirm } from "../../../components/ConfirmDialogue/ConfirmDialog";
 const OrganizationManagement = () => {
   const dispatch = useDispatch();
   const { organizations, loading, filters, error,creating,updating,deleting } = useSelector((state) => state.organizations);  
+  const {orgId} = useParams();
   const [plans, setPlans] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -69,6 +71,13 @@ const OrganizationManagement = () => {
     }, 200);
     return () => clearTimeout(timeoutId);
   }, [dispatch, filters]);
+
+  useEffect(() => {
+    if (orgId) {
+      const data = organizations.find((org) => org._id === orgId);
+      handleOpenOrg(data)
+    }
+  }, [orgId]);
 
   // Fetch plans on mount
   useEffect(() => {
@@ -450,33 +459,36 @@ const OrganizationManagement = () => {
                   <span style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px",hover:{color:"#6b7280"}}} onClick={() => setShowFilters(false)}><GoX size={20} color="#6b7280" /></span>
                   <div className="filter-group">
                     <label>Status</label>
-                    <select
-                      name="status"
+                    <CustomSelect
                       value={tempFilters?.status || filters?.status || ""}
-                      onChange={handleFilterChange}
-                    >
-                      <option value="">All</option>
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
-                      <option value="Suspended">Suspended</option>
-                    </select>
+                      searchable={false}
+                      options={[
+                        { value: "", label: "All" },
+                        { value: "Active", label: "Active" },
+                        { value: "Inactive", label: "Inactive" },
+                        { value: "Suspended", label: "Suspended" }
+                      ]}
+                      onChange={(value) => handleFilterChange({ target: { name: 'status', value } })}
+                      placeholder="Select status"
+                    />
                   </div>
 
                   {/* Plan Filter */}
                   <div className="filter-group">
                     <label>Plan</label>
-                    <select
-                      name="plan"
+                    <CustomSelect
                       value={tempFilters?.plan || filters?.plan || ""}
-                      onChange={handleFilterChange}
-                    >
-                      <option value="">All</option>
-                      {plans.map((plan) => (
-                        <option key={plan._id} value={plan._id}>
-                          {plan.name}
-                        </option>
-                      ))}
-                    </select>
+                      searchable={false}
+                      options={[
+                        { value: "", label: "All" },
+                        ...(plans?.map(plan => ({
+                          value: plan._id,
+                          label: plan.name
+                        })) || [])
+                      ]}
+                      onChange={(value) => handleFilterChange({ target: { name: 'plan', value } })}
+                      placeholder="Select plan"
+                    />
                   </div>
 
                   <div className="filter-actions">

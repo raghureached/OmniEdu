@@ -34,6 +34,7 @@ import {
 import './AnalyticsViewNew.css';
 import api from '../../../services/api';
 import LoadingScreen from '../../../components/common/Loading/Loading';
+import { useNavigate } from 'react-router-dom';
 
 
 
@@ -41,16 +42,17 @@ const COLORS = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#06b6d4'];
 
 const AnalyticsViewNew = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [range, setRange] = useState('30d');
+  const [range, setRange] = useState('7d');
   const [orgId, setOrgId] = useState('all');
   const [data, setData] = useState(null);
   const { organizations } = useSelector((state) => state.organizations);
-  
+  const navigate = useNavigate()
+
 
   // Generate trend data based on current values
   const generateTrendData = (currentValue, days = 7) => {
     const trend = [];
-    const baseValue = currentValue * 0.8; // Start from 80% of current value
+    const baseValue = currentValue * 0.8;
 
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
@@ -71,10 +73,12 @@ const AnalyticsViewNew = () => {
     const fetchAnalyticsData = async () => {
       try {
         setIsLoading(true);
-        const endpoint = orgId === 'all' 
+        const endpoint = orgId === 'all'
           ? '/api/globalAdmin/getAnalytics'
           : `/api/globalAdmin/getAnalytics/${orgId}`;
-        const response = await api.get(endpoint);
+        const response = await api.get(endpoint, {
+          params: { dateRange: range.toLowerCase() }
+        });
         setData(response.data);
       } catch (error) {
         console.error('Error fetching analytics data:', error);
@@ -86,14 +90,15 @@ const AnalyticsViewNew = () => {
     fetchAnalyticsData();
   }, [range, orgId]);
 
-
+  const ranges = ['7D', '1M', '3M']
   const formatNumber = (n) => (n != null ? n.toLocaleString('en-IN') : '--');
 
   // Metric Card Component
-  const MetricCard = ({ icon: Icon, label, value, subtitle, trend, trendValue, color, delay = 0 }) => (
+  const MetricCard = ({ icon: Icon, label, value, subtitle, trend, trendValue, color, delay = 0 ,onClick}) => (
     <div
       className="metric-card-enhanced"
-      style={{ animationDelay: `${delay}ms` }}
+      style={{ animationDelay: `${delay}ms`,cursor:'pointer' }}
+      onClick={onClick}
     >
       <div className="metric-card-header">
         <div className={`metric-icon-enhanced ${color}`}>
@@ -115,7 +120,71 @@ const AnalyticsViewNew = () => {
   );
 
   if (isLoading) {
-    return <LoadingScreen text="Loading Analytics" />;
+    return (
+      <div className="analytics-container">
+        {/* Header with loading skeleton */}
+        <div className="page-header">
+          <div className="header-content">
+            <div className="header-badge" style={{ background: '#f3f4f6', width: '120px', height: '24px' }}></div>
+            <div className="page-title" style={{ background: '#f3f4f6', width: '200px', height: '32px', borderRadius: '8px' }}></div>
+            <div className="page-subtitle" style={{ background: '#f3f4f6', width: '400px', height: '16px', borderRadius: '4px' }}></div>
+          </div>
+          <div className="header-filters" style={{ display: "flex", flexDirection: "column" }}>
+            <div className="filter-group-enhanced">
+              <div style={{ width: '100px', height: '16px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '8px' }}></div>
+              <div style={{ width: '200px', height: '40px', background: '#f3f4f6', borderRadius: '8px' }}></div>
+            </div>
+            <div className="filter-group-enhanced">
+              <div style={{ width: '100px', height: '16px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '8px' }}></div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {['7D', '1M', '3M', '6M'].map((range) => (
+                  <div key={range} style={{ width: '40px', height: '32px', background: '#f3f4f6', borderRadius: '6px' }}></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Loading metrics skeleton */}
+        <div className="metrics-grid-enhanced">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <div key={i} className="metric-card-enhanced" style={{ background: '#f9fafb' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ width: '40px', height: '40px', background: '#e5e7eb', borderRadius: '8px' }}></div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ width: '120px', height: '16px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '8px' }}></div>
+                  <div style={{ width: '80px', height: '12px', background: '#f3f4f6', borderRadius: '4px' }}></div>
+                </div>
+              </div>
+              <div style={{ width: '60px', height: '24px', background: '#e5e7eb', borderRadius: '4px' }}></div>
+            </div>
+          ))}
+        </div>
+
+        {/* Loading charts skeleton */}
+        <div className="charts-grid">
+          <div className="chart-panel" style={{ background: '#f9fafb' }}>
+            <div style={{ width: '200px', height: '20px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '16px' }}></div>
+            <div style={{ width: '100%', height: '300px', background: '#f3f4f6', borderRadius: '8px' }}></div>
+          </div>
+          <div className="chart-panel" style={{ background: '#f9fafb' }}>
+            <div style={{ width: '200px', height: '20px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '16px' }}></div>
+            <div style={{ width: '100%', height: '300px', background: '#f3f4f6', borderRadius: '8px' }}></div>
+          </div>
+        </div>
+
+        {/* Support stats skeleton */}
+        <div className="support-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px', marginTop: '24px' }}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="support-stat" style={{ background: '#f9fafb', padding: '16px', borderRadius: '8px' }}>
+              <div style={{ width: '60px', height: '16px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '8px' }}></div>
+              <div style={{ width: '40px', height: '24px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '8px' }}></div>
+              <div style={{ width: '80px', height: '12px', background: '#f3f4f6', borderRadius: '4px' }}></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -133,7 +202,7 @@ const AnalyticsViewNew = () => {
           </p>
         </div>
 
-        <div className="header-filters">
+        <div className="header-filters" style={{ display: "flex", flexDirection: "column" }}>
           <div className="filter-group-enhanced">
             <label>Organization</label>
             <select value={orgId} onChange={(e) => setOrgId(e.target.value)} className="filter-select-enhanced">
@@ -143,6 +212,28 @@ const AnalyticsViewNew = () => {
               ))}
             </select>
           </div>
+          
+          <div className="date-range-selector" style={{alignSelf:"flex-end"}}>
+            <button
+                className={`date-range-btn ${range === '7d' ? 'active' : ''}`}
+                onClick={() => setRange('7d')}
+            >
+                7D
+            </button>
+            <button
+                className={`date-range-btn ${range === '1m' ? 'active' : ''}`}
+                onClick={() => setRange('1m')}
+            >
+                1M
+            </button>
+            <button
+                className={`date-range-btn ${range === '3m' ? 'active' : ''}`}
+                onClick={() => setRange('3m')}
+            >
+                3M
+            </button>
+         
+        </div>
         </div>
       </div>
 
@@ -152,7 +243,7 @@ const AnalyticsViewNew = () => {
           icon={Activity}
           label="Daily Active Users"
           value={formatNumber(data?.stats?.dau?.value)}
-          subtitle={data?.stats?.dau?.sublabel}
+          subtitle={`${data?.stats?.dau?.sublabel} (${range === '7d' ? 'last 7 days' : range === '1m' ? 'last month' : range === '3m' ? 'last 3 months' : 'last 6 months'})`}
           trend={data?.stats?.dau?.change >= 0 ? 'up' : 'down'}
           trendValue={`${Math.abs(data?.stats?.dau?.change)}`}
           color="color-primary"
@@ -162,7 +253,7 @@ const AnalyticsViewNew = () => {
           icon={Users}
           label="Monthly Active Users"
           value={formatNumber(data?.stats?.mau?.value)}
-          subtitle={data?.stats?.mau?.sublabel}
+          subtitle={`${data?.stats?.mau?.sublabel} (${range === '7d' ? 'last 7 days' : range === '1m' ? 'last month' : range === '3m' ? 'last 3 months' : 'last 6 months'})`}
           trend={data?.stats?.mau?.change >= 0 ? 'up' : 'down'}
           trendValue={`${Math.abs(data?.stats?.mau?.change)}`}
           color="color-secondary"
@@ -172,21 +263,52 @@ const AnalyticsViewNew = () => {
           icon={TrendingUp}
           label="Platform Stickiness"
           value={`${data?.stats?.stickiness?.value}%`}
-          subtitle={data?.stats?.stickiness?.sublabel}
+          subtitle={`${data?.stats?.stickiness?.sublabel} (${range === '7d' ? 'last 7 days' : range === '1m' ? 'last month' : range === '3m' ? 'last 3 months' : 'last 6 months'})`}
           color="color-tertiary"
           delay={200}
         />
         <MetricCard
-          icon={Building2}
+          icon={Users}
           label="Total System Users"
           value={formatNumber(data?.stats?.totalUsers?.value)}
-          subtitle={data?.stats?.totalUsers?.sublabel}
+          subtitle={`${data?.stats?.totalUsers?.sublabel} (all-time)`}
           trend={data?.stats?.totalUsers?.change >= 0 ? 'up' : 'down'}
           trendValue={`${Math.abs(data?.stats?.totalUsers?.change)}`}
           color="color-neutral"
           delay={300}
         />
+        {orgId == 'all' ? <MetricCard
+          icon={Building2}
+          label="Total Organizations"
+          onClick={() => navigate('/global-admin/organizations')}
+          value={formatNumber(data?.stats?.totalOrg?.value)}
+          subtitle={`${data?.stats?.totalOrg?.sublabel} (all-time)`}
+          // trend={data?.stats?.totalOrg?.change >= 0 ? 'up' : 'down'}
+          trendValue={`${Math.abs(data?.stats?.totalOrg?.change)}`}
+          color="color-neutral"
+          delay={300}
+        />
+          :
+          <MetricCard
+            icon={Building2}
+            label="Active Users Percentage"
+            value={formatNumber(data?.stats?.activepercentage?.value)}
+            subtitle={`${data?.stats?.activepercentage?.sublabel} (${range === '7d' ? 'last 7 days' : range === '1m' ? 'last month' : range === '3m' ? 'last 3 months' : 'last 6 months'})`}
+            // trend={data?.stats?.totalOrg?.change >= 0 ? 'up' : 'down'}
+            // trendValue={`${Math.abs(data?.stats?.activepercentage?.change)}`}
+            color="color-neutral"
+            delay={300}
+          />}
       </div>
+      {/* <div className="filter-group-enhanced" style={{display:"flex",margin:"20px"}}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+          {ranges.map((r, index) => (
+            <button key={index} onClick={() => setRange(r)} className={`${r === range ? 'btn-primary' : 'btn-secondary'}`}>
+              {r}
+            </button>
+          ))}
+        </div>
+      </div> */}
 
       {/* Charts Row 1: DAU Trend & Support Tickets */}
       <div className="charts-grid">
@@ -231,73 +353,72 @@ const AnalyticsViewNew = () => {
           </div>
         </div>
 
-        {/* Support Tickets */}
+        {/* Usage Distribution */}
         <div className="chart-panel">
           <div className="panel-header-enhanced">
             <div>
-              <h3 className="panel-title">Support Ticket Volume</h3>
-              <p className="panel-description">Issue tracking and resolution</p>
+              <h3 className="panel-title">User Distribution Across Organizations</h3>
+              <p className="panel-description">Active user allocation by organization</p>
             </div>
-            <LifeBuoy size={20} className="panel-icon" />
+            <Users size={20} className="panel-icon" />
           </div>
 
-          <div className="support-stats">
-            <div className="support-stat">
-              <div className="support-stat-label">ADMIN</div>
-              <div className="support-stat-value">{data?.ticketsData?.adminOpen}</div>
-              <div className="support-stat-label">Open Tickets</div>
+          <div className="distribution-layout-vertical">
+            {/* Debug: Show data structure */}
+            {console.log('Organizations data:', data?.organizations)}
+            {console.log('Data structure:', data)}
+            
+            <div className="distribution-chart">
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie
+                    data={data?.organizations || []}
+                    dataKey="users"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={70}
+                    label={false}
+                  >
+                    {data?.organizations?.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value, name) => [`${formatNumber(value)} users`, name]} />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
-            <div className="support-stat">
-              <div className="support-stat-label">ADMIN</div>
-              <div className="support-stat-value">{data?.ticketsData?.adminResolved}</div>
-              <div className="support-stat-label">Resolved Tickets</div>
-            </div>
-            <div className="support-stat">
-              <div className="support-stat-label">USER</div>
-              <div className="support-stat-value">{data?.ticketsData?.userOpen}</div>
-              <div className="support-stat-label">Open Tickets</div>
-            </div>
-            <div className="support-stat">
-              <div className="support-stat-label">USER</div>
-              <div className="support-stat-value">{data?.ticketsData?.userResolved}</div>
-              <div className="support-stat-label">Resolved Tickets</div>
-            </div>
-          </div>
 
-          {/* <div className="chart-container">
-            <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={generateTrendData(15, 7)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                <XAxis dataKey="label" stroke="black" style={{ fontSize: 12 }} />
-                <YAxis stroke="black" style={{ fontSize: 12 }} />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#ef4444"
-                  strokeWidth={2}
-                  dot={{ fill: '#ef4444', r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#ef4444"
-                  strokeWidth={2}
-                  dot={{ fill: '#ef4444', r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-              
-            </ResponsiveContainer>
-          </div> */}
+            <div className="distribution-bars-grid">
+              {data?.organizations?.map((org, idx) => (
+                <div key={idx} className="distribution-bar-item">
+                  <div className="bar-header">
+                    <div className="bar-label">
+                      <div className="bar-color" style={{ background: COLORS[idx] }} />
+                      <span>{org.name}</span>
+                    </div>
+                    <span className="bar-value">{formatNumber(org.users)} users</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Show empty state if no data */}
+            {(!data?.organizations || data?.organizations.length === 0) && (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#6b7280' }}>
+                No organization data available
+              </div>
+            )}
+          </div>
         </div>
+
+
       </div>
 
       {/* Charts Row 2: System Health & Top Organizations */}
       <div className="charts-grid">
         {/* System Health */}
-        <div className="chart-panel">
+        {/* <div className="chart-panel">
           <div className="panel-header-enhanced">
             <div>
               <h3 className="panel-title">System Health Monitoring</h3>
@@ -368,13 +489,58 @@ const AnalyticsViewNew = () => {
               <div className="health-percentage">Last 30 days</div>
             </div>
           </div>
+        </div> */}
+        {/* Support Tickets */}
+        <div className="chart-panel">
+          <div className="panel-header-enhanced">
+            <div>
+              <h3 className="panel-title">Support Ticket Volume</h3>
+              <p className="panel-description">Issue tracking and resolution</p>
+            </div>
+            <LifeBuoy size={20} className="panel-icon" />
+          </div>
+
+          <div className="support-stats">
+            <div className="support-stat" onClick={()=>navigate('/global-admin/support/admin')}>
+              <div className="support-stat-label">ADMIN</div>
+              <div className="support-stat-value" style={{ color: 'red' }}>{data?.ticketsData?.adminOpen}</div>
+              <div className="support-stat-label">Open Tickets</div>
+            </div>
+            <div className="support-stat" onClick={()=>navigate('/global-admin/support/admin')}>
+              <div className="support-stat-label">ADMIN</div>
+              <div className="support-stat-value">{data?.ticketsData?.adminResolved}</div>
+              <div className="support-stat-label">Resolved Tickets</div>
+            </div>
+            <div className="support-stat" onClick={()=>navigate('/global-admin/support/user')}>
+              <div className="support-stat-label">USER</div>
+              <div className="support-stat-value" style={{ color: 'red' }}>{data?.ticketsData?.userOpen}</div>
+              <div className="support-stat-label">Open Tickets</div>
+            </div>
+            <div className="support-stat" onClick={()=>navigate('/global-admin/support/user')}>
+              <div className="support-stat-label">USER</div>
+              <div className="support-stat-value">{data?.ticketsData?.userResolved}</div>
+              <div className="support-stat-label">Resolved Tickets</div>
+            </div>
+            <div className="support-stat" onClick={()=>navigate('/global-admin/support')}>
+              <div className="support-stat-label">TOTAL</div>
+              <div className="support-stat-value" style={{ color: 'red' }}>{data?.ticketsData?.userOpen + data?.ticketsData?.adminOpen}</div>
+              <div className="support-stat-label">Open Tickets</div>
+            </div>
+            <div className="support-stat" onClick={()=>navigate('/global-admin/support')}>
+              <div className="support-stat-label">TOTAL</div>
+              <div className="support-stat-value">{data?.ticketsData?.userResolved + data?.ticketsData?.adminResolved}</div>
+              <div className="support-stat-label">Resolved Tickets</div>
+            </div>
+
+
+          </div>
         </div>
 
         {/* Top Organizations */}
         <div className="chart-panel">
           <div className="panel-header-enhanced">
             <div>
-              <h3 className="panel-title">Top Performing Organizations</h3>
+              <h3 className="panel-title">Organizational Performance</h3>
               <p className="panel-description">Engagement and completion leaders</p>
             </div>
             <Building2 size={20} className="panel-icon" />
@@ -388,85 +554,26 @@ const AnalyticsViewNew = () => {
                     <th>Rank</th>
                     <th>Organization</th>
                     <th>Users</th>
-                    <th>Total Hours</th>
-
+                    <th>active users(%)</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.organizations.map((org, idx) => (
-                    <tr key={org.id}>
+                    <tr key={org.id} onClick={()=>navigate(`/global-admin/organizations/${org._id}`)} style={{cursor:'pointer'}}>
                       <td>
-                        <div className="rank-badge" style={{ background: COLORS[idx] }}>
+                        <div className="rank-badge" style={{ background: COLORS[idx] }} >
                           #{idx + 1}
                         </div>
                       </td>
                       <td className="org-name">{org.name}</td>
                       <td>{formatNumber(org.users)}</td>
-                      <td>{formatNumber(org.totalHours)}</td>
+                      <td>{formatNumber(org.activeUsersPercentage)}</td>
 
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Usage Distribution */}
-      <div className="chart-panel full-width">
-        <div className="panel-header-enhanced">
-          <div>
-            <h3 className="panel-title">User Distribution Across Organizations</h3>
-            <p className="panel-description">Active user allocation by organization</p>
-          </div>
-          <Users size={20} className="panel-icon" />
-        </div>
-
-        <div className="distribution-layout">
-          <div className="distribution-chart">
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={data?.organizations || []}
-                  dataKey="totalHours"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={110}
-                  label={({ name, totalHours, percent }) => `${name}: ${totalHours}h (${(percent * 100).toFixed(0)}%)`}
-                  labelLine={true}
-                >
-                  {data?.organizations?.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value, name) => [`${value} hours`, name]} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="distribution-bars">
-            {data?.organizations?.map((org, idx) => (
-              <div key={idx} className="distribution-bar-item">
-                <div className="bar-header">
-                  <div className="bar-label">
-                    <div className="bar-color" style={{ background: COLORS[idx] }} />
-                    <span>{org.name}</span>
-                  </div>
-                  <span className="bar-value">{formatNumber(org.totalHours)}h</span>
-                </div>
-                <div className="bar-track">
-                  <div
-                    className="bar-fill"
-                    style={{
-                      width: `${data?.organizations?.[0]?.totalHours > 0 ? (org.totalHours / data?.organizations[0].totalHours) * 100 : 0}%`,
-                      background: COLORS[idx]
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </div>

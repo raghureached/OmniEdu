@@ -4,8 +4,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../../store/slices/authSlice';
 import { fetchNotifications, markNotificationAsRead } from '../../../store/slices/notificationSlice';
 import "./UserLayout.css";
-import { Menu, Home, BookOpen, CheckCircle, Award, Shield, BookCopy, Clock, User, HelpCircle, LogOut, Bell, X,Laptop} from 'lucide-react';
-import { GoGraph } from 'react-icons/go';
+import { Menu, Home, BookOpen, CheckCircle, Award, Shield, BookCopy, Clock, User, HelpCircle, LogOut, Bell, X, Laptop } from 'lucide-react';
+import { GoGear, GoGraph } from 'react-icons/go';
+import useLearningTracker from '../../../hooks/LearningActivity';
 
 const UserLayout = () => {
   const dispatch = useDispatch();
@@ -17,18 +18,20 @@ const UserLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const {permissions} = useSelector((state) => state.rolePermissions);
-  
+  const { permissions } = useSelector((state) => state.rolePermissions);
+  useLearningTracker();
+
+
   // Fetch notifications on component mount
   useEffect(() => {
     dispatch(fetchNotifications());
   }, [dispatch]);
-  
+
   // Close mobile menu when location changes
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
-  
+
   // Close profile dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -39,17 +42,17 @@ const UserLayout = () => {
         setNotificationsOpen(false);
       }
     };
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [profileDropdownOpen, notificationsOpen]);
-  
+
   const handleLogout = () => {
     // First remove token and update Redux state
     localStorage.removeItem('token');
-    
+
     // Then dispatch logout action
     dispatch(logout())
       .then(() => {
@@ -69,47 +72,47 @@ const UserLayout = () => {
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
-  
+
   const toggleProfileDropdown = () => {
     setProfileDropdownOpen(!profileDropdownOpen);
   };
-  
+
   const toggleNotifications = () => {
     setNotificationsOpen(!notificationsOpen);
   };
-  
+
   const handleNotificationClick = (notificationId) => {
     dispatch(markNotificationAsRead(notificationId));
   };
-  
+
   const navigateToProfile = () => {
     navigate('/user/profile');
     setProfileDropdownOpen(false);
   };
-  
+
   // Function to get user initials
   const getUserInitials = () => {
     if (!user || !user.name) return 'U';
-    
+
     const nameParts = user.name.split(' ');
     if (nameParts.length >= 2) {
       return `${nameParts[0].charAt(0)}${nameParts[1].charAt(0)}`.toUpperCase();
     }
-    
+
     return user.name.substring(0, 2).toUpperCase();
   };
-  
+
   // Function to check if a link is active
   const isActive = (path) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
-  
+
   // Function to format notification date
   const formatNotificationDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) {
       return 'Just now';
     } else if (diffInHours < 24) {
@@ -119,12 +122,12 @@ const UserLayout = () => {
       return `${diffInDays} ${diffInDays === 1 ? 'day' : 'days'} ago`;
     }
   };
-  
+
   return (
     <div className="user_layout_container">
       {/* Overlay for mobile */}
       {mobileMenuOpen && <div className="user_sidebar_overlay" onClick={toggleMobileMenu}></div>}
-      
+
       <nav className={`user_sidebar ${mobileMenuOpen ? 'user_sidebar_open' : ''} ${sidebarCollapsed ? 'user_sidebar_collapsed' : ''}`}>
         <div className="user_sidebar_header">
           <div className="user_logo_container">
@@ -140,73 +143,80 @@ const UserLayout = () => {
             </div>
           </div>
         </div>
-        
-        <ul className="user_sidebar_menu">
-          <li>
-            <Link to="/user/dashboard" className={isActive('/user/dashboard') ? 'user_link_active' : ''}>
-              <Home size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Dashboard</span>}
-            </Link>
-          </li>
-          {permissions?.includes("Learning Hub") && <li>
-            <Link to="/user/learning-hub" className={isActive('/user/learning-hub') ? 'user_link_active' : ''}>
-              <BookOpen size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Learning Hub</span>}
-            </Link>
-          </li>}
-          <li className="user_menu_section">
-            {/* {!sidebarCollapsed && <div className="user_section_title">Training</div>} */}
-          </li>
-          
-          {permissions?.includes("Global Library") && <li>
-            <Link to="/user/catalog" className={isActive('/user/catalog') ? 'user_link_active' : ''}>
-              <BookCopy size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Global Library</span>}
-            </Link>
-          </li>}
-          <li className="user_menu_section">
-            {!sidebarCollapsed && <div className="user_section_title">Settings</div>}
-          </li>
-          <li>
-            <Link to="/user/analytics" className={isActive('/user/analytics') ? 'user_link_active' : ''}>
-              <GoGraph size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Analytics</span>}
-            </Link>
-          </li>
-          {permissions?.includes("Activity History Access") && <li>
-            <Link to="/user/activity-history" className={isActive('/user/activity-history') ? 'user_link_active' : ''}>
-              <Clock size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Activity History</span>}
-            </Link>
-          </li>}
-          {permissions?.includes("Profile Access") && <li>
-            <Link to="/user/profile" className={isActive('/user/profile') ? 'user_link_active' : ''}>
-              <User size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>User Profile</span>}
-            </Link>
-          </li>}
-          {permissions?.includes("Help Center Access") && <li>
-            <Link to="/user/help-center" className={isActive('/user/help-center') ? 'user_link_active' : ''}>
-              <HelpCircle size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Help Center</span>}
-            </Link>
-          </li>}
-          {permissions?.includes("Support Button Access") && <li>
-            <Link to="/user/support" className={isActive('/user/support') ? 'user_link_active' : ''}>
-              <Laptop size={20} />
-              {!sidebarCollapsed && <span className='user_sidebar_names'>Support</span>}
-            </Link>
-          </li>}
+
+        <ul className="user_sidebar_menu" style={{display:"flex",justifyContent:"space-between",flexDirection:"column",height:"100%"}}>
+          <div>
+            <li>
+              <Link to="/user/dashboard" className={isActive('/user/dashboard') ? 'user_link_active' : ''}>
+                <Home size={20} />
+                {!sidebarCollapsed && <span className='user_sidebar_names'>Dashboard</span>}
+              </Link>
+            </li>
+            {permissions?.includes("Learning Hub") && <li>
+              <Link to="/user/learning-hub" className={isActive('/user/learning-hub') ? 'user_link_active' : ''}>
+                <BookOpen size={20} />
+                {!sidebarCollapsed && <span className='user_sidebar_names'>Learning Hub</span>}
+              </Link>
+            </li>}
+            <li className="user_menu_section">
+              {/* {!sidebarCollapsed && <div className="user_section_title">Training</div>} */}
+            </li>
+
+            {permissions?.includes("Global Library") && <li>
+              <Link to="/user/catalog" className={isActive('/user/catalog') ? 'user_link_active' : ''}>
+                <BookCopy size={20} />
+                {!sidebarCollapsed && <span className='user_sidebar_names'>Global Library</span>}
+              </Link>
+            </li>}
+          </div>
+          <div>
+            <li className="user_menu_section">
+              {!sidebarCollapsed && <div className="user_section_title"> <span style={{display:"flex",alignItems:"center",gap:"10px"}}><GoGear size={20} /> <span>Settings</span></span></div>}
+            </li>
+            <li>
+              <Link to="/user/analytics" className={isActive('/user/analytics') ? 'user_link_active' : ''}>
+                <GoGraph size={20} />
+                {!sidebarCollapsed && <span className='user_sidebar_names'>Analytics</span>}
+              </Link>
+            </li>
+            {permissions?.includes("Activity History Access") && <li>
+              <Link to="/user/activity-history" className={isActive('/user/activity-history') ? 'user_link_active' : ''}>
+                <Clock size={20} />
+                {!sidebarCollapsed && <span className='user_sidebar_names'>Activity History</span>}
+              </Link>
+            </li>}
+            {permissions?.includes("Profile Access") && <li>
+              <Link to="/user/profile" className={isActive('/user/profile') ? 'user_link_active' : ''}>
+                <User size={20} />
+                {!sidebarCollapsed && <span className='user_sidebar_names'>User Profile</span>}
+              </Link>
+            </li>}
+            {permissions?.includes("Help Center Access") && <li>
+              <Link to="/user/help-center" className={isActive('/user/help-center') ? 'user_link_active' : ''}>
+                <HelpCircle size={20} />
+                {!sidebarCollapsed && <span className='user_sidebar_names'>Help Center</span>}
+              </Link>
+            </li>}
+            {permissions?.includes("Support Button Access") && <li>
+              <Link to="/user/support" className={isActive('/user/support') ? 'user_link_active' : ''}>
+                <Laptop size={20} />
+                {!sidebarCollapsed && <span className='user_sidebar_names'>Support</span>}
+              </Link>
+            </li>}
+            <li>
+              <Link onClick={handleLogout} style={{ color: "red" }} >
+                <LogOut size={20} />
+                {!sidebarCollapsed && <span>Logout</span>}
+              </Link>
+            </li>
+
+          </div>
+
         </ul>
-        
-        <div className="user_sidebar_footer">
-          <button onClick={handleLogout} className="user_logout_btn">
-            <LogOut size={20} />
-            {!sidebarCollapsed && <span>Logout</span>}
-          </button>
-        </div>
+
+
       </nav>
-      
+
       <main className={`user_content ${sidebarCollapsed ? 'user_content_expanded' : ''}`}>
         <header className="user_content_header">
           <div className="user_header_left">
@@ -221,7 +231,7 @@ const UserLayout = () => {
               {location.pathname.includes('/user/analytics') && 'Analytics'}
               {location.pathname.includes('/user/profile') && 'User Profile'}
               {location.pathname.includes('/user/help-center') && 'Help Center'}
-               {location.pathname.includes('/user/support') && 'Support'}
+              {location.pathname.includes('/user/support') && 'Support'}
             </h2>
           </div>
           <div className="user_header_right">
@@ -230,7 +240,7 @@ const UserLayout = () => {
                 <Bell size={24} />
                 {unreadCount > 0 && <span className="user_notification_badge">{unreadCount}</span>}
               </div>
-              
+
               {notificationsOpen && (
                 <div className="user_notification_dropdown">
                   <div className="user_notification_header">
@@ -239,14 +249,14 @@ const UserLayout = () => {
                       <X size={16} />
                     </button>
                   </div>
-                  
+
                   <div className="user_notification_list">
                     {notifications.length === 0 ? (
                       <div className="user_notification_empty">No notifications</div>
                     ) : (
                       notifications.map(notification => (
-                        <div 
-                          key={notification.id} 
+                        <div
+                          key={notification.id}
                           className={`user_notification_item ${notification.read ? 'user_notification_read' : ''}`}
                           onClick={() => handleNotificationClick(notification.id)}
                         >
@@ -262,7 +272,7 @@ const UserLayout = () => {
                 </div>
               )}
             </div>
-            
+
             <div className="user_profile_container">
               <div className="user_profile_icon" onClick={toggleProfileDropdown}>
                 <div className="user_profile_initials">{getUserInitials()}</div>

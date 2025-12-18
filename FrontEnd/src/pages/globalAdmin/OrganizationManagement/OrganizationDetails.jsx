@@ -2,12 +2,17 @@ import React, { useEffect, useState } from "react";
 import "./OrganizationDetails.css";
 import ReactDOM from "react-dom";
 import CustomLoader from "../../../components/common/Loading/CustomLoader";
+import { useParams } from "react-router-dom";
 
 const OrganizationDetails = ({ org, isOpen, onClose }) => {
   const [docPreviewUrl, setDocPreviewUrl] = useState(null);
+  const {orgId} = useParams();
+  useEffect(()=>{
+    
+  },[orgId])
 
   const currentOrganization = org;
-  console.log(org)
+  // console.log(org)
   if (!isOpen) return null;
 
   if (!currentOrganization) {

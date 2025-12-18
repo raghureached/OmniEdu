@@ -38,7 +38,7 @@ import AdminSurveys from './pages/admin/AdminSurveys/AdminSurvey';
 // Global Admin Pages 
 import OrganizationManagement from './pages/globalAdmin/OrganizationManagement/OrganizationManagement';
 import GlobalRolesManagement from './pages/globalAdmin/GlobalRolesManagement/GlobalRolesManagement';
-import GlobalPortalActivity from './pages/globalAdmin/GlobalAdminLibraryPortal/GlobalPortal';
+// import GlobalPortalActivity from './pages/globalAdmin/GlobalAdminLibraryPortal/GlobalPortal';
 import Dashboard from './pages/user/Dashboard/Dashboard';
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -83,14 +83,13 @@ import NotAllowed from './pages/NotAllowed/NotAllowed';
 function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  useLearningTracker();
-  // useEffect(() => {
-  //   dispatch(checkAuth());
-  //   const interval = setInterval(() => {
-  //     dispatch(updateSessionTime());
-  //   }, 60000);
-  //   return () => clearInterval(interval);
-  // }, [dispatch]);
+  useEffect(() => {
+    dispatch(checkAuth());
+    const interval = setInterval(() => {
+      dispatch(updateSessionTime());
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [dispatch]);
   const { isAuthenticated, role, loading } = useSelector((state) => state.auth);
   const {permissions} = useSelector((state)=>state.rolePermissions)
 
@@ -164,6 +163,7 @@ function App() {
           <Route index element={<GlobalAdminHome />} />
           <Route path='dashboard' element={<GlobalAdminHome />} />
           <Route path="organizations" element={<OrganizationManagement />} />
+          <Route path="organizations/:orgId" element={<OrganizationManagement />} />
           <Route path="message-board" element={<GlobalMessageBoard />} />
           <Route path="roles" element={<GlobalRolesManagement />} />
           <Route path="module" element={<GlobalModuleManagement />} />
@@ -177,10 +177,10 @@ function App() {
           <Route path="profile" element={<GlobalProfile />} />
           <Route path="activity-log" element={<GlobalAdminActivity />} />
           <Route path="help-center" element={<GlobalHelpCenter />} />
-          <Route path="portal-library-admin" element={<GlobalPortalActivity />} />
           <Route path="analytics-view" element={<AnalyticsViewNew />} />
           <Route path="change-password" element={<ChangePassword />} />
           <Route path='support' element={<GlobalTicketsTable />} />
+          <Route path='support/:role' element={<GlobalTicketsTable />} />
           <Route path='grade-submissions' element={<GradeSubmission />} />
         </Route>
         <Route element={<NavbarOnly />}>

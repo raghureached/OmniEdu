@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDown, ChevronUp, Eye, Plus, Edit3, Trash2, User, Users } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Plus, Edit3, Trash2, User, Users, BarChart3 } from 'lucide-react';
 import '../UsersManagement.css';
 const UsersTable = ({
   users,
@@ -31,6 +31,10 @@ const UsersTable = ({
   // Count props for dropdown
   pageSelectionCount,
   totalFilteredCount,
+  // Analytics props
+  handleUserAnalytics,
+  // Highlighted user prop
+  highlightedUser,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -242,7 +246,10 @@ const UsersTable = ({
           : 'users-designation-cell';
 
         return (
-          <div className="users-table-row" key={userId}>
+          <div 
+            className={`users-table-row ${highlightedUser && (resolveUserId(user) === resolveUserId(highlightedUser)) ? 'highlighted-user' : ''}`} 
+            key={userId}
+          >
             <div className="users-checkbox-cell">
               <input
                 type="checkbox"
@@ -294,6 +301,7 @@ const UsersTable = ({
               >
                 <Plus size={16} />
               </button>
+            
               <button
                 className="global-action-btn edit"
                 onClick={() => openForm && openForm(user)}
@@ -301,6 +309,14 @@ const UsersTable = ({
                 type="button"
               >
                 <Edit3 size={16} />
+              </button>
+                <button
+                className="global-action-btn analytics"
+                onClick={() => handleUserAnalytics && handleUserAnalytics(userId)}
+                title="View Analytics"
+                type="button"
+              >
+                <BarChart3 size={16} />
               </button>
               <button
                 className="global-action-btn delete"

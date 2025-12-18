@@ -556,3 +556,10 @@ button:hover {
   filter: invert(25%) sepia(16%) saturate(339%) hue-rotate(179deg) brightness(90%) contrast(86%);
 }
 
+/* Analytics button styling */
+.global-action-btn.analytics:hover {
+  background-color: #3b82f6;
+  color: white;
+  transform: scale(1.05);
+}
+

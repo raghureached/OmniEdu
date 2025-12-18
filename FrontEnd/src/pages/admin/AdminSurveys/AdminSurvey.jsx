@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, ChevronDown, Filter } from 'lucide-react';
+import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, ChevronDown, Filter, BarChart3 } from 'lucide-react';
 import { GoX } from 'react-icons/go';
 import { RiDeleteBinFill } from 'react-icons/ri';
 import './AdminSurvey.css'
@@ -23,6 +23,7 @@ import api from '../../../services/api';
 import { notifyError, notifySuccess } from '../../../utils/notification';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
 import SelectionBanner from '../../../components/Banner/SelectionBanner';
+import AnalyticsPop from '../../../components/AnalyticsPopup/AnalyticsPop';
 const AdminSurveys = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
@@ -46,6 +47,11 @@ const AdminSurveys = () => {
   const [filterPanelStyle, setFilterPanelStyle] = useState({ top: 0, left: 0 });
   const [bulkPanelStyle, setBulkPanelStyle] = useState({ top: 0, left: 0 });
   const { confirm } = useConfirm();
+  
+  // Analytics state
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const updateFilterPanelPosition = () => {
     const rect = filterButtonRef.current?.getBoundingClientRect();
     if (rect) {
@@ -927,6 +933,20 @@ const AdminSurveys = () => {
       console.error('Failed to delete assessment:', err?.response?.data || err.message);
     }
   };
+
+  const handleSurveyAnalytics = async (surveyId) => {
+    try {
+      setAnalyticsLoading(true);
+      setShowAnalytics(true);
+      const response = await api.get(`/api/admin/analytics/survey/${surveyId}`);
+      setAnalyticsData(response.data.data);
+    } catch (error) {
+      notifyError('Failed to load survey analytics data');
+      setShowAnalytics(false);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
   if (creating) {
     return <LoadingScreen text="Creating Surveys..." />
   }
@@ -1331,7 +1351,7 @@ const AdminSurveys = () => {
                   <th>Questions</th>
                   <th>Status</th>
                   <th>Date Created</th>
-                  <th>Actions</th>
+                  <th style={{textAlign: 'center'}}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1388,14 +1408,21 @@ const AdminSurveys = () => {
                     <td>
                       <div className="assess-actions">
                         <button
-                          className="assess-action-btn edit"
+                          className="global-action-btn edit"
                           onClick={() => handleEditAssessment(assessment)}
                           title="Edit Assessment"
                         >
                           <Edit3 size={14} />
                         </button>
                         <button
-                          className="assess-action-btn delete"
+                          className="global-action-btn edit analytics"
+                          onClick={() => handleSurveyAnalytics(assessment.uuid || assessment._id || assessment.id)}
+                          title="View Analytics"
+                        >
+                          <BarChart3 size={14} />
+                        </button>
+                        <button
+                          className="global-action-btn edit delete"
                           onClick={() => handleDeleteAssessment(assessment.uuid)}
                           title="Delete Assessment"
                         >
@@ -1471,6 +1498,12 @@ const AdminSurveys = () => {
         groups={groups}
 
       />}
+      <AnalyticsPop
+        isOpen={showAnalytics}
+        onClose={() => setShowAnalytics(false)}
+        data={analyticsData}
+        loading={analyticsLoading}
+      />
     </div>
   );
 };

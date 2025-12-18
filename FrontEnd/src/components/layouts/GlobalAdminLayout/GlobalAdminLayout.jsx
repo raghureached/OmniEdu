@@ -7,6 +7,8 @@ import { fetchNotifications, markNotificationAsRead } from '../../../store/slice
 import './GlobalAdminLayout.css';
 import { fetchOrganizations } from "../../../store/slices/organizationSlice";
 import { Menu, Home, UserCheck, Shield, BookOpen, Building2, CheckCircle, UserRoundPen, BookCopy, Clock, User, LogOut, Bell, X, BarChart, MessageCircle, Landmark, MessageCircleCode, BookCheck, NotebookTabs, CircleUserRound, NotepadText, ChartColumnIncreasing, BookOpenCheck, User2, NotebookPen } from 'lucide-react';
+import { GoGear } from 'react-icons/go';
+import { HiOutlineBuildingLibrary } from "react-icons/hi2";
 
 
 const GlobalAdminLayout = () => {
@@ -180,7 +182,7 @@ const GlobalAdminLayout = () => {
                     </li>
 
                     <li className="globaladmin_menu_section">
-                        {!sidebarCollapsed && <div className="globaladmin_section_title">MANAGE</div>}
+                        {!sidebarCollapsed && <div className="globaladmin_section_title"><span style={{display:"flex",alignItems:"center",gap:"10px"}}><HiOutlineBuildingLibrary size={20} /> <span>MANAGE</span></span></div>}
                     </li>
 
                     <li>
@@ -217,7 +219,7 @@ const GlobalAdminLayout = () => {
                         </Link>
                     </li>
                     <li className="globaladmin_menu_section">
-                        {!sidebarCollapsed && <div className="globaladmin_section_title">Global Library </div>}
+                        {!sidebarCollapsed && <div className="globaladmin_section_title"><span style={{display:"flex",alignItems:"center",gap:"10px"}}><BookCopy size={20} /> <span>Global Library</span></span></div>}
                     </li>
                     <li>
                         <Link to="/global-admin/module" className={isActive("/global-admin/module") ? "globaladmin_link_active" : ""}>
@@ -245,19 +247,18 @@ const GlobalAdminLayout = () => {
                         </Link>
                     </li>
 
+                   
+                    
+
                     <li className="globaladmin_menu_section">
-                        {!sidebarCollapsed && <div className="globaladmin_section_title">Global Analytics</div>}
+                        {!sidebarCollapsed && <div className="globaladmin_section_title"><span style={{display:"flex",alignItems:"center",gap:"10px"}}><GoGear size={20} /> <span>Settings</span></span></div>}
                     </li>
                     <li>
                         <Link to="/global-admin/analytics-view" className={isActive("/global-admin/analytics-view") ? "globaladmin_link_active" : ""}>
                             {/* <BarChart size={20} /> */}
                             <ChartColumnIncreasing size={20} />
-                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Analytics View</span>}
+                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Analytics</span>}
                         </Link>
-                    </li>
-
-                    <li className="globaladmin_menu_section">
-                        {!sidebarCollapsed && <div className="globaladmin_section_title">GLOBAL SETTINGS</div>}
                     </li>
 
                     <li>
@@ -281,15 +282,16 @@ const GlobalAdminLayout = () => {
                             {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Global Admin Profile</span>}
                         </Link>
                     </li>
+                    <li >
+                    <Link onClick={handleLogout} style={{color:"red"}}>
+                        <LogOut size={20} />
+                        {!sidebarCollapsed && <span>Logout</span>}
+                    </Link>
+                </li>
                 </ul>
 
 
-                <div className="globaladmin_sidebar_footer">
-                    <button onClick={handleLogout} className="globaladmin_logout_btn">
-                        <LogOut size={20} />
-                        {!sidebarCollapsed && <span>Logout</span>}
-                    </button>
-                </div>
+                
             </nav>
 
             <main

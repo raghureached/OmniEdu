@@ -1066,12 +1066,13 @@ const toggleSelectOne = (id, checked) => {
       
       
                 <div className="filter-actions">
-                <button className="btn-primary" onClick={handleFilter}>
+            <button className="reset-btn" onClick={resetFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>
+              Clear
+            </button>
+            <button className="btn-primary" onClick={handleFilter} style={{ padding: '6px 12px', fontSize: '14px' }}>
                     Apply
                   </button>
-                  <button className="reset-btn" onClick={resetFilters}>
-                    Clear
-                  </button>
+            
                   
                  
                 </div>

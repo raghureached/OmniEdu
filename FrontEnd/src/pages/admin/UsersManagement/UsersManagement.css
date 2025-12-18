@@ -122,7 +122,7 @@ body {
   padding: 16px 24px;
   border-bottom: 1px solid #e5e7eb;
   display: grid;
-  grid-template-columns:  3px 2px 280px 200px 180px 100px 180px;
+  grid-template-columns:  3px 2px 280px 200px 180px 100px 200px;
   align-items: center;
   justify-items: center;
   background-color: #efefef;
@@ -144,7 +144,7 @@ body {
   padding: 16px 24px;
   border-bottom: 1px solid #f3f4f6;
   display: grid;
-  grid-template-columns: 3px 2px 280px 200px 180px 100px 180px;
+  grid-template-columns: 3px 2px 280px 200px 180px 100px 200px;
   align-items: center;
   justify-items: center;
   column-gap: 20px;
@@ -1183,5 +1183,49 @@ body {
   display: flex;
   justify-content: space-between;
   gap: 8px;
+}
+
+/* Highlighted user row styling */
+.users-table-row.highlighted-user {
+  background: linear-gradient(90deg, rgba(1, 31, 91, 0.1) 0%, rgba(28, 136, 199, 0.05) 100%);
+  border-left: 4px solid #011F5B;
+  animation: highlightPulse 2s ease-in-out;
+}
+
+@keyframes highlightPulse {
+  0% {
+    background: linear-gradient(90deg, rgba(1, 31, 91, 0.2) 0%, rgba(28, 136, 199, 0.1) 100%);
+    box-shadow: 0 0 20px rgba(1, 31, 91, 0.3);
+  }
+  50% {
+    background: linear-gradient(90deg, rgba(1, 31, 91, 0.15) 0%, rgba(28, 136, 199, 0.075) 100%);
+    box-shadow: 0 0 10px rgba(1, 31, 91, 0.2);
+  }
+  100% {
+    background: linear-gradient(90deg, rgba(1, 31, 91, 0.1) 0%, rgba(28, 136, 199, 0.05) 100%);
+    box-shadow: none;
+  }
+}
+
+.users-table-row.highlighted-user .users-user-name {
+  color: #011F5B;
+  font-weight: 700;
+}
+
+.users-table-row.highlighted-user .users-email-cell {
+  color: #1C88C7;
+  font-weight: 500;
+}
+
+.users-table-row.highlighted-user .global-action-btn.analytics {
+  background: linear-gradient(135deg, #011F5B, #1C88C7);
+  color: white;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(1, 31, 91, 0.3);
+}
+
+.users-table-row.highlighted-user .global-action-btn.analytics:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(1, 31, 91, 0.4);
 }
 

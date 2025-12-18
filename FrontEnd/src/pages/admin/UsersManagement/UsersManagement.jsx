@@ -14,7 +14,8 @@ import {
   User,
   Share,
   Import,
-  Eye
+  Eye,
+  BarChart3
 } from 'lucide-react';
 import { RiDeleteBinFill } from 'react-icons/ri';
 import { FiEdit3 } from 'react-icons/fi';
@@ -31,7 +32,7 @@ import {
 import { addUsersToGroup } from '../../../store/slices/userSlice';
 import { createTeam, createSubTeam } from '../../../store/slices/groupSlice';
 import api from '../../../services/api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './UsersManagement.css';
 import '../../globalAdmin/OrganizationManagement/AddOrganizationModal.css';
 import LoadingScreen from '../../../components/common/Loading/Loading';
@@ -41,6 +42,7 @@ import { GoX } from 'react-icons/go';
 import UserPreview from './components/UserPreview';
 import BulkAssignToTeam from './components/BulkAssignToTeam';
 import UsersTable from './components/UsersTable';
+import AnalyticsPop from '../../../components/AnalyticsPopup/AnalyticsPop';
 import * as XLSX from 'xlsx';
 import { notify, notifyError, notifySuccess, notifyWarning } from '../../../utils/notification';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
@@ -85,6 +87,11 @@ const UsersManagement = () => {
   const [selectAllLoading, setSelectAllLoading] = useState(false);
   const [showBulkAction, setShowBulkAction] = useState(false);
   const [assignTeamOpen, setAssignTeamOpen] = useState(false);
+
+  // Analytics state
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [assignTeamId, setAssignTeamId] = useState('');
   const [assignSubTeamId, setAssignSubTeamId] = useState('');
   const [assignTargetIds, setAssignTargetIds] = useState([]);
@@ -109,6 +116,7 @@ const UsersManagement = () => {
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
   //search
   const [localSearch, setLocalSearch] = useState('');
   //failed model
@@ -123,6 +131,9 @@ const UsersManagement = () => {
   const [refetchIndex, setRefetchIndex] = useState(0);
   //export modal
   const [showExportModal, setShowExportModal] = useState(false);
+  
+  // Highlighted user from navigation state
+  const [highlightedUser, setHighlightedUser] = useState(null);
   // Centralized fetch: runs when filters change OR when we explicitly bump refetchIndex
   useEffect(() => {
     // call fetchUsers exactly once per change
@@ -135,6 +146,34 @@ const UsersManagement = () => {
     getTeams();
     getDepartments();
   }, []);
+
+  // Handle navigation state for highlighted user from analytics
+  useEffect(() => {
+    if (location.state?.highlightedUser && allUsers.length > 0) {
+      const { highlightedUser: navHighlightedUser } = location.state;
+      
+      // Find the user in the allUsers array
+      const targetUser = allUsers.find(user => 
+        user.email === navHighlightedUser.email || 
+        user.name === navHighlightedUser.name
+      );
+      
+      if (targetUser && navHighlightedUser.showAnalytics) {
+        // Set highlighted user for visual highlighting
+        setHighlightedUser(targetUser);
+        
+        // Get user ID and trigger analytics
+        const userId = resolveUserId(targetUser);
+        if (userId) {
+          console.log('Auto-triggering analytics for highlighted user:', targetUser);
+          handleUserAnalytics(userId);
+          
+          // Clear the navigation state to prevent re-triggering
+          window.history.replaceState({}, document.title);
+        }
+      }
+    }
+  }, [location.state, allUsers]);
   const getRoles = async () => {
     try {
       const res = await api.get("api/admin/getOrgRoles")
@@ -215,6 +254,23 @@ const UsersManagement = () => {
       setDepartments(res.data.data);
     } catch (error) {
       console.log(error);
+    }
+  };
+
+  const handleUserAnalytics = async (userId) => {
+    try {
+      setAnalyticsLoading(true);
+      setShowAnalytics(true);
+      console.log('Fetching user analytics for user ID:', userId);
+      const response = await api.get(`/api/admin/analytics/user/${userId}`);
+      console.log('User analytics response:', response.data);
+      setAnalyticsData(response.data.data);
+    } catch (error) {
+      console.error('Error fetching user analytics:', error);
+      notifyError('Failed to load user analytics data');
+      setShowAnalytics(false);
+    } finally {
+      setAnalyticsLoading(false);
     }
   };
 
@@ -2018,37 +2074,37 @@ const UsersManagement = () => {
           </div>
         )} */}
 
-     <SelectionBanner
-  selectionScope={selectionScope}
-  selectedCount={derivedSelectedCount}
-  currentPageCount={currentPageUserIds.length}
-  totalCount={totalCount}
-  onClearSelection={clearSelection}
-  onSelectAllPages={handleSelectAllPages}
-  selectAllLoading={selectAllLoading}
-  itemType="user"
-  variant="default"
-  leftActions={[
-    // {
-    //   label: 'Export',
-    //   onClick: () => setShowExportModal(true),
-    //   icon: <Share size={14} />
-    // },
-    // {
-    //   label: 'Assign to Team',
-    //   onClick: handleOpenAssignForSelected,
-    //   icon: <Users size={14} />
-    // },
-    // {
-    //   label: 'Delete',
-    //   onClick: () => handleBulkAction('delete'),
-    //   variant: 'danger',
-    //   icon: <Trash2 size={14} />
-    // }
-  ]}
-/>
-      
-        
+        <SelectionBanner
+          selectionScope={selectionScope}
+          selectedCount={derivedSelectedCount}
+          currentPageCount={currentPageUserIds.length}
+          totalCount={totalCount}
+          onClearSelection={clearSelection}
+          onSelectAllPages={handleSelectAllPages}
+          selectAllLoading={selectAllLoading}
+          itemType="user"
+          variant="default"
+          leftActions={[
+            // {
+            //   label: 'Export',
+            //   onClick: () => setShowExportModal(true),
+            //   icon: <Share size={14} />
+            // },
+            // {
+            //   label: 'Assign to Team',
+            //   onClick: handleOpenAssignForSelected,
+            //   icon: <Users size={14} />
+            // },
+            // {
+            //   label: 'Delete',
+            //   onClick: () => handleBulkAction('delete'),
+            //   variant: 'danger',
+            //   icon: <Trash2 size={14} />
+            // }
+          ]}
+        />
+
+
         {/* selection flyout now handled inside UsersTable */}
         {/* Users Table */}
         <UsersTable
@@ -2077,6 +2133,8 @@ const UsersManagement = () => {
           handleCreateUser={openForm}
           pageSelectionCount={currentPageUserIds.length}
           totalFilteredCount={totalCount}
+          handleUserAnalytics={handleUserAnalytics}
+          highlightedUser={highlightedUser}
         />
         <BulkAssignToTeam
           isOpen={assignTeamOpen}
@@ -2344,6 +2402,13 @@ const UsersManagement = () => {
             </div>
           </div>
         )}
+        <AnalyticsPop
+          isOpen={showAnalytics}
+          onClose={() => setShowAnalytics(false)}
+          data={analyticsData}
+          loading={analyticsLoading}
+          hideUserName={false}
+        />
         <UserPreview
           isOpen={previewOpen}
           onClose={closePreview}

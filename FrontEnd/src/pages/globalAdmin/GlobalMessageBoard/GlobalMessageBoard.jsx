@@ -6,6 +6,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import CustomLoader from "../../../components/common/Loading/CustomLoader";
 import { useNotification } from "../../../components/common/Notification/NotificationProvider";
+import CustomSelect from "../../../components/dropdown/DropDown";
 
 const GlobalMessageBoard = () => {
   const [newMessage, setNewMessage] = useState("");
@@ -84,14 +85,20 @@ const GlobalMessageBoard = () => {
     <div className="message-board">
       <div className="message-board-form" style={{display: "flex", flexDirection: "row", alignItems: "center",justifyContent:"center",gap:"20px"}}>
         <label htmlFor="" className="message-board-label">Manage Messages for an Organization</label>
-        <select className="message-board-select" onChange={(e) => setOrgId(e.target.value)} style={{width:"fit-content"}}>
-        <option value="">Select an Organization</option>
-        {organizations.map((org) => (
-          <option key={org._id} value={org._id}>
-            {org.name}
-          </option>
-        ))}
-      </select>
+        <CustomSelect 
+          className="message-board-select" 
+          value={orgId || ""} 
+          onChange={(value) => setOrgId(value)} 
+          style={{width:"fit-content"}}
+          options={[
+            { value: "", label: "Select an Organization" },
+            ...(organizations?.map(org => ({
+              value: org._id,
+              label: org.name
+            })) || [])
+          ]}
+          placeholder="Select an Organization"
+        />
       </div>
       
       {/* Input Box */}

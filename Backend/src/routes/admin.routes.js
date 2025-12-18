@@ -32,7 +32,7 @@ const {
 const { enhanceText, enhanceSurvey, enhanceAssessment, createQuestions } = require("../controllers/admin.controller/admin_AI");
 const { generateSurveyWithSections } = require("../controllers/admin.controller/admin_AI");
 const {addTeam,editTeam,addSubTeam,editSubTeam,deleteSubTeam,addUsersToGroup} = require("../controllers/admin.controller/admin_Groups");
-const { getCourseDistribution, getUsersData, calculateUsageTrend, getAdoption } = require("../controllers/admin.controller/admin_analytics");
+const { getCourseDistribution, getUsersData, calculateUsageTrend, getAdoption, getTeams, getEngagementHeatmap, getAtRiskLearners, getContentAnalytics, getUserAnalytics, getAssessmentAnalytics, getSurveyAnalytics, getLearningPathAnalytics } = require("../controllers/admin.controller/admin_analytics");
 const { createAdminTicket, getAdminTickets, updateAdminTicketStatus, updateAdminTicket, deleteAdminTicket , getTicketDetails,
   addTicketComment, getTicketStats} = require("../controllers/admin.controller/admin_Tickets");
 const { getPermissions } = require("../controllers/permissions.controller");
@@ -142,6 +142,14 @@ router.route('/analytics/getCourseDistribution').get(getCourseDistribution)
 router.route('/analytics/getUserData').get(getUsersData)
 router.route('/analytics/getUsageTrend').get(calculateUsageTrend)
 router.route('/analytics/getAdoption').get(getAdoption)
+router.route('/analytics/getTeams').get(getTeams)
+router.route('/analytics/getEngagementHeatmap').get(getEngagementHeatmap)
+router.route('/analytics/getAtRiskLearners').get(getAtRiskLearners)
+router.route('/analytics/content/:contentId').get(getContentAnalytics);
+router.route('/analytics/user/:userId').get(getUserAnalytics);
+router.route('/analytics/assessment/:assessmentId').get(getAssessmentAnalytics);
+router.route('/analytics/survey/:surveyId').get(getSurveyAnalytics);
+router.route('/analytics/learningPath/:learningPathId').get(getLearningPathAnalytics);
 // AI
 router.route('/enhanceText').post(enhanceText)
 // router.route('/generateImage').post(generateImage)

@@ -9,6 +9,7 @@ import { fetchActivityLogs } from "../../../store/slices/activityLogSlice";
 import LoadingScreen from "../../../components/common/Loading/Loading";
 import { GoX } from "react-icons/go";
 import './GlobalActivityLog.css';
+import CustomSelect from "../../../components/dropdown/DropDown";
 
 const GlobalActivityLog = () => {
   const dispatch = useDispatch();
@@ -181,29 +182,32 @@ const GlobalActivityLog = () => {
                 
                 <div className="act-log-filter-group">
                   <label>Action</label>
-                  <select
+                  <CustomSelect
                     className="act-log-filter-select"
                     value={tempFilters.action || actionFilter}
-                    onChange={(e) => handleFilterChange('action', e.target.value)}
-                  >
-                    <option value="">All</option>
-                    <option value="Create">Create</option>
-                    <option value="Update">Update</option>
-                    <option value="Delete">Delete</option>
-                  </select>
+                    onChange={(value) => handleFilterChange('action', value)}
+                    options={[
+                      { value: "", label: "All" },
+                      { value: "Create", label: "Create" },
+                      { value: "Update", label: "Update" },
+                      { value: "Delete", label: "Delete" }
+                    ]}
+                    placeholder="Select action"
+                  />
                 </div>
 
                 <div className="act-log-filter-group">
                   <label>Role</label>
-                  <select
+                  <CustomSelect
                     value={tempFilters.role || roleFilter}
-                    onChange={(e) => handleFilterChange('role', e.target.value)}
-                  >
-                    <option value="">All</option>
-                    <option value="Administrator">Admin</option>
-                    {/* <option value="Manager">Manager</option> */}
-                    <option value="General User">User</option>
-                  </select>
+                    onChange={(value) => handleFilterChange('role', value)}
+                    options={[
+                      { value: "", label: "All" },
+                      { value: "Administrator", label: "Admin" },
+                      { value: "General User", label: "User" }
+                    ]}
+                    placeholder="Select role"
+                  />
                 </div>
 
                 <div className="act-log-filter-group">

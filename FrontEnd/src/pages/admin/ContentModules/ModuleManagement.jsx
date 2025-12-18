@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import { adminfetchContent, admindeleteContent, admincreateContent, adminupdateContent, adminbulkDeleteContent } from '../../../store/slices/adminModuleSlice';
 import "./ModuleManagement.css"
-import { useNavigate } from 'react-router-dom';
-import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X, Filter, Plus } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X, Filter, Plus, BarChart3 } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading'
 import { RiDeleteBinFill } from "react-icons/ri";
 import { FiEdit3 } from "react-icons/fi";
@@ -15,11 +15,14 @@ import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
 import api from '../../../services/api';
 import SelectionBanner from '../../../components/Banner/SelectionBanner';
 import { categories } from '../../../utils/constants';
+import AnalyticsPop from '../../../components/AnalyticsPopup/AnalyticsPop';
 
 
 
 const ModuleManagement = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { items, loading, error } = useSelector((state) => state.adminModule);
   const [searchTerm, setSearchTerm] = useState("");
   const [contentType, setContentType] = useState("all");
@@ -34,13 +37,24 @@ const ModuleManagement = () => {
   // console.log(items)
   const [filters, setFilters] = useState({
     status: '',
-    category: ''
+    category: '',
+    timeRange: '',
+    team: ''
   });
   const [tempFilters, setTempFilters] = useState({
     status: '',
-    category: ''
+    category: '',
+    timeRange: '',
+    team: ''
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [filteredCounts, setFilteredCounts] = useState({
+    total: 0,
+    published: 0
+  });
   const filterButtonRef = useRef(null);
   const bulkButtonRef = useRef(null);
   const filterPanelRef = useRef(null);
@@ -66,11 +80,66 @@ const ModuleManagement = () => {
   });
   const [teams,setTeams] = useState([])
   const [uploading, setUploading] = useState(false)
-  const navigate = useNavigate()
   useEffect(() => {
     dispatch(adminfetchContent());
     
   }, [dispatch]);
+
+  // Handle navigation state for filters from AdminAnalytics
+  useEffect(() => {
+    if (location.state?.status || location.state?.category || location.state?.timeRange || location.state?.team) {
+      const newFilters = {
+        status: location.state.status || '',
+        category: location.state.category || '',
+        search: searchTerm || '',
+        timeRange: location.state.timeRange || '',
+        team: location.state.team || ''
+      };
+      setFilters(newFilters);
+      setTempFilters(newFilters);
+      
+      // If timeRange is provided, we might need to filter modules based on creation date
+      if (location.state.timeRange) {
+        // This would require backend support to filter by creation date
+        console.log('Time range filter:', location.state.timeRange);
+      }
+    }
+  }, [location.state, searchTerm]);
+
+  // Calculate filtered counts
+  useEffect(() => {
+    if (filters.status || filters.category || filters.timeRange || filters.team) {
+      // For total modules: count all modules (including drafts) matching category, team, and time range filters
+      const totalFiltered = items?.filter((item) => {
+        const matchesCategory = !filters.category || filters.category === '' || item.category === filters.category;
+        const matchesTeam = !filters.team || filters.team === '' || item.team === filters.team;
+        
+        // Apply time range filter
+        let matchesTimeRange = true;
+        if (filters.timeRange && filters.timeRange !== '') {
+          const days = filters.timeRange === '7d' ? 7 : filters.timeRange === '30d' ? 30 : filters.timeRange === '90d' ? 90 : 30;
+          const cutoffDate = new Date();
+          cutoffDate.setDate(cutoffDate.getDate() - days);
+          matchesTimeRange = new Date(item.createdAt) >= cutoffDate;
+        }
+        
+        return matchesCategory && matchesTeam && matchesTimeRange;
+      }) || [];
+      
+      // For published modules: count only published modules matching the filters
+      const publishedFiltered = totalFiltered.filter(item => item.status === 'Published');
+      
+      setFilteredCounts({
+        total: totalFiltered.length,
+        published: publishedFiltered.length
+      });
+    } else {
+      setFilteredCounts({
+        total: 0,
+        published: 0
+      });
+    }
+  }, [filters, items]);
   const { confirm } = useConfirm();
 
 
@@ -110,6 +179,26 @@ const ModuleManagement = () => {
     
   };
 
+  const handleAnalyticsClick = async (contentId) => {
+    try {
+      setAnalyticsLoading(true);
+      setShowAnalytics(true);
+      console.log('Fetching analytics for content ID:', contentId);
+      
+      // Fetch analytics data for the specific content
+      const response = await api.get(`/api/admin/analytics/content/${contentId}`);
+      console.log('Analytics response:', response.data);
+      setAnalyticsData(response.data.data);
+      
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      notifyError('Failed to load analytics data');
+      setShowAnalytics(false);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
   // Filter handlers
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -146,8 +235,18 @@ const ModuleManagement = () => {
 
     const matchesCategory = !filters.category || filters.category === '' || item.category === filters.category;
     const matchesStatus = !filters.status || item.status === filters.status;
+    const matchesTeam = !filters.team || filters.team === '' || item.team === filters.team;
+    
+    // Apply time range filter based on creation date
+    let matchesTimeRange = true;
+    if (filters.timeRange && filters.timeRange !== '') {
+      const days = filters.timeRange === '7d' ? 7 : filters.timeRange === '30d' ? 30 : filters.timeRange === '90d' ? 90 : 30;
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      matchesTimeRange = new Date(item.createdAt) >= cutoffDate;
+    }
 
-    return matchesSearch && matchesCategory && matchesStatus;
+    return matchesSearch && matchesCategory && matchesStatus && matchesTeam && matchesTimeRange;
   }) || [];
 
   //pagination code
@@ -554,8 +653,12 @@ const ModuleManagement = () => {
                 <FileText size={20} />
               </div>
               <div className="global-content-stat-info">
-                <span className="global-content-stat-number">{items.length}</span>
-                <span className="global-content-stat-label">Total Modules</span>
+                <span className="global-content-stat-number">
+                  {filters.status || filters.category || filters.timeRange || filters.team ? filteredCounts.total : items.length}
+                </span>
+                <span className="global-content-stat-label">
+                  Total Modules
+                </span>
               </div>
             </div>
             <div className="global-content-stat-card">
@@ -563,8 +666,12 @@ const ModuleManagement = () => {
                 <Users size={20} />
               </div>
               <div className="global-content-stat-info">
-                <span className="global-content-stat-number">{items.filter(a => a.status === 'Published').length}</span>
-                <span className="global-content-stat-label">Published</span>
+                <span className="global-content-stat-number">
+                  {filters.status || filters.category || filters.timeRange || filters.team ? filteredCounts.published : items.filter(a => a.status === 'Published').length}
+                </span>
+                <span className="global-content-stat-label">
+                  Published
+                </span>
               </div>
             </div>
           </div>
@@ -896,7 +1003,7 @@ const ModuleManagement = () => {
                 <th>Status</th>
                 <th>Team</th>
                 <th>Date Created</th>
-                <th>Actions</th>
+                <th style={{textAlign: 'center'}}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -946,12 +1053,21 @@ const ModuleManagement = () => {
                         }}>
                           <Edit3 size={16} />
                         </button>
+                         <button
+                          className="global-action-btn analytics"
+                          onClick={() => handleAnalyticsClick(content.uuid)}
+                          title="View Analytics"
+                        >
+                          <BarChart3 size={16} />
+                        </button>
                         <button
                           className="global-action-btn delete"
                           onClick={() => handleDeleteContent(content.uuid)}
                         >
                           <Trash2 size={16} />
                         </button>
+                       
+                        
                        
                       </div>
                     </td>
@@ -1107,6 +1223,14 @@ const ModuleManagement = () => {
           </div>
         </div>
       )}
+      
+      {/* Analytics Popup */}
+      <AnalyticsPop 
+        isOpen={showAnalytics}
+        onClose={() => setShowAnalytics(false)}
+        data={analyticsData}
+        loading={analyticsLoading}
+      />
     </div>
   );
 };

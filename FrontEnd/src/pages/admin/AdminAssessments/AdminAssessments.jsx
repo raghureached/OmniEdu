@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, Filter, ChevronDown } from 'lucide-react';
+import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, Filter, ChevronDown, BarChart3 } from 'lucide-react';
 import { RiDeleteBinFill } from 'react-icons/ri';
 import { GoX } from 'react-icons/go';
 import './AdminAssessments.css'
@@ -14,6 +14,7 @@ import { notifyError, notifySuccess } from '../../../utils/notification';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
 import SelectionBanner from '../../../components/Banner/SelectionBanner';
 import { categories } from '../../../utils/constants';
+import AnalyticsPop from '../../../components/AnalyticsPopup/AnalyticsPop';
 
 
 const AdminAssessments = () => {
@@ -93,6 +94,11 @@ const AdminAssessments = () => {
   const [allSelectionCount, setAllSelectionCount] = useState(null);
   //confirm
   const { confirm } = useConfirm();
+  
+  // Analytics state
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   // Removed sync effect to avoid double fetch and fetch loops due to pagination object updates
 
   // Fetch list with pagination
@@ -976,6 +982,23 @@ const AdminAssessments = () => {
     }
   };
 
+  const handleAssessmentAnalytics = async (assessmentId) => {
+    try {
+      setAnalyticsLoading(true);
+      setShowAnalytics(true);
+      console.log('Fetching assessment analytics for assessment ID:', assessmentId);
+      const response = await api.get(`/api/admin/analytics/assessment/${assessmentId}`);
+      console.log('Assessment analytics response:', response.data);
+      setAnalyticsData(response.data.data);
+    } catch (error) {
+      console.error('Error fetching assessment analytics:', error);
+      notifyError('Failed to load assessment analytics data');
+      setShowAnalytics(false);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
   if (loading) {
     return <LoadingScreen text="Loading Assessments..." />
   }
@@ -1403,7 +1426,7 @@ const AdminAssessments = () => {
                   <th>Questions</th>
                   <th>Status</th>
                   <th>Date Created</th>
-                  <th>Actions</th>
+                  <th style={{textAlign: 'center'}}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1483,14 +1506,21 @@ const AdminAssessments = () => {
                       <td>
                         <div className="assess-actions">
                         <button
-                            className="assess-action-btn edit"
+                            className="global-action-btn edit"
                             onClick={() => handleEditAssessment(assessment)}
                             title="Edit Assessment"
                           >
                             <Edit3 size={14} />
                           </button>
                           <button
-                            className="assess-action-btn delete"
+                            className="global-action-btn analytics"
+                            onClick={() => handleAssessmentAnalytics(assessment.uuid || assessment._id || assessment.id)}
+                            title="View Analytics"
+                          >
+                            <BarChart3 size={14} />
+                          </button>
+                          <button
+                            className="global-action-btn delete"
                             onClick={() => handleDeleteAssessment(assessment.uuid)}
                             title="Delete Assessment"
                           >
@@ -1577,6 +1607,13 @@ const AdminAssessments = () => {
           setQuestions={setQuestions}
         />
       )}
+      
+      <AnalyticsPop
+        isOpen={showAnalytics}
+        onClose={() => setShowAnalytics(false)}
+        data={analyticsData}
+        loading={analyticsLoading}
+      />
     </div>
   );
 }

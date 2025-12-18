@@ -9,8 +9,6 @@ import {
     YAxis,
     CartesianGrid,
     Tooltip,
-    LineChart,
-    Line,
     ResponsiveContainer
 } from 'recharts';
 import {
@@ -20,16 +18,22 @@ import {
     Trophy,
     Calendar,
     TrendingUp,
-    AlertCircle,
     Award,
-    Star,
-    CheckCircle,
-    Activity,
     Zap,
+    Activity,
+    GitGraph,
+    LineChart,
+    LineChartIcon,
+    LucideTarget,
+    Accessibility,
+    LucideAccessibility,
+    Pointer,
+    Plus,
 } from 'lucide-react';
 import './Analytics.css';
 import api from '../../../services/api';
-
+import { useNavigate } from 'react-router-dom';
+import AnalyticsPop from './AnalyticsPop';
 const COLORS = {
     primary: '#011F5B',
     accent: '#1C88C7',
@@ -43,31 +47,82 @@ const CHART_COLORS = ['#011F5B', '#1C88C7', '#10b981', '#f59e0b', '#8b5cf6'];
 
 const LearnerAnalytics = () => {
     const [isLoading, setIsLoading] = useState(true);
-    const [timeRange, setTimeRange] = useState('week');
-    const [data, setData] = useState({
+    const [timeRange, setTimeRange] = useState('7D');
+    const [showModal, setShowModal] = useState(false);
+    const [stats, setStats] = useState({
+        avgScore: 0,
+        timeSpent: 0,
+        completionRate: 0,
+        leaderboardPosition: 'N/A',
+        totalParticipants: 0,
+        newCourses: 'N/A'
     });
+    const [moduleAnalytics, setModuleAnalytics] = useState({
+        courseCompletion: [],
+        completedCourses: 0,
+        totalCourses: 0,
+        inProgressCourses: 0,
+    });
+    const [Deadlines, setDeadlines] = useState({
+        upcomingDeadlines: [],
+        overdueAssignments: [],
+    });
+    const [assessmentScores, setAssessmentScores] = useState({
+        assessmentScores: [],
+        avgScore: 0,
+        classAverage: 0
+    });
+    const [weeklyActivity, setWeeklyActivity] = useState([]);
+    const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchAnalytics = async () => {
+        const fetchAllAnalytics = async () => {
+            setIsLoading(true);
             try {
-                const response = await api.get('/api/user/analytics');
-                setData(response.data.data);
-                console.log(response.data.data)
-                setIsLoading(false);
+                // Fetch all data in parallel
+                const [
+                    statsResponse,
+                    moduleResponse,
+                    deadlinesResponse,
+                    assessmentResponse,
+                    weeklyResponse
+                ] = await Promise.all([
+                    api.get('/api/user/analytics/getStats', {
+                        params: { dateRange: timeRange }
+                    }),
+                    api.get('/api/user/analytics/getCourseAnalytics', {
+                        params: { dateRange: timeRange }
+                    }),
+                    api.get('/api/user/analytics/getDeadlinesAndOverDue'),
+                    api.get('/api/user/analytics/getAssessmentPerformance', {
+                        params: { dateRange: timeRange }
+                    }),
+                    api.get('/api/user/analytics/getWeeklyActivity', {
+                        params: { dateRange: timeRange }
+                    })
+                ]);
+
+                // Set all data at once
+                setStats(statsResponse.data.data);
+                setModuleAnalytics(moduleResponse.data.data);
+                setDeadlines(deadlinesResponse.data.data);
+                setAssessmentScores(assessmentResponse.data.data);
+                setWeeklyActivity(weeklyResponse.data.data);
+                
             } catch (error) {
                 console.error('Error fetching analytics:', error);
+            } finally {
                 setIsLoading(false);
             }
         };
-        fetchAnalytics();
+
+        fetchAllAnalytics();
     }, [timeRange]);
-    const scores = (Array.isArray(data?.assessmentScores?.assessmentScores) ? data.assessmentScores?.assessmentScores : []).map(item => ({
+    const scores = (Array.isArray(assessmentScores?.assessmentScores) ? assessmentScores?.assessmentScores : []).map(item => ({
         ...item,
         shortName:
             item.name.length > 25 ? item.name.substring(0, 25) + "..." : item.name,
     }));
-    // console.log(scores)
-
 
     const MetricCard = ({ icon: Icon, label, value, subtitle, trend, color, delay = 0 }) => (
         <div
@@ -95,9 +150,48 @@ const LearnerAnalytics = () => {
 
     if (isLoading) {
         return (
-            <div className="loading-container">
-                <div className="loading-spinner-enhanced" />
-                <div className="loading-text">Loading Your Analytics...</div>
+            <div className="analytics-container">
+                {/* Header with loading skeleton */}
+                <div className="page-header">
+                    <div className="header-content">
+                        <div className="header-badge" style={{ background: '#f3f4f6', width: '120px', height: '24px' }}></div>
+                        <div className="page-title" style={{ background: '#f3f4f6', width: '200px', height: '32px', borderRadius: '8px' }}></div>
+                        <div className="page-subtitle" style={{ background: '#f3f4f6', width: '300px', height: '16px', borderRadius: '4px' }}></div>
+                    </div>
+                    <div className="date-range-selector">
+                        <div className="date-range-btn" style={{ background: '#f3f4f6', width: '40px', height: '32px' }}></div>
+                        <div className="date-range-btn" style={{ background: '#f3f4f6', width: '40px', height: '32px' }}></div>
+                        <div className="date-range-btn" style={{ background: '#f3f4f6', width: '40px', height: '32px' }}></div>
+                    </div>
+                </div>
+
+                {/* Loading metrics skeleton */}
+                <div className="metrics-grid-enhanced">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="metric-card-enhanced" style={{ background: '#f9fafb' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                                <div style={{ width: '40px', height: '40px', background: '#e5e7eb', borderRadius: '8px' }}></div>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ width: '120px', height: '16px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '8px' }}></div>
+                                    <div style={{ width: '80px', height: '12px', background: '#f3f4f6', borderRadius: '4px' }}></div>
+                                </div>
+                            </div>
+                            <div style={{ width: '60px', height: '24px', background: '#e5e7eb', borderRadius: '4px' }}></div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Loading charts skeleton */}
+                <div className="charts-grid">
+                    <div className="chart-panel" style={{ background: '#f9fafb' }}>
+                        <div style={{ width: '200px', height: '20px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '16px' }}></div>
+                        <div style={{ width: '100%', height: '280px', background: '#f3f4f6', borderRadius: '8px' }}></div>
+                    </div>
+                    <div className="chart-panel" style={{ background: '#f9fafb' }}>
+                        <div style={{ width: '200px', height: '20px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '16px' }}></div>
+                        <div style={{ width: '100%', height: '280px', background: '#f3f4f6', borderRadius: '8px' }}></div>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -117,21 +211,26 @@ const LearnerAnalytics = () => {
                     </p>
                 </div>
 
-                {/* <div className="header-filters">
-          <div className="filter-group-enhanced">
-            <label>Time Period</label>
-            <select 
-              value={timeRange} 
-              onChange={(e) => setTimeRange(e.target.value)} 
-              className="filter-select-enhanced"
-            >
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-              <option value="quarter">This Quarter</option>
-              <option value="year">This Year</option>
-            </select>
-          </div>
-        </div> */}
+                <div className="date-range-selector">
+                    <button
+                        className={`date-range-btn ${timeRange === '7D' ? 'active' : ''}`}
+                        onClick={() => setTimeRange('7D')}
+                    >
+                        7D
+                    </button>
+                    <button
+                        className={`date-range-btn ${timeRange === '1M' ? 'active' : ''}`}
+                        onClick={() => setTimeRange('1M')}
+                    >
+                        1M
+                    </button>
+                    <button
+                        className={`date-range-btn ${timeRange === '3M' ? 'active' : ''}`}
+                        onClick={() => setTimeRange('3M')}
+                    >
+                        3M
+                    </button>
+                </div>
             </div>
 
             {/* Key Metrics Grid */}
@@ -139,8 +238,8 @@ const LearnerAnalytics = () => {
                 <MetricCard
                     icon={Target}
                     label="Completion Rate"
-                    value={`${Number(data.completionRate) || 0}%`}
-                    subtitle={`${Number(data.completedCourses) || 0} of ${Number(data.totalCourses) || 0} courses`}
+                    value={`${Number(stats.completionRate) || 0}%`}
+                    subtitle={`${Number(moduleAnalytics.completedCourses) || 0} of ${Number(moduleAnalytics.totalCourses) || 0} courses (${timeRange === '7D' ? 'last 7 days' : timeRange === '1M' ? 'last month' : 'last 3 months'})`}
                     trend={12}
                     color="color-primary"
                     delay={0}
@@ -148,8 +247,8 @@ const LearnerAnalytics = () => {
                 <MetricCard
                     icon={Clock}
                     label="Time Spent Learning"
-                    value={`${Number(data.timeSpent) || 0}h`}
-                    subtitle="This month"
+                    value={`${Number(stats.timeSpent) || 0}h`}
+                    subtitle={`(${timeRange === '7D' ? 'last 7 days' : timeRange === '1M' ? 'last month' : 'last 3 months'})`}
                     trend={8}
                     color="color-secondary"
                     delay={100}
@@ -157,8 +256,8 @@ const LearnerAnalytics = () => {
                 <MetricCard
                     icon={Award}
                     label="Average Score"
-                    value={`${Number(data.avgScore) || 0}%`}
-                    subtitle={`Class avg: ${Number(data.classAverage) || 0}%`}
+                    value={`${Number(stats.avgScore) || 0}%`}
+                    subtitle={`Class avg: ${Number(assessmentScores.classAverage) || 0}% (${timeRange === '7D' ? 'last 7 days' : timeRange === '1M' ? 'last month' : 'last 3 months'})`}
                     trend={5}
                     color="color-tertiary"
                     delay={200}
@@ -166,12 +265,27 @@ const LearnerAnalytics = () => {
                 <MetricCard
                     icon={Trophy}
                     label="Leaderboard Rank"
-                    value={`${data.leaderboardPosition === 0 ? "N/A" : data.leaderboardPosition}`}
-                    subtitle={`out of ${Number(data.totalParticipants) || 0} learners`}
+                    value={`${stats.leaderboardPosition === 0 ? "N/A" : stats.leaderboardPosition}`}
+                    subtitle={`out of ${Number(stats.totalParticipants) || 0} learners (all-time)`}
+                    color="color-neutral"
+                    delay={300}
+                />
+                <MetricCard
+                    icon={Plus}
+                    label="New Courses"
+                    value={`${stats.newCourses}`}
+                    subtitle={`${stats.newCourses} new assignments (${timeRange === '7D' ? 'last 7 days' : timeRange === '1M' ? 'last month' : 'last 3 months'})`}
                     color="color-neutral"
                     delay={300}
                 />
             </div>
+
+            <AnalyticsPop
+                isOpen={showModal}
+                onClose={() => setShowModal(false)}
+                data={moduleAnalytics}
+                loading={isLoading}
+            />
 
             {/* Charts Row 1: Completion Donut & Deadlines */}
             <div className="charts-grid">
@@ -182,14 +296,18 @@ const LearnerAnalytics = () => {
                             <h3 className="panel-title">Course Completion Status</h3>
                             <p className="panel-description">Your learning progress overview</p>
                         </div>
-                        <BookOpen size={20} className="panel-icon" />
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+
+                            <LineChart size={20} className="panel-icon modal-trigger-icon" onClick={() => setShowModal(true)} />
+                            <BookOpen size={20} className="panel-icon" />
+                        </div>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', marginTop: '20px' }}>
                         <ResponsiveContainer width="50%" height={280}>
                             <PieChart>
                                 <Pie
-                                    data={data.courseCompletion}
+                                    data={moduleAnalytics.courseCompletion}
                                     cx="50%"
                                     cy="50%"
                                     innerRadius={70}
@@ -197,7 +315,7 @@ const LearnerAnalytics = () => {
                                     paddingAngle={5}
                                     dataKey="value"
                                 >
-                                    {data.courseCompletion.map((entry, index) => (
+                                    {moduleAnalytics.courseCompletion.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={CHART_COLORS[index]} />
                                     ))}
                                 </Pie>
@@ -205,24 +323,24 @@ const LearnerAnalytics = () => {
                             </PieChart>
                         </ResponsiveContainer>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', cursor: 'pointer' }} onClick={() => navigate('/user/completed')}>
                             <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                                     <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: CHART_COLORS[0] }} />
                                     <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Completed</span>
                                 </div>
                                 <div style={{ fontSize: '28px', fontWeight: 700, color: '#111827' }}>
-                                    {Number(data.completedCourses) || 0} courses
+                                    {Number(moduleAnalytics.completedCourses) || 0} courses
                                 </div>
                             </div>
 
-                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px' }}>
+                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/inProgress')}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                                     <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: CHART_COLORS[1] }} />
                                     <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>In Progress</span>
                                 </div>
                                 <div style={{ fontSize: '28px', fontWeight: 700, color: '#111827' }}>
-                                    {data.inProgressCourses} courses
+                                    {moduleAnalytics.inProgressCourses} courses
                                 </div>
                             </div>
                         </div>
@@ -240,9 +358,9 @@ const LearnerAnalytics = () => {
                     </div>
 
                     <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '300px', overflowY: 'auto' }}>
-                        {data.overdueAssignments.length > 0 && (
+                        {/* {Deadlines?.overdueAssignments.length > 0 && (
                             <>
-                                {data.overdueAssignments.length > 0 ? data.overdueAssignments.map((item, idx) => (
+                                {Deadlines?.overdueAssignments.length > 0 ? Deadlines?.overdueAssignments.map((item, idx) => (
                                     <div key={`overdue-${idx}`} style={{
                                         padding: '16px',
                                         background: 'rgba(239, 68, 68, 0.05)',
@@ -276,15 +394,17 @@ const LearnerAnalytics = () => {
                                     </div>
                                 )}
                             </>
-                        )}
+                        )} */}
 
-                        {data.upcomingDeadlines.length > 0 ? data.upcomingDeadlines.map((item, idx) => (
+                        {Deadlines?.upcomingDeadlines.length > 0 ? Deadlines?.upcomingDeadlines.map((item, idx) => (
                             <div key={`upcoming-${idx}`} style={{
                                 padding: '16px',
                                 background: '#f9fafb',
                                 borderRadius: '12px',
-                                borderLeft: `4px solid ${item.daysLeft <= 5 ? COLORS.warning : COLORS.accent}`
-                            }}>
+                                borderLeft: `4px solid ${item.daysLeft <= 5 ? COLORS.warning : COLORS.accent}`,
+                                cursor: "pointer"
+                            }}
+                                onClick={() => navigate(`/${item.type}/${item.uuid}/${item.assign_id}`)}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
                                     <div style={{ flex: 1 }}>
                                         <div style={{ fontSize: '14px', fontWeight: 600, color: '#111827', marginBottom: '4px' }}>
@@ -333,17 +453,26 @@ const LearnerAnalytics = () => {
                 <div className="chart-panel">
                     <div className="panel-header-enhanced">
                         <div>
-                            <h3 className="panel-title">Weekly Learning Activity</h3>
-                            <p className="panel-description">Hours spent and modules completed</p>
+                            <h3 className="panel-title">Learning Activity</h3>
+                            <p className="panel-description">
+                                {timeRange === '7D' ? 'Daily hours for last 7 days' : 
+                                 timeRange === '1M' ? 'Weekly hours for last 4 weeks' : 
+                                 'Weekly hours for last 12 weeks'}
+                            </p>
                         </div>
                         <Activity size={20} className="panel-icon" />
                     </div>
 
                     <div className="chart-container">
                         <ResponsiveContainer width="100%" height={280}>
-                            <BarChart data={data.weeklyProgress}>
+                            <BarChart data={weeklyActivity}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                                <XAxis dataKey="day" stroke="black" style={{ fontSize: 12 }} />
+                                <XAxis 
+                                    dataKey="day" 
+                                    stroke="black" 
+                                    style={{ fontSize: 12 }}
+                                    interval={timeRange === '3M' ? 2 : 0}
+                                />
                                 <YAxis stroke="black" style={{ fontSize: 12 }} />
                                 <Tooltip
                                     contentStyle={{
@@ -360,10 +489,12 @@ const LearnerAnalytics = () => {
 
                     <div style={{ marginTop: '16px', textAlign: 'center', padding: '12px', background: '#f9fafb', borderRadius: '12px' }}>
                         <div style={{ fontSize: '24px', fontWeight: 700, color: '#111827' }}>
-                            {data.weeklyProgress.reduce((acc, day) => acc + day.hours, 0).toFixed(1)}h
+                            {weeklyActivity.reduce((acc, day) => acc + day.hours, 0).toFixed(1)}h
                         </div>
                         <div style={{ fontSize: '12px', color: '#6b7280', fontWeight: 500 }}>
-                            Total this week
+                            {timeRange === '7D' ? 'Total this week' : 
+                             timeRange === '1M' ? 'Total last 4 weeks' : 
+                             'Total last 12 weeks'}
                         </div>
                     </div>
                 </div>
@@ -386,8 +517,8 @@ const LearnerAnalytics = () => {
                                 <XAxis
                                     dataKey="shortName"
                                     stroke="green"
-                                    style={{ fontSize: 12}}
-                                    
+                                    style={{ fontSize: 12 }}
+
                                 />
 
                                 <YAxis type="number" domain={[0, 100]} stroke="black" style={{ fontSize: 12 }} />
@@ -419,7 +550,7 @@ const LearnerAnalytics = () => {
                     <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
                         <div style={{ flex: 1, textAlign: 'center', padding: '12px', background: '#f9fafb', borderRadius: '12px' }}>
                             <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.success }}>
-                                {data.avgScore}%
+                                {assessmentScores.avgScore}%
                             </div>
                             <div style={{ fontSize: '12px', color: '#6b7280', fontWeight: 500 }}>
                                 Your Average
@@ -427,7 +558,7 @@ const LearnerAnalytics = () => {
                         </div>
                         <div style={{ flex: 1, textAlign: 'center', padding: '12px', background: '#f9fafb', borderRadius: '12px' }}>
                             <div style={{ fontSize: '24px', fontWeight: 700, color: '#6b7280' }}>
-                                {data?.assessmentScores?.classAverage}%
+                                {assessmentScores?.classAverage}%
                             </div>
                             <div style={{ fontSize: '12px', color: '#6b7280', fontWeight: 500 }}>
                                 Class Average
@@ -438,7 +569,7 @@ const LearnerAnalytics = () => {
             </div>
 
             {/* Gamification Stats */}
-            <div className="chart-panel full-width">
+            {/* <div className="chart-panel full-width">
                 <div className="panel-header-enhanced">
                     <div>
                         <h3 className="panel-title">Achievements & Gamification</h3>
@@ -448,7 +579,7 @@ const LearnerAnalytics = () => {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '20px' }}>
-                    {/* Leaderboard Position */}
+                   
                     <div className="health-metric">
                         <div className="health-metric-header">
                             <Trophy size={16} className="health-icon" />
@@ -469,7 +600,7 @@ const LearnerAnalytics = () => {
                         </div>
                     </div>
 
-                    {/* Credits Earned */}
+                    
                     <div className="health-metric">
                         <div className="achievement-icon-container credits-icon">
                             <Award size={32} className="achievement-icon" />
@@ -478,7 +609,7 @@ const LearnerAnalytics = () => {
                         <div className="achievement-value">{data.credits.toLocaleString()}</div>
                     </div>
 
-                    {/* Stars Earned */}
+                 
                     <div className="health-metric">
                         <div className="achievement-icon-container stars-icon">
                             <Star size={32} className="achievement-icon" />
@@ -487,7 +618,7 @@ const LearnerAnalytics = () => {
                         <div className="achievement-value">{data.stars.toLocaleString()}</div>
                     </div>
 
-                    {/* Badges Collected */}
+                   
                     <div className="health-metric">
                         <div className="achievement-icon-container badges-icon">
                             <Award size={32} className="achievement-icon" />
@@ -496,7 +627,7 @@ const LearnerAnalytics = () => {
                         <div className="achievement-value">{data.badges}</div>
                     </div>
                 </div>
-            </div>
+            </div> */}
         </div>
     );
 }
