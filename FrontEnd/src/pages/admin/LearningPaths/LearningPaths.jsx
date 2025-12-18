@@ -835,6 +835,7 @@ const LearningPaths = () => {
         onClose={() => setShowAnalytics(false)}
         data={analyticsData}
         loading={analyticsLoading}
+        analyticsType="learningPath"
       />
     </div>
   );

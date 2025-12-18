@@ -1503,6 +1503,7 @@ const AdminSurveys = () => {
         onClose={() => setShowAnalytics(false)}
         data={analyticsData}
         loading={analyticsLoading}
+        analyticsType="survey"
       />
     </div>
   );

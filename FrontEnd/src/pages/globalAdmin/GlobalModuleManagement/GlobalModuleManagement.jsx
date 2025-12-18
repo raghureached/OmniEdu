@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchContent, deleteContent, createContent, updateContent, bulkDeleteContent } from '../../../store/slices/contentSlice';
 import "./GlobalModuleManagement.css"
 import { useNavigate } from 'react-router-dom';
-import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X, Filter } from 'lucide-react';
+import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X, Filter, BarChart3 } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading'
 import { RiDeleteBinFill } from "react-icons/ri";
 import GlobalModuleModal from './GlobalModuleModal';
@@ -12,6 +12,9 @@ import { useNotification } from '../../../components/common/Notification/Notific
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog.jsx';
 import SelectionBanner from '../../../components/Banner/SelectionBanner';
 import { categories } from '../../../utils/constants.js';
+import api from '../../../services/api.js';
+import { notifyError } from '../../../utils/notification.js';
+import AnalyticsPop from '../../../components/AnalyticsPopup/AnalyticsPop.jsx';
 
 
 const GlobalModuleManagement = () => {
@@ -58,6 +61,9 @@ const GlobalModuleManagement = () => {
     submissionEnabled: false,
   });
   const [uploading, setUploading] = useState(false)
+    const [showAnalytics, setShowAnalytics] = useState(false);
+    const [analyticsData, setAnalyticsData] = useState(null);
+    const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const navigate = useNavigate()
   useEffect(() => {
     dispatch(fetchContent());
@@ -449,6 +455,26 @@ const GlobalModuleManagement = () => {
     localStorage.setItem('drafts', JSON.stringify(updatedDrafts));
     setShowDraftModal(false)
   }
+  const handleAnalyticsClick = async (contentId) => {
+      try {
+        setAnalyticsLoading(true);
+        setShowAnalytics(true);
+        console.log('Fetching analytics for content ID:', contentId);
+        
+        // Fetch analytics data for the specific content
+        const response = await api.get(`/api/globalAdmin/analytics/content/${contentId}`);
+        // console.log('Analytics response:', response.data);
+        setAnalyticsData(response.data.data);
+        
+      } catch (error) {
+        // console.error('Error fetching analytics:', error);
+        notifyError('Failed to load analytics data');
+        setShowAnalytics(false);
+      } finally {
+        setAnalyticsLoading(false);
+      }
+    };
+  
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -922,6 +948,13 @@ const GlobalModuleManagement = () => {
                       <Edit3 size={16} />
                     </button>
                     <button
+                          className="global-action-btn analytics"
+                          onClick={() => handleAnalyticsClick(content.uuid)}
+                          title="View Analytics"
+                        >
+                          <BarChart3 size={16} />
+                        </button>
+                    <button
                       className="global-action-btn delete"
                       onClick={() => handleDeleteContent(content.uuid)}
                     >
@@ -953,6 +986,7 @@ const GlobalModuleManagement = () => {
                       >
                         Prev
                       </button>
+                      
                       <span style={{ color: '#0f172a' }}>
                         {`Page ${currentPage} of ${Math.max(1, totalPages)}`}
                       </span>
@@ -1088,7 +1122,12 @@ const GlobalModuleManagement = () => {
           </div>
         </div>
       )}
-
+      <AnalyticsPop 
+        isOpen={showAnalytics}
+        onClose={() => setShowAnalytics(false)}
+        data={analyticsData}
+        loading={analyticsLoading}
+      />
 
     </div>
   );

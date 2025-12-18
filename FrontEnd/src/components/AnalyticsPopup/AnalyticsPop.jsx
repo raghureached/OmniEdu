@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, BookOpen, FileText, Video, ClipboardCheck, Clock, User,Users, Calendar, TrendingUp, Download } from 'lucide-react';
 import './AnalyticsPop.css';
 
-const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false }) => {
+const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false, analyticsType = 'module' }) => {
     const [tableData, setTableData] = useState([]);
     console.log('AnalyticsPop received data:', data);
     console.log('AnalyticsPop loading:', loading);
@@ -282,10 +282,29 @@ const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false }) 
                 <div className="analytics-modal-header">
                     <div>
                         <h2 className="analytics-modal-title">
-                            {data?.learningPathInfo ? 'Learning Path Analytics' : data?.surveyInfo ? 'Survey Analytics' : data?.assessmentInfo ? 'Assessment Analytics' : data?.totalAssignments ? 'Module Analytics' : 'Detailed Learning Analytics'}
+                            {analyticsType === 'learningPath' ? 'Learning Path Analytics' 
+                             : analyticsType === 'survey' ? 'Survey Analytics' 
+                             : analyticsType === 'assessment' ? 'Assessment Analytics' 
+                             : analyticsType === 'user' ? 'Detailed Learning Analytics' 
+                             : analyticsType === 'module' ? 'Module Analytics' 
+                             : data?.learningPathInfo ? 'Learning Path Analytics' 
+                             : data?.surveyInfo ? 'Survey Analytics' 
+                             : data?.assessmentInfo ? 'Assessment Analytics' 
+                             : data?.totalAssignments ? 'Module Analytics' 
+                             : 'Analytics'}
                         </h2>
                         <p className="analytics-modal-subtitle">
-                            {data?.learningPathInfo 
+                            {analyticsType === 'learningPath' 
+                                ? `Analytics for ${data?.learningPathInfo?.title || 'Learning Path'}`
+                                : analyticsType === 'survey' 
+                                ? `Analytics for ${data?.surveyInfo?.title || 'Survey'}`
+                                : analyticsType === 'assessment' 
+                                ? `Analytics for ${data?.assessmentInfo?.title || 'Assessment'}`
+                                : analyticsType === 'user'
+                                ? 'Comprehensive view of your learning progress and performance'
+                                : analyticsType === 'module'
+                                ? `Analytics for ${data?.moduleInfo?.title || (data?.totalAssignments?.[0]?.assignment_id?.contentId?.title) || 'Module'}`
+                                : data?.learningPathInfo 
                                 ? `Analytics for ${data.learningPathInfo.title}` 
                                 : data?.surveyInfo 
                                 ? `Analytics for ${data.surveyInfo.title}` 
@@ -293,7 +312,7 @@ const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false }) 
                                 ? `Analytics for ${data.assessmentInfo.title}` 
                                 : data?.totalAssignments
                                 ? `Analytics for ${data.moduleInfo?.title || (data.totalAssignments[0]?.assignment_id?.contentId?.title) || 'Module'}`
-                                : 'Comprehensive view of your learning progress and performance'
+                                : 'Analytics overview'
                             }
                         </p>
                     </div>
@@ -325,18 +344,37 @@ const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false }) 
                                 <BookOpen size={48} />
                             </div>
                             <h3 className="analytics-empty-title">
-                                {data?.learningPathInfo ? 'No Learning Path Assignments Found' : data?.surveyInfo ? 'No Survey Responses Found' : data?.assessmentInfo ? 'No Assessment Attempts Found' : data?.totalAssignments ? 'No Module Data Available' : 'No Learning Data Available'}
+                                {analyticsType === 'learningPath' ? 'No Learning Path Assignments Found'
+                                 : analyticsType === 'survey' ? 'No Survey Responses Found'
+                                 : analyticsType === 'assessment' ? 'No Assessment Attempts Found'
+                                 : analyticsType === 'user' ? 'No Learning Data Available'
+                                 : analyticsType === 'module' ? 'No Module Data Available'
+                                 : data?.learningPathInfo ? 'No Learning Path Assignments Found' 
+                                 : data?.surveyInfo ? 'No Survey Responses Found' 
+                                 : data?.assessmentInfo ? 'No Assessment Attempts Found' 
+                                 : data?.totalAssignments ? 'No Module Data Available' 
+                                 : 'No Data Available'}
                             </h3>
                             <p className="analytics-empty-description">
-                                {data?.learningPathInfo 
+                                {analyticsType === 'learningPath' 
+                                    ? 'No users have been assigned to this learning path yet. Once users are assigned, their analytics will appear here.'
+                                    : analyticsType === 'survey' 
+                                    ? 'No users have responded to this survey yet. Once users start responding to the survey, their analytics will appear here.'
+                                    : analyticsType === 'assessment' 
+                                    ? 'No users have attempted this assessment yet. Once users start taking the assessment, their analytics will appear here.'
+                                    : analyticsType === 'user'
+                                    ? 'Start exploring courses and assignments to see your detailed analytics here.'
+                                    : analyticsType === 'module'
+                                    ? `No users have been assigned to ${data?.moduleInfo?.title || (data?.totalAssignments?.[0]?.assignment_id?.contentId?.title) || 'this module'} yet. Once users are assigned, their analytics will appear here.`
+                                    : data?.learningPathInfo 
                                     ? 'No users have been assigned to this learning path yet. Once users are assigned, their analytics will appear here.'
                                     : data?.surveyInfo 
                                     ? 'No users have responded to this survey yet. Once users start responding to the survey, their analytics will appear here.'
                                     : data?.assessmentInfo 
                                     ? 'No users have attempted this assessment yet. Once users start taking the assessment, their analytics will appear here.'
                                     : data?.totalAssignments
-                                    ? `No users have been assigned to ${data.moduleInfo?.title || (data.totalAssignments[0]?.assignment_id?.contentId?.title) || 'this module'} yet. Once users are assigned, their analytics will appear here.`
-                                    : 'Start exploring courses and assignments to see your detailed analytics here.'
+                                    ? `No users have been assigned to ${data?.moduleInfo?.title || (data?.totalAssignments[0]?.assignment_id?.contentId?.title) || 'this module'} yet. Once users are assigned, their analytics will appear here.`
+                                    : 'Start exploring to see your analytics here.'
                                 }
                             </p>
                         </div>

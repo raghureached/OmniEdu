@@ -211,26 +211,32 @@ const LearnerAnalytics = () => {
                     </p>
                 </div>
 
-                <div className="date-range-selector">
-                    <button
-                        className={`date-range-btn ${timeRange === '7D' ? 'active' : ''}`}
-                        onClick={() => setTimeRange('7D')}
-                    >
-                        7D
-                    </button>
-                    <button
-                        className={`date-range-btn ${timeRange === '1M' ? 'active' : ''}`}
-                        onClick={() => setTimeRange('1M')}
-                    >
-                        1M
-                    </button>
-                    <button
-                        className={`date-range-btn ${timeRange === '3M' ? 'active' : ''}`}
-                        onClick={() => setTimeRange('3M')}
-                    >
-                        3M
-                    </button>
-                </div>
+                <div className="view-toggle-wrapper">
+                            <button
+                              className={`view-toggle-button ${timeRange === '7D' ? 'active' : ''}`}
+                              onClick={() => {
+                                setTimeRange('7D');
+                
+                              }}
+                            >
+                              <Calendar size={16} />
+                              <span>7 Days</span>
+                            </button>
+                            <button
+                              className={`view-toggle-button ${timeRange === '1M' ? 'active' : ''}`}
+                              onClick={() => { setTimeRange('1M') }}
+                            >
+                              <Calendar size={16} />
+                              <span>1 Month</span>
+                            </button>
+                            <button
+                              className={`view-toggle-button ${timeRange === '3M' ? 'active' : ''}`}
+                              onClick={() => { setTimeRange('3M') }}
+                            >
+                              <Calendar size={16} />
+                              <span>3 Months</span>
+                            </button>
+                          </div>
             </div>
 
             {/* Key Metrics Grid */}

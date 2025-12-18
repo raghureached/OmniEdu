@@ -30,6 +30,7 @@ import {
   Zap,
   Server,
   HardDrive,
+  Calendar,
 } from 'lucide-react';
 import './AnalyticsViewNew.css';
 import api from '../../../services/api';
@@ -94,10 +95,10 @@ const AnalyticsViewNew = () => {
   const formatNumber = (n) => (n != null ? n.toLocaleString('en-IN') : '--');
 
   // Metric Card Component
-  const MetricCard = ({ icon: Icon, label, value, subtitle, trend, trendValue, color, delay = 0 ,onClick}) => (
+  const MetricCard = ({ icon: Icon, label, value, subtitle, trend, trendValue, color, delay = 0, onClick }) => (
     <div
       className="metric-card-enhanced"
-      style={{ animationDelay: `${delay}ms`,cursor:'pointer' }}
+      style={{ animationDelay: `${delay}ms`, cursor: 'pointer' }}
       onClick={onClick}
     >
       <div className="metric-card-header">
@@ -212,28 +213,34 @@ const AnalyticsViewNew = () => {
               ))}
             </select>
           </div>
-          
-          <div className="date-range-selector" style={{alignSelf:"flex-end"}}>
+          <div className="view-toggle-wrapper">
             <button
-                className={`date-range-btn ${range === '7d' ? 'active' : ''}`}
-                onClick={() => setRange('7d')}
+              className={`view-toggle-button ${range === '7d' ? 'active' : ''}`}
+              onClick={() => {
+                setRange('7d');
+
+              }}
             >
-                7D
+              <Calendar size={16} />
+              <span>7 Days</span>
             </button>
             <button
-                className={`date-range-btn ${range === '1m' ? 'active' : ''}`}
-                onClick={() => setRange('1m')}
+              className={`view-toggle-button ${range === '1m' ? 'active' : ''}`}
+              onClick={() => { setRange('1m') }}
             >
-                1M
+              <Calendar size={16} />
+              <span>1 Month</span>
             </button>
             <button
-                className={`date-range-btn ${range === '3m' ? 'active' : ''}`}
-                onClick={() => setRange('3m')}
+              className={`view-toggle-button ${range === '90d' ? 'active' : ''}`}
+              onClick={() => { setRange('3m') }}
             >
-                3M
+              <Calendar size={16} />
+              <span>3 Months</span>
             </button>
-         
-        </div>
+          </div>
+
+
         </div>
       </div>
 
@@ -367,7 +374,7 @@ const AnalyticsViewNew = () => {
             {/* Debug: Show data structure */}
             {console.log('Organizations data:', data?.organizations)}
             {console.log('Data structure:', data)}
-            
+
             <div className="distribution-chart">
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
@@ -402,7 +409,7 @@ const AnalyticsViewNew = () => {
                 </div>
               ))}
             </div>
-            
+
             {/* Show empty state if no data */}
             {(!data?.organizations || data?.organizations.length === 0) && (
               <div style={{ textAlign: 'center', padding: '20px', color: '#6b7280' }}>
@@ -501,32 +508,32 @@ const AnalyticsViewNew = () => {
           </div>
 
           <div className="support-stats">
-            <div className="support-stat" onClick={()=>navigate('/global-admin/support/admin')}>
+            <div className="support-stat" onClick={() => navigate('/global-admin/support/admin')}>
               <div className="support-stat-label">ADMIN</div>
               <div className="support-stat-value" style={{ color: 'red' }}>{data?.ticketsData?.adminOpen}</div>
               <div className="support-stat-label">Open Tickets</div>
             </div>
-            <div className="support-stat" onClick={()=>navigate('/global-admin/support/admin')}>
+            <div className="support-stat" onClick={() => navigate('/global-admin/support/admin')}>
               <div className="support-stat-label">ADMIN</div>
               <div className="support-stat-value">{data?.ticketsData?.adminResolved}</div>
               <div className="support-stat-label">Resolved Tickets</div>
             </div>
-            <div className="support-stat" onClick={()=>navigate('/global-admin/support/user')}>
+            <div className="support-stat" onClick={() => navigate('/global-admin/support/user')}>
               <div className="support-stat-label">USER</div>
               <div className="support-stat-value" style={{ color: 'red' }}>{data?.ticketsData?.userOpen}</div>
               <div className="support-stat-label">Open Tickets</div>
             </div>
-            <div className="support-stat" onClick={()=>navigate('/global-admin/support/user')}>
+            <div className="support-stat" onClick={() => navigate('/global-admin/support/user')}>
               <div className="support-stat-label">USER</div>
               <div className="support-stat-value">{data?.ticketsData?.userResolved}</div>
               <div className="support-stat-label">Resolved Tickets</div>
             </div>
-            <div className="support-stat" onClick={()=>navigate('/global-admin/support')}>
+            <div className="support-stat" onClick={() => navigate('/global-admin/support')}>
               <div className="support-stat-label">TOTAL</div>
               <div className="support-stat-value" style={{ color: 'red' }}>{data?.ticketsData?.userOpen + data?.ticketsData?.adminOpen}</div>
               <div className="support-stat-label">Open Tickets</div>
             </div>
-            <div className="support-stat" onClick={()=>navigate('/global-admin/support')}>
+            <div className="support-stat" onClick={() => navigate('/global-admin/support')}>
               <div className="support-stat-label">TOTAL</div>
               <div className="support-stat-value">{data?.ticketsData?.userResolved + data?.ticketsData?.adminResolved}</div>
               <div className="support-stat-label">Resolved Tickets</div>
@@ -559,7 +566,7 @@ const AnalyticsViewNew = () => {
                 </thead>
                 <tbody>
                   {data.organizations.map((org, idx) => (
-                    <tr key={org.id} onClick={()=>navigate(`/global-admin/organizations/${org._id}`)} style={{cursor:'pointer'}}>
+                    <tr key={org.id} onClick={() => navigate(`/global-admin/organizations/${org._id}`)} style={{ cursor: 'pointer' }}>
                       <td>
                         <div className="rank-badge" style={{ background: COLORS[idx] }} >
                           #{idx + 1}

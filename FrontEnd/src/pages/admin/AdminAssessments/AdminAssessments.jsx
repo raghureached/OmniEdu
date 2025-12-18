@@ -1613,6 +1613,7 @@ const AdminAssessments = () => {
         onClose={() => setShowAnalytics(false)}
         data={analyticsData}
         loading={analyticsLoading}
+        analyticsType="assessment"
       />
     </div>
   );

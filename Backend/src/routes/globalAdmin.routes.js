@@ -11,7 +11,7 @@ const { getGlobalAdminActivity } = require("../controllers/globalAdmin.controlle
 const { getGlobalProfile, changeGlobalPassword } = require("../controllers/globalAdmin.controller/globalAdmin_profile");
 const { userDashBoardSettings, getUserDashBoardSettings, updateUserDashBoardConfig, getUserDashBoardConfig, getUserDashBoardPermissions } = require("../controllers/globalAdmin.controller/globalAdmin_userDashBoard");
 const { updateAdminDashboardConfig, getAdminDashboardConfig, getAdminDashboardPermissions } = require("../controllers/globalAdmin.controller/globalAdmin_adminDashboard");
-const { getAnalyticsData, getOrganizationAnalytics } = require("../controllers/globalAdmin.controller/globalAdmin_analytics");
+const { getAnalyticsData, getOrganizationAnalytics, getContentAnalytics } = require("../controllers/globalAdmin.controller/globalAdmin_analytics");
 
 //const { createAssessment, editAssessment, deleteAssessment, getAssessments, getAssessmentById, getQuestions, getQuestionsRandom, editQuestion, deleteQuestion, uploadAssessmentCSV } = require("../controllers/globalAdmin.controller/globalAdmin_Assessments");
 // const csvStream = require("../utils/csvParser");
@@ -180,5 +180,13 @@ router.route('/getSubmissions').get(getSubmissions)
 router.route('/activity-logs').get(getActivityLogs)
 router.route('/activity-logs/stats').get(getActivityLogStats)
 router.route('/activity-logs/test').get(testDatabase)
+
+
+router.route('/analytics/content/:contentId').get(getContentAnalytics);
+// router.route('/analytics/user/:userId').get(getUserAnalytics);
+// router.route('/analytics/assessment/:assessmentId').get(getAssessmentAnalytics);
+// router.route('/analytics/survey/:surveyId').get(getSurveyAnalytics);
+
+
 
 module.exports = router;

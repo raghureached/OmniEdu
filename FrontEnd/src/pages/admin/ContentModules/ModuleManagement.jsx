@@ -1230,6 +1230,7 @@ const ModuleManagement = () => {
         onClose={() => setShowAnalytics(false)}
         data={analyticsData}
         loading={analyticsLoading}
+        analyticsType="module"
       />
     </div>
   );

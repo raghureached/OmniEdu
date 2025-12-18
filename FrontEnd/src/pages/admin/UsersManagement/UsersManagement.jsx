@@ -2408,6 +2408,7 @@ const UsersManagement = () => {
           data={analyticsData}
           loading={analyticsLoading}
           hideUserName={false}
+          analyticsType="user"
         />
         <UserPreview
           isOpen={previewOpen}
