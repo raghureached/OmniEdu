@@ -1,185 +1,436 @@
 /* ==============================
-   Activity History – Admin Style
+   Admin Activity Log - Based on Organization Management
    ============================== */
 
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-.activity-history-container {
-  padding: 32px;
-  min-height: 100vh;
-  background-color: #f9fafb;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #f9fafb;
 }
 
-/* Header */
-.activity-history-header {
-  margin-bottom: 24px;
+/* Layout */
+.ad-act-log-app-container {
+    display: flex;
+    min-height: 100vh;
 }
 
-.activity-history-header p {
-  font-size: 14px;
-  color: #6b7280;
+/* Main content */
+.ad-act-log-main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Active Filters */
-.active-filters-container {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-  flex-wrap: wrap;
+/* Page content */
+.ad-act-log-page-content {
+    flex: 1;
+    padding: 32px;
 }
 
-.active-filter-badge {
-  display: flex;
-  align-items: center;
-  background-color: #f0f9ff;
-  border: 1px solid var(--color-accent);
-  border-radius: 6px;
-  padding: 4px 10px;
-  font-size: 13px;
-  font-weight: 500;
+/* Controls */
+.ad-act-log-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
 }
 
-.clear-filter-btn {
-  background: none;
-  border: none;
-  margin-left: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  color: var(--color-accent);
+.ad-act-log-roles-search-bar {
+    position: relative;
+    flex: 1;
+    max-width: 320px;
 }
 
-/* Controls (Admin style) */
-.activity-filter-section {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
+.ad-act-log-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
-.activity-filter-dropdown {
-  display: flex;
-  flex-direction: column;
-  min-width: 200px;
+.ad-act-log-search-input {
+    width: 100%;
+    padding: 8px 12px 8px 36px;
+    border: 1px solid #787a7b;
+    border-radius: 6px;
+    font-size: 14px;
+    color: black;
+    outline: none;
+    transition: border-color 0.2s ease;
 }
 
-.activity-filter-dropdown label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 4px;
+.ad-act-log-search-input:focus {
+    border-color: var(--color-accent);
 }
 
-.activity-filter-dropdown select {
-  padding: 8px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
+.ad-act-log-controls-right {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
 }
 
-.activity-filter-dropdown select:focus {
-  outline: none;
-  border-color: var(--color-accent);
+.ad-act-log-control-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #fff;
+    color: #374151;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-/* Custom Date */
-.activity-custom-date-filter {
-  display: flex;
-  gap: 12px;
+.ad-act-log-control-btn:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
 }
 
-.activity-date-input-group input {
-  padding: 8px 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
+.ad-act-log-btn-primary {
+    background: var(--color-accent);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s ease;
 }
 
-/* Table Container */
-.activity-table-container {
-  background-color: white;
-  border-radius: 12px;
-  border: 2px solid #cecece;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+.ad-act-log-btn-primary:hover {
+    background: var(--color-primary);
 }
 
 /* Table */
-.activity-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
+.ad-act-log-table-container {
+    background-color: white;
+    border-radius: 12px;
+    border: 2px solid #cecece;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
 }
 
-.activity-table thead th {
-  background-color: #efefef;
-  color: #666666;
-  text-transform: uppercase;
-  font-size: 12px;
-  letter-spacing: 0.5px;
-  font-weight: 600;
-  padding: 12px 16px;
-  text-align: left;
+.ad-act-log-table-header {
+    padding: 12px 24px;
+    border-bottom: 1px solid #e5e7eb;
+    display: grid;
+    text-align: start;   
+    grid-template-columns: 100px 300px 200px 100px 140px 100px 80px;
+    align-items: center;
+    background-color: #efefef;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #666666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.activity-table tbody td {
-  padding: 10px 16px;
-  color: #434343;
-  font-weight: 600;
-  border-bottom: 1px solid #f3f4f6;
+.ad-act-log-table-header > div {
+    border-right: 1px solid #e5e7eb;
 }
 
-.activity-table tbody tr:hover {
-  background-color: #d6dee6;
+.ad-act-log-table-header > div:last-child {
+    border-right: none;
 }
 
-.activity-table tbody tr:last-child td {
-  border-bottom: none;
+.ad-act-log-table-row {
+    padding: 10px 24px;
+    border-bottom: 1px solid #f3f4f6;
+    display: grid;
+    text-align: start; 
+    grid-template-columns: 100px 300px 200px 100px 140px 100px 80px;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #434343;
+    transition: background-color 0.2s ease;
 }
 
-/* Status Badge */
-.activity-status-badge {
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 600;
+.ad-act-log-table-row:hover {
+    background-color: #d6dee6;
 }
 
-.activity-status-badge.completed {
-  background-color: #d1fae5;
-  color: #065f46;
+.ad-act-log-table-row:last-child {
+    border-bottom: none;
 }
 
-.activity-status-badge.in-progress {
-  background-color: #dbeafe;
-  color: #1e40af;
+/* Action Cell */
+.ad-act-log-action-cell {
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    padding-left: 8px;
 }
 
-.activity-status-badge.not-started {
-  background-color: #f3f4f6;
-  color: #374151;
+.ad-act-log-status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-/* No Data */
-.activity-no-activities {
-  text-align: center;
-  padding: 32px;
-  font-size: 14px;
-  color: #6b7280;
+.ad-act-log-status-badge.created {
+    background-color: #d1fae5;
+    color: #065f46;
 }
 
-.activity-no-activities button {
-  margin-top: 12px;
-  padding: 8px 14px;
-  border-radius: 6px;
-  border: none;
-  background-color: var(--color-accent);
-  color: white;
-  cursor: pointer;
+.ad-act-log-status-badge.updated {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.ad-act-log-status-badge.deleted {
+    background-color: #fef2f2;
+    color: #991b1b;
+}
+
+/* Action badges */
+.ad-act-log-action-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ad-act-log-action-badge.success {
+    background-color: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.ad-act-log-action-badge.failed {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.ad-act-log-action-badge.Create {
+    background-color: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+}
+
+.ad-act-log-action-badge.Update {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.ad-act-log-action-badge.Delete {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.ad-act-log-action-badge.View {
+    background-color: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+/* Details Cell */
+.ad-act-log-details-cell {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    color: #374151;
+    min-width: 200px;
+}
+
+.ad-act-log-details-text {
+    font-size: 13px;
+    line-height: 1.3;
+    word-break: break-word;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* IP Cell */
+.ad-act-log-ip-cell {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    padding-left: 8px;
+}
+
+.ad-act-log-ip-badge {
+    padding: 4px 8px;
+    background-color: #f8fafc;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    font-weight: 500;
+}
+
+/* User Cell */
+.ad-act-log-user-cell {
+    display: flex;
+    align-items: center;
+    text-align: start;  
+    gap: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.ad-act-log-user-cell:hover {
+    background-color: #d6dee6;
+}
+
+.ad-act-log-user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.ad-act-log-user-info {
+    flex: 1;
+}
+
+.ad-act-log-user-name {
+    font-weight: 500;
+    color: #111827;
+}
+
+/* Role Cell */
+.ad-act-log-role-cell {
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    padding-left: 8px;
+}
+
+.users-role-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.users-role-badge.admin {
+    background-color: #f3e8ff;
+    color: #6b21a8;
+}
+
+.users-role-badge.manager {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.users-role-badge.user {
+    background-color: #e0e7ff;
+    color: #3730a3;
+}
+
+/* Date and Time Cells */
+.ad-act-log-date-cell,
+.ad-act-log-time-cell {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+/* Filter Panel */
+.ad-act-log-filter-panel {
+    position: absolute;
+    top: 100px;
+    right: 40px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    width: 220px;
+    z-index: 1000;
+}
+
+.ad-act-log-filter-group {
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+.ad-act-log-filter-group label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: #374151;
+}
+
+.ad-act-log-filter-group select,
+.ad-act-log-filter-group input {
+    padding: 6px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: #374151;
+    outline: none;
+}
+
+.ad-act-log-filter-group select:focus,
+.ad-act-log-filter-group input:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px rgba(28, 136, 199, 0.3);
+}
+
+.ad-act-log-filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+/* Pagination */
+.ad-act-log-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+    padding: 0 4px;
+}
+
+.ad-act-log-pagination button {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background-color: white;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.ad-act-log-pagination button:hover:not(:disabled) {
+    background-color: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.ad-act-log-pagination button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
 }

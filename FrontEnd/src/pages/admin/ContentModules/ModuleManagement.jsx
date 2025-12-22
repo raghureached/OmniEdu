@@ -16,6 +16,7 @@ import api from '../../../services/api';
 import SelectionBanner from '../../../components/Banner/SelectionBanner';
 import { categories } from '../../../utils/constants';
 import AnalyticsPop from '../../../components/AnalyticsPopup/AnalyticsPop';
+import CustomSelect from '../../../components/dropdown/DropDown';
 
 
 
@@ -720,31 +721,35 @@ const ModuleManagement = () => {
                 </span>
                 <div className="filter-group">
                   <label>Status</label>
-                  <select
+                  <CustomSelect
                     name="status"
                     value={tempFilters?.status || ""}
-                    onChange={handleFilterChange}
-                  >
-                    <option value="">All</option>
-                    <option value="Saved">Saved</option>
-                    <option value="Draft">Draft</option>
-                    <option value="Published">Published</option>
-                  </select>
+                    options={[
+                      { value: "", label: "All" },
+                      { value: "Saved", label: "Saved" },
+                      { value: "Draft", label: "Draft" },
+                      { value: "Published", label: "Published" }
+                    ]}
+                    onChange={(value) => handleFilterChange({ target: { name: 'status', value } })}
+                    placeholder="Select Status"
+                    searchable={false}
+                  />
                 </div>
                 <div className="filter-group">
                   <label>Category</label>
-                  <select
+                  <CustomSelect
                     name="category"
                     value={tempFilters?.category || ""}
-                    onChange={handleFilterChange}
-                  >
-                    <option value="">All</option>
-                    {categories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
+                    options={[
+                      { value: "", label: "All" },
+                      ...(categories.map((category) => ({
+                        value: category,
+                        label: category
+                      })) || [])
+                    ]}
+                    onChange={(value) => handleFilterChange({ target: { name: 'category', value } })}
+                    placeholder="Select Category"
+                  />
                 </div>
                 <div className="filter-actions">
                 <button className="btn-secondary" onClick={resetFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>

@@ -13,6 +13,7 @@ import { GoBook, GoX } from 'react-icons/go';
 import { admincreateContent, adminupdateContent, enhanceText } from '../../../store/slices/adminModuleSlice';
 import { categories } from '../../../utils/constants';
 import { notifyError, notifySuccess } from '../../../utils/notification';
+import CustomSelect from '../../../components/dropdown/DropDown';
 
 const ModuleModal = ({
     showModal, setShowModal, newContent, handleInputChange, showEditModal, setShowEditModal, editContentId, drafts, setDrafts, handleRichInputChange, teams
@@ -772,54 +773,78 @@ const ModuleModal = ({
                                     <label className="module-overlay__form-label">
                                         Credits
                                     </label>
-                                    <select name="credits" id="" value={newContent.credits || 0} onChange={handleInputChange} className='addOrg-form-input' style={{ width: '180px' }}>
-                                        <option value="0">0</option>
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                        <option value="4">4</option>
-                                        <option value="5">5</option>
-                                        <option value="6">6</option>
-                                        <option value="7">7</option>
-                                        <option value="8">8</option>
-                                        <option value="9">9</option>
-                                    </select>
+                                    <CustomSelect 
+                                        name="credits" 
+                                        value={String(newContent.credits || 0)}
+                                        options={[
+                                            { value: "0", label: "0" },
+                                            { value: "1", label: "1" },
+                                            { value: "2", label: "2" },
+                                            { value: "3", label: "3" },
+                                            { value: "4", label: "4" },
+                                            { value: "5", label: "5" },
+                                            { value: "6", label: "6" },
+                                            { value: "7", label: "7" },
+                                            { value: "8", label: "8" },
+                                            { value: "9", label: "9" }
+                                        ]}
+                                        onChange={(value) => handleInputChange({ target: { name: 'credits', value } })}
+                                        className='addOrg-form-input' 
+                                        style={{ width: '180px' }}
+                                        searchable={false}
+                                    />
                                 </div>
                                 <div className='module-overlay__form-group'>
                                     <label className="module-overlay__form-label slider-label">
                                         Stars
                                     </label>
 
-                                    <select name="stars" id="" value={newContent.stars || 0} onChange={handleInputChange} className='addOrg-form-input' style={{ width: '180px' }}>
-                                        <option value="0">0</option>
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                        <option value="4">4</option>
-                                        <option value="5">5</option>
-                                        <option value="6">6</option>
-                                        <option value="7">7</option>
-                                        <option value="8">8</option>
-                                        <option value="9">9</option>
-                                    </select>
+                                    <CustomSelect 
+                                        name="stars" 
+                                        value={String(newContent.stars || 0)}
+                                        options={[
+                                            { value: "0", label: "0" },
+                                            { value: "1", label: "1" },
+                                            { value: "2", label: "2" },
+                                            { value: "3", label: "3" },
+                                            { value: "4", label: "4" },
+                                            { value: "5", label: "5" },
+                                            { value: "6", label: "6" },
+                                            { value: "7", label: "7" },
+                                            { value: "8", label: "8" },
+                                            { value: "9", label: "9" }
+                                        ]}
+                                        onChange={(value) => handleInputChange({ target: { name: 'stars', value } })}
+                                        className='addOrg-form-input' 
+                                        style={{ width: '180px' }}
+                                        searchable={false}
+                                    />
                                 </div>
                                 <div className='module-overlay__form-group'>
                                     <label className="module-overlay__form-label slider-label">
                                         Badges
                                     </label>
                                     {/* <span className="slider-value">{newContent.badges || 0}</span> */}
-                                    <select name="badges" id="" value={newContent.badges || 0} onChange={handleInputChange} className='addOrg-form-input' style={{ width: '180px' }}>
-                                        <option value="0">0</option>
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                        <option value="4">4</option>
-                                        <option value="5">5</option>
-                                        <option value="6">6</option>
-                                        <option value="7">7</option>
-                                        <option value="8">8</option>
-                                        <option value="9">9</option>
-                                    </select>
+                                    <CustomSelect 
+                                        name="badges" 
+                                        value={String(newContent.badges || 0)}
+                                        options={[
+                                            { value: "0", label: "0" },
+                                            { value: "1", label: "1" },
+                                            { value: "2", label: "2" },
+                                            { value: "3", label: "3" },
+                                            { value: "4", label: "4" },
+                                            { value: "5", label: "5" },
+                                            { value: "6", label: "6" },
+                                            { value: "7", label: "7" },
+                                            { value: "8", label: "8" },
+                                            { value: "9", label: "9" }
+                                        ]}
+                                        onChange={(value) => handleInputChange({ target: { name: 'badges', value } })}
+                                        className='addOrg-form-input' 
+                                        style={{ width: '180px' }}
+                                        searchable={false}
+                                    />
                                 </div>
                             </div>
 
@@ -828,21 +853,22 @@ const ModuleModal = ({
                                     <label className="module-overlay__form-label">
                                         Category <span className="module-overlay__required">*</span>
                                     </label>
-                                    <select
+                                    <CustomSelect
                                         name="category"
                                         value={newContent.category || ''}
-                                        onChange={handleInputChange}
+                                        options={[
+                                            { value: "", label: "Select Category" },
+                                            ...(categories.map((cat) => ({
+                                                value: cat,
+                                                label: cat
+                                            })) || [])
+                                        ]}
+                                        onChange={(value) => handleInputChange({ target: { name: 'category', value } })}
                                         className="addOrg-form-input"
                                         required
                                         style={{ width: '300px' }}
-                                    >
-                                        <option value="">Select Category</option>
-                                        {categories.map((cat) => (
-                                            <option key={cat} value={cat}>
-                                                {cat}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        placeholder="Select Category"
+                                    />
                                 </div>
                                 <div className="module-overlay__form-group" >
                                     
@@ -851,42 +877,48 @@ const ModuleModal = ({
                                     <label className="module-overlay__form-label">
                                         Target Team <span className="module-overlay__required">*</span>
                                     </label>
-                                    <select
+                                    <CustomSelect
                                         name="team"
                                         value={newContent.team._id || newContent.team}
-                                        onChange={handleInputChange}
+                                        options={[
+                                            { value: "", label: "Select Team" },
+                                            ...(teams?.map((team) => ({
+                                                value: team._id,
+                                                label: team.name
+                                            })) || [])
+                                        ]}
+                                        onChange={(value) => handleInputChange({ target: { name: 'team', value } })}
                                         className="addOrg-form-input"
                                         required
                                         style={{ width: '250px' }}
-                                    >
-                                        <option value="">Select Sub Team</option>
-                                        {teams?.map((team) => (
-                                            <option key={team._id} value={team._id}>
-                                                {team.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        placeholder="Select Team"
+                                    />
 
                                 </div>
                                 <div className="module-overlay__form-group">
                                     <label className="module-overlay__form-label">
                                         Target Sub Team <span className="module-overlay__required">*</span>
                                     </label>
-                                    <select value={newContent.subteam || ""} 
+                                    <CustomSelect 
+                                        value={newContent.subteam || ""} 
                                         name="subteam"
-                                        onChange={handleInputChange}
+                                        options={[
+                                            { value: "", label: "All Sub-Teams" },
+                                            ...(teams
+                                                .find(team => team._id === newContent.team)
+                                                ?.subTeams
+                                                ?.map(sub => ({
+                                                    value: sub._id,
+                                                    label: sub.name
+                                                })) || [])
+                                        ]}
+                                        onChange={(value) => handleInputChange({ target: { name: 'subteam', value } })}
                                         className="addOrg-form-input"
                                         required
-                                        style={{width:"200px"}}>
-
-                                        <option value="">All Sub-Teams</option>
-                                        {teams
-                                            .find(team => team._id === newContent.team)
-                                            ?.subTeams
-                                            ?.map(sub => (
-                                                <option key={sub._id} value={sub._id}>{sub.name}</option>
-                                            ))}
-                                    </select>
+                                        style={{width:"200px"}}
+                                        placeholder="All Sub-Teams"
+                                        disabled={!newContent.team}
+                                    />
 
                                 </div>
                             </div>

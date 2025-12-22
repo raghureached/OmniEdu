@@ -512,7 +512,7 @@ background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary)
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     padding: 15px;
-    width: 220px;
+    width: 350px;
     z-index: 8;
   }
   

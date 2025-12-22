@@ -1,6 +1,7 @@
 import React from 'react';
 import { Users } from 'lucide-react';
 import { GoX } from 'react-icons/go';
+import CustomSelect from '../../../../components/dropdown/DropDown';
 
 const BulkAssignToTeam = ({
   isOpen,
@@ -24,12 +25,12 @@ const BulkAssignToTeam = ({
     }
   };
 
-  const handleTeamChange = (event) => {
-    onTeamChange && onTeamChange(event.target.value);
+  const handleTeamChange = (value) => {
+    onTeamChange && onTeamChange(value);
   };
 
-  const handleSubTeamChange = (event) => {
-    onSubTeamChange && onSubTeamChange(event.target.value);
+  const handleSubTeamChange = (value) => {
+    onSubTeamChange && onSubTeamChange(value);
   };
 
   const handleApply = async () => {
@@ -78,34 +79,37 @@ const BulkAssignToTeam = ({
           <div className="addOrg-form-grid">
             <div className="addOrg-form-group">
               <label className="addOrg-form-label">Team<span style={{ color: 'red' }}> *</span></label>
-              <select
+              <CustomSelect
                 className="addOrg-form-select"
                 value={assignTeamId}
+                options={[
+                  { value: "", label: "Select Team" },
+                  ...(resolvedTeams.map((team) => ({
+                    value: team?._id || team?.id,
+                    label: team?.name || team?.teamName || 'Untitled Team',
+                    disabled: team.status?.toLowerCase() === "inactive"
+                  })) || [])
+                ]}
                 onChange={handleTeamChange}
-              >
-                <option value="">Select Team</option>
-                {resolvedTeams.map((team) => (
-                  <option key={team?._id || team?.id} value={team?._id || team?.id } disabled={team.status?.toLowerCase() === "inactive"}>
-                    {team?.name || team?.teamName || 'Untitled Team'}
-                  </option>
-                ))}
-              </select>
+                placeholder="Select Team"
+              />
             </div>
             <div className="addOrg-form-group">
               <label className="addOrg-form-label">Sub Team</label>
-              <select
+              <CustomSelect
                 className="addOrg-form-select"
                 value={assignSubTeamId}
+                options={[
+                  { value: "", label: "Select Sub Team (optional)" },
+                  ...(subTeams.map((subTeam) => ({
+                    value: subTeam?._id || subTeam?.id,
+                    label: subTeam?.name || subTeam?.teamName || 'Untitled Subteam'
+                  })) || [])
+                ]}
                 onChange={handleSubTeamChange}
+                placeholder="Select Sub Team (optional)"
                 disabled={!assignTeamId}
-              >
-                <option value="">Select Sub Team (optional)</option>
-                {subTeams.map((subTeam) => (
-                  <option key={subTeam?._id || subTeam?.id} value={subTeam?._id || subTeam?.id} >
-                    {subTeam?.name || subTeam?.teamName || 'Untitled Subteam'}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
           </div>
 

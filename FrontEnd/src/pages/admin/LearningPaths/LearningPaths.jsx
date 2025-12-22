@@ -14,6 +14,7 @@ import { categories } from '../../../utils/constants';
 import AnalyticsPop from '../../../components/AnalyticsPopup/AnalyticsPop';
 import api from '../../../services/api';
 import { notifyError, notifySuccess } from '../../../utils/notification';
+import CustomSelect from '../../../components/dropdown/DropDown';
 
 
 const LearningPaths = () => {
@@ -399,7 +400,7 @@ const LearningPaths = () => {
       <div className="learnpath-filters" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="learnpath-filter-row">
           <div className="search-box-content">
-            {/* <label>Name</label> */}
+            <label>Name</label>
             <Search size={16} color="#6b7280" className="search-icon" />
 
             <input type="text" placeholder="Search Learning Paths" value={nameSearch} onChange={(e) => setNameSearch(e.target.value)} />
@@ -432,32 +433,35 @@ const LearningPaths = () => {
               </span>
               <div className="filter-group">
                 <label>Status</label>
-                <select
+                <CustomSelect
                   name="status"
                   value={tempFilters?.status || ""}
-                  onChange={handleFilterChange}
-                >
-                  <option value="">All</option>
-                  <option value="Saved">Saved</option>
-                  <option value="Draft">Draft</option>
-                  <option value="Published">Published</option>
-
-                </select>
+                  options={[
+                    { value: "", label: "All" },
+                    { value: "Saved", label: "Saved" },
+                    { value: "Draft", label: "Draft" },
+                    { value: "Published", label: "Published" }
+                  ]}
+                  onChange={(value) => handleFilterChange({ target: { name: 'status', value } })}
+                  placeholder="Select Status"
+                  searchable={false}
+                />
               </div>
               <div className="filter-group">
                 <label>Category</label>
-                <select
+                <CustomSelect
                   name="category"
                   value={tempFilters?.category || ""}
-                  onChange={handleFilterChange}
-                >
-                  <option value="">All</option>
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: "", label: "All" },
+                    ...(categories.map((category) => ({
+                      value: category,
+                      label: category
+                    })) || [])
+                  ]}
+                  onChange={(value) => handleFilterChange({ target: { name: 'category', value } })}
+                  placeholder="Select Category"
+                />
               </div>
 
               <div className="filter-actions">

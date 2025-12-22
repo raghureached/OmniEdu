@@ -1,6 +1,7 @@
 import { ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { categories } from '../../../../utils/constants';
+import CustomSelect from '../../../../components/dropdown/DropDown';
 
 const Step1ContentSelection = ({
   selectedContentType,
@@ -185,27 +186,45 @@ const Step1ContentSelection = ({
                 />
               </div>
               <div className="filter-row">
-                <select value={filterTeam} onChange={(e) => { setFilterTeam(e.target.value); setFilterSubTeam(''); }}>
-                  <option value="">All Teams</option>
-                  {teams.map(team => (
-                    <option key={team._id} value={team._id}>{team.name}</option>
-                  ))}
-                </select>
-                <select value={filterSubTeam} onChange={(e) => setFilterSubTeam(e.target.value)}>
-                  <option value="">All Sub-Teams</option>
-                  {teams
-                    .find(team => team._id === filterTeam)
-                    ?.subTeams
-                    ?.map(sub => (
-                      <option key={sub._id} value={sub._id}>{sub.name}</option>
-                    ))}
-                </select>
-                <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
-                  <option value="">Category</option>
-                  {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={filterTeam}
+                  options={[
+                    { value: "", label: "All Teams" },
+                    ...(teams.map(team => ({
+                      value: team._id,
+                      label: team.name
+                    })) || [])
+                  ]}
+                  onChange={(value) => { setFilterTeam(value); setFilterSubTeam(''); }}
+                  placeholder="All Teams"
+                />
+                <CustomSelect
+                  value={filterSubTeam}
+                  options={[
+                    { value: "", label: "All Sub-Teams" },
+                    ...(teams
+                      .find(team => team._id === filterTeam)
+                      ?.subTeams
+                      ?.map(sub => ({
+                        value: sub._id,
+                        label: sub.name
+                      })) || [])
+                  ]}
+                  onChange={(value) => setFilterSubTeam(value)}
+                  placeholder="All Sub-Teams"
+                />
+                <CustomSelect
+                  value={filterCategory}
+                  options={[
+                    { value: "", label: "Category" },
+                    ...(categories.map(category => ({
+                      value: category,
+                      label: category
+                    })) || [])
+                  ]}
+                  onChange={(value) => setFilterCategory(value)}
+                  placeholder="Category"
+                />
               </div>
             </div>
           </div>

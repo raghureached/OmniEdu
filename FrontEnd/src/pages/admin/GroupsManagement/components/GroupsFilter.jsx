@@ -3,6 +3,7 @@ import { GoX } from 'react-icons/go';
 import { RiDeleteBinFill } from 'react-icons/ri';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import api from '../../../../services/api';
+import CustomSelect from '../../../../components/dropdown/DropDown';
 
 const GroupsFilter = ({
   groups,
@@ -275,11 +276,17 @@ const GroupsFilter = ({
           <div className="filter-group">
             <div style={{ fontSize: "15px", fontWeight: "600", color: "#26334d" }}>  <label>Status</label></div>
 
-            <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)}>
-              <option value="All">All</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
+            <CustomSelect
+              value={selectedStatus}
+              options={[
+                { value: "All", label: "All" },
+                { value: "Active", label: "Active" },
+                { value: "Inactive", label: "Inactive" }
+              ]}
+              onChange={(value) => setSelectedStatus(value)}
+              placeholder="Select Status"
+              searchable={false}
+            />
           </div>
           <div className="filter-actions">
             <button className="btn-secondary" onClick={handleClearFilter} style={{ padding: '6px 12px', fontSize: '14px' }}>

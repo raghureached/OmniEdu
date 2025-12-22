@@ -1,5 +1,5 @@
 const UserTicket = require("../../models/userTickets");
-const logUserActivity = require("./user_activity");
+const { logActivity } = require("../../utils/activityLogger");
 const mongoose = require("mongoose");
 
 // Get all tickets for the authenticated user with pagination
@@ -23,7 +23,7 @@ const getTickets = async (req, res) => {
       createdBy: req.user._id
     });
 
-    await logUserActivity(req, "VIEW_TICKETS", `Viewed ${tickets.length} tickets`, "success");
+   
 
     res.status(200).json({
       isSuccess: true,
@@ -36,7 +36,7 @@ const getTickets = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching tickets:", error);
-    await logUserActivity(req, "VIEW_TICKETS", "Failed to fetch tickets", "error");
+    
     res.status(500).json({
       isSuccess: false,
       message: "Failed to fetch tickets",
@@ -68,7 +68,12 @@ const createTicket = async (req, res) => {
 
     const ticket = await UserTicket.create(ticketData);
 
-    await logUserActivity(req, "CREATE_TICKET", `Created ticket: ${ticket.ticketId}`, "success");
+    await logActivity({
+      userId: req.user._id,
+      action: "CREATE_TICKET",
+      details: `Created ticket: ${ticket.ticketId}`,
+      status: "success"
+    });
 
     res.status(201).json({
       isSuccess: true,
@@ -77,7 +82,12 @@ const createTicket = async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating ticket:", error);
-    await logUserActivity(req, "CREATE_TICKET", "Failed to create ticket", "error");
+    await logActivity({
+      userId: req.user._id,
+      action: "CREATE_TICKET",
+      details: "Failed to create ticket",
+      status: "error"
+    });
     res.status(500).json({
       isSuccess: false,
       message: "Failed to create ticket",
@@ -116,7 +126,12 @@ const updateTicketStatus = async (req, res) => {
       });
     }
 
-    await logUserActivity(req, "UPDATE_TICKET_STATUS", `Updated ticket ${ticketId} status to ${status}`, "success");
+    await logActivity({
+      userId: req.user._id,
+      action: "UPDATE_TICKET_STATUS",
+      details: `Updated ticket ${ticketId} status to ${status}`,
+      status: "success"
+    });
 
     res.status(200).json({
       isSuccess: true,
@@ -125,7 +140,12 @@ const updateTicketStatus = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating ticket status:", error);
-    await logUserActivity(req, "UPDATE_TICKET_STATUS", `Failed to update ticket status: ${req.params.ticketId}`, "error");
+    await logActivity({
+      userId: req.user._id,
+      action: "UPDATE_TICKET_STATUS",
+      details: `Failed to update ticket status: ${req.params.ticketId}`,
+      status: "error"
+    });
     res.status(500).json({
       isSuccess: false,
       message: "Failed to update ticket status",
@@ -170,7 +190,12 @@ const updateTicket = async (req, res) => {
       });
     }
 
-    await logUserActivity(req, "UPDATE_TICKET", `Updated ticket: ${ticketId}`, "success");
+    await logActivity({
+      userId: req.user._id,
+      action: "UPDATE_TICKET",
+      details: `Updated ticket: ${ticketId}`,
+      status: "success"
+    });
 
     res.status(200).json({
       isSuccess: true,
@@ -179,7 +204,12 @@ const updateTicket = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating ticket:", error);
-    await logUserActivity(req, "UPDATE_TICKET", `Failed to update ticket: ${req.params.ticketId}`, "error");
+    await logActivity({
+      userId: req.user._id,
+      action: "UPDATE_TICKET",
+      details: `Failed to update ticket: ${req.params.ticketId}`,
+      status: "error"
+    });
     res.status(500).json({
       isSuccess: false,
       message: "Failed to update ticket",
@@ -206,7 +236,12 @@ const deleteTicket = async (req, res) => {
       });
     }
 
-    await logUserActivity(req, "DELETE_TICKET", `Deleted ticket: ${ticketId}`, "success");
+    await logActivity({
+      userId: req.user._id,
+      action: "DELETE_TICKET",
+      details: `Deleted ticket: ${ticketId}`,
+      status: "success"
+    });
 
     res.status(200).json({
       isSuccess: true,
@@ -215,7 +250,12 @@ const deleteTicket = async (req, res) => {
     });
   } catch (error) {
     console.error("Error deleting ticket:", error);
-    await logUserActivity(req, "DELETE_TICKET", `Failed to delete ticket: ${req.params.ticketId}`, "error");
+    await logActivity({
+      userId: req.user._id,
+      action: "DELETE_TICKET",
+      details: `Failed to delete ticket: ${req.params.ticketId}`,
+      status: "error"
+    });
     res.status(500).json({
       isSuccess: false,
       message: "Failed to delete ticket",
@@ -289,14 +329,24 @@ const getTicketDetails = async (req, res) => {
     });
 
     if (!ticket) {
-      await logUserActivity(req, "view", `Ticket not found: ${ticketId}`, "failed");
+      await logActivity({
+      userId: req.user._id,
+      action: "view",
+      details: `Ticket not found: ${ticketId}`,
+      status: "failed"
+    });
       return res.status(404).json({
         isSuccess: false,
         message: "Ticket not found",
       });
     }
 
-    await logUserActivity(req, "view", `Viewed ticket details: ${ticketId}`);
+    await logActivity({
+      userId: req.user._id,
+      action: "view",
+      details: `Viewed ticket details: ${ticketId}`,
+      status: "success"
+    });
 
     return res.status(200).json({
       isSuccess: true,
@@ -305,7 +355,12 @@ const getTicketDetails = async (req, res) => {
     });
 
   } catch (error) {
-    await logUserActivity(req, "view", error.message, "failed");
+    await logActivity({
+      userId: req.user._id,
+      action: "view",
+      details: error.message,
+      status: "failed"
+    });
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to fetch ticket details",
@@ -362,14 +417,24 @@ const addTicketComment = async (req, res) => {
     );
 
     if (!updatedTicket) {
-      await logUserActivity(req, "comment", `Ticket not found: ${ticketId}`, "failed");
+      await logActivity({
+      userId: req.user._id,
+      action: "comment",
+      details: `Ticket not found: ${ticketId}`,
+      status: "failed"
+    });
       return res.status(404).json({
         isSuccess: false,
         message: "Ticket not found",
       });
     }
 
-    await logUserActivity(req, "comment", `Added comment to ticket ${ticketId}`);
+    await logActivity({
+      userId: req.user._id,
+      action: "comment",
+      details: `Added comment to ticket ${ticketId}`,
+      status: "success"
+    });
 
     return res.status(201).json({
       isSuccess: true,
@@ -378,7 +443,12 @@ const addTicketComment = async (req, res) => {
     });
 
   } catch (error) {
-    await logUserActivity(req, "comment", error.message, "failed");
+    await logActivity({
+      userId: req.user._id,
+      action: "comment",
+      details: error.message,
+      status: "failed"
+    });
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to add comment",

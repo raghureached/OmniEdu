@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import CustomSelect from '../../../../components/dropdown/DropDown';
 
 const Step3ScheduleSettings = ({ 
   assignDate,
@@ -228,17 +229,20 @@ const Step3ScheduleSettings = ({
             <h4>📅 Recurring Schedule</h4>
             <div className="form-group">
               <label>Recurrence Interval</label>
-              <select 
+              <CustomSelect
                 value={recurringInterval}
-                onChange={(e) => setRecurringInterval(e.target.value)}
-              >
-                <option value="">Select interval...</option>
-                <option value="1m">Every 1 month after completion</option>
-                <option value="3m">Every 3 months after completion</option>
-                <option value="6m">Every 6 months after completion</option>
-                <option value="1y">Every 1 year after completion</option>
-                <option value="custom">Custom interval</option>
-              </select>
+                options={[
+                  { value: "", label: "Select interval..." },
+                  { value: "1m", label: "Every 1 month after completion" },
+                  { value: "3m", label: "Every 3 months after completion" },
+                  { value: "6m", label: "Every 6 months after completion" },
+                  { value: "1y", label: "Every 1 year after completion" },
+                  { value: "custom", label: "Custom interval" }
+                ]}
+                onChange={(value) => setRecurringInterval(value)}
+                placeholder="Select interval..."
+                searchable={false}
+              />
             </div>
 
             {recurringInterval === 'custom' && (
@@ -252,15 +256,17 @@ const Step3ScheduleSettings = ({
                     value={customIntervalValue}
                     onChange={(e) => setCustomIntervalValue(e.target.value)}
                   />
-                  <select 
+                  <CustomSelect
                     value={customIntervalUnit}
-                    onChange={(e) => setCustomIntervalUnit(e.target.value)}
-                  >
-                    <option value="days">Days</option>
-                    <option value="weeks">Weeks</option>
-                    <option value="months">Months</option>
-                    <option value="years">Years</option>
-                  </select>
+                    options={[
+                      { value: "days", label: "Days" },
+                      { value: "weeks", label: "Weeks" },
+                      { value: "months", label: "Months" },
+                      { value: "years", label: "Years" }
+                    ]}
+                    onChange={(value) => setCustomIntervalUnit(value)}
+                    searchable={false}
+                  />
                 </div>
                 <div className="help-text">Specify how long after completion to reassign</div>
               </div>

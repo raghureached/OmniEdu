@@ -11,6 +11,7 @@ import { toast, ToastContainer } from "react-toastify";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
 import { notify,notifyError,notifySuccess,notifyInfo } from '../../../utils/notification.js';
+import CustomSelect from '../../../components/dropdown/DropDown';
 const QuestionsForm = ({
     currentAssessment,
     formData,
@@ -834,16 +835,19 @@ const QuestionsForm = ({
                                                         {/* Question Type */}
                                                         <div className="survey-assess-form-group">
                                                             <label className="survey-assess-form-label" style={{ marginTop: "10px" }}>Question Type<span className="assess-required">*</span></label>
-                                                            <select
+                                                            <CustomSelect
                                                                 className="survey-assess-form-select"
                                                                 value={element.question_type || ''}
-                                                                onChange={e => updateFormElementField(elementIndex, 'question_type', e.target.value)}
+                                                                options={[
+                                                                    { value: "", label: "Select Type" },
+                                                                    { value: "Multiple Choice", label: "Multiple Choice" },
+                                                                    { value: "Multi Select", label: "Multi Select" }
+                                                                ]}
+                                                                onChange={value => updateFormElementField(elementIndex, 'question_type', value)}
                                                                 required
-                                                            >
-                                                                <option value="">Select Type</option>
-                                                                <option value="Multiple Choice">Multiple Choice</option>
-                                                                <option value="Multi Select">Multi Select</option>
-                                                            </select>
+                                                                placeholder="Select Type"
+                                                                searchable={false}
+                                                            />
                                                         </div>
 
 
@@ -1022,41 +1026,42 @@ const QuestionsForm = ({
                                         <label className="survey-assess-form-label">
                                             Team<span className="survey-assess-required">*</span>
                                         </label>
-                                        <select
+                                        <CustomSelect
                                             className="survey-assess-form-select"
                                             value={formData.team || ''}
-                                            onChange={e => {
-                                                const teamId = e.target.value;
+                                            options={[
+                                                { value: "", label: "Select Team" },
+                                                ...(groups.map(team => ({
+                                                    value: team._id,
+                                                    label: team.name
+                                                })) || [])
+                                            ]}
+                                            onChange={value => {
                                                 // Reset sub-team when team changes
-                                                setFormData({ ...formData, team: teamId, subteam: '' });
+                                                setFormData({ ...formData, team: value, subteam: '' });
                                             }}
-                                        >
-                                            <option value="">Select Team</option>
-                                            {groups.map(team => (
-                                                <option key={team._id} value={team._id}>
-                                                    {team.name}
-                                                </option>
-                                            ))}
-                                        </select>
+                                            placeholder="Select Team"
+                                        />
                                     </div>
 
                                     <div className="survey-assess-form-group">
                                         <label className="survey-assess-form-label">
                                             Sub-Team<span className="assess-required">*</span>
                                         </label>
-                                        <select
+                                        <CustomSelect
                                             className="survey-assess-form-select"
                                             value={formData.subteam || ''}
-                                            onChange={e => setFormData({ ...formData, subteam: e.target.value })}
+                                            options={[
+                                                { value: "", label: formData.team ? 'Select Sub-Team' : 'Select Team first' },
+                                                ...(subTeams.map(st => ({
+                                                    value: st._id,
+                                                    label: st.name
+                                                })) || [])
+                                            ]}
+                                            onChange={value => setFormData({ ...formData, subteam: value })}
+                                            placeholder={formData.team ? 'Select Sub-Team' : 'Select Team first'}
                                             disabled={!formData.team}
-                                        >
-                                            <option value="">{formData.team ? 'Select Sub-Team' : 'Select Team first'}</option>
-                                            {subTeams.map(st => (
-                                                <option key={st._id} value={st._id}>
-                                                    {st.name}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        />
                                     </div>
                                 </div>
                                 {/* <div className="survey-assess-form-grid">
@@ -1065,22 +1070,25 @@ const QuestionsForm = ({
                                             Duration<span className="assess-required">*</span>
                                         </label>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <select
+                                            <CustomSelect
                                                 className="survey-assess-form-select"
-                                                value={(parseHm(formData.duration).hh * 60) + parseHm(formData.duration).mm}
-                                                onChange={e => {
-                                                    const mins = parseInt(e.target.value, 10) || 10;
+                                                value={String((parseHm(formData.duration).hh * 60) + parseHm(formData.duration).mm)}
+                                                options={[
+                                                    { value: "5", label: "5 mins" },
+                                                    { value: "10", label: "10 mins" },
+                                                    { value: "15", label: "15 mins" },
+                                                    { value: "20", label: "20 mins" }
+                                                ]}
+                                                onChange={value => {
+                                                    const mins = parseInt(value, 10) || 10;
                                                     const hh = Math.floor(mins / 60);
                                                     const mm = mins % 60;
                                                     setFormData({ ...formData, duration: formatHm(hh, mm) });
                                                 }}
                                                 required
-                                            >
-                                                <option value={5}>5 mins</option>
-                                                <option value={10}>10 mins</option>
-                                                <option value={15}>15 mins</option>
-                                                <option value={20}>20 mins</option>
-                                            </select>
+                                                placeholder="Select Duration"
+                                                searchable={false}
+                                            />
                                         </div>
 
                                     </div>

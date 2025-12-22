@@ -268,7 +268,7 @@ const LearnerAnalytics = () => {
                     color="color-tertiary"
                     delay={200}
                 />
-                <MetricCard
+                {/* <MetricCard
                     icon={Trophy}
                     label="Leaderboard Rank"
                     value={`${stats.leaderboardPosition === 0 ? "N/A" : stats.leaderboardPosition}`}
@@ -283,7 +283,7 @@ const LearnerAnalytics = () => {
                     subtitle={`${stats.newCourses} new assignments (${timeRange === '7D' ? 'last 7 days' : timeRange === '1M' ? 'last month' : 'last 3 months'})`}
                     color="color-neutral"
                     delay={300}
-                />
+                /> */}
             </div>
 
             <AnalyticsPop
@@ -354,7 +354,7 @@ const LearnerAnalytics = () => {
                 </div>
 
                 {/* Deadlines & Overdue */}
-                <div className="chart-panel">
+                {/* <div className="chart-panel">
                     <div className="panel-header-enhanced">
                         <div>
                             <h3 className="panel-title">Upcoming Deadlines</h3>
@@ -364,43 +364,7 @@ const LearnerAnalytics = () => {
                     </div>
 
                     <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '300px', overflowY: 'auto' }}>
-                        {/* {Deadlines?.overdueAssignments.length > 0 && (
-                            <>
-                                {Deadlines?.overdueAssignments.length > 0 ? Deadlines?.overdueAssignments.map((item, idx) => (
-                                    <div key={`overdue-${idx}`} style={{
-                                        padding: '16px',
-                                        background: 'rgba(239, 68, 68, 0.05)',
-                                        borderRadius: '12px',
-                                        borderLeft: `4px solid ${COLORS.danger}`
-                                    }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ fontSize: '14px', fontWeight: 600, color: '#111827', marginBottom: '4px' }}>
-                                                    {item.course}
-                                                </div>
-                                                <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                                                    Due: {new Date(item.dueDate).toLocaleDateString()}
-                                                </div>
-                                            </div>
-                                            <div style={{
-                                                padding: '4px 12px',
-                                                background: COLORS.danger,
-                                                color: 'white',
-                                                borderRadius: '8px',
-                                                fontSize: '12px',
-                                                fontWeight: 600
-                                            }}>
-                                                {item.daysOverdue}d overdue
-                                            </div>
-                                        </div>
-                                    </div>
-                                )) : (
-                                    <div style={{ padding: '16px', background: '#f9fafb', borderRadius: '12px' }}>
-                                        No overdue assignments
-                                    </div>
-                                )}
-                            </>
-                        )} */}
+                        
 
                         {Deadlines?.upcomingDeadlines.length > 0 ? Deadlines?.upcomingDeadlines.map((item, idx) => (
                             <div key={`upcoming-${idx}`} style={{
@@ -450,7 +414,7 @@ const LearnerAnalytics = () => {
                             </div>
                         )}
                     </div>
-                </div>
+                </div> */}
             </div>
 
             {/* Charts Row 2: Weekly Progress & Assessment Performance */}
@@ -506,7 +470,7 @@ const LearnerAnalytics = () => {
                 </div>
 
                 {/* Assessment Performance */}
-                <div className="chart-panel">
+                {/* <div className="chart-panel">
                     <div className="panel-header-enhanced">
                         <div>
                             <h3 className="panel-title">Assessment Performance</h3>
@@ -571,7 +535,7 @@ const LearnerAnalytics = () => {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> */}
             </div>
 
             {/* Gamification Stats */}

@@ -193,6 +193,7 @@ const GlobalActivityLog = () => {
                       { value: "Delete", label: "Delete" }
                     ]}
                     placeholder="Select action"
+                    searchable={false}
                   />
                 </div>
 
@@ -207,6 +208,7 @@ const GlobalActivityLog = () => {
                       { value: "General User", label: "User" }
                     ]}
                     placeholder="Select role"
+                    searchable={false }
                   />
                 </div>
 

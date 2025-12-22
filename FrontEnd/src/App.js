@@ -106,7 +106,7 @@ function App() {
   }, [isAuthenticated, role, navigate]);
 
   useEffect(() => {
-    if(role !== 'global-admin')
+    if(role !== 'GlobalAdmin')
     dispatch(fetchPermissions());
   }, [dispatch]);
   if (loading) {

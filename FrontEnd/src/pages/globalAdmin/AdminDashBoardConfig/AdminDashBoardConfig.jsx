@@ -6,6 +6,7 @@ import { fetchOrganizations } from '../../../store/slices/organizationSlice'
 import { fetchAdminAllowedPermissions, fetchAdminDashboardPermissions } from '../../../store/slices/adminDashboardConfigSlice'
 import { updateAdminDashboardConfig } from '../../../store/slices/adminDashboardConfigSlice'
 import LoadingScreen from '../../../components/common/Loading/Loading'
+import CustomSelect from '../../../components/dropdown/DropDown'
 const AdminDashBoardConfig = () => {
     const [currentOrg, setCurrentOrg] = useState(null)
     const dispatch = useDispatch();
@@ -21,8 +22,8 @@ const AdminDashBoardConfig = () => {
     const { permissions, loading } = useSelector((state) => state.adminDashboardConfig);
     const { adminAllowedPermissions } = useSelector((state) => state.adminDashboardConfig);
     // console.log(adminAllowedPermissions)
-    const handleOrgChange = (e) => {
-        setCurrentOrg(organizations.find((org) => org.uuid === e.target.value))
+    const handleOrgChange = (value) => {
+        setCurrentOrg(organizations.find((org) => org.uuid === value))
     }
     const handlePermissionChange = (permissionId) => {
         dispatch(updateAdminDashboardConfig({ permissionId, orgId: currentOrg?.uuid }))
@@ -34,14 +35,19 @@ const AdminDashBoardConfig = () => {
         <div className="user-dash-dashboard-settings-container">
             <div className="message-board-form" style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: "20px" }}>
                 <label htmlFor="" className="message-board-label">Manage Settings for an Organization</label>
-                <select className="message-board-select" onChange={(e) => handleOrgChange(e)} style={{ width: "fit-content" }} value={currentOrg?.uuid}>
-                    <option value="">Select an Organization</option>
-                    {organizations.map((org) => (
-                        <option key={org._id} value={org.uuid}>
-                            {org.name}
-                        </option>
-                    ))}
-                </select>
+                <CustomSelect
+                    value={currentOrg?.uuid || ""}
+                    options={[
+                        { value: "", label: "Select an Organization" },
+                        ...(organizations?.map((org) => ({
+                            value: org.uuid,
+                            label: org.name,
+                        })) || [])
+                    ]}
+                    onChange={(value) => handleOrgChange(value)}
+                    placeholder="Select an Organization"
+                    style={{ width: "fit-content" }}
+                />
             </div>
 
             {currentOrg ? <div className="user-dash-settings-card">

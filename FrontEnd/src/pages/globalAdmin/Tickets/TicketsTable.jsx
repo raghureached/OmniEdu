@@ -73,8 +73,8 @@ const GlobalTicketsTable = () => {
     useEffect(() => {
         const fetchOrganizations = async () => {
             try {
-                const response = await api.get('/globalAdmin/getOrganizations');
-                setPlans(response.data.organizations || []);
+                const response = await api.get('/api/globalAdmin/getOrganizations');
+                setPlans(response.data.data || []);
             } catch (error) {
                 console.error('Error fetching organizations:', error);
                 setPlans([]);

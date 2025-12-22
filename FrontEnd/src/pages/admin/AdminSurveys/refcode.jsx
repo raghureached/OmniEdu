@@ -4,6 +4,7 @@ import api from '../../../services/api';
 import './QuestionsForm-survey.css';
 import '../GlobalAssessments/QuestionsForm.css';
 import RichText from '../Surveys/RichTextSurvey.jsx';
+import CustomSelect from '../../../components/dropdown/DropDown';
 // Minimal URL resolver for previews (can be enhanced to handle relative URLs)
 const resolveUrl = (u) => u;
 
@@ -386,16 +387,19 @@ const QuestionsForm = ({
                                                     {/* Question Type */}
                                                     <div className="assess-form-group">
                                                         <label className="assess-form-label" style={{marginTop:"10px"}}>Question Type</label>
-                                                        <select
+                                                        <CustomSelect
                                                             className="assess-form-select"
                                                             value={element.question_type || ''}
-                                                            onChange={e => updateFormElementField(elementIndex, 'question_type', e.target.value)}
+                                                            options={[
+                                                                { value: "", label: "Select Type" },
+                                                                { value: "Multiple Choice", label: "Multiple Choice" },
+                                                                { value: "Multi Select", label: "Multi Select" }
+                                                            ]}
+                                                            onChange={value => updateFormElementField(elementIndex, 'question_type', value)}
                                                             required
-                                                        >
-                                                            <option value="">Select Type</option>
-                                                            <option value="Multiple Choice">Multiple Choice</option>
-                                                            <option value="Multi Select">Multi Select</option>
-                                                        </select>
+                                                            placeholder="Select Type"
+                                                            searchable={false}
+                                                        />
                                                     </div>
 
                                                     
@@ -617,41 +621,42 @@ const QuestionsForm = ({
                                     <label className="assess-form-label">
                                         Team<span className="assess-required">*</span>
                                     </label>
-                                    <select
+                                    <CustomSelect
                                         className="assess-form-select"
                                         value={formData.team || ''}
-                                        onChange={e => {
-                                            const teamId = e.target.value;
+                                        options={[
+                                            { value: "", label: "Select Team" },
+                                            ...(groups.map(team => ({
+                                                value: team._id,
+                                                label: team.name
+                                            })) || [])
+                                        ]}
+                                        onChange={value => {
                                             // Reset sub-team when team changes
-                                            setFormData({ ...formData, team: teamId, subteam: '' });
+                                            setFormData({ ...formData, team: value, subteam: '' });
                                         }}
-                                    >
-                                        <option value="">Select Team</option>
-                                        {groups.map(team => (
-                                            <option key={team._id} value={team._id}>
-                                                {team.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        placeholder="Select Team"
+                                    />
                                 </div>
 
                                 <div className="assess-form-group">
                                     <label className="assess-form-label">
                                         Sub-Team
                                     </label>
-                                    <select
+                                    <CustomSelect
                                         className="assess-form-select"
                                         value={formData.subteam || ''}
-                                        onChange={e => setFormData({ ...formData, subteam: e.target.value })}
+                                        options={[
+                                            { value: "", label: formData.team ? 'Select Sub-Team' : 'Select Team first' },
+                                            ...(subTeams.map(st => ({
+                                                value: st._id,
+                                                label: st.name
+                                            })) || [])
+                                        ]}
+                                        onChange={value => setFormData({ ...formData, subteam: value })}
+                                        placeholder={formData.team ? 'Select Sub-Team' : 'Select Team first'}
                                         disabled={!formData.team}
-                                    >
-                                        <option value="">{formData.team ? 'Select Sub-Team' : 'Select Team first'}</option>
-                                        {subTeams.map(st => (
-                                            <option key={st._id} value={st._id}>
-                                                {st.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    />
                                 </div>
                             </div>
                            

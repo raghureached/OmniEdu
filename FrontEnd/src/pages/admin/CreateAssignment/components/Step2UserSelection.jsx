@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import React, { useState } from 'react';
+import CustomSelect from '../../../../components/dropdown/DropDown';
 
 const Step2UserSelection = ({ 
   userMode,
@@ -129,21 +130,34 @@ const Step2UserSelection = ({
           <div className="form-group">
             <label>Filter Users</label>
             <div className="filter-row">
-              <select value={userFilterTeam} onChange={(e) => { setUserFilterTeam(e.target.value); setUserFilterSubTeam(''); }}>
-                <option value="">All Teams</option>
-                {groups.map(team => (
-                  <option key={team._id} value={team._id}>{team.name}</option>
-                ))}
-              </select>
-              <select value={userFilterSubTeam} onChange={(e) => setUserFilterSubTeam(e.target.value)} disabled={!userFilterTeam}>
-                <option value="">All Sub-Teams</option>
-                {groups
-                  .find(team => team._id === userFilterTeam)
-                  ?.subTeams
-                  ?.map(sub => (
-                    <option key={sub._id} value={sub._id}>{sub.name}</option>
-                  ))}
-              </select>
+              <CustomSelect
+                value={userFilterTeam}
+                options={[
+                  { value: "", label: "All Teams" },
+                  ...(groups.map(team => ({
+                    value: team._id,
+                    label: team.name
+                  })) || [])
+                ]}
+                onChange={(value) => { setUserFilterTeam(value); setUserFilterSubTeam(''); }}
+                placeholder="All Teams"
+              />
+              <CustomSelect
+                value={userFilterSubTeam}
+                options={[
+                  { value: "", label: "All Sub-Teams" },
+                  ...(groups
+                    .find(team => team._id === userFilterTeam)
+                    ?.subTeams
+                    ?.map(sub => ({
+                      value: sub._id,
+                      label: sub.name
+                    })) || [])
+                ]}
+                onChange={(value) => setUserFilterSubTeam(value)}
+                placeholder="All Sub-Teams"
+                disabled={!userFilterTeam}
+              />
             </div>
           </div>
 

@@ -5,6 +5,7 @@ import { CourseCard } from '../Cards/ContentCards';
 import { categories } from '../../../utils/constants';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import ModulePopUp from '../ModuleView/ModulePopUp';
+import CustomSelect from '../../../components/dropdown/DropDown';
 
 const Catalog = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -75,17 +76,19 @@ const Catalog = () => {
           </div>
           
           <div className="catalog-filter-dropdown">
-            <select
+            <CustomSelect
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <option value="all">All Categories</option>
-              {categories.map(category => (
-                <option key={category} value={category}>
-                  {category === 'all' ? 'All Categories' : category}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setSelectedCategory(value)}
+              placeholder="All Categories"
+              searchable={true}
+              options={[
+                { value: "all", label: "All Categories" },
+                ...categories.map(category => ({
+                  value: category,
+                  label: category === 'all' ? 'All Categories' : category
+                }))
+              ]}
+            />
           </div>
           
           {/* <div className="catalog-filter-dropdown">

@@ -16,6 +16,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { categories } from '../../../utils/constants.js';
 import { notifyError, notifySuccess } from '../../../utils/notification';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
+import CustomSelect from '../../../components/dropdown/DropDown';
 
 const QuestionsForm = ({
     currentAssessment,
@@ -666,22 +667,23 @@ const QuestionsForm = ({
                                         </div>
                                         <div style={{ width: "50%" }}>
                                             <label className='assess-form-label' style={{ margin: "10px" }}>Level</label>
-                                            <select
-                                                type="text"
+                                            <CustomSelect
                                                 name="Level"
                                                 value={Level}
                                                 className='assess-form-input'
-                                                onChange={(e) => {
-                                                    const value = e.target.value;
+                                                options={[
+                                                    { value: "", label: "Select Type" },
+                                                    { value: "Beginner", label: "Beginner" },
+                                                    { value: "Intermediate", label: "Intermediate" },
+                                                    { value: "Advanced", label: "Advanced" }
+                                                ]}
+                                                onChange={(value) => {
                                                     setLevel(value);
                                                     setFormData({ ...formData, Level: value });
                                                 }}
-                                            >
-                                                <option value="">Select Type</option>
-                                                <option value="Beginner">Beginner</option>
-                                                <option value="Intermediate">Intermediate</option>
-                                                <option value="Advanced">Advanced</option>
-                                            </select>
+                                                placeholder="Select Type"
+                                                searchable={false}
+                                            />
 
                                         </div>
                                     </div>
@@ -913,18 +915,20 @@ const QuestionsForm = ({
                                                             {/* Question Type */}
                                                             <div className="assess-form-group">
                                                                 <label className="assess-form-label" style={{ marginTop: "10px" }}>Question Type<span className="assess-required">*</span></label>
-                                                                <select
+                                                                <CustomSelect
                                                                     key={`type-${qIndex}-${q.type}`} // Force re-render when type changes
                                                                     className="assess-form-input"
                                                                     value={q.type || ''}
-                                                                    onChange={e => updateQuestionField(qIndex, 'type', e.target.value)}
+                                                                    options={[
+                                                                        { value: "", label: "Select Type" },
+                                                                        { value: "Multiple Choice", label: "Multiple Choice" },
+                                                                        { value: "Multi Select", label: "Multi Select" }
+                                                                    ]}
+                                                                    onChange={value => updateQuestionField(qIndex, 'type', value)}
                                                                     required
-                                                                >
-
-                                                                    <option value="">Select Type</option>
-                                                                    <option value="Multiple Choice">Multiple Choice</option>
-                                                                    <option value="Multi Select">Multi Select</option>
-                                                                </select>
+                                                                    placeholder="Select Type"
+                                                                    searchable={false}
+                                                                />
                                                             </div>
                                                         </div>
                                                     </div>
@@ -943,24 +947,23 @@ const QuestionsForm = ({
                                                                 className="assess-file-upload-container"
                                                                 style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
                                                             >
-                                                                <select
+                                                                <CustomSelect
                                                                     className="assess-form-select"
                                                                     value={q.file_url || ''}
-                                                                    onChange={e => updateQuestionField(qIndex, 'file_url', e.target.value)}
-                                                                >
-                                                                    <option value="">No file selected</option>
-                                                                    {/* Show existing file option if it's not part of uploadedFiles list */}
-                                                                    {q.file_url && !uploadedFiles.includes(q.file_url) && (
-                                                                        <option value={q.file_url}>
-                                                                            {q.file_url.split('/').pop() || 'Current File'}
-                                                                        </option>
-                                                                    )}
-                                                                    {uploadedFiles.map((fUrl, i) => (
-                                                                        <option key={i} value={fUrl}>
-                                                                            {`Uploaded File ${i + 1}`}
-                                                                        </option>
-                                                                    ))}
-                                                                </select>
+                                                                    options={[
+                                                                        { value: "", label: "No file selected" },
+                                                                        ...(q.file_url && !uploadedFiles.includes(q.file_url) ? [{
+                                                                            value: q.file_url,
+                                                                            label: q.file_url.split('/').pop() || 'Current File'
+                                                                        }] : []),
+                                                                        ...(uploadedFiles.map((fUrl, i) => ({
+                                                                            value: fUrl,
+                                                                            label: `Uploaded File ${i + 1}`
+                                                                        })) || [])
+                                                                    ]}
+                                                                    onChange={value => updateQuestionField(qIndex, 'file_url', value)}
+                                                                    placeholder="No file selected"
+                                                                />
                                                                 <div
                                                                     className="assess-file-upload"
                                                                     style={{ position: 'relative' }}
@@ -1384,21 +1387,40 @@ const QuestionsForm = ({
 
                                     <div className="assess-form-group">
                                         <label className="assess-form-label">Attempts<span className="assess-required">*</span></label>
-                                        <select
+                                        <CustomSelect
                                             className="assess-form-select"
-                                            value={formData.unlimited_attempts ? '100' : (formData.attempts || '')}
-                                            onChange={e => {
-                                                const value = e.target.value;
+                                            value={formData.unlimited_attempts ? '100' : String(formData.attempts || '')}
+                                            options={[
+                                                { value: "", label: "Select Attempts" },
+                                                { value: "1", label: "1" },
+                                                { value: "2", label: "2" },
+                                                { value: "3", label: "3" },
+                                                { value: "4", label: "4" },
+                                                { value: "5", label: "5" },
+                                                { value: "6", label: "6" },
+                                                { value: "7", label: "7" },
+                                                { value: "8", label: "8" },
+                                                { value: "9", label: "9" },
+                                                { value: "100", label: "Unlimited" }
+                                            ]}
+                                            onChange={value => {
                                                 if (value === '100') {
                                                     // Unlimited attempts
                                                     setFormData({
                                                         ...formData,
                                                         unlimited_attempts: true,
                                                         attempts: 100,
-                                                        // If display answers is enabled and unlimited is chosen, default to AfterPassing
+                                                        // If display answers is enabled and unlimited is options, default to AfterPassing
                                                         display_answers: formData.display_answers
                                                             ? 'AfterPassing'
                                                             : formData.display_answers,
+                                                    });
+                                                } else if (value === '') {
+                                                    // No selection - reset to default
+                                                    setFormData({
+                                                        ...formData,
+                                                        unlimited_attempts: false,
+                                                        attempts: 1,
                                                     });
                                                 } else {
                                                     // Limited attempts
@@ -1410,19 +1432,9 @@ const QuestionsForm = ({
                                                     });
                                                 }
                                             }}
-                                        >
-                                            <option value="">Select Attempts</option>
-                                            <option value="1">1</option>
-                                            <option value="2">2</option>
-                                            <option value="3">3</option>
-                                            <option value="4">4</option>
-                                            <option value="5">5</option>
-                                            <option value="6">6</option>
-                                            <option value="7">7</option>
-                                            <option value="8">8</option>
-                                            <option value="9">9</option>
-                                            <option value="100">Unlimited</option>
-                                        </select>
+                                            placeholder="Select Attempts"
+                                            searchable={false}
+                                        />
                                     </div>
                                 </div>
                                 <div className="assess-form-grid">
@@ -1431,41 +1443,42 @@ const QuestionsForm = ({
                                         <label className="assess-form-label">
                                             Team<span className="assess-required">*</span>
                                         </label>
-                                        <select
+                                        <CustomSelect
                                             className="assess-form-select"
                                             value={formData.team || ''}
-                                            onChange={e => {
-                                                const teamId = e.target.value;
+                                            options={[
+                                                { value: "", label: "Select Team" },
+                                                ...(groups.map(team => ({
+                                                    value: team._id,
+                                                    label: team.name
+                                                })) || [])
+                                            ]}
+                                            onChange={value => {
                                                 // Reset sub-team when team changes
-                                                setFormData({ ...formData, team: teamId, subteam: '' });
+                                                setFormData({ ...formData, team: value, subteam: '' });
                                             }}
-                                        >
-                                            <option value="">Select Team</option>
-                                            {groups.map(team => (
-                                                <option key={team._id} value={team._id}>
-                                                    {team.name}
-                                                </option>
-                                            ))}
-                                        </select>
+                                            placeholder="Select Team"
+                                        />
                                     </div>
 
                                     <div className="assess-form-group">
                                         <label className="assess-form-label">
                                             Sub-Team<span className="assess-required">*</span>
                                         </label>
-                                        <select
+                                        <CustomSelect
                                             className="assess-form-select"
                                             value={formData.subteam || ''}
-                                            onChange={e => setFormData({ ...formData, subteam: e.target.value })}
+                                            options={[
+                                                { value: "", label: formData.team ? 'Select Sub-Team' : 'Select Team first' },
+                                                ...(subTeams.map(st => ({
+                                                    value: st._id,
+                                                    label: st.name
+                                                })) || [])
+                                            ]}
+                                            onChange={value => setFormData({ ...formData, subteam: value })}
+                                            placeholder={formData.team ? 'Select Sub-Team' : 'Select Team first'}
                                             disabled={!formData.team}
-                                        >
-                                            <option value="">{formData.team ? 'Select Sub-Team' : 'Select Team first'}</option>
-                                            {subTeams.map(st => (
-                                                <option key={st._id} value={st._id}>
-                                                    {st.name}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        />
                                     </div>
                                 </div>
                                 <div className="assess-form-grid">
@@ -1511,17 +1524,19 @@ const QuestionsForm = ({
                                         <label className="assess-form-label">
                                             Display Answers <span className="assess-required">*</span>
                                         </label>
-                                        <select
+                                        <CustomSelect
                                             className="assess-form-select"
                                             value={formData.display_answers || ''}
-                                            onChange={e => setFormData({ ...formData, display_answers: e.target.value })}
-                                            disabled={!formData.display_answers}
-                                        >
-                                            <option value="">Select when to display</option>
-                                            <option value="AfterAssessment">After submission</option>
-                                            <option value="AfterPassing">After passing</option>
-                                            <option value="Never">Never</option>
-                                        </select>
+                                            options={[
+                                                { value: "", label: "Select when to display" },
+                                                { value: "AfterAssessment", label: "After submission" },
+                                                { value: "AfterPassing", label: "After passing" },
+                                                { value: "Never", label: "Never" }
+                                            ]}
+                                            onChange={value => setFormData({ ...formData, display_answers: value })}
+                                            placeholder="Select when to display"
+                                            searchable={false}
+                                        />
                                     </div>
                                 </div>
                                 {/* adding new fileds */}
@@ -1530,36 +1545,50 @@ const QuestionsForm = ({
                                         <label className="assess-form-label">
                                             Credits<span className="assess-required">*</span>
                                         </label>
-                                        <select name="credits" id="" value={Number.isFinite(formData.credits) ? formData.credits : 0} onChange={(e) => setFormData({ ...formData, credits: parseInt(e.target.value, 10) || 0 })} className='assess-form-input' >
-                                            <option value="0">0</option>
-                                            <option value="1">1</option>
-                                            <option value="2">2</option>
-                                            <option value="3">3</option>
-                                            <option value="4">4</option>
-                                            <option value="5">5</option>
-                                            <option value="6">6</option>
-                                            <option value="7">7</option>
-                                            <option value="8">8</option>
-                                            <option value="9">9</option>
-                                        </select>
+                                        <CustomSelect 
+                                            name="credits" 
+                                            value={String(Number.isFinite(formData.credits) ? formData.credits : 0)}
+                                            options={[
+                                                { value: "0", label: "0" },
+                                                { value: "1", label: "1" },
+                                                { value: "2", label: "2" },
+                                                { value: "3", label: "3" },
+                                                { value: "4", label: "4" },
+                                                { value: "5", label: "5" },
+                                                { value: "6", label: "6" },
+                                                { value: "7", label: "7" },
+                                                { value: "8", label: "8" },
+                                                { value: "9", label: "9" }
+                                            ]}
+                                            onChange={(value) => setFormData({ ...formData, credits: parseInt(value, 10) || 0 })}
+                                            className='assess-form-input'
+                                            searchable={false}
+                                        />
                                     </div>
                                     <div className='assess-form-group'>
                                         <label className="assess-form-label">
                                             Stars<span className="assess-required">*</span>
                                         </label>
 
-                                        <select name="stars" id="" value={Number.isFinite(formData.stars) ? formData.stars : 0} onChange={(e) => setFormData({ ...formData, stars: parseInt(e.target.value, 10) || 0 })} className='assess-form-input' >
-                                            <option value="0">0</option>
-                                            <option value="1">1</option>
-                                            <option value="2">2</option>
-                                            <option value="3">3</option>
-                                            <option value="4">4</option>
-                                            <option value="5">5</option>
-                                            <option value="6">6</option>
-                                            <option value="7">7</option>
-                                            <option value="8">8</option>
-                                            <option value="9">9</option>
-                                        </select>
+                                        <CustomSelect 
+                                            name="stars" 
+                                            value={String(Number.isFinite(formData.stars) ? formData.stars : 0)}
+                                            options={[
+                                                { value: "0", label: "0" },
+                                                { value: "1", label: "1" },
+                                                { value: "2", label: "2" },
+                                                { value: "3", label: "3" },
+                                                { value: "4", label: "4" },
+                                                { value: "5", label: "5" },
+                                                { value: "6", label: "6" },
+                                                { value: "7", label: "7" },
+                                                { value: "8", label: "8" },
+                                                { value: "9", label: "9" }
+                                            ]}
+                                            onChange={(value) => setFormData({ ...formData, stars: parseInt(value, 10) || 0 })}
+                                            className='assess-form-input'
+                                            searchable={false}
+                                        />
                                     </div>
 
                                 </div>
@@ -1569,38 +1598,45 @@ const QuestionsForm = ({
                                             Badges<span className="assess-required">*</span>
                                         </label>
                                         {/* <span className="slider-value">{newContent.badges || 0}</span> */}
-                                        <select name="badges" id="" value={Number.isFinite(formData.badges) ? formData.badges : 0} onChange={(e) => setFormData({ ...formData, badges: parseInt(e.target.value, 10) || 0 })} className='assess-form-input' >
-                                            <option value="0">0</option>
-                                            <option value="1">1</option>
-                                            <option value="2">2</option>
-                                            <option value="3">3</option>
-                                            <option value="4">4</option>
-                                            <option value="5">5</option>
-                                            <option value="6">6</option>
-                                            <option value="7">7</option>
-                                            <option value="8">8</option>
-                                            <option value="9">9</option>
-                                        </select>
+                                        <CustomSelect 
+                                            name="badges" 
+                                            value={String(Number.isFinite(formData.badges) ? formData.badges : 0)}
+                                            options={[
+                                                { value: "0", label: "0" },
+                                                { value: "1", label: "1" },
+                                                { value: "2", label: "2" },
+                                                { value: "3", label: "3" },
+                                                { value: "4", label: "4" },
+                                                { value: "5", label: "5" },
+                                                { value: "6", label: "6" },
+                                                { value: "7", label: "7" },
+                                                { value: "8", label: "8" },
+                                                { value: "9", label: "9" }
+                                            ]}
+                                            onChange={(value) => setFormData({ ...formData, badges: parseInt(value, 10) || 0 })}
+                                            className='assess-form-input'
+                                            searchable={false}
+                                        />
                                     </div>
                                     <div className='assess-form-group'>
                                         <label className="assess-form-label">
                                             Category <span className="assess-required">*</span>
                                         </label>
-                                        <select
+                                        <CustomSelect
                                             name="category"
                                             value={formData.category || ''}
-                                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                            options={[
+                                                { value: "", label: "Select Category" },
+                                                ...(categories.map((cat) => ({
+                                                    value: cat,
+                                                    label: cat
+                                                })) || [])
+                                            ]}
+                                            onChange={(value) => setFormData({ ...formData, category: value })}
                                             className="assess-form-input"
                                             required
-
-                                        >
-                                            <option value="">Select Category</option>
-                                            {categories.map((cat) => (
-                                                <option key={cat} value={cat}>
-                                                    {cat}
-                                                </option>
-                                            ))}
-                                        </select>
+                                            placeholder="Select Category"
+                                        />
                                     </div>
                                 </div>
 

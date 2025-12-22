@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import './ActivityHistory.css';
 import api from '../../../services/api';
 import { Filter, Search, X } from 'lucide-react';
+import CustomSelect from '../../../components/dropdown/DropDown';
 
 const ActivityHistory = () => {
   const location = useLocation();
@@ -445,46 +446,52 @@ const ActivityHistory = () => {
           <div className="act-log-filter-content">
             <div className="act-log-filter-group">
               <label>Activity Type</label>
-              <select 
-                className="act-log-filter-select"
+              <CustomSelect
                 value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-              >
-                <option value="all">All Types</option>
-                <option value="module">Module</option>
-                <option value="assessment">Assessment</option>
-                <option value="survey">Survey</option>
-                <option value="learning-path">Learning Path</option>
-              </select>
+                onChange={(value) => setTypeFilter(value)}
+                placeholder="All Types"
+                searchable={false}
+                options={[
+                  { value: "all", label: "All Types" },
+                  { value: "module", label: "Module" },
+                  { value: "assessment", label: "Assessment" },
+                  { value: "survey", label: "Survey" },
+                  { value: "learning-path", label: "Learning Path" }
+                ]}
+              />
             </div>
 
             <div className="act-log-filter-group">
               <label>Status</label>
-              <select 
-                className="act-log-filter-select"
+              <CustomSelect
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="all">All Status</option>
-                <option value="completed">Completed</option>
-                <option value="in-progress">In Progress</option>
-                <option value="not-started">Not Started</option>
-              </select>
+                onChange={(value) => setStatusFilter(value)}
+                placeholder="All Status"
+                searchable={false}
+                options={[
+                  { value: "all", label: "All Status" },
+                  { value: "completed", label: "Completed" },
+                  { value: "in-progress", label: "In Progress" },
+                  { value: "not-started", label: "Not Started" }
+                ]}
+              />
             </div>
 
             <div className="act-log-filter-group">
               <label>Time Period</label>
-              <select 
-                className="act-log-filter-select"
+              <CustomSelect
                 value={timeFilter}
                 onChange={handleTimeFilterChange}
-              >
-                <option value="all">All Time</option>
-                <option value="week">Last Week</option>
-                <option value="month">Last Month</option>
-                <option value="year">Last Year</option>
-                <option value="custom">Custom Range</option>
-              </select>
+                placeholder="All Time"
+                searchable={false}
+                options={[
+                  { value: "all", label: "All Time" },
+                  { value: "week", label: "Last Week" },
+                  { value: "month", label: "Last Month" },
+                  { value: "year", label: "Last Year" },
+                  { value: "custom", label: "Custom Range" }
+                ]}
+              />
             </div>
 
             {showCustomDateFilter && (

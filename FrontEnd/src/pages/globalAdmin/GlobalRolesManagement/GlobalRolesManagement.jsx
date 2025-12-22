@@ -12,11 +12,12 @@ import api from "../../../services/api";
 import { Edit3, Search, Trash2 } from "lucide-react";
 import LoadingScreen from "../../../components/common/Loading/Loading";
 import { GoOrganization, GoTrash, GoX } from "react-icons/go";
-import {useNotification} from "../../../components/common/Notification/NotificationProvider";
+import { useNotification } from "../../../components/common/Notification/NotificationProvider";
+import CustomSelect from "../../../components/dropdown/DropDown";
 
 const GlobalRolesManagement = () => {
   const dispatch = useDispatch();
-  const { globalRoles, orgRoles, loading ,error} = useSelector((state) => state.roles);
+  const { globalRoles, orgRoles, loading, error } = useSelector((state) => state.roles);
   const [availablePermissions, setAvailablePermissions] = useState([]); // sections + permissions
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -41,7 +42,7 @@ const GlobalRolesManagement = () => {
 
   }, [dispatch, currentOrg]);
 
-  const userSections = ["Course Catalog Section","Learning Hub Section"]
+  const userSections = ["Course Catalog Section", "Learning Hub Section"]
   const fetchPermissions = async () => {
     const response = await api.get("/api/globalAdmin/getPermissions");
     setAvailablePermissions(response.data.data);
@@ -69,14 +70,14 @@ const GlobalRolesManagement = () => {
     if (window.confirm("Are you sure you want to delete this role?")) {
       const resultAction = await dispatch(deleteRole({ _id: roleId, isGlobalAdmin: true }));
 
-      if(deleteRole.fulfilled.match(resultAction)){
+      if (deleteRole.fulfilled.match(resultAction)) {
         showNotification({
           type: "success",
           title: "Role deleted successfully",
           message: "Role deleted successfully",
           duration: 5000,
         });
-      }else{
+      } else {
         showNotification({
           type: "error",
           title: "Role deletion failed",
@@ -110,22 +111,22 @@ const GlobalRolesManagement = () => {
   const handleSelectCurrentOrg = (orgId) => {
     setCurrentOrg((prev) => (prev === orgId ? null : orgId));
   }
-  const handleToggleRole = async(orgId,roleId) => {
+  const handleToggleRole = async (orgId, roleId) => {
     const resultAction = await dispatch(
       updateOrgRole({
         id: roleId,
-        orgId:currentOrg,
+        orgId: currentOrg,
       })
     );
-    
-    if(updateOrgRole.fulfilled.match(resultAction)){
+
+    if (updateOrgRole.fulfilled.match(resultAction)) {
       showNotification({
         type: "success",
         title: `Role updated for ${organizations.find((org) => org.uuid === currentOrg).name.slice(0, 7)}...`,
         message: "Role updated successfully",
         duration: 5000,
       });
-    }else{
+    } else {
       showNotification({
         type: "error",
         title: "Role update failed",
@@ -145,12 +146,12 @@ const GlobalRolesManagement = () => {
     };
 
     if (currentRole) {
-    const resultAction = await dispatch(updateRole({
-      id: currentRole.uuid,
-      roleData,
-    }));
-      
-      if(updateRole.fulfilled.match(resultAction)){
+      const resultAction = await dispatch(updateRole({
+        id: currentRole.uuid,
+        roleData,
+      }));
+
+      if (updateRole.fulfilled.match(resultAction)) {
         showNotification({
           type: "success",
           title: "Role updated successfully",
@@ -158,7 +159,7 @@ const GlobalRolesManagement = () => {
           duration: 5000,
         });
         dispatch(fetchRoles(currentOrg));
-      }else{
+      } else {
         showNotification({
           type: "error",
           title: "Role update failed",
@@ -167,15 +168,15 @@ const GlobalRolesManagement = () => {
         });
       }
     } else {
-    const resultAction = await dispatch(createRole({ roleData }));
-      if(createRole.fulfilled.match(resultAction)){
+      const resultAction = await dispatch(createRole({ roleData }));
+      if (createRole.fulfilled.match(resultAction)) {
         showNotification({
           type: "success",
           title: "Role created successfully",
           message: "Role created successfully",
           duration: 5000,
         });
-      }else{
+      } else {
         showNotification({
           type: "error",
           title: "Role creation failed",
@@ -206,63 +207,54 @@ const GlobalRolesManagement = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"10px"}}>
-        <div className="form-group">
-          <select
-            style={{ marginTop: "20px" ,transition:"all 0.3s ease",border:"2px solid #cecece",borderRadius:"12px",padding:"10px 14px",outline:"none"}}
-            value={currentOrg}
-            className="control-btn"
-            onChange={(e) =>
-              handleSelectCurrentOrg(e.target.value)
-            }
-            
-          >
-            <option value="global">Roles Available for All Organizations</option>
-            {
-              organizations.map((organization) => (
-                <option key={organization.id} value={organization.uuid}>
-                  {organization.name}
-                </option>
-              ))
-            }
-          </select>
-
-        </div>
-        {currentOrg === "global" || currentOrg === null ? <button className="btn-primary" onClick={handleAddRole}>
-          + Add Role
-        </button> : null}
-        {/* <button className="add-btn" onClick={handleAddRole} disabled={currentOrg !== null || c}>
-          + Add Role
-        </button> */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+          <div className="form-group">
+            <label style={{fontSize:"0.95rem",fontWeight:"600"}}>ORGANIZATION</label>
+            <CustomSelect
+              value={currentOrg || "global"}
+              options={[
+                { value: "global", label: "Roles Available for All Organizations" },
+                ...(organizations?.map((organization) => ({
+                  value: organization.uuid,
+                  label: organization.name,
+                })) || [])
+              ]}
+              onChange={(value) => handleSelectCurrentOrg(value)}
+              placeholder="Select Organization"
+            />
+          </div>
+          {currentOrg === "global" || currentOrg === null ? <button className="btn-primary" onClick={handleAddRole}>
+            + Add Role
+          </button> : null}
         </div>
       </div>
       {showForm && (
         <div className="addOrg-modal-overlay">
           <div className="addOrg-modal-content">
-          <div className="addOrg-modal-header">
-          <div className="addOrg-header-content">
-            <div className="addOrg-header-icon">
-              <GoOrganization size={24} color="#5570f1" />
+            <div className="addOrg-modal-header">
+              <div className="addOrg-header-content">
+                <div className="addOrg-header-icon">
+                  <GoOrganization size={24} color="#5570f1" />
+                </div>
+                <div>
+                  <h2>{currentRole ? "Edit Role" : "Add New Role"}</h2>
+                  <p className="addOrg-header-subtitle">
+                    {currentRole ? "Update role details" : "Create a new role profile"}
+                  </p>
+                  {/* {error && <CustomError  error={error} />} */}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="addOrg-close-btn"
+                onClick={() => setShowForm(false)}
+                aria-label="Close modal"
+              >
+                <GoX size={20} />
+              </button>
             </div>
-            <div>
-              <h2>{currentRole ? "Edit Role" : "Add New Role"}</h2>
-              <p className="addOrg-header-subtitle">
-                {currentRole ? "Update role details" : "Create a new role profile"}
-              </p>
-              {/* {error && <CustomError  error={error} />} */}
-            </div>
-          </div>
-          <button 
-            type="button" 
-            className="addOrg-close-btn"
-            onClick={() => setShowForm(false)}
-            aria-label="Close modal"
-          >
-            <GoX size={20} />
-          </button>
-        </div>
 
-            <form onSubmit={handleSaveRole} className="addOrg-org-form" style={{padding:"20px"}}>
+            <form onSubmit={handleSaveRole} className="addOrg-org-form" style={{ padding: "20px" }}>
               <div className="roles-form-group">
                 <label>Role Name</label>
                 <input
@@ -282,7 +274,7 @@ const GlobalRolesManagement = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
-                  style={{minWidth:"100%",minHeight:"100px"}}
+                  style={{ minWidth: "100%", minHeight: "100px" }}
                 />
               </div>
 
@@ -291,7 +283,7 @@ const GlobalRolesManagement = () => {
                 <div className="permissions-sections">
                   {availablePermissions.map((section) => (
                     <div key={section.sectionId} className="permission-section">
-                      <div className="section-title">{section.name} {userSections.includes(section.name) && <p style={{fontSize:"10px",color:"red"}}>NOTE : Only for users</p>} </div>
+                      <div className="section-title">{section.name} {userSections.includes(section.name) && <p style={{ fontSize: "10px", color: "red" }}>NOTE : Only for users</p>} </div>
                       <div className="permissions-list">
                         {section.permissions.map((perm) => {
                           const isChecked = permissions.some(
@@ -325,7 +317,7 @@ const GlobalRolesManagement = () => {
               </div>
 
               <div className="form-actions">
-              <button
+                <button
                   type="button"
                   className="btn-secondary"
                   onClick={() => {
@@ -339,7 +331,7 @@ const GlobalRolesManagement = () => {
                 <button type="submit" className="btn-primary">
                   {currentRole ? "Update Role" : "Create Role"}
                 </button>
-                
+
               </div>
             </form>
           </div>
@@ -348,7 +340,7 @@ const GlobalRolesManagement = () => {
 
       {/* Table */}
       <div className="roles-table-container">
-          <div className="roles-table-container">
+        <div className="roles-table-container">
           <table className="roles-table">
             <thead>
               <tr>
@@ -387,7 +379,7 @@ const GlobalRolesManagement = () => {
                         className="global-action-btn edit"
                         onClick={() => handleEditRole(role)}
                       >
-                      <Edit3 size={14} />
+                        <Edit3 size={14} />
                       </button>
                       <button
                         className="global-action-btn delete"
@@ -395,29 +387,29 @@ const GlobalRolesManagement = () => {
                       >
                         <Trash2 size={14} />
                       </button>
-                      
-                    </td> : 
-                    <td className="roles-action-cell">
-                    <div key={role._id} className="permission-item">
-                    <label className="toggle-switch" style={{marginBottom:"0px",bottom:"3px !important"}}>
-                      <input
-                        type="checkbox"
-                        checked={
-                          orgRoles.includes(role._id)
-                        }
-                        onChange={() => handleToggleRole(currentOrg,role.uuid)}
-                      />
-                      <span className="slider-org"></span>
-                    </label>
-                  </div>
-                  </td>
+
+                    </td> :
+                      <td className="roles-action-cell">
+                        <div key={role._id} className="permission-item">
+                          <label className="toggle-switch" style={{ marginBottom: "0px", bottom: "3px !important" }}>
+                            <input
+                              type="checkbox"
+                              checked={
+                                orgRoles.includes(role._id)
+                              }
+                              onChange={() => handleToggleRole(currentOrg, role.uuid)}
+                            />
+                            <span className="slider-org"></span>
+                          </label>
+                        </div>
+                      </td>
                     }
                   </tr>
-                ))} 
+                ))}
             </tbody>
           </table>
         </div>
-        
+
       </div>
     </div>
   );

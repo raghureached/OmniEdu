@@ -36,6 +36,7 @@ import './AnalyticsViewNew.css';
 import api from '../../../services/api';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import { useNavigate } from 'react-router-dom';
+import CustomSelect from '../../../components/dropdown/DropDown';
 
 
 
@@ -206,12 +207,24 @@ const AnalyticsViewNew = () => {
         <div className="header-filters" style={{ display: "flex", flexDirection: "column" }}>
           <div className="filter-group-enhanced">
             <label>Organization</label>
-            <select value={orgId} onChange={(e) => setOrgId(e.target.value)} className="filter-select-enhanced">
+            {/* <select value={orgId} onChange={(e) => setOrgId(e.target.value)} className="filter-select-enhanced">
               <option value="all">All Organizations</option>
               {organizations?.map((org, index) => (
                 <option key={index} value={org._id}>{org.name}</option>
               ))}
-            </select>
+            </select> */}
+            <CustomSelect 
+            value={orgId}
+            options={[
+              { value: 'all', label: 'All Organizations' },
+              ...(organizations?.map((org, index) => ({
+                value: org._id,
+                label: org.name,
+              })) || [])
+            ]}
+            onChange={(value) => setOrgId(value)}
+            placeholder='All organizations'
+            />
           </div>
           <div className="view-toggle-wrapper">
             <button

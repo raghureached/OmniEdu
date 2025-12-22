@@ -15,6 +15,7 @@ import { categories } from '../../../utils/constants';
 import { notifyError, notifySuccess } from '../../../utils/notification';
 import CustomLoader from '../../../components/common/Loading/CustomLoader';
 import CustomLoader2 from '../../../components/common/Loading/CustomLoader2';
+import CustomSelect from '../../../components/dropdown/DropDown';
 
 const defaultForm = {
   title: '',
@@ -673,54 +674,78 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                     <label className="module-overlay__form-label">
                       Credits
                     </label>
-                    <select name="credits" id="" value={form.credits || 0} onChange={handleChange} className='addOrg-form-input' style={{ width: '180px' }}>
-                      <option value="0">0</option>
-                      <option value="1">1</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                      <option value="4">4</option>
-                      <option value="5">5</option>
-                      <option value="6">6</option>
-                      <option value="7">7</option>
-                      <option value="8">8</option>
-                      <option value="9">9</option>
-                    </select>
+                    <CustomSelect 
+                        name="credits" 
+                        value={String(form.credits || 0)}
+                        options={[
+                            { value: "0", label: "0" },
+                            { value: "1", label: "1" },
+                            { value: "2", label: "2" },
+                            { value: "3", label: "3" },
+                            { value: "4", label: "4" },
+                            { value: "5", label: "5" },
+                            { value: "6", label: "6" },
+                            { value: "7", label: "7" },
+                            { value: "8", label: "8" },
+                            { value: "9", label: "9" }
+                        ]}
+                        onChange={(value) => handleChange({ target: { name: 'credits', value } })}
+                        className='addOrg-form-input' 
+                        style={{ width: '180px' }}
+                        searchable={false}
+                    />
                   </div>
                   <div className='module-overlay__form-group'>
                     <label className="module-overlay__form-label slider-label">
                       Stars
                     </label>
 
-                    <select name="stars" id="" value={form.stars || 0} onChange={handleChange} className='addOrg-form-input' style={{ width: '180px' }}>
-                      <option value="0">0</option>
-                      <option value="1">1</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                      <option value="4">4</option>
-                      <option value="5">5</option>
-                      <option value="6">6</option>
-                      <option value="7">7</option>
-                      <option value="8">8</option>
-                      <option value="9">9</option>
-                    </select>
+                    <CustomSelect 
+                        name="stars" 
+                        value={String(form.stars || 0)}
+                        options={[
+                            { value: "0", label: "0" },
+                            { value: "1", label: "1" },
+                            { value: "2", label: "2" },
+                            { value: "3", label: "3" },
+                            { value: "4", label: "4" },
+                            { value: "5", label: "5" },
+                            { value: "6", label: "6" },
+                            { value: "7", label: "7" },
+                            { value: "8", label: "8" },
+                            { value: "9", label: "9" }
+                        ]}
+                        onChange={(value) => handleChange({ target: { name: 'stars', value } })}
+                        className='addOrg-form-input' 
+                        style={{ width: '180px' }}
+                        searchable={false}
+                    />
                   </div>
                   <div className='module-overlay__form-group'>
                     <label className="module-overlay__form-label slider-label">
                       Badges
                     </label>
                     {/* <span className="slider-value">{newContent.badges || 0}</span> */}
-                    <select name="badges" id="" value={form.badges || 0} onChange={handleChange} className='addOrg-form-input' style={{ width: '180px' }}>
-                      <option value="0">0</option>
-                      <option value="1">1</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                      <option value="4">4</option>
-                      <option value="5">5</option>
-                      <option value="6">6</option>
-                      <option value="7">7</option>
-                      <option value="8">8</option>
-                      <option value="9">9</option>
-                    </select>
+                    <CustomSelect 
+                        name="badges" 
+                        value={String(form.badges || 0)}
+                        options={[
+                            { value: "0", label: "0" },
+                            { value: "1", label: "1" },
+                            { value: "2", label: "2" },
+                            { value: "3", label: "3" },
+                            { value: "4", label: "4" },
+                            { value: "5", label: "5" },
+                            { value: "6", label: "6" },
+                            { value: "7", label: "7" },
+                            { value: "8", label: "8" },
+                            { value: "9", label: "9" }
+                        ]}
+                        onChange={(value) => handleChange({ target: { name: 'badges', value } })}
+                        className='addOrg-form-input' 
+                        style={{ width: '180px' }}
+                        searchable={false}
+                    />
                   </div>
                 </div>
 
@@ -729,54 +754,71 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                   <div className="lp-grid-3">
                     <div>
                       <label className="module-overlay__form-label">Category <span className="module-overlay__required">*</span></label>
-                      <select className="addOrg-form-input" name="category" value={form.category} onChange={handleChange} style={{ width: '100%' }}>
-                        <option value="">Select Category</option>
-                        {categories.map((category) => (
-                          <option key={category} value={category}>
-                            {category}
-                          </option>
-                        ))}
-                      </select>
+                      <CustomSelect 
+                        className="addOrg-form-input" 
+                        name="category" 
+                        value={form.category || ''}
+                        options={[
+                            { value: "", label: "Select Category" },
+                            ...(categories.map((category) => ({
+                                value: category,
+                                label: category
+                            })) || [])
+                        ]}
+                        onChange={(value) => handleChange({ target: { name: 'category', value } })}
+                        style={{ width: '100%' }}
+                        placeholder="Select Category"
+                    />
                     </div>
                     
                     <div>
                       <label className="module-overlay__form-label">Target Team<span className="module-overlay__required">*</span></label>
                       <div >
-                        <select className="addOrg-form-input" name="team" value={form.team._id || initialData?.team} onChange={handleChange} style={{ width: '100%' }}>
-                          <option value="">Select a Team</option>
-                          {teams.map((team) => (
-                            <option key={team.id} value={team._id}>
-                              {team.name}
-                            </option>
-                          ))}
-                        </select>
+                        <CustomSelect 
+                            className="addOrg-form-input" 
+                            name="team" 
+                            value={form.team._id || initialData?.team || ''}
+                            options={[
+                                { value: "", label: "Select a Team" },
+                                ...(teams.map((team) => ({
+                                    value: team._id,
+                                    label: team.name
+                                })) || [])
+                            ]}
+                            onChange={(value) => handleChange({ target: { name: 'team', value } })}
+                            style={{ width: '100%' }}
+                            placeholder="Select a Team"
+                        />
                       </div>
                       
                     </div>
                     <div>
                       <label className="module-overlay__form-label">Target Sub Team<span className="module-overlay__required">*</span></label>
 
-                        <select className="addOrg-form-input" name="subteam" value={form.subteam._id || initialData?.subteam} onChange={handleChange} style={{ width: '100%' }}>
-                          <option value="">Select a Sub-team</option>
-                          {initialData?.team.length > 0 ?
-                            teams.filter((team) => team._id === initialData?.team).map((subteam) => (
-                              subteam.subTeams.map((subteam) => (
-                                <option key={subteam.id} value={subteam._id}>
-                                  {subteam.name}
-                                </option>
-                              ))
-                            ))
-
-                            :
-                            teams.filter((team) => team.id === form.team).map((subteam) => (
-                              subteam.subTeams.map((subteam) => (
-                                <option key={subteam.id} value={subteam._id}>
-                                  {subteam.name}
-                                </option>
-                              ))
-                            ))
-                          }
-                        </select>
+                        <CustomSelect 
+                            className="addOrg-form-input" 
+                            name="subteam" 
+                            value={form.subteam._id || initialData?.subteam || ''}
+                            options={[
+                                { value: "", label: "Select a Sub-team" },
+                                ...((initialData?.team.length > 0 ?
+                                    teams.filter((team) => team._id === initialData?.team).flatMap((team) =>
+                                        team.subTeams.map((subteam) => ({
+                                            value: subteam._id,
+                                            label: subteam.name
+                                        }))
+                                    ) :
+                                    teams.filter((team) => team.id === form.team).flatMap((team) =>
+                                        team.subTeams.map((subteam) => ({
+                                            value: subteam._id,
+                                            label: subteam.name
+                                        }))
+                                    )) || [])
+                            ]}
+                            onChange={(value) => handleChange({ target: { name: 'subteam', value } })}
+                            style={{ width: '100%' }}
+                            placeholder="Select a Sub-team"
+                        />
                       </div>
                   </div>
                 </div>

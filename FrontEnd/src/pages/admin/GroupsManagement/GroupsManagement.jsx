@@ -28,6 +28,7 @@ import GroupsFilter from './components/GroupsFilter';
 import DeactivateModal from './DeactivateModal';
 import FailedImportModal from './FailedImportModal';
 import ExportModal from './components/ExportModal';
+import CustomSelect from '../../../components/dropdown/DropDown';
 // Reuse OrganizationManagement styles for consistent look & feel
 import '../../globalAdmin/OrganizationManagement/OrganizationManagement.css';
 import LoadingScreen from '../../../components/common/Loading/Loading';
@@ -1558,17 +1559,20 @@ const GroupsManagement = () => {
                         <label className="addOrg-form-label">
                           Status<span className="addOrg-required">*</span>
                         </label>
-                        <select
+                        <CustomSelect
                           name="status"
                           value={formData?.status?.toLowerCase()}
-                          onChange={handleInputChange}
+                          options={[
+                            { value: "", label: "Select Status" },
+                            { value: "active", label: "Active" },
+                            { value: "inactive", label: "Inactive" }
+                          ]}
+                          onChange={(value) => handleInputChange({ target: { name: 'status', value } })}
+                          placeholder="Select Status"
                           className="addOrg-form-input"
                           required
-                        >
-                          <option value="">Select Status</option>
-                          <option value="active">Active</option>
-                          <option value="inactive">Inactive</option>
-                        </select>
+                          searchable={false}
+                        />
                       </div>
 
                     </div>

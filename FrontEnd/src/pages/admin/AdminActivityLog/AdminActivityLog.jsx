@@ -8,6 +8,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchActivityLogs } from "../../../store/slices/activityLogSlice";
 import LoadingScreen from "../../../components/common/Loading/Loading";
 import { GoX } from "react-icons/go";
+import CustomSelect from "../../../components/dropdown/DropDown";
 import './AdminActivityLog.css';
 
 const AdminActivityLog = () => {
@@ -118,7 +119,7 @@ const AdminActivityLog = () => {
               </div>
 
               <div className="ad-act-log-controls-right">
-                <button className="ad-act-log-control-btn" onClick={() => setShowFilters((prev) => !prev)}>
+                <button className="btn-secondary" onClick={() => setShowFilters((prev) => !prev)}>
                   <Filter size={16} />
                   Filter
                 </button>
@@ -136,28 +137,32 @@ const AdminActivityLog = () => {
                 
                 <div className="ad-act-log-filter-group">
                   <label>Action</label>
-                  <select
+                  <CustomSelect
                     value={actionFilter}
-                    onChange={(e) => handleFilterChange('action', e.target.value)}
-                  >
-                    <option value="">All</option>
-                    <option value="Created">Created</option>
-                    <option value="Updated">Updated</option>
-                    <option value="Deleted">Deleted</option>
-                  </select>
+                    onChange={(value) => handleFilterChange('action', value)}
+                    placeholder="All Actions"
+                    options={[
+                      { value: "", label: "All" },
+                      { value: "Created", label: "Created" },
+                      { value: "Updated", label: "Updated" },
+                      { value: "Deleted", label: "Deleted" }
+                    ]}
+                  />
                 </div>
 
                 <div className="ad-act-log-filter-group">
                   <label>Role</label>
-                  <select
+                  <CustomSelect
                     value={roleFilter}
-                    onChange={(e) => handleFilterChange('role', e.target.value)}
-                  >
-                    <option value="">All</option>
-                    <option value="Admin">Admin</option>
-                    <option value="Manager">Manager</option>
-                    <option value="User">User</option>
-                  </select>
+                    onChange={(value) => handleFilterChange('role', value)}
+                    placeholder="All Roles"
+                    options={[
+                      { value: "", label: "All" },
+                      { value: "Admin", label: "Admin" },
+                      { value: "Manager", label: "Manager" },
+                      { value: "User", label: "User" }
+                    ]}
+                  />
                 </div>
 
                 <div className="ad-act-log-filter-group">

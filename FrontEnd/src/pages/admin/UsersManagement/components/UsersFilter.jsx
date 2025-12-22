@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import CustomSelect from '../../../../components/dropdown/DropDown';
 
 const UsersFilter = ({ 
   users, 
@@ -90,28 +91,28 @@ const UsersFilter = ({
         
         <div className="users_management-search-box">
           <label>Team:</label>
-          <select 
-            value={selectedTeam} 
-            onChange={(e) => setSelectedTeam(e.target.value)}
-          >
-            <option value="All">All</option>
-            {teams.map(team => (
-              <option key={team} value={team}>{team}</option>
-            ))}
-          </select>
+          <CustomSelect
+            value={selectedTeam}
+            options={[
+              { value: "All", label: "All" },
+              ...(teams.map(team => ({ value: team, label: team })) || [])
+            ]}
+            onChange={(value) => setSelectedTeam(value)}
+            placeholder="Select Team"
+          />
         </div>
         
         <div className="users_management-search-box">
           <label>Sub Team:</label>
-          <select 
-            value={selectedSubTeam} 
-            onChange={(e) => setSelectedSubTeam(e.target.value)}
-          >
-            <option value="All">All</option>
-            {subTeams.map(subTeam => (
-              <option key={subTeam} value={subTeam}>{subTeam}</option>
-            ))}
-          </select>
+          <CustomSelect
+            value={selectedSubTeam}
+            options={[
+              { value: "All", label: "All" },
+              ...(subTeams.map(subTeam => ({ value: subTeam, label: subTeam })) || [])
+            ]}
+            onChange={(value) => setSelectedSubTeam(value)}
+            placeholder="Select Sub Team"
+          />
         </div>
         
         <div className="users_management-search-box">
@@ -126,17 +127,16 @@ const UsersFilter = ({
         
         <div className="users_management-search-box">
           <label>Status:</label>
-          <select 
-            value={selectedStatus} 
-            onChange={(e) => setSelectedStatus(e.target.value)}
-          >
-            <option value="All">All</option>
-            {statuses.map(status => (
-              <option key={status} value={status}>
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </option>
-            ))}
-          </select>
+          <CustomSelect
+            value={selectedStatus}
+            options={[
+              { value: "All", label: "All" },
+              ...(statuses.map(status => ({ value: status, label: status })) || [])
+            ]}
+            onChange={(value) => setSelectedStatus(value)}
+            placeholder="Select Status"
+            searchable={false}
+          />
         </div>
         
         <div className="users_management-filter-actions">

@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchOrganizations } from '../../../store/slices/organizationSlice';
 import { fetchUserAllowedPermissions, fetchUserDashboardPermissions, updateUserDashboardConfig } from '../../../store/slices/userDashboardConfigSlice';
 import LoadingScreen from '../../../components/common/Loading/Loading';
+import CustomSelect from '../../../components/dropdown/DropDown';
 const UserDashBoardConfig = () => {
   const [currentOrg, setCurrentOrg] = useState(null)
   const [features, setFeatures] = useState([])
@@ -19,8 +20,8 @@ const UserDashBoardConfig = () => {
   },[currentOrg])
   const { organizations } = useSelector((state) => state.organizations);
   const { permissions, userDashboardAllowedPermissions,loading } = useSelector((state) => state.userDashboardConfig);
-  const handleOrgChange = (e) => {
-    setCurrentOrg(organizations.find((org) => org.uuid === e.target.value))
+  const handleOrgChange = (value) => {
+    setCurrentOrg(organizations.find((org) => org.uuid === value))
   }
   const handlePermissionChange = (e, id) => {
     dispatch(updateUserDashboardConfig({permissionId:id,orgId:currentOrg?.uuid}))
@@ -32,14 +33,19 @@ const UserDashBoardConfig = () => {
     <div className="user-dash-dashboard-settings-container">
       <div className="message-board-form" style={{display: "flex", flexDirection: "row", alignItems: "center",justifyContent:"center",gap:"20px"}}>
         <label htmlFor="" className="message-board-label">Manage Settings for an Organization</label>
-        <select className="message-board-select" onChange={(e) => handleOrgChange(e)} style={{width:"fit-content"}} value={currentOrg?.uuid}>
-        <option value="">Select an Organization</option>
-        {organizations.map((org) => (
-          <option key={org._id} value={org.uuid}>
-            {org.name}
-          </option>
-        ))}
-      </select>
+        <CustomSelect
+          value={currentOrg?.uuid || ""}
+          options={[
+            { value: "", label: "Select an Organization" },
+            ...(organizations?.map((org) => ({
+              value: org.uuid,
+              label: org.name,
+            })) || [])
+          ]}
+          onChange={(value) => handleOrgChange(value)}
+          placeholder="Select an Organization"
+          style={{width:"fit-content"}}
+        />
       </div>
 
       {currentOrg ? <div className="user-dash-settings-card">
