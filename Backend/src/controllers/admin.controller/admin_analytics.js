@@ -2,14 +2,191 @@ const Module = require("../../models/moduleOrganization_model");
 const UserContentProgress = require("../../models/userContentProgress_model");
 const User = require("../../models/users_model");
 const Team = require("../../models/teams_model");
+const SubTeam = require("../../models/subTeams_model");
 const Organization = require("../../models/organization_model");
 const ForUserAssignment = require("../../models/forUserAssigments_model");
 const mongoose = require("mongoose");
+
+// Get organization creation date
+const getOrganizationCreationDate = async (req, res) => {
+    try {
+        const organizationId = req.user?.organization_id;
+        
+        if (!organizationId) {
+            return res.status(400).json({
+                success: false,
+                message: "Organization ID not found"
+            });
+        }
+
+        const organization = await Organization.findById(organizationId).select('createdAt');
+        
+        if (!organization) {
+            return res.status(404).json({
+                success: false,
+                message: "Organization not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                createdAt: organization.createdAt
+            }
+        });
+    } catch (error) {
+        console.error("Error fetching organization creation date:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
 const OrganizationAssessmentsAttemps = require("../../models/organizationAssessmentsAttemps_model");
 const OrganizationAssessments = require("../../models/organizationAssessments_model");
 const OrganizationSurveys = require("../../models/organizationSurveys_model");
 const OrganizationSurveyResponses = require("../../models/organizationSurveyResponses_model");
 const LearningPath = require("../../models/learningPath_model");
+
+// Get content counts for dashboard (no time filtering)
+const getContentCountsAll = async (req, res) => {
+    try {
+        const organizationId = req.user?.organization_id;
+        
+        if (!organizationId) {
+            return res.status(400).json({
+                success: false,
+                message: "Organization ID not found"
+            });
+        }
+
+        // Get counts for all content types without any date filtering
+        const [modulesCount, assessmentsCount, surveysCount, learningPathsCount] = await Promise.all([
+            Module.countDocuments({ org_id: organizationId }),
+            OrganizationAssessments.countDocuments({ organization_id: organizationId }),
+            OrganizationSurveys.countDocuments({ organization_id: organizationId }),
+            LearningPath.countDocuments({ organization_id: organizationId })
+        ]);
+
+        // Get published counts without any date filtering
+        const [publishedModulesCount, publishedAssessmentsCount, publishedSurveysCount] = await Promise.all([
+            Module.countDocuments({ org_id: organizationId, status: 'Published' }),
+            OrganizationAssessments.countDocuments({ organization_id: organizationId, status: 'Published' }),
+            OrganizationSurveys.countDocuments({ organization_id: organizationId, status: 'Published' })
+        ]);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                modules: {
+                    total: modulesCount,
+                    published: publishedModulesCount
+                },
+                assessments: {
+                    total: assessmentsCount,
+                    published: publishedAssessmentsCount
+                },
+                surveys: {
+                    total: surveysCount,
+                    published: publishedSurveysCount
+                },
+                learningPaths: {
+                    total: learningPathsCount
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Error fetching content counts:", error);
+        res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: error.message
+        });
+    }
+};
+
+// Get content counts for dashboard
+const getContentCounts = async (req, res) => {
+    try {
+        const organizationId = req.user?.organization_id;
+        const { timeRange = '7d' } = req.query; // Default to 7 days
+        
+        if (!organizationId) {
+            return res.status(400).json({
+                success: false,
+                message: "Organization ID not found"
+            });
+        }
+
+        // Calculate date filter based on time range
+        let dateFilter = {};
+        if (timeRange !== 'all') {
+            const cutoffDate = new Date();
+            
+            switch (timeRange) {
+                case '7d':
+                    cutoffDate.setDate(cutoffDate.getDate() - 7);
+                    break;
+                case '30d':
+                    cutoffDate.setDate(cutoffDate.getDate() - 30);
+                    break;
+                case '90d':
+                    cutoffDate.setDate(cutoffDate.getDate() - 90);
+                    break;
+                case 'mtd':
+                    cutoffDate.setDate(cutoffDate.getDate() - (cutoffDate.getDate() - 1));
+                    break;
+                default:
+                    cutoffDate.setDate(cutoffDate.getDate() - 7);
+            }
+            
+            dateFilter = { createdAt: { $gte: cutoffDate } };
+        }
+
+        // Get counts for all content types with date filter
+        const [modulesCount, assessmentsCount, surveysCount, learningPathsCount] = await Promise.all([
+            Module.countDocuments({ org_id: organizationId, ...dateFilter }),
+            OrganizationAssessments.countDocuments({ organization_id: organizationId, ...dateFilter }),
+            OrganizationSurveys.countDocuments({ organization_id: organizationId, ...dateFilter }),
+            LearningPath.countDocuments({ organization_id: organizationId, ...dateFilter })
+        ]);
+
+        // Get published counts with date filter
+        const [publishedModulesCount, publishedAssessmentsCount, publishedSurveysCount] = await Promise.all([
+            Module.countDocuments({ org_id: organizationId, status: 'Published', ...dateFilter }),
+            OrganizationAssessments.countDocuments({ organization_id: organizationId, status: 'Published', ...dateFilter }),
+            OrganizationSurveys.countDocuments({ organization_id: organizationId, status: 'Published', ...dateFilter })
+        ]);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                modules: {
+                    total: modulesCount,
+                    published: publishedModulesCount
+                },
+                assessments: {
+                    total: assessmentsCount,
+                    published: publishedAssessmentsCount
+                },
+                surveys: {
+                    total: surveysCount,
+                    published: publishedSurveysCount
+                },
+                learningPaths: {
+                    total: learningPathsCount
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Error fetching content counts:", error);
+        res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: error.message
+        });
+    }
+};
 
 const categories = [
     "Mandatory Training (Compliance & Regulations)",
@@ -169,7 +346,7 @@ const formatDuration = (minutes) => {
 
 const getCourseDistribution = async (req, res) => {
     try {
-        const { category, team, timeRange } = req.query;
+        const { category, team, subteam, timeRange } = req.query;
         let query = { 
             org_id: req.user.organization_id,
             status: 'Published' // Only include published modules
@@ -184,11 +361,36 @@ const getCourseDistribution = async (req, res) => {
             query.team = team;
         }
         
+        if (subteam && subteam !== 'all') {
+            query.subteam = subteam;
+        }
+        
         // Apply time range filter if provided
         if (timeRange) {
-            const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : timeRange === '90d' ? 90 : 30;
-            const cutoffDate = new Date();
-            cutoffDate.setDate(cutoffDate.getDate() - days);
+            let cutoffDate = new Date();
+            
+            if (timeRange === '7d') {
+                cutoffDate.setDate(cutoffDate.getDate() - 7);
+            } else if (timeRange === '30d') {
+                cutoffDate.setDate(cutoffDate.getDate() - 30);
+            } else if (timeRange === '90d') {
+                cutoffDate.setDate(cutoffDate.getDate() - 90);
+            } else if (timeRange === 'mtd') {
+                // Month to date - from first day of current month
+                cutoffDate = new Date(cutoffDate.getFullYear(), cutoffDate.getMonth(), 1);
+            } else if (timeRange === 'custom') {
+                // Custom date range - use provided start and end dates
+                if (req.query.startDate) {
+                    cutoffDate = new Date(req.query.startDate);
+                } else {
+                    // Fallback to 30 days if no start date provided
+                    cutoffDate.setDate(cutoffDate.getDate() - 30);
+                }
+            } else {
+                // Default to 30 days
+                cutoffDate.setDate(cutoffDate.getDate() - 30);
+            }
+            
             query.createdAt = { $gte: cutoffDate };
         }
         
@@ -197,10 +399,22 @@ const getCourseDistribution = async (req, res) => {
         // If specific category is filtered, return only that category
         if (category && category !== 'all') {
             const filtered = modules.filter(m => m.category === category);
+            
+            // Get course names and team names for this category
+            const courseNames = filtered.map(m => m.title || 'Unnamed Course');
+            const teamIds = [...new Set(filtered.map(m => m.team).filter(Boolean))];
+            
+            // Fetch team names
+            const Team = require('../../models/teams_model');
+            const teams = await Team.find({ _id: { $in: teamIds } }).select('name');
+            const teamNames = teams.map(t => t.name);
+            
             const courseLibrary = [{
                 category,
                 courses: filtered.length,
-                teams: new Set(filtered.map(m => m.team)).size
+                teams: new Set(filtered.map(m => m.team)).size,
+                courseNames: courseNames.join('; '),
+                teamNames: teamNames.join('; ')
             }];
             
             return res.status(200).json({
@@ -210,15 +424,26 @@ const getCourseDistribution = async (req, res) => {
         }
 
         // Return all categories if no specific filter
-        const courseLibrary = categories.map(cat => {
+        const courseLibrary = await Promise.all(categories.map(async cat => {
             const filtered = modules.filter(m => m.category === cat);
+            
+            // Get course names and team names for this category
+            const courseNames = filtered.map(m => m.title || 'Unnamed Course');
+            const teamIds = [...new Set(filtered.map(m => m.team).filter(Boolean))];
+            
+            // Fetch team names
+            const Team = require('../../models/teams_model');
+            const teams = await Team.find({ _id: { $in: teamIds } }).select('name');
+            const teamNames = teams.map(t => t.name);
 
             return {
                 category: cat,
                 courses: filtered.length,
-                teams: new Set(filtered.map(m => m.team)).size
+                teams: new Set(filtered.map(m => m.team)).size,
+                courseNames: courseNames.join('; '),
+                teamNames: teamNames.join('; ')
             };
-        });
+        }));
 
         return res.status(200).json({
             success: true,
@@ -245,6 +470,20 @@ const calculateUsageTrend = async (req, res) => {
         if (timeRange === '7d') weeksToShow = 1;
         else if (timeRange === '30d') weeksToShow = 4;
         else if (timeRange === '90d') weeksToShow = 12;
+        else if (timeRange === 'mtd') {
+            // For month to date, calculate weeks from first day of month
+            const now = new Date();
+            const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const daysSinceMonthStart = Math.ceil((now - firstDayOfMonth) / (1000 * 60 * 60 * 24));
+            weeksToShow = Math.max(1, Math.ceil(daysSinceMonthStart / 7));
+        }
+        else if (timeRange === 'custom' && req.query.startDate && req.query.endDate) {
+            // For custom date range, calculate weeks based on the date range
+            const startDate = new Date(req.query.startDate);
+            const endDate = new Date(req.query.endDate);
+            const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+            weeksToShow = Math.max(1, Math.ceil(daysDiff / 7));
+        }
         
         // Build base query filter
         let baseFilter = { organization_id: organizationId };
@@ -338,49 +577,154 @@ const calculateUsageTrend = async (req, res) => {
 
 const getUsersData = async (req, res) => {
     try {
-        const last24Hours = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
-        const last7Days = new Date(new Date().getTime() - 7 * 24 * 60 * 60 * 1000);
-        const last30Days = new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000);
+        const { timeRange = '7d', startDate, endDate } = req.query;
+        const organizationId = req.user.organization_id;
 
-        const totalUsers = await User.countDocuments({ organization_id: req.user.organization_id });
-        const dau = await User.countDocuments({ organization_id: req.user.organization_id, last_login: { $gte: last24Hours } });
-        const mau = await User.countDocuments({ organization_id: req.user.organization_id, last_login: { $gte: last30Days } });
+        // Calculate date ranges based on timeRange
+        const now = new Date();
+        let dateRangeStart, dateRangeEnd, mauDateRangeStart, mauDateRangeEnd;
+        let daysInPeriod = 7;
 
-        const stickinessScore = mau > 0 ? ((dau / mau) * 100).toFixed(1) : 0;
+        switch (timeRange) {
+            case '7d':
+                dateRangeStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                dateRangeEnd = now;
+                mauDateRangeStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                mauDateRangeEnd = now;
+                daysInPeriod = 7;
+                break;
+            case 'mtd':
+                dateRangeStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                dateRangeEnd = now;
+                mauDateRangeStart = dateRangeStart;
+                mauDateRangeEnd = now;
+                daysInPeriod = Math.ceil((now - dateRangeStart) / (24 * 60 * 60 * 1000));
+                break;
+            case '30d':
+                dateRangeStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                dateRangeEnd = now;
+                mauDateRangeStart = dateRangeStart;
+                mauDateRangeEnd = now;
+                daysInPeriod = 30;
+                break;
+            case '90d':
+                dateRangeStart = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+                dateRangeEnd = now;
+                mauDateRangeStart = dateRangeStart;
+                mauDateRangeEnd = now;
+                daysInPeriod = 90;
+                break;
+            case 'custom':
+                if (startDate && endDate) {
+                    dateRangeStart = new Date(startDate);
+                    dateRangeEnd = new Date(endDate);
+                    mauDateRangeStart = dateRangeStart;
+                    mauDateRangeEnd = dateRangeEnd;
+                    daysInPeriod = Math.ceil((dateRangeEnd - dateRangeStart) / (24 * 60 * 60 * 1000));
+                } else {
+                    // Fallback to 7 days if custom dates not provided
+                    dateRangeStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    dateRangeEnd = now;
+                    mauDateRangeStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                    mauDateRangeEnd = now;
+                    daysInPeriod = 7;
+                }
+                break;
+            default:
+                dateRangeStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                dateRangeEnd = now;
+                mauDateRangeStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                mauDateRangeEnd = now;
+                daysInPeriod = 7;
+        }
 
-        const previous24Hours = new Date(last24Hours.getTime() - 24 * 60 * 60 * 1000);
-        const previous30Days = new Date(last30Days.getTime() - 30 * 24 * 60 * 60 * 1000);
+        // Total Users (doesn't change with time range)
+        const totalUsers = await User.countDocuments({ organization_id: organizationId });
 
-        const previousDAU = await User.countDocuments({
-            organization_id: req.user.organization_id,
-            last_login: { $gte: previous24Hours, $lt: last24Hours }
+        // Calculate DAU (average daily active users over the period)
+        const dauPromises = [];
+        for (let day = 0; day < daysInPeriod; day++) {
+            const dayStart = new Date(dateRangeStart);
+            dayStart.setDate(dayStart.getDate() + day);
+            dayStart.setHours(0, 0, 0, 0);
+
+            const dayEnd = new Date(dayStart);
+            dayEnd.setHours(23, 59, 59, 999);
+
+            const dayDAU = User.countDocuments({
+                organization_id: organizationId,
+                last_login: { $gte: dayStart, $lte: dayEnd }
+            });
+            dauPromises.push(dayDAU);
+        }
+
+        const dauCounts = await Promise.all(dauPromises);
+        const avgDAU = Math.round(dauCounts.reduce((sum, count) => sum + count, 0) / daysInPeriod);
+
+        // Calculate MAU (users active in the MAU period)
+        const mau = await User.countDocuments({
+            organization_id: organizationId,
+            last_login: { $gte: mauDateRangeStart, $lte: mauDateRangeEnd }
         });
+
+        // Calculate Platform Stickiness
+        const stickinessScore = mau > 0 ? ((avgDAU / mau) * 100).toFixed(1) : 0;
+
+        // Calculate Avg Time on Platform (mock implementation - you may need to adjust based on your actual data structure)
+        // This would typically require session data or time tracking data
+        const avgTimeOnPlatform = "2h 45m"; // Placeholder - implement based on your actual time tracking
+
+        // Calculate previous period for change percentages
+        const previousPeriodStart = new Date(dateRangeStart.getTime() - (dateRangeEnd - dateRangeStart));
+        const previousPeriodEnd = dateRangeStart;
+
+        const previousDAUPromises = [];
+        for (let day = 0; day < daysInPeriod; day++) {
+            const dayStart = new Date(previousPeriodStart);
+            dayStart.setDate(dayStart.getDate() + day);
+            dayStart.setHours(0, 0, 0, 0);
+
+            const dayEnd = new Date(dayStart);
+            dayEnd.setHours(23, 59, 59, 999);
+
+            const dayDAU = User.countDocuments({
+                organization_id: organizationId,
+                last_login: { $gte: dayStart, $lte: dayEnd }
+            });
+            previousDAUPromises.push(dayDAU);
+        }
+
+        const previousDAUCounts = await Promise.all(previousDAUPromises);
+        const previousAvgDAU = Math.round(previousDAUCounts.reduce((sum, count) => sum + count, 0) / daysInPeriod);
 
         const previousMAU = await User.countDocuments({
-            organization_id: req.user.organization_id,
-            last_login: { $gte: previous30Days, $lt: last30Days }
+            organization_id: organizationId,
+            last_login: { $gte: new Date(mauDateRangeStart.getTime() - (mauDateRangeEnd - mauDateRangeStart)), $lt: mauDateRangeStart }
         });
 
-        const dauChange = previousDAU > 0 ? (((dau - previousDAU) / previousDAU) * 100).toFixed(1) : 0;
+        const dauChange = previousAvgDAU > 0 ? (((avgDAU - previousAvgDAU) / previousAvgDAU) * 100).toFixed(1) : 0;
         const mauChange = previousMAU > 0 ? (((mau - previousMAU) / previousMAU) * 100).toFixed(1) : 0;
-        const totalChange = previousDAU > 0 ? (((totalUsers - previousDAU) / previousDAU) * 100).toFixed(1) : 0;
-
-
 
         return res.status(200).json({
             success: true,
             data: {
                 totalUsers,
-                dau,
+                dau: avgDAU,
                 mau,
                 stickinessScore,
+                avgTimeOnPlatform,
                 dauChange,
                 mauChange,
-                totalChange,
-
+                timeRange,
+                period: {
+                    start: dateRangeStart,
+                    end: dateRangeEnd,
+                    days: daysInPeriod
+                }
             }
         });
     } catch (error) {
+        console.error("Error fetching users data:", error);
         return res.status(500).json({
             success: false,
             message: "Server error",
@@ -391,15 +735,33 @@ const getUsersData = async (req, res) => {
 
 const getAdoption = async (req, res) => {
     try {
-        const { category, team, timeRange } = req.query;
-        
+        const { category, team, subteam, timeRange } = req.query;
+        console.log('getAdoption called with params:', { category, team, subteam, timeRange });
+        console.log('Organization ID:', req.user.organization_id);
+       
         let progressQuery = { organization_id: req.user.organization_id };
         
         // Apply time range filter if provided
         if (timeRange) {
-            const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : timeRange === '90d' ? 90 : 30;
-            const cutoffDate = new Date();
-            cutoffDate.setDate(cutoffDate.getDate() - days);
+            let cutoffDate = new Date();
+            
+            if (timeRange === '7d') {
+                cutoffDate.setDate(cutoffDate.getDate() - 7);
+            } else if (timeRange === '30d') {
+                cutoffDate.setDate(cutoffDate.getDate() - 30);
+            } else if (timeRange === '90d') {
+                cutoffDate.setDate(cutoffDate.getDate() - 90);
+            } else if (timeRange === 'mtd') {
+                // Month to date - from first day of current month
+                cutoffDate = new Date(cutoffDate.getFullYear(), cutoffDate.getMonth(), 1);
+            } else if (timeRange === 'custom' && req.query.startDate) {
+                // Custom date range - use provided start date
+                cutoffDate = new Date(req.query.startDate);
+            } else {
+                // Default to 30 days
+                cutoffDate.setDate(cutoffDate.getDate() - 30);
+            }
+            
             progressQuery.createdAt = { $gte: cutoffDate };
         }
         
@@ -417,6 +779,7 @@ const getAdoption = async (req, res) => {
             const name = entry.assignment_id?.contentName;
             const courseCategory = entry.assignment_id?.contentId?.category;
             const courseTeam = entry.assignment_id?.contentId?.team?.toString();
+            const courseSubteam = entry.assignment_id?.contentId?.subteam?.toString();
 
             if (!contentId) return;
 
@@ -425,6 +788,9 @@ const getAdoption = async (req, res) => {
             
             // Apply team filter if specified (compare ObjectId strings)
             if (team && team !== 'all' && courseTeam !== team) return;
+            
+            // Apply subteam filter if specified (compare ObjectId strings)
+            if (subteam && subteam !== 'all' && courseSubteam !== subteam) return;
 
             if (!grouped[contentId]) {
                 grouped[contentId] = {
@@ -505,6 +871,34 @@ const getTeams = async (req, res) => {
     }
 };
 
+const getSubteams = async (req, res) => {
+    try {
+        const subteams = await SubTeam.find()
+            .populate({
+                path: 'team_id',
+                match: { organization_id: req.user.organization_id },
+                select: '_id name'
+            })
+            .select('_id name team_id')
+            .sort({ name: 1 });
+
+        // Filter out subteams whose parent team doesn't belong to this organization
+        const filteredSubteams = subteams.filter(subteam => subteam.team_id);
+
+        return res.status(200).json({
+            success: true,
+            subteams: filteredSubteams
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: error.message
+        });
+    }
+};
+
 const getEngagementHeatmap = async (req, res) => {
     try {
         const { timeRange } = req.query;
@@ -518,6 +912,14 @@ const getEngagementHeatmap = async (req, res) => {
             startDate.setDate(startDate.getDate() - 7);
         } else if (timeRange === '30d') {
             startDate.setDate(startDate.getDate() - 30);
+        } else if (timeRange === '90d') {
+            startDate.setDate(startDate.getDate() - 90);
+        } else if (timeRange === 'mtd') {
+            // Month to date - from first day of current month
+            startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+        } else if (timeRange === 'custom' && req.query.startDate) {
+            // Custom date range - use provided start date
+            startDate = new Date(req.query.startDate);
         } else {
             startDate.setDate(startDate.getDate() - 30); // default to 30 days
         }
@@ -615,12 +1017,33 @@ const getEngagementHeatmap = async (req, res) => {
 
 const getAtRiskLearners = async (req, res) => {
     try {
-        const { days = 30 } = req.query;
+        const { timeRange, days, riskLevel } = req.query;
         const organizationId = req.user.organization_id;
         
-        // Calculate date threshold for login activity
+        // Calculate date threshold for login activity based on timeRange
         const loginThreshold = new Date();
-        loginThreshold.setDate(loginThreshold.getDate() - parseInt(days));
+        let daysToUse = 30; // default
+        
+        if (timeRange === '7d') {
+            daysToUse = 7;
+        } else if (timeRange === '30d') {
+            daysToUse = 30;
+        } else if (timeRange === '90d') {
+            daysToUse = 90;
+        } else if (timeRange === 'mtd') {
+            // For month to date, use days from first day of month
+            const firstDayOfMonth = new Date(loginThreshold.getFullYear(), loginThreshold.getMonth(), 1);
+            daysToUse = Math.ceil((loginThreshold - firstDayOfMonth) / (1000 * 60 * 60 * 24));
+        } else if (timeRange === 'custom' && req.query.startDate) {
+            // For custom date range, calculate days from start date
+            const startDate = new Date(req.query.startDate);
+            daysToUse = Math.ceil((loginThreshold - startDate) / (1000 * 60 * 60 * 24));
+        } else if (days) {
+            // Fallback to explicit days parameter if provided
+            daysToUse = parseInt(days);
+        }
+        
+        loginThreshold.setDate(loginThreshold.getDate() - daysToUse);
         
         console.log('At-risk learners - orgId:', organizationId, 'days:', days);
         console.log('Login threshold:', loginThreshold);
@@ -628,7 +1051,7 @@ const getAtRiskLearners = async (req, res) => {
         // Get all users in the organization
         const users = await User.find({
             organization_id: organizationId
-        }).select('name email last_login createdAt');
+        }).select('name email last_login createdAt uuid');
         
         console.log('Total users found:', users.length);
         
@@ -659,6 +1082,7 @@ const getAtRiskLearners = async (req, res) => {
         users.forEach(user => {
             userMetrics[user._id] = {
                 userId: user._id,
+                uuid: user.uuid,
                 name: user.name,
                 email: user.email,
                 lastLogin: user.last_login,
@@ -724,10 +1148,33 @@ const getAtRiskLearners = async (req, res) => {
         });
         
         // Filter users with risk factors
-        const atRiskLearners = Object.values(userMetrics)
-            .filter(user => user.riskFactors.length > 0)
-            .sort((a, b) => b.riskFactors.length - a.riskFactors.length)
-            .slice(0, 20); // Limit to top 20 at-risk learners
+        let atRiskLearners = Object.values(userMetrics)
+            .filter(user => user.riskFactors.length > 0);
+        
+        // Apply risk level filtering if specified
+        if (riskLevel && riskLevel !== 'all') {
+            atRiskLearners = atRiskLearners.filter(user => {
+                const userRiskLevel = user.riskFactors.length >= 3 ? 'high' : 
+                                   user.riskFactors.length >= 2 ? 'medium' : 'low';
+                return userRiskLevel === riskLevel;
+            });
+        }
+        
+        // Sort by last login (least recent first), then by risk factors (most at-risk first), and limit to top 20
+        atRiskLearners = atRiskLearners
+            .sort((a, b) => {
+                // First sort by last login (least recent first)
+                const aLastLogin = a.lastLogin ? new Date(a.lastLogin) : new Date(0);
+                const bLastLogin = b.lastLogin ? new Date(b.lastLogin) : new Date(0);
+                
+                if (aLastLogin.getTime() !== bLastLogin.getTime()) {
+                    return aLastLogin.getTime() - bLastLogin.getTime();
+                }
+                
+                // If last login dates are the same, sort by risk factors (most at-risk first)
+                return b.riskFactors.length - a.riskFactors.length;
+            })
+            .slice(0, 20);
         
         console.log('At-risk learners identified:', atRiskLearners.length);
         
@@ -1717,4 +2164,302 @@ const getLearningPathAnalytics = async (req, res) => {
     }
 };
 
-module.exports = { getCourseDistribution, getUsersData, calculateUsageTrend, getAdoption, getTeams, getEngagementHeatmap, getAtRiskLearners, getContentAnalytics, getUserAnalytics, getAssessmentAnalytics, getSurveyAnalytics, getLearningPathAnalytics };
+const getCoursePerformanceInsights = async (req, res) => {
+    try {
+        const { content, timeRange } = req.query;
+        console.log('Course Performance Insights called with:', { content, timeRange, orgId: req.user.organization_id });
+        
+        let progressQuery = { organization_id: req.user.organization_id };
+        
+        // Apply time range filter if provided
+        if (timeRange) {
+            let cutoffDate = new Date();
+            
+            if (timeRange === '7d') {
+                cutoffDate.setDate(cutoffDate.getDate() - 7);
+            } else if (timeRange === '30d') {
+                cutoffDate.setDate(cutoffDate.getDate() - 30);
+            } else if (timeRange === '90d') {
+                cutoffDate.setDate(cutoffDate.getDate() - 90);
+            } else if (timeRange === 'mtd') {
+                // Month to date - from first day of current month
+                cutoffDate = new Date(cutoffDate.getFullYear(), cutoffDate.getMonth(), 1);
+            } else if (timeRange === 'custom' && req.query.startDate) {
+                // Custom date range - use provided start date
+                cutoffDate = new Date(req.query.startDate);
+            } else {
+                // Default to 30 days
+                cutoffDate.setDate(cutoffDate.getDate() - 30);
+            }
+            
+            progressQuery.createdAt = { $gte: cutoffDate };
+        }
+        
+        let progress = [];
+        let contentTypeModel = "OrganizationModule";
+        let contentTypeField = "contentId";
+        
+        // Determine which content type to fetch based on filter
+        switch (content) {
+            case "assessments":
+                contentTypeModel = "OrganizationAssessments";
+                break;
+            case "surveys":
+                contentTypeModel = "OrganizationSurveys";
+                break;
+            case "learningpaths":
+                contentTypeModel = "LearningPath";
+                break;
+            case "modules":
+            default:
+                contentTypeModel = "OrganizationModule";
+                break;
+        }
+        
+        // Fetch progress data based on content type
+        if (content === "assessments") {
+            // Get users from organization first, then get their assessment attempts
+            const orgUsers = await User.find({ organization_id: req.user.organization_id }).select('_id');
+            const userIds = orgUsers.map(u => u._id);
+            
+            progress = await OrganizationAssessmentsAttemps
+                .find({
+                    user_id: { $in: userIds },
+                    ...(timeRange && { createdAt: progressQuery.createdAt })
+                })
+                .populate({
+                    path: "assessment_id"
+                })
+                .populate({
+                    path: "user_id",
+                    select: "name email"
+                });
+        } else if (content === "surveys") {
+            // Get users from organization first, then get their survey responses
+            const orgUsers = await User.find({ organization_id: req.user.organization_id }).select('_id');
+            const userIds = orgUsers.map(u => u._id);
+            
+            // Get all surveys for this organization
+            const allSurveys = await OrganizationSurveys.find({
+                organization_id: req.user.organization_id
+            });
+            
+            // Get survey responses
+            const responses = await OrganizationSurveyResponses
+                .find({
+                    user_id: { $in: userIds },
+                    ...(timeRange && { createdAt: progressQuery.createdAt })
+                })
+                .populate({
+                    path: "user_id",
+                    select: "name email"
+                });
+            
+            // Create progress entries for all surveys, even if no responses
+            progress = allSurveys.map(survey => {
+                const surveyResponses = responses.filter(r => 
+                    r.survey_assignment_id && r.survey_assignment_id.toString() === survey._id.toString()
+                );
+                
+                return {
+                    survey_assignment_id: survey._id,
+                    surveyId: survey,
+                    responses: surveyResponses,
+                    submitted_at: surveyResponses.length > 0 ? surveyResponses[0].submitted_at : null,
+                    user_id: surveyResponses.length > 0 ? surveyResponses[0].user_id : null
+                };
+            });
+        } else if (content === "learningpaths") {
+            // Get all learning paths for this organization
+            const allLearningPaths = await LearningPath.find({
+                organization_id: req.user.organization_id
+            });
+            
+            // Get user progress for learning paths
+            const userProgress = await UserContentProgress
+                .find({
+                    organization_id: req.user.organization_id,
+                    contentType: "learningpath",
+                    ...(timeRange && { createdAt: progressQuery.createdAt })
+                })
+                .populate({
+                    path: "assignment_id",
+                    populate: { 
+                        path: "contentId", 
+                        model: "LearningPath"
+                    }
+                });
+            
+            // Create progress entries for all learning paths, even if no progress
+            progress = allLearningPaths.map(learningPath => {
+                const pathProgress = userProgress.filter(p => 
+                    p.assignment_id?.contentId && p.assignment_id.contentId.toString() === learningPath._id.toString()
+                );
+                
+                return {
+                    assignment_id: pathProgress.length > 0 ? pathProgress[0].assignment_id : null,
+                    contentId: learningPath,
+                    status: pathProgress.length > 0 ? pathProgress[0].status : "assigned",
+                    score: pathProgress.length > 0 ? pathProgress[0].score || 0 : 0,
+                    enrolled: pathProgress.length,
+                    completed: pathProgress.filter(p => p.status === "completed").length,
+                    inProgress: pathProgress.filter(p => p.status === "in_progress").length
+                };
+            });
+        } else {
+            // modules (default)
+            progress = await UserContentProgress
+                .find(progressQuery)
+                .populate({
+                    path: "assignment_id",
+                    populate: { path: "contentId", model: contentTypeModel }
+                });
+        }
+
+        const grouped = {};
+
+        console.log(`Found ${progress.length} progress entries for content type: ${content}`);
+        
+        if (content === "surveys") {
+            console.log('Sample survey entry:', progress[0]);
+        } else if (content === "learningpaths") {
+            console.log('Sample learning path entry:', progress[0]);
+        } else if (content === "modules" || !content) {
+            console.log('Sample module entry:', progress[0]);
+        }
+
+        progress.forEach(entry => {
+            let contentId, name, status, score = 0;
+            
+            if (content === "assessments") {
+                contentId = entry.assessment_id?._id?.toString();
+                name = entry.assessment_id?.title;
+                status = entry.result ? "completed" : "in-progress";
+                score = entry.score || 0;
+            } else if (content === "surveys") {
+                // For surveys, use the survey data directly
+                contentId = entry.surveyId?._id?.toString() || entry.survey_assignment_id?.toString();
+                name = entry.surveyId?.title || `Survey ${contentId?.slice(-8) || 'Unknown'}`;
+                status = entry.submitted_at ? "completed" : "assigned";
+                score = 0; // Surveys don't have scores
+            } else {
+                // modules and learningpaths
+                if (content === "learningpaths") {
+                    contentId = entry.contentId?._id?.toString();
+                    name = entry.contentId?.title || 'Unknown Learning Path';
+                    status = entry.status || "assigned";
+                    score = entry.score || 0;
+                } else {
+                    // modules
+                    contentId = entry.assignment_id?.contentId?._id?.toString();
+                    name = entry.assignment_id?.contentName;
+                    status = entry.status;
+                    score = entry.score || 0;
+                }
+            }
+
+            if (!contentId) return;
+
+            if (!grouped[contentId]) {
+                grouped[contentId] = {
+                    name,
+                    enrolled: 0,
+                    completed: 0,
+                    inProgress: 0,
+                    totalScore: 0,
+                    scores: []
+                };
+            }
+
+            if (status === "assigned") grouped[contentId].enrolled++;
+            if (status === "in-progress") grouped[contentId].inProgress++;
+            if (status === "completed") {
+                grouped[contentId].completed++;
+                grouped[contentId].totalScore += score;
+                grouped[contentId].scores.push(score);
+            }
+        });
+
+        let coursePerformance = [];
+
+        Object.values(grouped).forEach(item => {
+            let { name, enrolled, completed, inProgress, totalScore, scores } = item;
+
+            // Skip if no activity
+            if (enrolled === 0 && completed === 0 && inProgress === 0) return;
+
+            // If enrolled = 0 but there's activity, count total activity as enrolled
+            if (enrolled === 0 && (completed > 0 || inProgress > 0)) {
+                enrolled = completed + inProgress;
+            }
+
+            const completionRate = ((completed / enrolled) * 100).toFixed(1);
+            const avgScore = scores.length > 0 ? (totalScore / scores.length).toFixed(1) : 0;
+            
+            // Determine performance level based on completion rate, average score, and enrollment
+            let performanceLevel = "Needs Attention";
+            
+            // Top Performing: completionRate ≥ 80% AND avgScore ≥ 70 AND enrolled ≥ 5
+            if (completionRate >= 80 && enrolled >= 2) {
+                performanceLevel = "Top Performing";
+            } 
+            // Good Performance: completionRate ≥ 60% AND avgScore ≥ 50 AND enrolled ≥ 3
+            else if (completionRate >= 60  && enrolled >= 1) {
+                performanceLevel = "Good Performance";
+            }
+            // Needs Attention: completionRate < 60% OR avgScore < 50 OR completed = 0
+            else if (completionRate < 60 || completed === 0) {
+                performanceLevel = "Needs Attention";
+            }
+            // Default for other cases
+            else {
+                performanceLevel = "Good Performance";
+            }
+
+            coursePerformance.push({
+                name,
+                enrolled,
+                completed,
+                inProgress,
+                completionRate,
+                avgScore,
+                performanceLevel
+            });
+        });
+
+        // Sort by completion rate and average score
+        coursePerformance.sort((a, b) => {
+            if (b.completionRate !== a.completionRate) {
+                return b.completionRate - a.completionRate;
+            }
+            return b.avgScore - a.avgScore;
+        });
+
+        // Separate top performing and courses needing attention
+        const topPerforming = coursePerformance
+            .filter(course => course.performanceLevel === "Top Performing")
+            .slice(0, 5);
+
+        const needingAttention = coursePerformance
+            .filter(course => course.performanceLevel === "Needs Attention")
+            .slice(0, 5);
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                topPerforming,
+                needingAttention,
+                allCourses: coursePerformance.slice(0, 10) // Top 10 overall
+            }
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: error.message
+        });
+    }
+};
+
+module.exports = { getOrganizationCreationDate, getCourseDistribution, getUsersData, calculateUsageTrend, getAdoption, getTeams, getSubteams, getEngagementHeatmap, getAtRiskLearners, getContentAnalytics, getUserAnalytics, getAssessmentAnalytics, getSurveyAnalytics, getLearningPathAnalytics, getCoursePerformanceInsights, getContentCounts, getContentCountsAll };

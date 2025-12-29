@@ -336,6 +336,109 @@
     transform: scale(1.1);
 }
 
+.view-toggle-wrapper {
+    display: flex;
+    gap: 8px;
+    background: #f8fafc;
+    padding: 4px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.custom-date-picker {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    margin-top: 8px;
+    padding: 16px;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    min-width: 320px;
+    animation: slideDown 0.3s ease-out;
+}
+
+.page-header {
+    background: white;
+    border-radius: 24px;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    animation: slideDown 0.6s ease-out;
+    position: relative;
+}
+
+.date-inputs {
+    display: flex;
+    gap: 16px;
+    align-items: end;
+    flex-wrap: wrap;
+}
+
+.date-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.date-input-group label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #475569;
+}
+
+.date-input-group input {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.date-input-group input:focus {
+    border-color: #011F5B;
+    box-shadow: 0 0 0 3px rgba(1, 31, 91, 0.1);
+}
+
+.apply-date-range-btn {
+    padding: 8px 16px;
+    background: #011F5B;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.apply-date-range-btn:hover:not(:disabled) {
+    background: #011a4d;
+}
+
+.apply-date-range-btn:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .date-range-selector {
     display: flex;
     gap: 4px;

@@ -1,53 +1,53 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, Calendar, Building2, Download } from 'lucide-react';
+import api from '../../../services/api';
 
-const User = ({ isOpen, onClose, data, loading }) => {
+const UserPop = ({ isOpen, onClose,orgId, loading,range }) => {
     const [tableData, setTableData] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [name, setName] = useState('');
 
-    useEffect(() => {
-        if (data && data.users) {
-            // Transform the user data to match the table structure
-            const transformedData = data.users.map(user => ({
-                name: user.name || 'Unknown User',
-                email: user.email || 'No Email',
-                organization: user.organization?.name || 'No Organization',
-                lastLogin: user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'
-            }));
-            setTableData(transformedData);
+    useEffect(()=>{
+        const fetchUsersData = async()=>{
+            const response = await api.get(`/api/globalAdmin/analytics/users/${orgId}`,{
+                params:{
+                    dateRange:range
+                }
+            })
+            // console.log(response.data.data)
+            setTableData(response.data.data)
+            setName(response.data.name)
+            setIsLoading(false)
         }
-    }, [data]);
+        fetchUsersData()
+    },[orgId,range])
     
     const exportToCSV = () => {
         if (tableData.length === 0) return;
 
-        // Define CSV headers
         const headers = [
             'Name',
             'Email',
-            'Organization',
+            'Role',
             'Last Login',
         ];
 
-        // Convert data to CSV format
         const csvData = tableData.map(item => [
             item.name,
             item.email,
-            item.organization,
-            item.lastLogin,
+            item.role,
+            formatDate(item.last_login),
         ]);
 
-        // Create CSV content
         const csvContent = [
             headers.join(','),
             ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
         ].join('\n');
 
-        // Create and download CSV file
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
         
-        // Generate filename with current date
         const currentDate = new Date().toLocaleDateString().replace(/\//g, '-');
         link.setAttribute('href', url);
         link.setAttribute('download', `users-analytics-${currentDate}.csv`);
@@ -58,16 +58,21 @@ const User = ({ isOpen, onClose, data, loading }) => {
         document.body.removeChild(link);
     };
 
+    const formatDate = (date) => {
+        if (!date) return 'N/A';
+        const d = new Date(date);
+        return d.toLocaleDateString();
+    } 
     if (!isOpen) return null;
 
     return (
         <div className="analytics-modal-overlay" onClick={onClose}>
             <div className="analytics-modal" onClick={(e) => e.stopPropagation()}>
-                {/* Modal Header */}
+                
                 <div className="analytics-modal-header">
                     <div>
-                        <h2 className="analytics-modal-title">User Analytics</h2>
-                        <p className="analytics-modal-subtitle">Comprehensive view of user information and activity</p>
+                        <h2 className="analytics-modal-title">{name}</h2>
+                        <p className="analytics-modal-subtitle">Comprehensive view of user information</p>
                     </div>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                         <button 
@@ -84,12 +89,11 @@ const User = ({ isOpen, onClose, data, loading }) => {
                     </div>
                 </div>
 
-                {/* Modal Body */}
                 <div className="analytics-modal-body">
                     {loading ? (
                         <div className="analytics-loading">
                             <div className="analytics-loading-spinner"></div>
-                            <span>Loading analytics data...</span>
+                            <span>Loading analytics data</span>
                         </div>
                     ) : tableData.length === 0 ? (
                         <div className="analytics-empty-state">
@@ -103,19 +107,20 @@ const User = ({ isOpen, onClose, data, loading }) => {
                         </div>
                     ) : (
                         <div className="analytics-table-container">
+                            
                             <table className="analytics-table">
                                 <thead>
                                     <tr>
                                         <th>Name</th>
                                         <th>Email</th>
-                                        <th>Organization</th>
+                                        <th>Role</th>
                                         <th>Last Login</th>
-                                        {/* <th>Time Spent</th> */}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {tableData.map((item, index) => (
-                                        <tr key={index}>
+                                        <tr key={index} style={{ backgroundColor: item.isActive ? '#e6f7ff' : 'white' }}>
+
                                             <td>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                     <User size={16} />
@@ -128,13 +133,13 @@ const User = ({ isOpen, onClose, data, loading }) => {
                                             <td>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                     <Building2 size={14} />
-                                                    <span>{item.organization}</span>
+                                                    <span>{item?.role || 'N/A'}</span>
                                                 </div>
                                             </td>
                                             <td>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                     <Calendar size={14} />
-                                                    <span>{item.lastLogin}</span>
+                                                    <span>{formatDate(item.last_login) || 'N/A'}</span>
                                                 </div>
                                             </td>
                                         </tr>

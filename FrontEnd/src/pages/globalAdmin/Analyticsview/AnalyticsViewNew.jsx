@@ -37,6 +37,7 @@ import api from '../../../services/api';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import { useNavigate } from 'react-router-dom';
 import CustomSelect from '../../../components/dropdown/DropDown';
+import UserPop from './UserPop';
 
 
 
@@ -47,8 +48,10 @@ const AnalyticsViewNew = () => {
   const [range, setRange] = useState('7d');
   const [orgId, setOrgId] = useState('all');
   const [data, setData] = useState(null);
+  const [userOrgId, setUserOrgId] = useState('');
   const { organizations } = useSelector((state) => state.organizations);
   const navigate = useNavigate()
+  const [userPopUp, setUserPopUp] = useState(false);
 
 
   // Generate trend data based on current values
@@ -91,6 +94,10 @@ const AnalyticsViewNew = () => {
 
     fetchAnalyticsData();
   }, [range, orgId]);
+  const handleOrgClick = (Id) => {
+    setUserOrgId(Id);
+    setUserPopUp(true);
+  }
 
   const ranges = ['7D', '1M', '3M']
   const formatNumber = (n) => (n != null ? n.toLocaleString('en-IN') : '--');
@@ -263,7 +270,7 @@ const AnalyticsViewNew = () => {
           icon={Activity}
           label="Daily Active Users"
           value={formatNumber(data?.stats?.dau?.value)}
-          subtitle={`${data?.stats?.dau?.sublabel} (${range === '7d' ? 'last 7 days' : range === '1m' ? 'last month' : range === '3m' ? 'last 3 months' : 'last 6 months'})`}
+          subtitle={data?.stats?.dau?.sublabel}
           trend={data?.stats?.dau?.change >= 0 ? 'up' : 'down'}
           trendValue={`${Math.abs(data?.stats?.dau?.change)}`}
           color="color-primary"
@@ -273,7 +280,7 @@ const AnalyticsViewNew = () => {
           icon={Users}
           label="Monthly Active Users"
           value={formatNumber(data?.stats?.mau?.value)}
-          subtitle={`${data?.stats?.mau?.sublabel} (${range === '7d' ? 'last 7 days' : range === '1m' ? 'last month' : range === '3m' ? 'last 3 months' : 'last 6 months'})`}
+          subtitle={range === '7d' ? 'last 7 days' : range === '1m' ? 'last month' : range === '3m' ? 'last 3 months' : 'last 6 months'}
           trend={data?.stats?.mau?.change >= 0 ? 'up' : 'down'}
           trendValue={`${Math.abs(data?.stats?.mau?.change)}`}
           color="color-secondary"
@@ -283,7 +290,7 @@ const AnalyticsViewNew = () => {
           icon={TrendingUp}
           label="Platform Stickiness"
           value={`${data?.stats?.stickiness?.value}%`}
-          subtitle={`${data?.stats?.stickiness?.sublabel} (${range === '7d' ? 'last 7 days' : range === '1m' ? 'last month' : range === '3m' ? 'last 3 months' : 'last 6 months'})`}
+          subtitle={data?.stats?.stickiness?.sublabel}
           color="color-tertiary"
           delay={200}
         />
@@ -291,9 +298,7 @@ const AnalyticsViewNew = () => {
           icon={Users}
           label="Total System Users"
           value={formatNumber(data?.stats?.totalUsers?.value)}
-          subtitle={`${data?.stats?.totalUsers?.sublabel} (all-time)`}
-          trend={data?.stats?.totalUsers?.change >= 0 ? 'up' : 'down'}
-          trendValue={`${Math.abs(data?.stats?.totalUsers?.change)}`}
+          subtitle={data?.stats?.totalUsers?.sublabel}
           color="color-neutral"
           delay={300}
         />
@@ -302,9 +307,7 @@ const AnalyticsViewNew = () => {
           label="Total Organizations"
           onClick={() => navigate('/global-admin/organizations')}
           value={formatNumber(data?.stats?.totalOrg?.value)}
-          subtitle={`${data?.stats?.totalOrg?.sublabel} (all-time)`}
-          // trend={data?.stats?.totalOrg?.change >= 0 ? 'up' : 'down'}
-          trendValue={`${Math.abs(data?.stats?.totalOrg?.change)}`}
+          subtitle={data?.stats?.totalOrg?.sublabel}
           color="color-neutral"
           delay={300}
         />
@@ -314,8 +317,6 @@ const AnalyticsViewNew = () => {
             label="Active Users Percentage"
             value={formatNumber(data?.stats?.activepercentage?.value)}
             subtitle={`${data?.stats?.activepercentage?.sublabel} (${range === '7d' ? 'last 7 days' : range === '1m' ? 'last month' : range === '3m' ? 'last 3 months' : 'last 6 months'})`}
-            // trend={data?.stats?.totalOrg?.change >= 0 ? 'up' : 'down'}
-            // trendValue={`${Math.abs(data?.stats?.activepercentage?.change)}`}
             color="color-neutral"
             delay={300}
           />}
@@ -384,9 +385,7 @@ const AnalyticsViewNew = () => {
           </div>
 
           <div className="distribution-layout-vertical">
-            {/* Debug: Show data structure */}
-            {console.log('Organizations data:', data?.organizations)}
-            {console.log('Data structure:', data)}
+            
 
             <div className="distribution-chart">
               <ResponsiveContainer width="100%" height={200}>
@@ -399,12 +398,14 @@ const AnalyticsViewNew = () => {
                     cy="50%"
                     outerRadius={70}
                     label={false}
+                    onClick={(entry) => handleOrgClick(entry._id)}
+                    cursorStyle={{cursor:'pointer'}}
                   >
                     {data?.organizations?.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value, name) => [`${formatNumber(value)} users`, name]} />
+                  <Tooltip formatter={(value, name) => [`${formatNumber(value)} users`, name]}  cursorStyle={{cursor:'pointer'}} cursor={{fill:'transparent'}}/>
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -434,6 +435,7 @@ const AnalyticsViewNew = () => {
 
 
       </div>
+      {userPopUp && <UserPop isOpen={userPopUp} onClose={() => setUserPopUp(false)} orgId={userOrgId} loading={isLoading} range={range} />}
 
       {/* Charts Row 2: System Health & Top Organizations */}
       <div className="charts-grid">

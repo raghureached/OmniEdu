@@ -321,12 +321,24 @@
 
 .learning-dashboard-card {
   background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   border: 1px solid #e5e7eb;
   transition: transform 0.3s, box-shadow 0.3s;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 24px;
+  align-items: stretch;
+  margin-bottom: 20px;
+}
+
 
 .learning-dashboard-card:hover {
   transform: translateY(-5px);
@@ -345,11 +357,22 @@
 /* Training Summary Card */
 .learning-training-stats {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 
+.learning-training-summary {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.learning-training-stats {
+  flex: 1; /* fills remaining height */
+}
+
 .learning-stat-item {
+  cursor: pointer;
   display: flex;
   align-items: center;
   padding: 10px;
@@ -358,8 +381,8 @@
 }
 
 .learning-stat-icon {
-  width: 40px;
-  height: 40px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -381,10 +404,16 @@
   background-color: #6b7280; /* gray */
 }
 
-.learning-stat-icon.overdue {
-  background-color: #ef4444; /* red */
-}
+  .learning-stat-icon.overdue {
+    background-color: #ef4444; /* red */
+  }
 
+.learning-stat-icon.time-spent-total {
+  background-color: rgb(222, 222, 0); /* red */
+}
+.learning-stat-icon.completion-rate {
+  background-color:var(--color-primary) /* red */
+}
 .learning-stat-info {
   display: flex;
   flex-direction: column;
@@ -400,7 +429,7 @@
   font-weight: 600;
   color: #111827;
 }
-.learning-achievement-icon.credits {
+.learning-achievement-icon.creditss {
   background: linear-gradient(135deg, #f6e05e, #ecc94b);
   color: #744210;
 }
@@ -418,26 +447,41 @@
 /* Achievements Panel */
 .learning-achievements-container {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: space-around ;
+  flex-direction: row;
+  align-items: stretch;
   padding: 10px 0;
+  flex: 1;
+  display: flex;
+}
+.learning-achievements-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .learning-achievement-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  width: 33%;
+  border: 1.5px solid #e5e7eb;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  padding: 10px;
+  gap: 10px;
+  border-radius: 8px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.learning-achievement-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
 }
 
 .learning-achievement-icon {
-  width: 60px;
-  height: 60px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 10px;
   font-size: 24px;
   color: #d1d5db;
   background-color: #f3f4f6;
@@ -465,7 +509,8 @@
 /* Leaderboard Overview */
 .learning-leaderboard-container {
   display: flex;
-  justify-content: space-around;
+  flex-direction: column;
+  justify-content: center;
   margin-bottom: 20px;
   gap: 20px;
 }
@@ -485,7 +530,7 @@
   padding: 20px;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  min-width: 140px;
+  width: 200px;
 }
 
 .learning-leaderboard-position:hover {
@@ -539,7 +584,7 @@
   color: #4b5563;
   font-size: 14px;
   font-style: italic;
-  margin-top: 15px;
+  /* margin-top: 15px; */
 }
 
 
@@ -556,6 +601,12 @@
 }
 
 /* Responsive adjustments */
+@media (max-width: 1024px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 992px) {
   .learning-learning-dashboard-overview-container {
     grid-template-columns: repeat(2, 1fr);

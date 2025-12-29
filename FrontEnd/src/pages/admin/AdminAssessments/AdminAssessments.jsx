@@ -15,7 +15,6 @@ import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
 import SelectionBanner from '../../../components/Banner/SelectionBanner';
 import { categories } from '../../../utils/constants';
 import AnalyticsPop from '../../../components/AnalyticsPopup/AnalyticsPop';
-import CustomSelect from '../../../components/dropdown/DropDown';
 
 
 const AdminAssessments = () => {
@@ -1122,36 +1121,32 @@ const AdminAssessments = () => {
           <span style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px", hover: { color: "#6b7280" } }} onClick={() => setShowFilters(false)}><GoX size={20} color="#6b7280" /></span>
           <div className="filter-group">
             <label>Status</label>
-            <CustomSelect
+            <select
               name="status"
               value={tempFilters?.status || ""}
-              options={[
-                { value: "", label: "All" },
-                { value: "Saved", label: "Saved" },
-                { value: "Draft", label: "Draft" },
-                { value: "Published", label: "Published" }
-              ]}
-              onChange={(value) => handleFilterChange({ target: { name: 'status', value } })}
-              placeholder="Select Status"
-              searchable={false}
-            />
+              onChange={handleFilterChange}
+            >
+              <option value="">All</option>
+              <option value="Saved">Saved</option>
+              <option value="Draft">Draft</option>
+              <option value="Published">Published</option>
+            </select>
           </div>
 
           <div className="filter-group">
             <label>Category</label>
-            <CustomSelect
+            <select
               name="category"
               value={tempFilters?.category || ""}
-              options={[
-                { value: "", label: "All" },
-                ...(categories.map((category) => ({
-                  value: category,
-                  label: category
-                })) || [])
-              ]}
-              onChange={(value) => handleFilterChange({ target: { name: 'category', value } })}
-              placeholder="Select Category"
-            />
+              onChange={handleFilterChange}
+            >
+              <option value="">All</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="filter-actions">

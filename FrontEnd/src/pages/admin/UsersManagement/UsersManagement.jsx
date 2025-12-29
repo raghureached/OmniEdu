@@ -20,7 +20,6 @@ import {
 import { RiDeleteBinFill } from 'react-icons/ri';
 import { FiEdit3 } from 'react-icons/fi';
 import { useDispatch, useSelector } from 'react-redux';
-import CustomSelect from '../../../components/dropdown/DropDown';
 import {
   fetchUsers,
   createUser,
@@ -1925,18 +1924,16 @@ const UsersManagement = () => {
                 <div className="filter-group">
                   <div style={{ fontSize: "15px", fontWeight: "600", color: "#26334d" }}>  <label>Status</label></div>
 
-                  <CustomSelect
+                  <select
                     name="status"
                     value={tempFilters.status || ''}
-                    options={[
-                      { value: "", label: "All Status" },
-                      { value: "active", label: "Active" },
-                      { value: "inactive", label: "Inactive" }
-                    ]}
-                    onChange={(value) => handleFilterChange({ target: { name: 'status', value } })}
-                    placeholder="Select Status"
-                    searchable={false}
-                  />
+                    onChange={handleFilterChange}
+                  >
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    {/* <option value="pending">Pending</option> */}
+                  </select>
                 </div>
 
                 {/* selection flyout now handled inside UsersTable */}
@@ -2245,42 +2242,46 @@ const UsersManagement = () => {
                   <div className="addOrg-form-grid">
                     <div className="addOrg-form-group">
                       <label className="addOrg-form-label">Team </label>
-                      <CustomSelect
+                      <select
                         name="team"
                         className="addOrg-form-select"
                         value={formData.team}
-                        options={[
-                          { value: "", label: "Select Team" },
-                          ...(teams.map((team) => ({
-                            value: team._id,
-                            label: team.name + (team.status === "inactive" ? " (Inactive)" : ""),
-                            disabled: team.status?.toLowerCase() === "inactive"
-                          })) || [])
-                        ]}
-                        onChange={(value) => handleFormChange({ target: { name: 'team', value } })}
-                        placeholder="Select Team"
-                      />
+                        onChange={handleFormChange}
+                      >
+                        <option value="">Select Team</option>
+                        {teams.map((team) => (
+                          // <option key={team._id} value={team._id}>
+                          //   {team.name}
+                          // </option>
+                          <option
+                            key={team._id}
+                            value={team._id}
+                            disabled={team.status?.toLowerCase() === "inactive"}
+                          >
+                            {team.name} {team.status === "inactive" ? "(Inactive)" : ""}
+                          </option>
+
+                        ))}
+                      </select>
                     </div>
                     <div className="addOrg-form-group">
                       <label className="addOrg-form-label">Sub Team </label>
-                      <CustomSelect
+                      <select
                         name="subteam"
                         className="addOrg-form-select"
                         value={formData.subteam}
-                        options={[
-                          { value: "", label: "Select Sub Team" },
-                          ...(teams.filter((team) => team._id === formData.team).flatMap((team) => 
-                            team.subTeams.map((subTeam) => ({
-                              value: subTeam._id,
-                              label: subTeam.name,
-                              disabled: team.status?.toLowerCase() === "inactive"
-                            }))
-                          ) || [])
-                        ]}
-                        onChange={(value) => handleFormChange({ target: { name: 'subteam', value } })}
-                        placeholder="Select Sub Team"
-                        disabled={!formData.team}
-                      />
+                        onChange={handleFormChange}
+                      >
+                        <option value="">Select Sub Team</option>
+                        {teams.filter((team) => team._id === formData.team).map((team) => (
+                          team.subTeams.map((subTeam) => (
+                            <option key={subTeam._id} value={subTeam._id} disabled={team.status?.toLowerCase() === "inactive"}>
+                              {subTeam.name}
+                            </option>
+
+                          ))
+                        ))}
+                      </select>
                     </div>
 
                   </div>
@@ -2313,21 +2314,20 @@ const UsersManagement = () => {
                   <div className="addOrg-form-grid">
                     <div className="addOrg-form-group">
                       <label className="addOrg-form-label">Role <span style={{ color: 'red' }}>*</span></label>
-                      <CustomSelect
+                      <select
                         name="role"
                         className="addOrg-form-select"
                         value={formData.role}
-                        options={[
-                          { value: "", label: "Select Role" },
-                          ...(roles.map((role) => ({
-                            value: role._id,
-                            label: role.name
-                          })) || [])
-                        ]}
-                        onChange={(value) => handleFormChange({ target: { name: 'role', value } })}
-                        placeholder="Select Role"
+                        onChange={handleFormChange}
                         required
-                      />
+                      >
+                        <option value="">Select Role</option>
+                        {roles.map((role) => (
+                          <option key={role._id} value={role._id}>
+                            {role.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div className="addOrg-form-group">
                       <label className="addOrg-form-label">Custom 1</label>

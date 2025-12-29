@@ -4,7 +4,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../../store/slices/authSlice';
 import { fetchNotifications, markNotificationAsRead } from '../../../store/slices/notificationSlice';
 import './AdminLayout.css';
-import { Menu, Home, User2, UserCheck, Shield, BookOpen, CircleUserRound, NotepadText, NotebookPen, LibraryBig, BookOpenCheck, MessageCircleCode, Award, BookCopy, Clock, HelpCircle, LogOut, Bell, X, ChartColumnIncreasing,Laptop, Pen, PenBox } from 'lucide-react';
+import { Menu, Home, User2, UserCheck, Shield, BookOpen, CircleUserRound, NotepadText, NotebookPen, LibraryBig, BookOpenCheck, MessageCircleCode, Award, BookCopy, Clock, HelpCircle, LogOut, Bell, X, ChartColumnIncreasing,Laptop, PenBox } from 'lucide-react';
+import { fetchPermissions } from '../../../store/slices/roleSlice';
 import { GoGear, GoPeople } from 'react-icons/go';
 
 const AdminLayout = () => {
@@ -20,7 +21,21 @@ const AdminLayout = () => {
   const [currentLocation, setCurrentLocation] = useState(location.pathname);
 
   const {permissions} = useSelector((state) => state.rolePermissions);
-  // console.log(permissions)
+  useEffect(() => {
+      // Initial fetch
+      dispatch(fetchPermissions());
+  
+      // Set up interval for periodic updates (every 5 minutes)
+      const permissionsInterval = setInterval(() => {
+        dispatch(fetchPermissions());
+      }, 5 * 60 * 1000); // 5 minutes in milliseconds
+  
+      // Cleanup interval on unmount
+      return () => {
+        clearInterval(permissionsInterval);
+      };
+    }, [dispatch]);
+
   
   // Fetch notifications on component mount
   useEffect(() => {
@@ -209,8 +224,21 @@ const AdminLayout = () => {
           </li>
           <li className="admin_menu_section">
             {!sidebarCollapsed && (
-              <div className="admin_section_title"><span style={{display:"flex",alignItems:"center",gap:"10px"}}><LibraryBig size={20} /> <span>Library</span></span></div>
+              <div className="admin_section_title">Content</div>
             )}
+          </li>
+           <li>
+            <Link
+              to="/admin/content-modules"
+              className={
+                isActive("/admin/content-modules") ? "admin_link_active" : ""
+              }
+            >
+              <BookOpen size={20} />
+              {!sidebarCollapsed && (
+                <span className="admin_sidebar_names">Documents</span>
+              )}
+            </Link>
           </li>
           <li>
             <Link
@@ -225,6 +253,7 @@ const AdminLayout = () => {
               )}
             </Link>
           </li>
+          
           <li>
             <Link
               to="/admin/content-assessments"
@@ -269,7 +298,8 @@ const AdminLayout = () => {
           
           <li className="admin_menu_section">
             {!sidebarCollapsed && (
-              <div className="admin_section_title"><span style={{display:"flex",alignItems:"center",gap:"10px"}}><PenBox size={20} /> <span>Assignments</span></span></div>
+                           <div className="admin_section_title"><span style={{display:"flex",alignItems:"center",gap:"10px"}}><PenBox size={20} /> <span>Assignments</span></span></div>
+
             )}
           </li>
           <li>
@@ -285,35 +315,13 @@ const AdminLayout = () => {
               )}
             </Link>
           </li>
-          {/* <li className="admin_menu_section">
-            {!sidebarCollapsed && (
-              <div className="admin_section_title">Library</div>
-            )}
-          </li> */}
-          {/* <li>
-            <Link
-              to="/admin/portal-library"
-              className={
-                isActive("/admin/portal-library") ? "admin_link_active" : ""
-              }
-            >
-              
-              <LibraryBig size={20} />
-              {!sidebarCollapsed && (
-                <span className="admin_sidebar_names">Portal Library</span>
-              )}
-            </Link>
-          </li> */}
-       
-          
-          
+        
           
           <li className="admin_menu_section">
             {!sidebarCollapsed && (
               <div className="admin_section_title"><span style={{display:"flex",alignItems:"center",gap:"10px"}}><GoGear size={20} /> <span>Settings</span></span></div>
             )}
           </li>
-          
           <li>
             <Link
               to="/admin/analytics"

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../../store/slices/authSlice';
 import { fetchNotifications, markNotificationAsRead } from '../../../store/slices/notificationSlice';
+import { fetchPermissions } from '../../../store/slices/RolePermissionSlice';
 import "./UserLayout.css";
 import { Menu, Home, BookOpen, CheckCircle, Award, Shield, BookCopy, Clock, User, HelpCircle, LogOut, Bell, X, Laptop } from 'lucide-react';
 import { GoGear, GoGraph } from 'react-icons/go';
@@ -25,6 +26,22 @@ const UserLayout = () => {
   // Fetch notifications on component mount
   useEffect(() => {
     dispatch(fetchNotifications());
+  }, [dispatch]);
+
+  // Fetch permissions on component mount and set up interval updates
+  useEffect(() => {
+    // Initial fetch
+    dispatch(fetchPermissions());
+
+    // Set up interval for periodic updates (every 5 minutes)
+    const permissionsInterval = setInterval(() => {
+      dispatch(fetchPermissions());
+    }, 5 * 60 * 1000); // 5 minutes in milliseconds
+
+    // Cleanup interval on unmount
+    return () => {
+      clearInterval(permissionsInterval);
+    };
   }, [dispatch]);
 
   // Close mobile menu when location changes
@@ -123,6 +140,120 @@ const UserLayout = () => {
     }
   };
 
+  // Memoize menu items based on permissions to prevent unnecessary re-renders
+  const memoizedMenuItems = useMemo(() => {
+    const items = [];
+
+    // Main navigation items
+    items.push(
+      <li key="dashboard">
+        <Link to="/user/dashboard" className={isActive('/user/dashboard') ? 'user_link_active' : ''}>
+          <Home size={20} />
+          {!sidebarCollapsed && <span className='user_sidebar_names'>Dashboard</span>}
+        </Link>
+      </li>
+    );
+
+    if (permissions?.includes("Learning Hub")) {
+      items.push(
+        <li key="learning-hub">
+          <Link to="/user/learning-hub" className={isActive('/user/learning-hub') ? 'user_link_active' : ''}>
+            <BookOpen size={20} />
+            {!sidebarCollapsed && <span className='user_sidebar_names'>Learning Hub</span>}
+          </Link>
+        </li>
+      );
+    }
+
+    items.push(
+      <li key="menu-section" className="user_menu_section">
+        {/* Section separator */}
+      </li>
+    );
+
+    if (permissions?.includes("Global Library")) {
+      items.push(
+        <li key="catalog">
+          <Link to="/user/catalog" className={isActive('/user/catalog') ? 'user_link_active' : ''}>
+            <BookCopy size={20} />
+            {!sidebarCollapsed && <span className='user_sidebar_names'>Global Library</span>}
+          </Link>
+        </li>
+      );
+    }
+
+    return items;
+  }, [permissions, sidebarCollapsed, location.pathname]);
+
+  // Memoize settings menu items
+  const memoizedSettingsItems = useMemo(() => {
+    const items = [];
+
+    items.push(
+      <li key="analytics">
+        <Link to="/user/analytics" className={isActive('/user/analytics') ? 'user_link_active' : ''}>
+          <GoGraph size={20} />
+          {!sidebarCollapsed && <span className='user_sidebar_names'>Analytics</span>}
+        </Link>
+      </li>
+    );
+
+    if (permissions?.includes("Activity History Access")) {
+      items.push(
+        <li key="activity-history">
+          <Link to="/user/activity-history" className={isActive('/user/activity-history') ? 'user_link_active' : ''}>
+            <Clock size={20} />
+            {!sidebarCollapsed && <span className='user_sidebar_names'>Activity History</span>}
+          </Link>
+        </li>
+      );
+    }
+
+    if (permissions?.includes("Profile Access")) {
+      items.push(
+        <li key="profile">
+          <Link to="/user/profile" className={isActive('/user/profile') ? 'user_link_active' : ''}>
+            <User size={20} />
+            {!sidebarCollapsed && <span className='user_sidebar_names'>User Profile</span>}
+          </Link>
+        </li>
+      );
+    }
+
+    if (permissions?.includes("Help Center Access")) {
+      items.push(
+        <li key="help-center">
+          <Link to="/user/help-center" className={isActive('/user/help-center') ? 'user_link_active' : ''}>
+            <HelpCircle size={20} />
+            {!sidebarCollapsed && <span className='user_sidebar_names'>Help Center</span>}
+          </Link>
+        </li>
+      );
+    }
+
+    if (permissions?.includes("Support Button Access")) {
+      items.push(
+        <li key="support">
+          <Link to="/user/support" className={isActive('/user/support') ? 'user_link_active' : ''}>
+            <Laptop size={20} />
+            {!sidebarCollapsed && <span className='user_sidebar_names'>Support</span>}
+          </Link>
+        </li>
+      );
+    }
+
+    items.push(
+      <li key="logout">
+        <Link onClick={handleLogout} style={{ color: "red" }} >
+          <LogOut size={20} />
+          {!sidebarCollapsed && <span>Logout</span>}
+        </Link>
+      </li>
+    );
+
+    return items;
+  }, [permissions, sidebarCollapsed, location.pathname, handleLogout]);
+
   return (
     <div className="user_layout_container">
       {/* Overlay for mobile */}
@@ -146,72 +277,14 @@ const UserLayout = () => {
 
         <ul className="user_sidebar_menu" style={{display:"flex",justifyContent:"space-between",flexDirection:"column",height:"100%"}}>
           <div>
-            <li>
-              <Link to="/user/dashboard" className={isActive('/user/dashboard') ? 'user_link_active' : ''}>
-                <Home size={20} />
-                {!sidebarCollapsed && <span className='user_sidebar_names'>Dashboard</span>}
-              </Link>
-            </li>
-            {permissions?.includes("Learning Hub") && <li>
-              <Link to="/user/learning-hub" className={isActive('/user/learning-hub') ? 'user_link_active' : ''}>
-                <BookOpen size={20} />
-                {!sidebarCollapsed && <span className='user_sidebar_names'>Learning Hub</span>}
-              </Link>
-            </li>}
-            <li className="user_menu_section">
-              {/* {!sidebarCollapsed && <div className="user_section_title">Training</div>} */}
-            </li>
-
-            {permissions?.includes("Global Library") && <li>
-              <Link to="/user/catalog" className={isActive('/user/catalog') ? 'user_link_active' : ''}>
-                <BookCopy size={20} />
-                {!sidebarCollapsed && <span className='user_sidebar_names'>Global Library</span>}
-              </Link>
-            </li>}
+            {memoizedMenuItems}
           </div>
           <div>
             <li className="user_menu_section">
               {!sidebarCollapsed && <div className="user_section_title"> <span style={{display:"flex",alignItems:"center",gap:"10px"}}><GoGear size={20} /> <span>Settings</span></span></div>}
             </li>
-            <li>
-              <Link to="/user/analytics" className={isActive('/user/analytics') ? 'user_link_active' : ''}>
-                <GoGraph size={20} />
-                {!sidebarCollapsed && <span className='user_sidebar_names'>Analytics</span>}
-              </Link>
-            </li>
-            {permissions?.includes("Activity History Access") && <li>
-              <Link to="/user/activity-history" className={isActive('/user/activity-history') ? 'user_link_active' : ''}>
-                <Clock size={20} />
-                {!sidebarCollapsed && <span className='user_sidebar_names'>Activity History</span>}
-              </Link>
-            </li>}
-            {permissions?.includes("Profile Access") && <li>
-              <Link to="/user/profile" className={isActive('/user/profile') ? 'user_link_active' : ''}>
-                <User size={20} />
-                {!sidebarCollapsed && <span className='user_sidebar_names'>User Profile</span>}
-              </Link>
-            </li>}
-            {permissions?.includes("Help Center Access") && <li>
-              <Link to="/user/help-center" className={isActive('/user/help-center') ? 'user_link_active' : ''}>
-                <HelpCircle size={20} />
-                {!sidebarCollapsed && <span className='user_sidebar_names'>Help Center</span>}
-              </Link>
-            </li>}
-            {permissions?.includes("Support Button Access") && <li>
-              <Link to="/user/support" className={isActive('/user/support') ? 'user_link_active' : ''}>
-                <Laptop size={20} />
-                {!sidebarCollapsed && <span className='user_sidebar_names'>Support</span>}
-              </Link>
-            </li>}
-            <li>
-              <Link onClick={handleLogout} style={{ color: "red" }} >
-                <LogOut size={20} />
-                {!sidebarCollapsed && <span>Logout</span>}
-              </Link>
-            </li>
-
+            {memoizedSettingsItems}
           </div>
-
         </ul>
 
 

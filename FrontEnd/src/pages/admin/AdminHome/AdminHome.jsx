@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { BookOpen, Users, Award, TrendingUp, ClipboardCheck, ListChecks, GraduationCap, PencilLine, ClipboardList, MessageSquare, Activity, HelpCircle, Megaphone } from 'lucide-react';
 import './AdminHome.css';
 import { fetchMessagesForAdmin } from '../../../store/slices/globalMessageSlice';
+import { getContentCountsAll } from '../../../utils/contentCountsService'
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line
 } from 'recharts';
@@ -14,6 +15,13 @@ const AdminHome = () => {
   const { currentMessages, loading } = useSelector((state) => state.globalMessage);
   const userName = user?.name || 'Admin';
   const currentHour = new Date().getHours();
+  const [contentCounts, setContentCounts] = useState({
+    modules: { total: 0, published: 0 },
+    assessments: { total: 0, published: 0 },
+    surveys: { total: 0, published: 0 },
+    learningPaths: { total: 0 }
+  });
+  const [countsLoading, setCountsLoading] = useState(true);
   const {permissions} = useSelector((state)=>state.rolePermissions)
   // Try to infer organization id/uuid from user payload (supports multiple backend shapes)
   const orgId = user?.organization?.uuid
@@ -51,6 +59,33 @@ const AdminHome = () => {
       dispatch(fetchMessagesForAdmin(orgId));
     }
   }, [dispatch, orgId]);
+
+  // Fetch content counts
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        setCountsLoading(true);
+        const response = await getContentCountsAll();
+        console.log('Content counts response:', response);
+        console.log('Response type:', typeof response);
+        console.log('Response keys:', response ? Object.keys(response) : 'null');
+        
+        if (response && response.data) {
+          setContentCounts(response.data);
+        } else if (response) {
+          setContentCounts(response);
+        } else {
+          console.error('No response received from getContentCountsAll');
+        }
+      } catch (error) {
+        console.error('Failed to fetch content counts:', error);
+      } finally {
+        setCountsLoading(false);
+      }
+    };
+
+    fetchCounts();
+  }, []);
 
   // Keep hover effect visible while scrolling by tracking the element under the pointer
   useEffect(() => {
@@ -149,7 +184,7 @@ const AdminHome = () => {
           </div>
         </div>
 
-        
+        {/* Message Board Card */}
         <div className="admin-message-card">
           <div className="admin-message-card-header">
             <h2 className="admin-message-card-title">Message Board</h2>
@@ -213,22 +248,67 @@ const AdminHome = () => {
 
           {/* Stat Card 2: User Engagement Analytics */}
           <div className="admin-quick-links-card">
-            {/* <h3 className="admin-quick-links-title">User Engagement Analytics</h3> */}
-            <h2 className="admin-message-card-title" style={{ marginBottom: '1rem' }}>Monthly User Activity</h2>
-            <div style={{ width: '100%', height: 250 }}>
-              <ResponsiveContainer>
-                <LineChart data={userActivityData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                  <XAxis dataKey="month" stroke="#666" />
-                  <YAxis stroke="#666" />
-                  <Tooltip
-                    wrapperStyle={{ backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '8px', padding: '10px' }}
-                  />
-                  <Legend />
-                  <Line type="monotone" dataKey="logins" name="User Logins" stroke="#0088FE" strokeWidth={3} dot={{ r: 5 }} />
-                  <Line type="monotone" dataKey="completions" name="Completions" stroke="#00C49F" strokeWidth={3} dot={{ r: 5 }} />
-                </LineChart>
-              </ResponsiveContainer>
+            <h2 className="admin-message-card-title" style={{ marginBottom: '2rem' }}>Courses Statistics</h2>
+            <div className="admin-stats-grid">
+              <div className="admin-stat-card">
+                <div className="admin-stat-icon">
+                  <BookOpen size={24} />
+                </div>
+                <div className="admin-stat-info">
+                  <div className="admin-stat-number">
+                    {countsLoading ? '...' : (contentCounts?.modules?.total || 0)}
+                  </div>
+                  <div className="admin-stat-label">Total Modules</div>
+                  {/* <div className="admin-stat-sublabel">
+                    {countsLoading ? '...' : contentCounts.modules.published} Published
+                  </div> */}
+                </div>
+              </div>
+
+              <div className="admin-stat-card">
+                <div className="admin-stat-icon">
+                  <ClipboardCheck size={24} />
+                </div>
+                <div className="admin-stat-info">
+                  <div className="admin-stat-number">
+                    {countsLoading ? '...' : (contentCounts?.assessments?.total || 0)}
+                  </div>
+                  <div className="admin-stat-label">Total Assessments</div>
+                  {/* <div className="admin-stat-sublabel">
+                    {countsLoading ? '...' : contentCounts.assessments.published} Published
+                  </div> */}
+                </div>
+              </div>
+
+              <div className="admin-stat-card">
+                <div className="admin-stat-icon">
+                  <ListChecks size={24} />
+                </div>
+                <div className="admin-stat-info">
+                  <div className="admin-stat-number">
+                    {countsLoading ? '...' : (contentCounts?.surveys?.total || 0)}
+                  </div>
+                  <div className="admin-stat-label">Total Surveys</div>
+                  {/* <div className="admin-stat-sublabel">
+                    {countsLoading ? '...' : contentCounts.surveys.published} Published
+                  </div> */}
+                </div>
+              </div>
+
+              <div className="admin-stat-card">
+                <div className="admin-stat-icon">
+                  <GraduationCap size={24} />
+                </div>
+                <div className="admin-stat-info">
+                  <div className="admin-stat-number">
+                    {countsLoading ? '...' : (contentCounts?.learningPaths?.total || 0)}
+                  </div>
+                  <div className="admin-stat-label">Total Learning Paths</div>
+                  {/* <div className="admin-stat-sublabel">
+                    Active Programs
+                  </div> */}
+                </div>
+              </div>
             </div>
           </div>
 

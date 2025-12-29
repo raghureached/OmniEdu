@@ -205,9 +205,9 @@ const AnalyticsPop = ({ isOpen, onClose,data,loading }) => {
                                         <th>Assigned On</th>
                                         <th>Started On</th>
                                         <th>Completed On</th>
-                                        <th>Score</th>
+                                        <th>Score(%)</th>
                                         <th>Status</th>
-                                        <th>Assigned By</th>
+                                        {/* <th>Assigned By</th> */}
                                         {/* <th>Time Spent</th> */}
                                     </tr>
                                 </thead>
@@ -247,7 +247,7 @@ const AnalyticsPop = ({ isOpen, onClose,data,loading }) => {
                                             </td>
                                             <td>
                                                 <span className={`score-cell ${getScoreColor(item.score)}`}>
-                                                    {item.score}%
+                                                    {item.score}
                                                 </span>
                                             </td>
                                             <td>
@@ -255,12 +255,12 @@ const AnalyticsPop = ({ isOpen, onClose,data,loading }) => {
                                                     {item.status.replace('-', ' ')}
                                                 </span>
                                             </td>
-                                            <td className="assigned-by">
+                                            {/* <td className="assigned-by">
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                     <User size={12} />
                                                     {item.assignedBy}
                                                 </div>
-                                            </td>
+                                            </td> */}
                                             
                                         </tr>
                                     ))}

@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { adminfetchContent, admindeleteContent, admincreateContent, adminupdateContent, adminbulkDeleteContent } from '../../../store/slices/adminModuleSlice';
 import "./ModuleManagement.css"
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X, Filter, Plus, BarChart3 } from 'lucide-react';
+import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X, Filter, Plus, BarChart3, Download ,Share} from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading'
 import { RiDeleteBinFill } from "react-icons/ri";
 import { FiEdit3 } from "react-icons/fi";
@@ -16,7 +16,8 @@ import api from '../../../services/api';
 import SelectionBanner from '../../../components/Banner/SelectionBanner';
 import { categories } from '../../../utils/constants';
 import AnalyticsPop from '../../../components/AnalyticsPopup/AnalyticsPop';
-import CustomSelect from '../../../components/dropdown/DropDown';
+import { exportModulesWithSelection } from '../../../utils/moduleExport';
+import ExportModal from '../../../components/common/ExportModal/ExportModal';
 
 
 
@@ -40,16 +41,19 @@ const ModuleManagement = () => {
     status: '',
     category: '',
     timeRange: '',
-    team: ''
+    team: '',
+    subteam: ''
   });
   const [tempFilters, setTempFilters] = useState({
     status: '',
     category: '',
     timeRange: '',
-    team: ''
+    team: '',
+    subteam: ''
   });
   const [showFilters, setShowFilters] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [analyticsData, setAnalyticsData] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [filteredCounts, setFilteredCounts] = useState({
@@ -80,6 +84,7 @@ const ModuleManagement = () => {
     submissionEnabled: false,
   });
   const [teams,setTeams] = useState([])
+  const [subteams, setSubteams] = useState([])
   const [uploading, setUploading] = useState(false)
   useEffect(() => {
     dispatch(adminfetchContent());
@@ -109,11 +114,12 @@ const ModuleManagement = () => {
 
   // Calculate filtered counts
   useEffect(() => {
-    if (filters.status || filters.category || filters.timeRange || filters.team) {
-      // For total modules: count all modules (including drafts) matching category, team, and time range filters
+    if (filters.status || filters.category || filters.timeRange || filters.team || filters.subteam) {
+      // For total modules: count all modules (including drafts) matching category, team, subteam, and time range filters
       const totalFiltered = items?.filter((item) => {
         const matchesCategory = !filters.category || filters.category === '' || item.category === filters.category;
         const matchesTeam = !filters.team || filters.team === '' || item.team === filters.team;
+        const matchesSubteam = !filters.subteam || filters.subteam === '' || item.subteam === filters.subteam;
         
         // Apply time range filter
         let matchesTimeRange = true;
@@ -124,7 +130,7 @@ const ModuleManagement = () => {
           matchesTimeRange = new Date(item.createdAt) >= cutoffDate;
         }
         
-        return matchesCategory && matchesTeam && matchesTimeRange;
+        return matchesCategory && matchesTeam && matchesSubteam && matchesTimeRange;
       }) || [];
       
       // For published modules: count only published modules matching the filters
@@ -153,7 +159,18 @@ const ModuleManagement = () => {
         console.log(error);
       }
     }
-    fetchTeams()
+    
+    const fetchSubteams = async () => {
+      try {
+        const res = await api.get('/api/admin/analytics/getSubteams');
+        setSubteams(res.data.subteams);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    
+    fetchTeams();
+    fetchSubteams();
 
   }, []);
 
@@ -200,6 +217,52 @@ const ModuleManagement = () => {
     }
   };
 
+  const handleExport = () => {
+    setShowExportModal(true);
+  };
+
+  const handleExportConfirm = (exportScope) => {
+    try {
+      if (exportScope === 'selected') {
+        // Export based on selection criteria and filters
+        exportModulesWithSelection(
+          items, 
+          selectedIds, 
+          excludedIds, 
+          allSelected, 
+          teams, 
+          subteams, 
+          filters
+        );
+        
+        // Show appropriate success message
+        if (allSelected) {
+          const exportCount = totalItems - excludedIds.length;
+          notifySuccess(`${exportCount} modules exported successfully`);
+        } else if (selectedIds.length > 0) {
+          notifySuccess(`${selectedIds.length} selected modules exported successfully`);
+        } else {
+          notifySuccess('Filtered modules exported successfully');
+        }
+      } else if (exportScope === 'all') {
+        // Export all modules
+        exportModulesWithSelection(
+          items, 
+          [], // No selected IDs
+          [], // No excluded IDs  
+          false, // Not all selected
+          teams, 
+          subteams, 
+          { status: '', category: '', team: '', subteam: '', search: '' } // No filters
+        );
+        notifySuccess(`${items.length} modules exported successfully`);
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      notifyError('Failed to export modules');
+    }
+  };
+
   // Filter handlers
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -221,7 +284,9 @@ const ModuleManagement = () => {
     const resetFilters = {
       status: '',
       category: '',
-      search: ''
+      search: '',
+      team: '',
+      subteam: ''
     };
     setTempFilters(resetFilters);
     setFilters(resetFilters);
@@ -237,6 +302,7 @@ const ModuleManagement = () => {
     const matchesCategory = !filters.category || filters.category === '' || item.category === filters.category;
     const matchesStatus = !filters.status || item.status === filters.status;
     const matchesTeam = !filters.team || filters.team === '' || item.team === filters.team;
+    const matchesSubteam = !filters.subteam || filters.subteam === '' || item.subteam === filters.subteam;
     
     // Apply time range filter based on creation date
     let matchesTimeRange = true;
@@ -247,7 +313,7 @@ const ModuleManagement = () => {
       matchesTimeRange = new Date(item.createdAt) >= cutoffDate;
     }
 
-    return matchesSearch && matchesCategory && matchesStatus && matchesTeam && matchesTimeRange;
+    return matchesSearch && matchesCategory && matchesStatus && matchesTeam && matchesSubteam && matchesTimeRange;
   }) || [];
 
   //pagination code
@@ -655,7 +721,7 @@ const ModuleManagement = () => {
               </div>
               <div className="global-content-stat-info">
                 <span className="global-content-stat-number">
-                  {filters.status || filters.category || filters.timeRange || filters.team ? filteredCounts.total : items.length}
+                  {filters.status || filters.category || filters.timeRange || filters.team || filters.subteam ? filteredCounts.total : items.length}
                 </span>
                 <span className="global-content-stat-label">
                   Total Modules
@@ -668,7 +734,7 @@ const ModuleManagement = () => {
               </div>
               <div className="global-content-stat-info">
                 <span className="global-content-stat-number">
-                  {filters.status || filters.category || filters.timeRange || filters.team ? filteredCounts.published : items.filter(a => a.status === 'Published').length}
+                  {filters.status || filters.category || filters.timeRange || filters.team || filters.subteam ? filteredCounts.published : items.filter(a => a.status === 'Published').length}
                 </span>
                 <span className="global-content-stat-label">
                   Published
@@ -711,6 +777,19 @@ const ModuleManagement = () => {
               <Filter size={16} />
               Filter
             </button>
+            <button
+              className="control-btn"
+              onClick={handleExport}
+              title={derivedSelectedCount > 0 ? "Export selected modules to CSV" : "Select modules to export"}
+              disabled={derivedSelectedCount === 0}
+              style={{ 
+                opacity: derivedSelectedCount === 0 ? 0.5 : 1,
+                cursor: derivedSelectedCount === 0 ? 'not-allowed' : 'pointer'
+              }}
+            >
+             
+              Export<Share size={16} color="#6b7280" /> {derivedSelectedCount > 0 && `(${derivedSelectedCount})`}
+            </button>
             {showFilters && (
               <div ref={filterPanelRef} className="adminmodule-filter-panel">
                 <span
@@ -721,35 +800,68 @@ const ModuleManagement = () => {
                 </span>
                 <div className="filter-group">
                   <label>Status</label>
-                  <CustomSelect
+                  <select
                     name="status"
                     value={tempFilters?.status || ""}
-                    options={[
-                      { value: "", label: "All" },
-                      { value: "Saved", label: "Saved" },
-                      { value: "Draft", label: "Draft" },
-                      { value: "Published", label: "Published" }
-                    ]}
-                    onChange={(value) => handleFilterChange({ target: { name: 'status', value } })}
-                    placeholder="Select Status"
-                    searchable={false}
-                  />
+                    onChange={handleFilterChange}
+                  >
+                    <option value="">All</option>
+                    <option value="Saved">Saved</option>
+                    <option value="Draft">Draft</option>
+                    <option value="Published">Published</option>
+                  </select>
                 </div>
                 <div className="filter-group">
                   <label>Category</label>
-                  <CustomSelect
+                  <select
                     name="category"
                     value={tempFilters?.category || ""}
-                    options={[
-                      { value: "", label: "All" },
-                      ...(categories.map((category) => ({
-                        value: category,
-                        label: category
-                      })) || [])
-                    ]}
-                    onChange={(value) => handleFilterChange({ target: { name: 'category', value } })}
-                    placeholder="Select Category"
-                  />
+                    onChange={handleFilterChange}
+                  >
+                    <option value="">All</option>
+                    {categories.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="filter-group">
+                  <label>Team</label>
+                  <select
+                    name="team"
+                    value={tempFilters?.team || ""}
+                    onChange={(e) => {
+                      handleFilterChange(e);
+                      // Reset subteam when team changes
+                      setTempFilters(prev => ({ ...prev, subteam: '' }));
+                    }}
+                  >
+                    <option value="">All Teams</option>
+                    {teams.map((team) => (
+                      <option key={team._id} value={team._id}>
+                        {team.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="filter-group">
+                  <label>Subteam</label>
+                  <select
+                    name="subteam"
+                    value={tempFilters?.subteam || ""}
+                    onChange={handleFilterChange}
+                    disabled={!tempFilters?.team || tempFilters?.team === ''}
+                  >
+                    <option value="">All Subteams</option>
+                    {subteams
+                      .filter(subteam => !tempFilters?.team || tempFilters?.team === '' || subteam.team_id?._id === tempFilters?.team)
+                      .map((subteam) => (
+                        <option key={subteam._id} value={subteam._id}>
+                          {subteam.name}
+                        </option>
+                      ))}
+                  </select>
                 </div>
                 <div className="filter-actions">
                 <button className="btn-secondary" onClick={resetFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>
@@ -890,6 +1002,17 @@ const ModuleManagement = () => {
       />
       {showModal && <ModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading} handleRichInputChange={handleRichInputChange} error={error} teams={teams}/>}
       {showEditModal && <ModuleModal showModal={showEditModal} setShowModal={setShowEditModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} showEditModal={showEditModal} setShowEditModal={setShowEditModal} editContentId={editContentId} handleRichInputChange={handleRichInputChange} error={error} teams={teams}/>}
+      {showExportModal && (
+        <ExportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          onConfirm={handleExportConfirm}
+          selectedCount={derivedSelectedCount}
+          totalCount={totalItems}
+          hasMembers={false}
+          exportType="modules"
+        />
+      )}
       {currentContent.length === 0 ? (
         <div className='assess-table-section'>
           <div className='assess-table-container'>
@@ -1007,7 +1130,7 @@ const ModuleManagement = () => {
                 <th>Title</th>
                 <th>Status</th>
                 <th>Team</th>
-                <th>Date Created</th>
+                <th>Date Published</th>
                 <th style={{textAlign: 'center'}}>Actions</th>
               </tr>
             </thead>
@@ -1058,13 +1181,15 @@ const ModuleManagement = () => {
                         }}>
                           <Edit3 size={16} />
                         </button>
-                         <button
-                          className="global-action-btn analytics"
-                          onClick={() => handleAnalyticsClick(content.uuid)}
-                          title="View Analytics"
-                        >
-                          <BarChart3 size={16} />
-                        </button>
+                         {content.status !== 'Draft' && (
+                          <button
+                            className="global-action-btn analytics"
+                            onClick={() => handleAnalyticsClick(content.uuid)}
+                            title="View Analytics"
+                          >
+                            <BarChart3 size={16} />
+                          </button>
+                        )}
                         <button
                           className="global-action-btn delete"
                           onClick={() => handleDeleteContent(content.uuid)}

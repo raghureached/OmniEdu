@@ -32,7 +32,7 @@ const {
 const { enhanceText, enhanceSurvey, enhanceAssessment, createQuestions } = require("../controllers/admin.controller/admin_AI");
 const { generateSurveyWithSections } = require("../controllers/admin.controller/admin_AI");
 const {addTeam,editTeam,addSubTeam,editSubTeam,deleteSubTeam,addUsersToGroup} = require("../controllers/admin.controller/admin_Groups");
-const { getCourseDistribution, getUsersData, calculateUsageTrend, getAdoption, getTeams, getEngagementHeatmap, getAtRiskLearners, getContentAnalytics, getUserAnalytics, getAssessmentAnalytics, getSurveyAnalytics, getLearningPathAnalytics } = require("../controllers/admin.controller/admin_analytics");
+const { getOrganizationCreationDate, getCourseDistribution, getUsersData, calculateUsageTrend, getAdoption, getTeams, getSubteams, getEngagementHeatmap, getAtRiskLearners, getContentAnalytics, getUserAnalytics, getAssessmentAnalytics, getSurveyAnalytics, getLearningPathAnalytics, getCoursePerformanceInsights, getContentCounts, getContentCountsAll } = require("../controllers/admin.controller/admin_analytics");
 const { createAdminTicket, getAdminTickets, updateAdminTicketStatus, updateAdminTicket, deleteAdminTicket , getTicketDetails,
   addTicketComment, getTicketStats} = require("../controllers/admin.controller/admin_Tickets");
 const { getPermissions } = require("../controllers/permissions.controller");
@@ -138,18 +138,23 @@ router.route('/deleteAssignment/:id').delete(deleteAssignment)
 router.route('/getProfile').get(getProfile)
 
 /////Analytics//////
+router.route('/analytics/getOrganizationCreationDate').get(getOrganizationCreationDate)
 router.route('/analytics/getCourseDistribution').get(getCourseDistribution)
 router.route('/analytics/getUserData').get(getUsersData)
 router.route('/analytics/getUsageTrend').get(calculateUsageTrend)
 router.route('/analytics/getAdoption').get(getAdoption)
 router.route('/analytics/getTeams').get(getTeams)
+router.route('/analytics/getSubteams').get(getSubteams)
 router.route('/analytics/getEngagementHeatmap').get(getEngagementHeatmap)
 router.route('/analytics/getAtRiskLearners').get(getAtRiskLearners)
+router.route('/analytics/getCoursePerformanceInsights').get(getCoursePerformanceInsights)
 router.route('/analytics/content/:contentId').get(getContentAnalytics);
 router.route('/analytics/user/:userId').get(getUserAnalytics);
 router.route('/analytics/assessment/:assessmentId').get(getAssessmentAnalytics);
 router.route('/analytics/survey/:surveyId').get(getSurveyAnalytics);
 router.route('/analytics/learningPath/:learningPathId').get(getLearningPathAnalytics);
+router.route('/analytics/content-counts').get(getContentCounts);
+router.route('/analytics/content-counts-all').get(getContentCountsAll);
 // AI
 router.route('/enhanceText').post(enhanceText)
 // router.route('/generateImage').post(generateImage)

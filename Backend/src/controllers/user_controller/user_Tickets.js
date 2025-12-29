@@ -341,12 +341,7 @@ const getTicketDetails = async (req, res) => {
       });
     }
 
-    await logActivity({
-      userId: req.user._id,
-      action: "view",
-      details: `Viewed ticket details: ${ticketId}`,
-      status: "success"
-    });
+   
 
     return res.status(200).json({
       isSuccess: true,
@@ -355,12 +350,7 @@ const getTicketDetails = async (req, res) => {
     });
 
   } catch (error) {
-    await logActivity({
-      userId: req.user._id,
-      action: "view",
-      details: error.message,
-      status: "failed"
-    });
+    
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to fetch ticket details",

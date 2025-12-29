@@ -11,33 +11,40 @@ const WeeklyActivity = require("../../models/userWeekly_activity_model");
 const weeklyProgress = require("../../models/userWeekly_activity_model");
 
 // Helper function to get date range filter
-const getDateRangeFilter = (dateRange) => {
+const getDateRangeFilter = (dateRange, startDate, endDate) => {
+  if (dateRange === 'custom' && startDate && endDate) {
+    return { 
+      $gte: new Date(startDate), 
+      $lte: new Date(endDate + 'T23:59:59.999Z') 
+    };
+  }
+  
   if (dateRange === 'all') return null;
   
   const now = new Date();
-  const startDate = new Date();
+  const startDateFilter = new Date();
   
   switch (dateRange) {
     case '7D':
-      startDate.setDate(now.getDate() - 7);
+      startDateFilter.setDate(now.getDate() - 7);
       break;
     case '1M':
-      startDate.setMonth(now.getMonth() - 1);
+      startDateFilter.setMonth(now.getMonth() - 1);
       break;
     case '3M':
-      startDate.setMonth(now.getMonth() - 3);
+      startDateFilter.setMonth(now.getMonth() - 3);
       break;
     default:
-      startDate.setDate(now.getDate() - 7);
+      startDateFilter.setDate(now.getDate() - 7);
   }
   
-  return { $gte: startDate, $lte: now };
+  return { $gte: startDateFilter, $lte: now };
 };
 
 const getStats = async (req, res) => {
   try {
-    const { dateRange = 'all' } = req.query;
-    const dateFilter = getDateRangeFilter(dateRange);
+    const { dateRange = 'all', startDate, endDate } = req.query;
+    const dateFilter = getDateRangeFilter(dateRange, startDate, endDate);
 
     // For avgScore - Filter assessment attempts by date
     const scoreQuery = { user_id: req.user._id };
@@ -57,7 +64,10 @@ const getStats = async (req, res) => {
       .sort({ noOfhoursCompleted: -1 });
     const totalParticipants = await User.countDocuments({ organization_id: req.user.organization_id });
     const leaderboardPosition = leaderboard.findIndex((l) => l.user_id.toString() === req.user._id.toString()) + 1;
-
+    const teams = await UserProfile.findOne({ user_id: req.user._id }).select("teams");
+    const PrimaryTeam = teams.teams[0].team_id;
+    const leaderboardinTeam = await Leaderboard.find({ team_id: PrimaryTeam }).sort({ noOfhoursCompleted: -1 });
+    const position = leaderboardinTeam.findIndex((l) => l.user_id.toString() === req.user._id.toString()) + 1;
     // For course completion - Filter by date
     const courseQuery = { user_id: req.user._id };
     if (dateFilter) {
@@ -80,6 +90,8 @@ const getStats = async (req, res) => {
         leaderboardPosition,
         totalParticipants,
         newCourses,
+        teamPosition: position,
+        teamTotalParticipants: leaderboardinTeam.length
       }
     })
 
@@ -95,8 +107,8 @@ const getStats = async (req, res) => {
 
 const courseAnalytics = async (req, res) => {
   try {
-    const { dateRange = '7D' } = req.query;
-    const dateFilter = getDateRangeFilter(dateRange);
+    const { dateRange = '7D', startDate, endDate } = req.query;
+    const dateFilter = getDateRangeFilter(dateRange, startDate, endDate);
     
     const query = { user_id: req.user._id };
     if (dateFilter) {
@@ -132,9 +144,13 @@ const courseAnalytics = async (req, res) => {
     const totalCourses = totalAssignments.length;
     const completedCourses = totalAssignments.filter((assignment) => assignment.status === "completed").length;
     const inProgressCourses = totalAssignments.filter((assignment) => assignment.status === "in_progress").length;
+    const assignedCourses = totalAssignments.filter((assignment) => assignment.status === "assigned").length;
+    const overdueCourses = totalAssignments.filter((assignment) => (assignment.status === "assigned" || assignment.status === "in_progress" ) && assignment.due_date < Date.now()).length;
     const courseCompletion = [
       { name: 'Completed', value: completedCourses },
       { name: 'In Progress', value: inProgressCourses },
+      { name: 'Assigned', value: assignedCourses },
+      { name: 'Overdue', value: overdueCourses || 0 }
     ]
     return res.status(200).json({
       isSuccess: true,
@@ -144,6 +160,8 @@ const courseAnalytics = async (req, res) => {
         completedCourses,
         totalCourses,
         inProgressCourses,
+        assignedCourses,
+        overdueCourses,
         totalAssignments
       }
     })
@@ -344,8 +362,8 @@ const getAnalytics = async (req, res) => {
 
 const getAssessmentPerformance = async (req, res) => {
   try {
-    const { dateRange = 'all' } = req.query;
-    const dateFilter = getDateRangeFilter(dateRange);
+    const { dateRange = 'all', startDate, endDate } = req.query;
+    const dateFilter = getDateRangeFilter(dateRange, startDate, endDate);
 
     // Filter user attempts by date range
     const userAttemptQuery = { user_id: req.user._id };
@@ -479,77 +497,153 @@ const updateLearningActivity = async (req, res) => {
 
 const getWeeklyActivity = async (req, res) => {
   try {
-    const { dateRange = '7D' } = req.query;
+    const { dateRange = '7D', startDate, endDate } = req.query;
     const userId = req.user._id;
 
     const today = new Date();
     today.setHours(23, 59, 59, 999);
 
-    let startDate = new Date();
+    let startDateFilter = new Date();
     let dataPoints = 7;
     let dayLabels = [];
 
-    switch (dateRange) {
-      case '7D':
-        startDate.setDate(today.getDate() - 6);
-        startDate.setHours(0, 0, 0, 0);
+    if (dateRange === 'custom' && startDate && endDate) {
+      // Custom date range logic
+      startDateFilter = new Date(startDate);
+      const endDateFilter = new Date(endDate + 'T23:59:59.999Z');
+      
+      const daysDiff = Math.ceil((endDateFilter - startDateFilter) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff <= 7) {
         dataPoints = 7;
-        // Generate day labels for last 7 days
         for (let i = 0; i < 7; i++) {
-          const d = new Date(startDate);
-          d.setDate(startDate.getDate() + i);
+          const d = new Date(startDateFilter);
+          d.setDate(startDateFilter.getDate() + i);
           dayLabels.push(d.toLocaleDateString("en-US", { weekday: "short" }));
         }
-        break;
-      case '1M':
-        startDate.setMonth(today.getMonth() - 1);
-        startDate.setHours(0, 0, 0, 0);
+      } else if (daysDiff <= 30) {
         dataPoints = 4; // 4 weeks
-        // Generate week labels for last 4 weeks
         for (let i = 0; i < 4; i++) {
-          const weekStart = new Date(startDate);
-          weekStart.setDate(startDate.getDate() + (i * 7));
           dayLabels.push(`Week ${i + 1}`);
         }
-        break;
-      case '3M':
-        startDate.setMonth(today.getMonth() - 3);
-        startDate.setHours(0, 0, 0, 0);
-        dataPoints = 12; // 12 weeks
-        // Generate week labels for last 12 weeks
-        for (let i = 0; i < 12; i++) {
-          const weekStart = new Date(startDate);
-          weekStart.setDate(startDate.getDate() + (i * 7));
+      } else {
+        dataPoints = Math.min(12, Math.ceil(daysDiff / 7)); // Up to 12 weeks
+        for (let i = 0; i < dataPoints; i++) {
           if (i % 3 === 0) {
             dayLabels.push(`Week ${i + 1}`);
           } else {
             dayLabels.push('');
           }
         }
-        break;
-      default:
-        startDate.setDate(today.getDate() - 6);
-        startDate.setHours(0, 0, 0, 0);
-        dataPoints = 7;
-        for (let i = 0; i < 7; i++) {
-          const d = new Date(startDate);
-          d.setDate(startDate.getDate() + i);
-          dayLabels.push(d.toLocaleDateString("en-US", { weekday: "short" }));
-        }
+      }
+    } else {
+      // Predefined date range logic
+      switch (dateRange) {
+        case '7D':
+          startDateFilter.setDate(today.getDate() - 6);
+          startDateFilter.setHours(0, 0, 0, 0);
+          dataPoints = 7;
+          // Generate day labels for last 7 days
+          for (let i = 0; i < 7; i++) {
+            const d = new Date(startDateFilter);
+            d.setDate(startDateFilter.getDate() + i);
+            dayLabels.push(d.toLocaleDateString("en-US", { weekday: "short" }));
+          }
+          break;
+        case '1M':
+          startDateFilter.setMonth(today.getMonth() - 1);
+          startDateFilter.setHours(0, 0, 0, 0);
+          dataPoints = 4; // 4 weeks
+          // Generate week labels for last 4 weeks
+          for (let i = 0; i < 4; i++) {
+            const weekStart = new Date(startDateFilter);
+            weekStart.setDate(startDateFilter.getDate() + (i * 7));
+            dayLabels.push(`Week ${i + 1}`);
+          }
+          break;
+        case '3M':
+          startDateFilter.setMonth(today.getMonth() - 3);
+          startDateFilter.setHours(0, 0, 0, 0);
+          dataPoints = 12; // 12 weeks
+          // Generate week labels for last 12 weeks
+          for (let i = 0; i < 12; i++) {
+            const weekStart = new Date(startDateFilter);
+            weekStart.setDate(startDateFilter.getDate() + (i * 7));
+            if (i % 3 === 0) {
+              dayLabels.push(`Week ${i + 1}`);
+            } else {
+              dayLabels.push('');
+            }
+          }
+          break;
+        default:
+          startDateFilter.setDate(today.getDate() - 6);
+          startDateFilter.setHours(0, 0, 0, 0);
+          dataPoints = 7;
+          for (let i = 0; i < 7; i++) {
+            const d = new Date(startDateFilter);
+            d.setDate(startDateFilter.getDate() + i);
+            dayLabels.push(d.toLocaleDateString("en-US", { weekday: "short" }));
+          }
+      }
     }
+
+    const endDateQuery = dateRange === 'custom' && endDate 
+      ? new Date(endDate + 'T23:59:59.999Z')
+      : today;
 
     const logs = await WeeklyActivity.find({
       userId,
-      date: { $gte: startDate, $lte: today }
+      date: { $gte: startDateFilter, $lte: endDateQuery }
     });
 
     const activityData = [];
 
-    if (dateRange === '7D') {
+    if (dateRange === 'custom' && startDate && endDate) {
+      const endDateFilter = new Date(endDate + 'T23:59:59.999Z');
+      const daysDiff = Math.ceil((endDateFilter - startDateFilter) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff <= 7) {
+        // Daily data for custom ranges up to 7 days
+        for (let i = 0; i < dataPoints; i++) {
+          const d = new Date(startDateFilter);
+          d.setDate(startDateFilter.getDate() + i);
+          
+          const record = logs.find(
+            item => item.date.toDateString() === d.toDateString()
+          );
+          
+          activityData.push({
+            day: dayLabels[i],
+            hours: record ? Number(record.hours.toFixed(2)) : 0
+          });
+        }
+      } else {
+        // Weekly aggregation for longer custom ranges
+        for (let i = 0; i < dataPoints; i++) {
+          const weekStart = new Date(startDateFilter);
+          weekStart.setDate(startDateFilter.getDate() + (i * 7));
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6);
+          weekEnd.setHours(23, 59, 59, 999);
+          
+          const weekLogs = logs.filter(log => 
+            log.date >= weekStart && log.date <= weekEnd
+          );
+          
+          const totalHours = weekLogs.reduce((sum, log) => sum + log.hours, 0);
+          
+          activityData.push({
+            day: dayLabels[i] || `Week ${i + 1}`,
+            hours: Number(totalHours.toFixed(2))
+          });
+        }
+      }
+    } else if (dateRange === '7D') {
       // Daily data for 7 days
       for (let i = 0; i < dataPoints; i++) {
-        const d = new Date(startDate);
-        d.setDate(startDate.getDate() + i);
+        const d = new Date(startDateFilter);
+        d.setDate(startDateFilter.getDate() + i);
         
         const record = logs.find(
           item => item.date.toDateString() === d.toDateString()
@@ -563,8 +657,8 @@ const getWeeklyActivity = async (req, res) => {
     } else if (dateRange === '1M' || dateRange === '3M') {
       // Weekly aggregation for 1M and 3M
       for (let i = 0; i < dataPoints; i++) {
-        const weekStart = new Date(startDate);
-        weekStart.setDate(startDate.getDate() + (i * 7));
+        const weekStart = new Date(startDateFilter);
+        weekStart.setDate(startDateFilter.getDate() + (i * 7));
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 6);
         weekEnd.setHours(23, 59, 59, 999);
@@ -595,6 +689,38 @@ const getWeeklyActivity = async (req, res) => {
   }
 };
 
+const getRewards = async (req, res) => {
+  try {
+    const user = await UserProfile.findOne({ user_id: req.user._id });
+    
+    if (!user) {
+      return res.status(404).json({
+        isSuccess: false,
+        message: "User profile not found"
+      });
+    }
+
+    const { credits, badges, stars } = user;
+
+    return res.status(200).json({
+      isSuccess: true,
+      message: "Rewards fetched successfully",
+      data: {
+        credits: credits || 0,
+        badges: badges || [],
+        stars: stars || 0
+      }
+    });
+
+  } catch (error) {
+    console.error("Error fetching rewards:", error);
+    return res.status(500).json({
+      isSuccess: false,
+      message: "Failed to fetch rewards",
+      error: error.message
+    });
+  }
+};
 
 module.exports = {
   getAnalytics,
@@ -603,5 +729,6 @@ module.exports = {
   courseAnalytics,
   getDeadlinesAndOverDue,
   getAssessmentPerformance,
-  getWeeklyActivity
+  getWeeklyActivity,
+  getRewards
 }

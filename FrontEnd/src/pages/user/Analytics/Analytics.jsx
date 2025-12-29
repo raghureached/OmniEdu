@@ -29,11 +29,14 @@ import {
     LucideAccessibility,
     Pointer,
     Plus,
+    CalendarDays,
 } from 'lucide-react';
 import './Analytics.css';
 import api from '../../../services/api';
 import { useNavigate } from 'react-router-dom';
 import AnalyticsPop from './AnalyticsPop';
+import { LuCalendarOff } from "react-icons/lu";
+import { FaAward, FaChartLine, FaCheckCircle, FaClock, FaExclamationTriangle, FaHourglassHalf, FaMedal, FaPlayCircle, FaStar } from 'react-icons/fa';
 const COLORS = {
     primary: '#011F5B',
     accent: '#1C88C7',
@@ -43,17 +46,25 @@ const COLORS = {
     purple: '#8b5cf6',
 };
 
-const CHART_COLORS = ['#011F5B', '#1C88C7', '#10b981', '#f59e0b', '#8b5cf6'];
+
+const CHART_COLORS = ['#011F5B', '#1C88C7', '#10b981', '#f59e0b'];
 
 const LearnerAnalytics = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [timeRange, setTimeRange] = useState('7D');
     const [showModal, setShowModal] = useState(false);
+    const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
+    const [customDateRange, setCustomDateRange] = useState({
+        startDate: '',
+        endDate: ''
+    });
     const [stats, setStats] = useState({
         avgScore: 0,
         timeSpent: 0,
         completionRate: 0,
         leaderboardPosition: 'N/A',
+        teamPosition: 'N/A',
+        teamTotalParticipants: 0,
         totalParticipants: 0,
         newCourses: 'N/A'
     });
@@ -62,10 +73,17 @@ const LearnerAnalytics = () => {
         completedCourses: 0,
         totalCourses: 0,
         inProgressCourses: 0,
+        assignedCourses: 0,
+        overdueCourses: 0,
     });
     const [Deadlines, setDeadlines] = useState({
         upcomingDeadlines: [],
         overdueAssignments: [],
+    });
+    const [rewards, setRewards] = useState({
+        stars: 0,
+        badges: 0,
+        credits: 0
     });
     const [assessmentScores, setAssessmentScores] = useState({
         assessmentScores: [],
@@ -79,26 +97,42 @@ const LearnerAnalytics = () => {
         const fetchAllAnalytics = async () => {
             setIsLoading(true);
             try {
+                // Prepare date range parameters
+                const dateParams = timeRange === 'custom' 
+                    ? { 
+                        startDate: customDateRange.startDate,
+                        endDate: customDateRange.endDate
+                    }
+                    : { dateRange: timeRange };
+
+                // Only fetch if we have valid date range (for custom range)
+                if (timeRange === 'custom' && (!customDateRange.startDate || !customDateRange.endDate)) {
+                    setIsLoading(false);
+                    return;
+                }
+
                 // Fetch all data in parallel
                 const [
                     statsResponse,
                     moduleResponse,
                     deadlinesResponse,
+                    rewardsResponse,
                     assessmentResponse,
                     weeklyResponse
                 ] = await Promise.all([
                     api.get('/api/user/analytics/getStats', {
-                        params: { dateRange: timeRange }
+                        params: dateParams
                     }),
                     api.get('/api/user/analytics/getCourseAnalytics', {
-                        params: { dateRange: timeRange }
+                        params: dateParams
                     }),
                     api.get('/api/user/analytics/getDeadlinesAndOverDue'),
+                    api.get('/api/user/analytics/getUserRewards'),
                     api.get('/api/user/analytics/getAssessmentPerformance', {
-                        params: { dateRange: timeRange }
+                        params: dateParams
                     }),
                     api.get('/api/user/analytics/getWeeklyActivity', {
-                        params: { dateRange: timeRange }
+                        params: dateParams
                     })
                 ]);
 
@@ -106,9 +140,10 @@ const LearnerAnalytics = () => {
                 setStats(statsResponse.data.data);
                 setModuleAnalytics(moduleResponse.data.data);
                 setDeadlines(deadlinesResponse.data.data);
+                setRewards(rewardsResponse.data.data);
                 setAssessmentScores(assessmentResponse.data.data);
                 setWeeklyActivity(weeklyResponse.data.data);
-                
+
             } catch (error) {
                 console.error('Error fetching analytics:', error);
             } finally {
@@ -117,7 +152,7 @@ const LearnerAnalytics = () => {
         };
 
         fetchAllAnalytics();
-    }, [timeRange]);
+    }, [timeRange, customDateRange.startDate, customDateRange.endDate]);
     const scores = (Array.isArray(assessmentScores?.assessmentScores) ? assessmentScores?.assessmentScores : []).map(item => ({
         ...item,
         shortName:
@@ -212,35 +247,221 @@ const LearnerAnalytics = () => {
                 </div>
 
                 <div className="view-toggle-wrapper">
+                    <button
+                        className={`view-toggle-button ${timeRange === '7D' ? 'active' : ''}`}
+                        onClick={() => {
+                            setTimeRange('7D');
+                            setShowCustomDatePicker(false);
+                        }}
+                    >
+                        <Calendar size={16} />
+                        <span>7 Days</span>
+                    </button>
+                    <button
+                        className={`view-toggle-button ${timeRange === '1M' ? 'active' : ''}`}
+                        onClick={() => { 
+                            setTimeRange('1M');
+                            setShowCustomDatePicker(false);
+                        }}
+                    >
+                        <Calendar size={16} />
+                        <span>1 Month</span>
+                    </button>
+                    <button
+                        className={`view-toggle-button ${timeRange === '3M' ? 'active' : ''}`}
+                        onClick={() => { 
+                            setTimeRange('3M');
+                            setShowCustomDatePicker(false);
+                        }}
+                    >
+                        <Calendar size={16} />
+                        <span>3 Months</span>
+                    </button>
+                    <button
+                        className={`view-toggle-button ${timeRange === 'custom' ? 'active' : ''}`}
+                        onClick={() => {
+                            if (timeRange !== 'custom') {
+                                setTimeRange('custom');
+                            }
+                            setShowCustomDatePicker(!showCustomDatePicker);
+                        }}
+                    >
+                        <CalendarDays size={16} />
+                        <span>Custom</span>
+                    </button>
+                </div>
+                {showCustomDatePicker && (
+                    <div className="custom-date-picker">
+                        <div className="date-inputs">
+                            <div className="date-input-group">
+                                <label>From:</label>
+                                <input
+                                    type="date"
+                                    value={customDateRange.startDate}
+                                    onChange={(e) => setCustomDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                                    max={new Date().toISOString().split('T')[0]}
+                                />
+                            </div>
+                            <div className="date-input-group">
+                                <label>To:</label>
+                                <input
+                                    type="date"
+                                    value={customDateRange.endDate}
+                                    onChange={(e) => setCustomDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                                    max={new Date().toISOString().split('T')[0]}
+                                    min={customDateRange.startDate}
+                                />
+                            </div>
                             <button
-                              className={`view-toggle-button ${timeRange === '7D' ? 'active' : ''}`}
-                              onClick={() => {
-                                setTimeRange('7D');
+                                className="apply-date-range-btn"
+                                onClick={() => {
+                                    if (customDateRange.startDate && customDateRange.endDate) {
+                                        setShowCustomDatePicker(false);
+                                    }
+                                }}
+                                disabled={!customDateRange.startDate || !customDateRange.endDate}
+                            >
+                                Apply
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+            <div className='summary-grid'>
+            <div className="learning-dashboard-card learning-training-summary">
+                <h4 className="learning-card-title">Training Summary</h4>
+                <div className="learning-training-stats">
+                    <div className="learning-stat-item" onClick={() => navigate('/user/completed')}>
+                        <div className="learning-stat-icon completed">
+                            <FaCheckCircle />
+                        </div>
+                        <div className="learning-stat-info">
+                            <span className="learning-stat-label">Completed</span>
+                            <span className="learning-stat-value">{moduleAnalytics.completedCourses}</span>
+                        </div>
+                    </div>
+
+                    <div className="learning-stat-item" onClick={() => navigate('/user/inProgress')}>
+                        <div className="learning-stat-icon in-progress">
+                            <FaHourglassHalf />
+                        </div>
+                        <div className="learning-stat-info">
+                            <span className="learning-stat-label">In Progress</span>
+                            <span className="learning-stat-value">{moduleAnalytics.inProgressCourses}</span>
+                        </div>
+                    </div>
+                    <div className="learning-stat-item" onClick={() => navigate('/user/completionRate')}>
+                        <div className="learning-stat-icon completion-rate">
+                            <FaChartLine />
+                        </div>
+                        <div className="learning-stat-info">
+                            <span className="learning-stat-label">Completion Rate</span>
+                            <span className="learning-stat-value">{stats.completionRate}</span>
+                        </div>
+                    </div>
+
+                    <div className="learning-stat-item" onClick={() => navigate('/user/assigned')}>
+                        <div className="learning-stat-icon not-started">
+                            <FaPlayCircle />
+                        </div>
+                        <div className="learning-stat-info">
+                            <span className="learning-stat-label">Not Started</span>
+                            <span className="learning-stat-value">{moduleAnalytics.assignedCourses || 0}</span>
+                        </div>
+                    </div>
+
+                    <div className="learning-stat-item" onClick={() => navigate('/user/assigned')}>
+                        <div className="learning-stat-icon overdue">
+                            <FaExclamationTriangle />
+                        </div>
+                        <div className="learning-stat-info">
+                            <span className="learning-stat-label">Overdue</span>
+                            <span className="learning-stat-value">{moduleAnalytics.overdueCourses}</span>
+                        </div>
+                    </div>
+
+                    <div className="learning-stat-item">
+                        <div className="learning-stat-icon time-spent-total">
+                            <FaClock />
+                        </div>
+                        <div className="learning-stat-info">
+                            <span className="learning-stat-label">Time Spent</span>
+                            <span className="learning-stat-value">{stats.timeSpent}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div className="learning-dashboard-card">
+                <h4 className="learning-card-title">Achievements & Leaderboard <span> <LuCalendarOff size={16} /> </span></h4>
                 
-                              }}
-                            >
-                              <Calendar size={16} />
-                              <span>7 Days</span>
-                            </button>
-                            <button
-                              className={`view-toggle-button ${timeRange === '1M' ? 'active' : ''}`}
-                              onClick={() => { setTimeRange('1M') }}
-                            >
-                              <Calendar size={16} />
-                              <span>1 Month</span>
-                            </button>
-                            <button
-                              className={`view-toggle-button ${timeRange === '3M' ? 'active' : ''}`}
-                              onClick={() => { setTimeRange('3M') }}
-                            >
-                              <Calendar size={16} />
-                              <span>3 Months</span>
-                            </button>
-                          </div>
+                <div className="learning-achievements-container">
+                    <div style={{ display: "flex", gap: "10px", flexDirection: "column" }}>
+                        <div className="learning-achievement-item">
+                            <div className="learning-achievement-icon creditss">
+                                <FaMedal />
+                            </div>
+                            <div className="learning-achievement-info">
+                                <span className="learning-achievement-label">Credits</span>
+                                <span className="learning-achievement-value">{rewards.credits}</span>
+                            </div>
+                        </div>
+
+                        <div className="learning-achievement-item">
+                            <div className="learning-achievement-icon stars">
+                                <FaStar />
+                            </div>
+                            <div className="learning-achievement-info">
+                                <span className="learning-achievement-label">Stars</span>
+                                <span className="learning-achievement-value">{rewards.stars}</span>
+                            </div>
+                        </div>
+
+                        <div className="learning-achievement-item">
+                            <div className="learning-achievement-icon badgesss">
+                                <FaAward />
+                            </div>
+                            <div className="learning-achievement-info">
+                                <span className="learning-achievement-label">Badges</span>
+                                <span className="learning-achievement-value">{rewards.badges}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="learning-leaderboard-container">
+                        <div className="learning-leaderboard-item">
+                            <div className="learning-leaderboard-position">
+                                <div className="learning-position-badge">
+                                    <FaMedal className="learning-medal-icon" />
+                                    <span className="learning-position-number">#{stats.teamPosition || 0}</span>
+                                </div>
+                                <div className="learning-position-info">
+                                    <span className="learning-position-label">Team Rank</span>
+                                    <span className="learning-position-total">of {stats.teamTotalParticipants || 0}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="learning-leaderboard-item">
+                            <div className="learning-leaderboard-position">
+                                <div className="learning-position-badge">
+                                    <FaAward className="learning-medal-icon" />
+                                    <span className="learning-position-number">#{stats.leaderboardPosition || 0}</span>
+                                </div>
+                                <div className="learning-position-info">
+                                    <span className="learning-position-label">Organization Rank</span>
+                                    <span className="learning-position-total">of {stats.totalParticipants}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <p className="learning-motivational-text">Keep climbing the leaderboard!</p>
+
+
+            </div>
             </div>
 
-            {/* Key Metrics Grid */}
-            <div className="metrics-grid-enhanced">
+            {/* <div className="metrics-grid-enhanced">
                 <MetricCard
                     icon={Target}
                     label="Completion Rate"
@@ -268,7 +489,7 @@ const LearnerAnalytics = () => {
                     color="color-tertiary"
                     delay={200}
                 />
-                {/* <MetricCard
+                <MetricCard
                     icon={Trophy}
                     label="Leaderboard Rank"
                     value={`${stats.leaderboardPosition === 0 ? "N/A" : stats.leaderboardPosition}`}
@@ -283,8 +504,8 @@ const LearnerAnalytics = () => {
                     subtitle={`${stats.newCourses} new assignments (${timeRange === '7D' ? 'last 7 days' : timeRange === '1M' ? 'last month' : 'last 3 months'})`}
                     color="color-neutral"
                     delay={300}
-                /> */}
-            </div>
+                />
+            </div> */}
 
             <AnalyticsPop
                 isOpen={showModal}
@@ -292,20 +513,19 @@ const LearnerAnalytics = () => {
                 data={moduleAnalytics}
                 loading={isLoading}
             />
-
-            {/* Charts Row 1: Completion Donut & Deadlines */}
             <div className="charts-grid">
-                {/* Completion Rate Donut */}
                 <div className="chart-panel">
                     <div className="panel-header-enhanced">
+                        
                         <div>
+                            
                             <h3 className="panel-title">Course Completion Status</h3>
                             <p className="panel-description">Your learning progress overview</p>
                         </div>
+                        {/* <LineChart size={20} className="panel-icon modal-trigger-icon" onClick={() => setShowModal(true)} /> */}
                         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-
-                            <LineChart size={20} className="panel-icon modal-trigger-icon" onClick={() => setShowModal(true)} />
-                            <BookOpen size={20} className="panel-icon" />
+                            {/* <BookOpen size={20} className="panel-icon" /> */}
+                            <LineChart size={20} className="panel-icon modal-trigger-icon" style={{ color: "black" }} onClick={() => setShowModal(true)} />
                         </div>
                     </div>
 
@@ -316,8 +536,8 @@ const LearnerAnalytics = () => {
                                     data={moduleAnalytics.courseCompletion}
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={70}
-                                    outerRadius={100}
+                                    innerRadius={90}
+                                    outerRadius={130}
                                     paddingAngle={5}
                                     dataKey="value"
                                 >
@@ -329,8 +549,8 @@ const LearnerAnalytics = () => {
                             </PieChart>
                         </ResponsiveContainer>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', cursor: 'pointer' }} onClick={() => navigate('/user/completed')}>
-                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/completed')}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                                     <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: CHART_COLORS[0] }} />
                                     <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Completed</span>
@@ -349,72 +569,29 @@ const LearnerAnalytics = () => {
                                     {moduleAnalytics.inProgressCourses} courses
                                 </div>
                             </div>
+
+                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/assigned')}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                                    <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: CHART_COLORS[2] }} />
+                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Assigned</span>
+                                </div>
+                                <div style={{ fontSize: '28px', fontWeight: 700, color: '#111827' }}>
+                                    {moduleAnalytics.assignedCourses} courses
+                                </div>
+                            </div>
+
+                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/overdue')}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                                    <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: CHART_COLORS[3] }} />
+                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Overdue</span>
+                                </div>
+                                <div style={{ fontSize: '28px', fontWeight: 700, color: '#111827' }}>
+                                    {moduleAnalytics.overdueCourses} courses
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                {/* Deadlines & Overdue */}
-                {/* <div className="chart-panel">
-                    <div className="panel-header-enhanced">
-                        <div>
-                            <h3 className="panel-title">Upcoming Deadlines</h3>
-                            <p className="panel-description">Stay on track with your assignments</p>
-                        </div>
-                        <Calendar size={20} className="panel-icon" />
-                    </div>
-
-                    <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '300px', overflowY: 'auto' }}>
-                        
-
-                        {Deadlines?.upcomingDeadlines.length > 0 ? Deadlines?.upcomingDeadlines.map((item, idx) => (
-                            <div key={`upcoming-${idx}`} style={{
-                                padding: '16px',
-                                background: '#f9fafb',
-                                borderRadius: '12px',
-                                borderLeft: `4px solid ${item.daysLeft <= 5 ? COLORS.warning : COLORS.accent}`,
-                                cursor: "pointer"
-                            }}
-                                onClick={() => navigate(`/${item.type}/${item.uuid}/${item.assign_id}`)}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontSize: '14px', fontWeight: 600, color: '#111827', marginBottom: '4px' }}>
-                                            {item.course}
-                                        </div>
-                                        <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                                            Due: {new Date(item.dueDate).toLocaleDateString()}
-                                        </div>
-                                    </div>
-                                    <div style={{
-                                        padding: '4px 12px',
-                                        background: item.daysLeft <= 5 ? COLORS.warning : COLORS.accent,
-                                        color: 'white',
-                                        borderRadius: '8px',
-                                        fontSize: '12px',
-                                        fontWeight: 600
-                                    }}>
-                                        {item.daysLeft}d left
-                                    </div>
-                                </div>
-                                <div className="progress-bar" style={{ marginTop: '12px' }}>
-                                    <div
-                                        className="progress-fill"
-                                        style={{
-                                            width: `${item.progress}%`,
-                                            background: item.daysLeft <= 5 ? COLORS.warning : COLORS.accent
-                                        }}
-                                    />
-                                </div>
-                                <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>
-                                    {item.progress}% complete
-                                </div>
-                            </div>
-                        )) : (
-                            <div style={{ padding: '16px', background: '#f9fafb', borderRadius: '12px' }}>
-                                No upcoming deadlines
-                            </div>
-                        )}
-                    </div>
-                </div> */}
             </div>
 
             {/* Charts Row 2: Weekly Progress & Assessment Performance */}
@@ -425,21 +602,21 @@ const LearnerAnalytics = () => {
                         <div>
                             <h3 className="panel-title">Learning Activity</h3>
                             <p className="panel-description">
-                                {timeRange === '7D' ? 'Daily hours for last 7 days' : 
-                                 timeRange === '1M' ? 'Weekly hours for last 4 weeks' : 
-                                 'Weekly hours for last 12 weeks'}
+                                {timeRange === '7D' ? 'Daily hours for last 7 days' :
+                                    timeRange === '1M' ? 'Weekly hours for last 4 weeks' :
+                                        'Weekly hours for last 12 weeks'}
                             </p>
                         </div>
-                        <Activity size={20} className="panel-icon" />
+                        {/* <Activity size={20} className="panel-icon" /> */}
                     </div>
 
                     <div className="chart-container">
                         <ResponsiveContainer width="100%" height={280}>
                             <BarChart data={weeklyActivity}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                                <XAxis 
-                                    dataKey="day" 
-                                    stroke="black" 
+                                <XAxis
+                                    dataKey="day"
+                                    stroke="black"
                                     style={{ fontSize: 12 }}
                                     interval={timeRange === '3M' ? 2 : 0}
                                 />
@@ -462,142 +639,15 @@ const LearnerAnalytics = () => {
                             {weeklyActivity.reduce((acc, day) => acc + day.hours, 0).toFixed(1)}h
                         </div>
                         <div style={{ fontSize: '12px', color: '#6b7280', fontWeight: 500 }}>
-                            {timeRange === '7D' ? 'Total this week' : 
-                             timeRange === '1M' ? 'Total last 4 weeks' : 
-                             'Total last 12 weeks'}
+                            {timeRange === '7D' ? 'Total this week' :
+                                timeRange === '1M' ? 'Total last 4 weeks' :
+                                    'Total last 12 weeks'}
                         </div>
                     </div>
                 </div>
 
-                {/* Assessment Performance */}
-                {/* <div className="chart-panel">
-                    <div className="panel-header-enhanced">
-                        <div>
-                            <h3 className="panel-title">Assessment Performance</h3>
-                            <p className="panel-description">Your scores vs class average</p>
-                        </div>
-                        <Target size={20} className="panel-icon" />
-                    </div>
 
-                    <div className="chart-container">
-                        <ResponsiveContainer width="100%" height={280}>
-                            <BarChart data={scores}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="black" />
-
-                                <XAxis
-                                    dataKey="shortName"
-                                    stroke="green"
-                                    style={{ fontSize: 12 }}
-
-                                />
-
-                                <YAxis type="number" domain={[0, 100]} stroke="black" style={{ fontSize: 12 }} />
-
-                                <Tooltip
-                                    formatter={(value) => [`${value}%`, 'Score']}
-                                    contentStyle={{
-                                        background: '#fff',
-                                        border: '1px solid #e5e7eb',
-                                        borderRadius: '8px',
-                                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                                    }}
-                                />
-
-                                <Bar dataKey="score" radius={[8, 8, 0, 0]}>
-                                    {scores.map((entry, index) => (
-
-                                        <Cell
-                                            key={index}
-                                            fill={entry.score >= entry.classAverage ? COLORS.success : COLORS.warning}
-                                        />
-
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-                        <div style={{ flex: 1, textAlign: 'center', padding: '12px', background: '#f9fafb', borderRadius: '12px' }}>
-                            <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.success }}>
-                                {assessmentScores.avgScore}%
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#6b7280', fontWeight: 500 }}>
-                                Your Average
-                            </div>
-                        </div>
-                        <div style={{ flex: 1, textAlign: 'center', padding: '12px', background: '#f9fafb', borderRadius: '12px' }}>
-                            <div style={{ fontSize: '24px', fontWeight: 700, color: '#6b7280' }}>
-                                {assessmentScores?.classAverage}%
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#6b7280', fontWeight: 500 }}>
-                                Class Average
-                            </div>
-                        </div>
-                    </div>
-                </div> */}
             </div>
-
-            {/* Gamification Stats */}
-            {/* <div className="chart-panel full-width">
-                <div className="panel-header-enhanced">
-                    <div>
-                        <h3 className="panel-title">Achievements & Gamification</h3>
-                        <p className="panel-description">Your badges, credits, and leaderboard standing</p>
-                    </div>
-                    <Trophy size={20} className="panel-icon" />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '20px' }}>
-                   
-                    <div className="health-metric">
-                        <div className="health-metric-header">
-                            <Trophy size={16} className="health-icon" />
-                            <span className="health-label">Leaderboard Rank</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '12px' }}>
-                            <div className="health-value">#{data.leaderboardPosition === 0 ? 'N/A' : data.leaderboardPosition}</div>
-                            <div style={{ fontSize: '16px', color: '#6b7280' }}>of {data.totalParticipants}</div>
-                        </div>
-                        <div className="progress-bar">
-                            <div
-                                className="progress-fill progress-primary"
-                                style={{ width: `${100 - (data.leaderboardPosition / data.totalParticipants * 100)}%` }}
-                            />
-                        </div>
-                        <div className="health-percentage">
-                            Top {Math.round((data.leaderboardPosition / data.totalParticipants) * 100)}%
-                        </div>
-                    </div>
-
-                    
-                    <div className="health-metric">
-                        <div className="achievement-icon-container credits-icon">
-                            <Award size={32} className="achievement-icon" />
-                        </div>
-                        <div className="achievement-label">Credits</div>
-                        <div className="achievement-value">{data.credits.toLocaleString()}</div>
-                    </div>
-
-                 
-                    <div className="health-metric">
-                        <div className="achievement-icon-container stars-icon">
-                            <Star size={32} className="achievement-icon" />
-                        </div>
-                        <div className="achievement-label">Stars</div>
-                        <div className="achievement-value">{data.stars.toLocaleString()}</div>
-                    </div>
-
-                   
-                    <div className="health-metric">
-                        <div className="achievement-icon-container badges-icon">
-                            <Award size={32} className="achievement-icon" />
-                        </div>
-                        <div className="achievement-label">Badges</div>
-                        <div className="achievement-value">{data.badges}</div>
-                    </div>
-                </div>
-            </div> */}
         </div>
     );
 }
