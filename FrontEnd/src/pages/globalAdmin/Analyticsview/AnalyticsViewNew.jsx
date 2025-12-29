@@ -245,6 +245,16 @@ const AnalyticsViewNew = () => {
               <span>7 Days</span>
             </button>
             <button
+              className={`view-toggle-button ${range === 'mtd' ? 'active' : ''}`}
+              onClick={() => {
+                setRange('mtd');
+
+              }}
+            >
+              <Calendar size={16} />
+              <span>Month To Date</span>
+            </button>
+            <button
               className={`view-toggle-button ${range === '1m' ? 'active' : ''}`}
               onClick={() => { setRange('1m') }}
             >
@@ -280,7 +290,7 @@ const AnalyticsViewNew = () => {
           icon={Users}
           label="Monthly Active Users"
           value={formatNumber(data?.stats?.mau?.value)}
-          subtitle={range === '7d' ? 'last 7 days' : range === '1m' ? 'last month' : range === '3m' ? 'last 3 months' : 'last 6 months'}
+          subtitle={range === '7d' ? 'last 7 days' : range === '1m' ? 'last month' : range === '3m' ? 'last 3 months' : range === '6m' ? 'last 6 months' : range === 'mtd' ? 'Month To Date' : 'last 6 months'}
           trend={data?.stats?.mau?.change >= 0 ? 'up' : 'down'}
           trendValue={`${Math.abs(data?.stats?.mau?.change)}`}
           color="color-secondary"

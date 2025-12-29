@@ -8,7 +8,6 @@ const userTickets = require('../../models/userTickets');
 /* ===========================
    DATE RANGE UTILS (SINGLE SOURCE)
 =========================== */
-
 const getDateRangeFilter = (dateRange = '7D') => {
   if (!dateRange || dateRange === 'all') return null;
 
@@ -19,15 +18,24 @@ const getDateRangeFilter = (dateRange = '7D') => {
     case '7D':
       start.setDate(end.getDate() - 7);
       break;
+
     case '1M':
       start.setMonth(end.getMonth() - 1);
       break;
+
     case '3M':
       start.setMonth(end.getMonth() - 3);
       break;
+
     case '6M':
       start.setMonth(end.getMonth() - 6);
       break;
+
+    case 'MTD':
+      start.setDate(1);              // first day of current month
+      start.setHours(0, 0, 0, 0);    // start of day
+      break;
+
     default:
       start.setDate(end.getDate() - 7);
   }
