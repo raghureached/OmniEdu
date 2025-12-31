@@ -2,32 +2,6 @@ const OrganizationModule = require("../../models/moduleOrganization_model");
 const { z } = require("zod");
 const UserProfile = require("../../models/userProfiles_model");
 
-const CONTENT_TYPES = ["PDF", "DOCX", "Theory"];
-
-const createContentSchema = z
-  .object({
-    title: z.string().min(1, "Title is required"),
-    type: z.enum(CONTENT_TYPES, {
-      message: `Type must be one of: ${CONTENT_TYPES.join(", ")}`,
-    }),
-    content: z.string().optional(),
-    is_active: z.boolean().optional(),
-    pushable_to_orgs: z.boolean().optional(),
-    file_url: z.string().url("Invalid file URL").optional(),
-  })
-  .refine(
-    (data) => {
-      if (data.type === "Theory") return !!data.content;
-      if (["PDF", "DOCX"].includes(data.type)) return !!data.file_url;
-      return true;
-    },
-    {
-      message:
-        "Invalid content: Theory requires content text, PDF/DOCX require file_url",
-    }
-  );
-
-const updateContentSchema = createContentSchema.partial();
 
 const addModule = async (req, res) => {
   try {
