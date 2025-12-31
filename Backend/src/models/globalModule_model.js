@@ -110,9 +110,16 @@ const GlobalModuleSchema = new mongoose.Schema(
       enum: ["Published", "Saved","Draft"],
       default: "Draft",
     },
+    lastUpdated: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
     timestamps: true,
+  },
+  {
+    
   }
 );
 

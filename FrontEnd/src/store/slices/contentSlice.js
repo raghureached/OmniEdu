@@ -13,7 +13,30 @@ export const fetchContent = createAsyncThunk(
     }
   }
 );
-
+export const addDraft = createAsyncThunk(
+  'content/addDraft',
+  async(moduleData,{rejectWithValue}) =>{
+    try {
+      // Do not set Content-Type here!
+      const response = await api.post('/api/globalAdmin/addDraft', moduleData,{headers:{'Content-Type':'multipart/form-data'}});
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+)
+export const updateDraft = createAsyncThunk(
+  'content/updateDraft',
+  async({ id, updatedData },{rejectWithValue}) =>{
+    try {
+      // Do not set Content-Type here!
+      const response = await api.put(`/api/globalAdmin/updateDraft/${id}`, updatedData,{headers:{'Content-Type':'multipart/form-data'}});
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+)
 export const fetchContentById = createAsyncThunk(
   'content/fetchContentById',
   async (id, { rejectWithValue }) => {
@@ -94,6 +117,7 @@ const contentSlice = createSlice({
   name: 'content',
   initialState: {
     items: [],
+    drafts:[],
     uploading: false,
     aiProcessing:false,
     loading: false,
@@ -152,6 +176,33 @@ const contentSlice = createSlice({
         state.loading = false;
         state.uploading = false;
         state.error = action.payload?.message || 'Failed to create content';
+      })
+      .addCase(addDraft.pending, (state) => {
+        
+      })
+      .addCase(addDraft.fulfilled, (state, action) => {
+       
+        state.drafts.push(action.payload);
+        
+      })
+      .addCase(addDraft.rejected, (state, action) => {
+        
+        state.error = action.payload?.message || 'Failed to create content';
+      })
+      .addCase(updateDraft.pending, (state) => {
+         
+        })
+      .addCase(updateDraft.fulfilled, (state, action) => {
+        
+        const index = state.drafts.findIndex(item => item.uuid === action.payload.uuid);
+        if (index !== -1) {
+          state.drafts[index] = action.payload;
+        }
+        
+      })
+      .addCase(updateDraft.rejected, (state, action) => {
+        
+        state.error = action.payload?.message || 'Failed to update content';
       })
       
       // Update content

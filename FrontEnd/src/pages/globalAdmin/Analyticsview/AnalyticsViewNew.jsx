@@ -31,6 +31,7 @@ import {
   Server,
   HardDrive,
   Calendar,
+  CalendarDays,
 } from 'lucide-react';
 import './AnalyticsViewNew.css';
 import api from '../../../services/api';
@@ -52,6 +53,11 @@ const AnalyticsViewNew = () => {
   const { organizations } = useSelector((state) => state.organizations);
   const navigate = useNavigate()
   const [userPopUp, setUserPopUp] = useState(false);
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
+  const [customDateRange, setCustomDateRange] = useState({
+    startDate: '',
+    endDate: ''
+  });
 
 
   // Generate trend data based on current values
@@ -78,11 +84,23 @@ const AnalyticsViewNew = () => {
     const fetchAnalyticsData = async () => {
       try {
         setIsLoading(true);
+        const dateParams = range === 'custom'
+          ? {
+            startDate: customDateRange.startDate,
+            endDate: customDateRange.endDate
+          }
+          : { dateRange: range };
+
         const endpoint = orgId === 'all'
           ? '/api/globalAdmin/getAnalytics'
           : `/api/globalAdmin/getAnalytics/${orgId}`;
+        if (range === 'custom' && (!customDateRange.startDate || !customDateRange.endDate)) {
+          setIsLoading(false);
+          return;
+        }
+
         const response = await api.get(endpoint, {
-          params: { dateRange: range.toLowerCase() }
+          params: dateParams
         });
         setData(response.data);
       } catch (error) {
@@ -93,7 +111,7 @@ const AnalyticsViewNew = () => {
     };
 
     fetchAnalyticsData();
-  }, [range, orgId]);
+  }, [range, orgId, customDateRange.startDate, customDateRange.endDate]);
   const handleOrgClick = (Id) => {
     setUserOrgId(Id);
     setUserPopUp(true);
@@ -220,17 +238,17 @@ const AnalyticsViewNew = () => {
                 <option key={index} value={org._id}>{org.name}</option>
               ))}
             </select> */}
-            <CustomSelect 
-            value={orgId}
-            options={[
-              { value: 'all', label: 'All Organizations' },
-              ...(organizations?.map((org, index) => ({
-                value: org._id,
-                label: org.name,
-              })) || [])
-            ]}
-            onChange={(value) => setOrgId(value)}
-            placeholder='All organizations'
+            <CustomSelect
+              value={orgId}
+              options={[
+                { value: 'all', label: 'All Organizations' },
+                ...(organizations?.map((org, index) => ({
+                  value: org._id,
+                  label: org.name,
+                })) || [])
+              ]}
+              onChange={(value) => setOrgId(value)}
+              placeholder='All organizations'
             />
           </div>
           <div className="view-toggle-wrapper">
@@ -268,7 +286,56 @@ const AnalyticsViewNew = () => {
               <Calendar size={16} />
               <span>3 Months</span>
             </button>
+            <button
+              className={`view-toggle-button ${range === 'custom' ? 'active' : ''}`}
+              onClick={() => {
+                if (range !== 'custom') {
+                  setRange('custom');
+                }
+                setShowCustomDatePicker(!showCustomDatePicker);
+              }}
+            >
+              <CalendarDays size={16} />
+              <span>Custom</span>
+            </button>
           </div>
+          {showCustomDatePicker && (
+            <div className="custom-date-picker">
+              <div className="date-inputs">
+                <div className="date-input-group">
+                  <label>From:</label>
+                  <input
+                    type="date"
+                    value={customDateRange.startDate}
+                    onChange={(e) => setCustomDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                    max={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+                <div className="date-input-group">
+                  <label>To:</label>
+                  <input
+                    type="date"
+                    value={customDateRange.endDate}
+                    onChange={(e) => setCustomDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                    max={new Date().toISOString().split('T')[0]}
+                    min={customDateRange.startDate}
+                  />
+                </div>
+                <button
+                  className="apply-date-range-btn"
+                  onClick={() => {
+                    if (customDateRange.startDate && customDateRange.endDate) {
+                      setShowCustomDatePicker(false);
+                    }
+                  }}
+                  disabled={!customDateRange.startDate || !customDateRange.endDate}
+                >
+                  Apply
+                </button>
+
+              </div>
+            </div>
+          )}
 
 
         </div>
@@ -290,7 +357,7 @@ const AnalyticsViewNew = () => {
           icon={Users}
           label="Monthly Active Users"
           value={formatNumber(data?.stats?.mau?.value)}
-          subtitle={range === '7d' ? 'last 7 days' : range === '1m' ? 'last month' : range === '3m' ? 'last 3 months' : range === '6m' ? 'last 6 months' : range === 'mtd' ? 'Month To Date' : 'last 6 months'}
+          subtitle={range === '7d' ? 'last 7 days' : range === '1m' ? 'last month' : range === '3m' ? 'last 3 months' : range === 'custom' ? 'Custom Range' : range === 'mtd' ? 'Month To Date' : 'last 6 months'}
           trend={data?.stats?.mau?.change >= 0 ? 'up' : 'down'}
           trendValue={`${Math.abs(data?.stats?.mau?.change)}`}
           color="color-secondary"
@@ -395,7 +462,7 @@ const AnalyticsViewNew = () => {
           </div>
 
           <div className="distribution-layout-vertical">
-            
+
 
             <div className="distribution-chart">
               <ResponsiveContainer width="100%" height={200}>
@@ -409,13 +476,13 @@ const AnalyticsViewNew = () => {
                     outerRadius={70}
                     label={false}
                     onClick={(entry) => handleOrgClick(entry._id)}
-                    cursorStyle={{cursor:'pointer'}}
+                    cursorStyle={{ cursor: 'pointer' }}
                   >
                     {data?.organizations?.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value, name) => [`${formatNumber(value)} users`, name]}  cursorStyle={{cursor:'pointer'}} cursor={{fill:'transparent'}}/>
+                  <Tooltip formatter={(value, name) => [`${formatNumber(value)} users`, name]} cursorStyle={{ cursor: 'pointer' }} cursor={{ fill: 'transparent' }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>

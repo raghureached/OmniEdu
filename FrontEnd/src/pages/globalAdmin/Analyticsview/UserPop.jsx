@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, Calendar, Building2, Download } from 'lucide-react';
 import api from '../../../services/api';
+import LoadingScreen from '../../../components/common/Loading/Loading';
 
 const UserPop = ({ isOpen, onClose,orgId, loading,range }) => {
     const [tableData, setTableData] = useState([]);
@@ -8,6 +9,7 @@ const UserPop = ({ isOpen, onClose,orgId, loading,range }) => {
     const [name, setName] = useState('');
 
     useEffect(()=>{
+        setIsLoading(true)
         const fetchUsersData = async()=>{
             const response = await api.get(`/api/globalAdmin/analytics/users/${orgId}`,{
                 params:{
@@ -67,7 +69,7 @@ const UserPop = ({ isOpen, onClose,orgId, loading,range }) => {
 
     return (
         <div className="analytics-modal-overlay" onClick={onClose}>
-            <div className="analytics-modal" onClick={(e) => e.stopPropagation()}>
+            {isLoading ? <LoadingScreen text="please wait" /> : <div className="analytics-modal" onClick={(e) => e.stopPropagation()}>
                 
                 <div className="analytics-modal-header">
                     <div>
@@ -149,7 +151,7 @@ const UserPop = ({ isOpen, onClose,orgId, loading,range }) => {
                         </div>
                     )}
                 </div>
-            </div>
+            </div>}
         </div>
     );
 };

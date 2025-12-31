@@ -1,6 +1,6 @@
 require("dotenv").config();
 const express = require("express");
-const connectDB = require("./src/config/mongoDBConfig");
+require("./src/config/mongoDBConfig");
 const logger = require("./src/utils/logger");
 const helmetMiddleware = require("./src/config/helmetConfig");
 const corsMiddleware = require("./src/config/corsConfig");
@@ -16,7 +16,10 @@ const userRouter = require("./src/routes/user.routes");
 const cookieParser = require("cookie-parser");
 const { authenticate, authorize } = require("./src/middleware/auth_middleware");
 const activityLogRouter = require("./src/routes/globalAdmin.activityLogs.routes");
-connectDB;
+const startSubscriptionUpdater = require("./src/utils/updateSubscriptions");
+
+// connectDB
+startSubscriptionUpdater()
 
 // Session middleware for Passport
 app.use(session({

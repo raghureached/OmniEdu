@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { BookOpen, Users, Award, TrendingUp, ClipboardCheck, ListChecks, GraduationCap, PencilLine, ClipboardList, MessageSquare, Activity, HelpCircle, Megaphone, Building } from 'lucide-react';
@@ -7,9 +7,40 @@ import { fetchAllMessages } from '../../../store/slices/globalMessageSlice';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line
 } from 'recharts';
+import { AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
+import { Clock } from 'lucide-react';
+import api from '../../../services/api';
+
+// Add this constant for colors
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 const GlobalAdminHome = () => {
+  const [organizationData, setOrganizationData] = useState([]);
+  const [orgGrowthData, setOrgGrowthData] = useState([]);
+  useEffect(() => {
+    const fetchUserDistribution = async () => {
+      try {
+        const res = await api.get('/api/globalAdmin/getUserDistribution');
+        if (res.data.success) {
+          setOrganizationData(res.data.groupedUsers);
+        }
+      } catch (error) {
 
+      }
+    }
+    const fetchOrgGrowth = async () => {
+      try {
+        const res = await api.get('/api/globalAdmin/getOrganizationGrowth');
+        if (res.data.success) {
+          setOrgGrowthData(res.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching organization growth data:', error);
+      }
+    };
+    fetchOrgGrowth();
+    fetchUserDistribution();
+  }, []);
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { currentMessages, loading } = useSelector((state) => state.globalMessage);
@@ -18,13 +49,7 @@ const GlobalAdminHome = () => {
   // Global admin: no orgId needed here
 
   // Mock data for Organization Performance
-  const organizationData = [
-    { name: 'Org A', completionRate: 82, assessmentPassRate: 88 },
-    { name: 'Org B', completionRate: 75, assessmentPassRate: 79 },
-    { name: 'Org C', completionRate: 68, assessmentPassRate: 72 },
-    { name: 'Org D', completionRate: 79, assessmentPassRate: 81 },
-    { name: 'Org E', completionRate: 85, assessmentPassRate: 90 }
-  ];
+
 
   // Mock data for User Activity
   const userActivityData = [
@@ -71,6 +96,7 @@ const GlobalAdminHome = () => {
       }
     };
 
+
     const onMouseMove = (e) => {
       pointerX = e.clientX;
       pointerY = e.clientY;
@@ -116,6 +142,16 @@ const GlobalAdminHome = () => {
     { to: '/global-admin/activity-log', title: 'Activity Log', desc: 'Review recent platform activities.', Icon: Activity },
     { to: '/global-admin/help-center', title: 'Help Center', desc: 'Find documentation and get support.', Icon: HelpCircle },
   ];
+  const generateTrendData = (baseValue) => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date();
+      day.setDate(day.getDate() - (6 - i));
+      return {
+        label: day.toLocaleDateString('en-US', { weekday: 'short' }),
+        value: Math.max(0, baseValue * (0.8 + Math.random() * 0.4)) // Randomize around base value
+      };
+    });
+  };
 
   return (
     <div className="admin-home-container">
@@ -145,7 +181,7 @@ const GlobalAdminHome = () => {
           <div className="admin-message-card-header">
             <h2 className="admin-message-card-title">Message Board</h2>
           </div> */}
-          {/* <div className="admin-message-card-body">
+        {/* <div className="admin-message-card-body">
             {loading ? (
               <div className="admin-message-loading">Loading messages...</div>
             ) : (
@@ -179,11 +215,9 @@ const GlobalAdminHome = () => {
           <h2 className="admin-section-title">Getting Started</h2>
         </div>
 
-        {/* 3-column row: two stats + quick links */}
-        <div className="admin-summary-grid">
-          {/* Stat Card 1: Organization Performance */}
+        {/* <div className="admin-summary-grid">
+         
           <div className="admin-quick-links-card">
-            {/* <h3 className="admin-quick-links-title">Organization Performance</h3> */}
             <h2 className="admin-message-card-title"style={{ marginBottom: '1rem' }} >Completion Rates by Organization</h2>
             <div style={{ width: '100%', height: 250 }}>
               <ResponsiveContainer>
@@ -202,9 +236,7 @@ const GlobalAdminHome = () => {
             </div>
           </div>
 
-          {/* Stat Card 2: User Engagement Analytics */}
           <div className="admin-quick-links-card">
-            {/* <h3 className="admin-quick-links-title">User Engagement Analytics</h3> */}
             <h2 className="admin-message-card-title" style={{ marginBottom: '1rem' }}>Monthly User Activity</h2>
             <div style={{ width: '100%', height: 250 }}>
               <ResponsiveContainer>
@@ -224,7 +256,129 @@ const GlobalAdminHome = () => {
           </div>
 
 
-          {/* Quick Links */}
+          
+        </div> */}
+        {/* Additional Charts Section */}
+        <div className="admin-summary-grid" style={{ marginTop: '2rem' }}>
+          {/* DAU Trend Chart */}
+          <div className="admin-quick-links-card">
+            <div className="panel-header-enhanced">
+              <div>
+                <h3 className="panel-title">Organization Growth</h3>
+                <p className="panel-description">3-month growth trend</p>
+              </div>
+              <TrendingUp size={20} className="panel-icon" />
+            </div>
+            <div className="chart-container">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={orgGrowthData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                  <XAxis
+                    dataKey="month"
+                    stroke="#6B7280"
+                    style={{ fontSize: 12 }}
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    orientation="left"
+                    stroke="#3B82F6"
+                    style={{ fontSize: 12 }}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    stroke="#10B981"
+                    style={{ fontSize: 12 }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: '#fff',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                    }}
+                    formatter={(value, name) => {
+                      if (name === 'New Organizations') {
+                        return [value, name];
+                      }
+                      return [value, 'Total Organizations'];
+                    }}
+                  />
+                  <Legend />
+                  <Bar
+                    yAxisId="left"
+                    dataKey="newOrgs"
+                    name="New Organizations"
+                    fill="#3B82F6"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="total"
+                    name="Total Organizations"
+                    stroke="#10B981"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* User Distribution Chart */}
+          <div className="admin-quick-links-card">
+            <div className="panel-header-enhanced">
+              <div>
+                <h3 className="panel-title">User Distribution Across Organizations</h3>
+                <p className="panel-description">Total user allocation by organization</p>
+              </div>
+              <Users size={20} className="panel-icon" />
+            </div>
+
+            <div className="distribution-layout-vertical">
+              <div className="distribution-chart">
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={organizationData}
+                      dataKey="userCount"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={70}
+                      label={false}
+
+                    >
+                      {organizationData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value, org) => [`${value}`, org.organizationName]}
+                      cursorStyle={{ cursor: 'pointer' }}
+                      cursor={{ fill: 'transparent' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="distribution-bars-grid">
+                {organizationData.map((org, idx) => (
+                  <div key={idx} className="distribution-bar-item">
+                    <div className="bar-header">
+                      <div className="bar-label">
+                        <div className="bar-color" style={{ background: COLORS[idx] }} />
+                        <span>{org.organizationName}</span>
+                      </div>
+                      <span className="bar-value">{org.userCount}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
           <div className="admin-quick-links-card">
             <h2 className="admin-message-card-title admin-quick-link-item" style={{ padding: "10px 12px" }} >Quick Links</h2>
             <ul className="admin-quick-links-list" role="list">

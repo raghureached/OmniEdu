@@ -220,9 +220,9 @@ const HelpCenter = () => {
                 <button className="help-btn-primary">
                   <Mail size={18} /> Email Support
                 </button>
-                <button className="help-btn-outline">
+                {/* <button className="help-btn-outline">
                   <MessageSquare size={18} /> Live Chat
-                </button>
+                </button> */}
               </div>
             </div>
           </div>

@@ -186,3 +186,42 @@ input[type="number"]::-webkit-inner-spin-button {
 button:hover{
   transition: background-color 0.4s ease !important; 
 }
+/* Custom Scrollbar Styles - Add to index.css */
+
+/* Define your color variables first (if not already defined) */
+:root {
+  --color-primary: #011F5B;
+  --color-accent: #1C88C7;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 100%);
+  border-radius: 10px;
+  border: 2px solid #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+}
+
+/* Firefox - doesn't support gradients, uses solid color fallback */
+* {
+  scrollbar-width: thin;
+  scrollbar-color:gray transparent;
+}
+

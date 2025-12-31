@@ -12,6 +12,11 @@ const weeklyProgress = require("../../models/userWeekly_activity_model");
 
 // Helper function to get date range filter
 const getDateRangeFilter = (dateRange, startDate, endDate) => {
+  if(dateRange === 'MTD') {
+    const now = new Date();
+    const startDateFilter = new Date(now.getFullYear(), now.getMonth(), 1);
+    return { $gte: startDateFilter, $lte: now };
+  }
   if (dateRange === 'custom' && startDate && endDate) {
     return { 
       $gte: new Date(startDate), 

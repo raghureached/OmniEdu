@@ -3,10 +3,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import './ModuleView.css';
 import { GoBook } from 'react-icons/go';
 import { RiDeleteBin2Fill } from 'react-icons/ri';
-import { EyeIcon, Plus, ThumbsUp, ThumbsDown, Send, ChevronLeft, ChevronRight } from 'lucide-react';
+import { EyeIcon, Plus, ThumbsUp, ThumbsDown, Send, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
 import VideoPlayer from '../../../components/VideoPlayer/VideoPlayer';
 import api from '../../../services/api';
 import LoadingScreen from '../../../components/common/Loading/Loading';
+import { notifySuccess } from '../../../utils/notification';
 
 const ModuleView = ({id,lpId}) => {
     const navigate = useNavigate();
@@ -224,6 +225,26 @@ const ModuleView = ({id,lpId}) => {
     const handleSaveDraft = () => {
         alert('Draft saved (dummy action).');
     };
+    const handleSubmitFile = () => {
+        if(!submission) return;
+        const formData = new FormData();
+        formData.append('file', submission);
+        if(id){
+           formData.append('lpId', lpId);
+           formData.append('refPath', 'Module');
+        }else{
+
+        }
+        formData.append('moduleId', id);
+        
+        const res = api.post(`/api/user/submitFile/${id}`, formData);
+        if (res.status === 200) {
+            notifySuccess("File submitted successfully");
+        }
+        return;
+        
+        
+    }
 
     const handleComplete = async() => {
         if(id){
@@ -527,6 +548,14 @@ const ModuleView = ({id,lpId}) => {
                                                         aria-label="Delete uploaded file"
                                                     >
                                                         <RiDeleteBin2Fill size={16} /> Delete
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="module-overlay__btn-delete"
+                                                        
+                                                        aria-label="Delete uploaded file"
+                                                    >
+                                                        <Upload size={16} /> Submit
                                                     </button>
                                                 </div>
                                             </div>

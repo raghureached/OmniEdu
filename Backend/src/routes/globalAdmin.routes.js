@@ -1,6 +1,6 @@
 const {addOrganization, editOrganization, deleteOrganization, getOrganizations, getOrganizationById, deleteOrganizations} = require("../controllers/globalAdmin.controller/globalAdmin_organization");
 const {addRole, editRole, deleteRole, getRoles, addPermissions, getPermissions, createRole, editOrgRole} = require("../controllers/globalAdmin.controller/globalAdmin_Roles");
-const {addContent, editContent, deleteContent, getContent, getContentById, bulkDelete} = require("../controllers/globalAdmin.controller/globalAdmin_Module");
+const {addContent, editContent, deleteContent, getContent, getContentById, bulkDelete, updateDraft, addDraft, getDraftById, getDrafts, deleteDraft} = require("../controllers/globalAdmin.controller/globalAdmin_Module");
 const {createSurvey, editSurvey, deleteSurvey, getSurveys, getSurvey} = require("../controllers/globalAdmin.controller/globalAdmin_Surveys");
 const {upload,uploadContent, uploadAssessment, uploadQuestionFile} = require("../middleware/multer_middleware");
 const { uploadMultipleToCloudinary, uploadToCloudinary, uploadQuestionFilestoCloud, uploadQuestionFilesToCloud } = require("../utils/uploadOnCloud");
@@ -48,6 +48,7 @@ const {
 } = require("../controllers/globalAdmin.controller/globalAdmin_tickets");
 const { gradeSubmission, getSubmissions } = require("../controllers/globalAdmin.controller/globalAdmin_grading");
 const { getActivityLogs, getActivityLogStats, testDatabase } = require("../controllers/globalAdmin.controller/globalAdmin_activityLogs");
+const { getUserDistribution, getOrganizationGrowth } = require("../controllers/globalAdmin.controller/globalAdmin_DashBoard");
 
 const router = require("express").Router();
 
@@ -75,10 +76,16 @@ router.route('/getPermissions').get(getPermissions)
 router.route('/addContent').post(uploadContent.fields([{name:'primaryFile',maxCount:1},{name:'additionalFile',maxCount:1},{name:'thumbnail',maxCount:1}]),uploadMultipleToCloudinary,addContent)
 router.route('/getContent').get(getContent)
 router.route('/getContentById/:id').get(getContentById)
-//Some changes
+
 router.route('/editContent/:id').put(uploadContent.fields([{name:'primaryFile',maxCount:1},{name:'additionalFile',maxCount:1},{name:'thumbnail',maxCount:1}]),uploadMultipleToCloudinary,editContent)
 router.route('/deleteContent/:id').delete(deleteContent)
 router.route('/bulkDeleteContent').delete(bulkDelete)
+// router.route('/updateDraft/:id').put(updateDraft)
+router.route('/addDraft').post(uploadContent.fields([{name:'primaryFile',maxCount:1},{name:'additionalFile',maxCount:1},{name:'thumbnail',maxCount:1}]),uploadMultipleToCloudinary,addDraft)
+router.route('/updateDraft/:id').put(uploadContent.fields([{name:'primaryFile',maxCount:1},{name:'additionalFile',maxCount:1},{name:'thumbnail',maxCount:1}]),uploadMultipleToCloudinary,updateDraft)
+router.route('/deleteDraft/:id').delete(deleteDraft)
+router.route('/getDrafts').get(getDrafts)
+router.route('/getDraftById/:id').get(getDraftById)
 /////////////Global Assesments////////////
 
 router.route('/createAssessment').post(upload.single('thumbnail'),uploadToCloudinary('assessments'),createAssessment)
@@ -187,6 +194,9 @@ router.route('/analytics/users/:orgId').get(getUsersData);
 // router.route('/analytics/user/:userId').get(getUserAnalytics);
 // router.route('/analytics/assessment/:assessmentId').get(getAssessmentAnalytics);
 // router.route('/analytics/survey/:surveyId').get(getSurveyAnalytics);
+
+router.route('/getUserDistribution').get(getUserDistribution)
+router.route('/getOrganizationGrowth').get(getOrganizationGrowth)
 
 
 

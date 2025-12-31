@@ -258,6 +258,16 @@ const LearnerAnalytics = () => {
                         <span>7 Days</span>
                     </button>
                     <button
+                        className={`view-toggle-button ${timeRange === 'MTD' ? 'active' : ''}`}
+                        onClick={() => {
+                            setTimeRange('MTD');
+                            setShowCustomDatePicker(false);
+                        }}
+                    >
+                        <Calendar size={16} />
+                        <span>Month to Date</span>
+                    </button>
+                    <button
                         className={`view-toggle-button ${timeRange === '1M' ? 'active' : ''}`}
                         onClick={() => { 
                             setTimeRange('1M');

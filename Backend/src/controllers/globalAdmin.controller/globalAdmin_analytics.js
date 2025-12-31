@@ -8,8 +8,15 @@ const userTickets = require('../../models/userTickets');
 /* ===========================
    DATE RANGE UTILS (SINGLE SOURCE)
 =========================== */
-const getDateRangeFilter = (dateRange = '7D') => {
+const getDateRangeFilter = (dateRange = '7D', startDate, endDate) => {
+  // console.log(dateRange);
   if (!dateRange || dateRange === 'all') return null;
+  if (dateRange === 'custom' && startDate && endDate) {
+    return { 
+      $gte: new Date(startDate), 
+      $lte: new Date(endDate + 'T23:59:59.999Z') 
+    };
+  }
 
   const end = new Date();
   const start = new Date(end);
@@ -58,8 +65,8 @@ const getPreviousRange = (range) => {
 
 const getAnalyticsData = async (req, res) => {
   try {
-    const { dateRange = '7D' } = req.query;
-    const range = getDateRangeFilter(dateRange);
+    const { dateRange = '7D', startDate, endDate } = req.query;
+    const range = getDateRangeFilter(dateRange, startDate, endDate);
     const prevRange = getPreviousRange(range);
 
     const totalUsers = await User.countDocuments();
@@ -167,9 +174,9 @@ const getAnalyticsData = async (req, res) => {
 const getOrganizationAnalytics = async (req, res) => {
   try {
     const { organizationId } = req.params;
-    const { dateRange = '7D' } = req.query;
+    const { dateRange = '7D', startDate, endDate } = req.query;
 
-    const range = getDateRangeFilter(dateRange);
+    const range = getDateRangeFilter(dateRange, startDate, endDate);
     const prevRange = getPreviousRange(range);
 
     const organization = await Organization.findById(organizationId);
@@ -353,9 +360,9 @@ const getOrganizationAnalytics = async (req, res) => {
 const getUsersData = async (req, res) => {
   try {
     const { orgId } = req.params;
-    const { dateRange = '7D' } = req.query;
+    const { dateRange = '7D', startDate, endDate } = req.query;
 
-    const range = getDateRangeFilter(dateRange);
+    const range = getDateRangeFilter(dateRange, startDate, endDate);
     const organization = await Organization.findById(orgId);
 
     const users = await User.find({ organization_id: orgId })

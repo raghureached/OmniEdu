@@ -212,9 +212,9 @@ function generatePlanId(orgName, planName) {
 const editOrganization = async (req, res) => {
   try {
     // 1. Validate request body presence for required fields
-    const { name, email, status, logo_url, start_date, end_date, planId } = req.body;
+    const { name, email, logo_url, start_date, end_date, planId } = req.body;
 
-    if (!name || !email || !status || !start_date || !end_date || !planId) {
+    if (!name || !email || !start_date || !end_date || !planId) {
       return res.status(400).json({
         success: false,
         message: "Missing required fields",
@@ -239,7 +239,8 @@ const editOrganization = async (req, res) => {
         message: "Plan not found",
       });
     }
-
+    const status = Date.now() < new Date(end_date) ? "Active" : "Inactive";
+ 
     // 4. Update organization document with fallback for logos and docs
     const updatedOrg = await Organization.findOneAndUpdate(
       { uuid: req.params.id },

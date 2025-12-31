@@ -5,6 +5,7 @@ const Surveys = require("../../models/global_surveys_model")
 const Organization = require("../../models/organization_model")
 const { logActivity } = require("../../utils/activityLogger")
 const mongoose = require("mongoose")
+const { sendMail } = require("../../utils/Emailer")
 const createAssignment = async (req, res) => {
     let session;
     try {
@@ -81,16 +82,64 @@ const createAssignment = async (req, res) => {
             assignments.push(assignment[0]);
         }
         if (contentType === "Module") {
-            content = await GlobalModule.findOneAndUpdate({ uuid: contentId },{status:"Published"}, { session });
+            content = await GlobalModule.findOneAndUpdate({ uuid: contentId }, { status: "Published" }, { session });
         } else if (contentType === "Assessment") {
-            content = await GlobalAssessment.findOneAndUpdate({ uuid: contentId }, {status:"Published"}, { session });
+            content = await GlobalAssessment.findOneAndUpdate({ uuid: contentId }, { status: "Published" }, { session });
         } else if (contentType === "Survey") {
-            content = await Surveys.findOneAndUpdate({ uuid: contentId }, {status:"Published"}, { session });
+            content = await Surveys.findOneAndUpdate({ uuid: contentId }, { status: "Published" }, { session });
         }
 
-        
+
 
         await session.commitTransaction();
+        if (notifyUsers && Array.isArray(organizations) && organizations.length > 0) {
+
+            const emailJobs = organizations
+                .filter(org => org?.email) // validate email existence
+                .map(org => {
+                    return sendMail({
+                        to: org.email,
+                        subject: 'Access to New Content Granted',
+                        text: `Hello ${org.name || ''},
+
+You have been granted access to new content.
+Please log in to your dashboard to explore it.
+
+Regards,
+Platform Team`,
+                        html: `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+            <h2>New Content Available 🎉</h2>
+            <p>Hello ${org.name || 'there'},</p>
+            <p>
+              You have been <strong>granted access to new content</strong>.
+              Please log in to your dashboard to explore it.
+            </p>
+            <a href="https://omniedu-fe587.web.app/"
+               style="display:inline-block;margin-top:12px;
+               padding:10px 16px;background:#1C88C7;color:#fff;
+               text-decoration:none;border-radius:6px;">
+              Go to Dashboard
+            </a>
+            <p style="margin-top:20px;font-size:12px;color:#666;">
+              If you were not expecting this email, you can ignore it safely.
+            </p>
+          </div>
+        `
+                    });
+                });
+
+            const results = await Promise.allSettled(emailJobs);
+
+            const successCount = results.filter(r => r.status === 'fulfilled').length;
+            const failedCount = results.filter(r => r.status === 'rejected').length;
+
+            // console.log(`📧 Notification emails sent: ${successCount}`);
+            if (failedCount > 0) {
+                console.warn(`⚠️ Failed email attempts: ${failedCount}`);
+            }
+        }
+
 
         await logActivity({
             userId: req.user._id,
@@ -127,19 +176,19 @@ const createAssignment = async (req, res) => {
 
 
 
-const fetchAssignments = async(req,res)=>{
+const fetchAssignments = async (req, res) => {
     try {
         const assignments = await GlobalAssignment.find()
         return res.status(200).json({
-            isSuccess:true,
-            message:"Assignments fetched successfully",
-            data:assignments
+            isSuccess: true,
+            message: "Assignments fetched successfully",
+            data: assignments
         })
     } catch (error) {
         return res.status(500).json({
-            isSuccess:false,
-            message:"Failed to fetch assignments",
-            error:error.message
+            isSuccess: false,
+            message: "Failed to fetch assignments",
+            error: error.message
         })
     }
 }

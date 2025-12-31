@@ -1,23 +1,26 @@
 import React, { useEffect, useState } from 'react';
+import { debounce } from 'lodash';
 import { ChevronLeft, ChevronRight, EyeIcon, Info, Loader, Plus, X } from 'lucide-react';
 import './GlobalModuleModal.css';
 import { RiDeleteBin2Fill } from 'react-icons/ri';
 import { useDispatch, useSelector } from 'react-redux';
-import { createContent, enhanceText, updateContent } from '../../../store/slices/contentSlice';
+import { addDraft, createContent, enhanceText, updateContent, updateDraft } from '../../../store/slices/contentSlice';
 import CustomLoader2 from '../../../components/common/Loading/CustomLoader2';
 import ModulePreview from '../../../components/common/Preview/Preview';
 import api from '../../../services/api';
 import FullRichTextEditor from './RichText';
 import { GoBook, GoX } from 'react-icons/go';
-import {categories} from '../../../utils/constants.js';
-import {useNotification} from '../../../components/common/Notification/NotificationProvider.jsx'
+import { categories } from '../../../utils/constants.js';
+import { useNotification } from '../../../components/common/Notification/NotificationProvider.jsx'
 import { notifyError, notifySuccess } from '../../../utils/notification.js';
+import { AutoSaving } from '../../../components/common/Loading/AutoSaving.jsx';
+import { useCallback } from 'react';
+import { useRef } from 'react';
 
 
 const GlobalModuleModal = ({
-    showModal, setShowModal, newContent, handleInputChange, showEditModal, setShowEditModal, editContentId, drafts, setDrafts, handleRichInputChange, error
+    showModal, setShowModal, newContent, handleInputChange, showEditModal, setShowEditModal, editContentId, handleRichInputChange, draftId, setDraftId
 }) => {
-    // console.log(newContent)
     const [currentStep, setCurrentStep] = useState(1);
     const [learningOutcomes, setLearningOutcomes] = useState(newContent.learningOutcomes || ['']);
     const [tags, setTags] = useState(newContent.tags || []);
@@ -30,11 +33,13 @@ const GlobalModuleModal = ({
     const [preview, setPreview] = useState(false);
     const [teams, setTeams] = useState([]);
     const [aiProcessing, setAiProcessing] = useState(false);
-    const [generatingImage, setGeneratingImage] = useState(false);
     const [aiHelpOpen, setAiHelpOpen] = useState(false);
     const [filePreview, setFilePreview] = useState({ open: false, url: null, name: '', type: '', isBlob: false });
-    const {showNotification} = useNotification()
-    const [subteams, setSubteams] = useState([])
+    const { showNotification } = useNotification()
+    const [savedDraft, setSavedDraft] = useState(false)
+    const [draftStatus, setDraftStatus] = useState("initial")
+    const isCreatingDraftRef = useRef(false);
+
     const validateUrl = (url) => {
         try {
             const _url = new URL(url);
@@ -43,6 +48,8 @@ const GlobalModuleModal = ({
             return false;
         }
     };
+  
+
     useEffect(() => {
         const fetchTeams = async () => {
             try {
@@ -55,7 +62,7 @@ const GlobalModuleModal = ({
         };
         fetchTeams();
     }, []);
-    
+
     // Run URL validation when externalResource changes
     useEffect(() => {
         setShowIframe(false); // hide iframe whenever URL changes
@@ -111,26 +118,6 @@ const GlobalModuleModal = ({
             notifySuccess("Title, description, tags and learning outcomes created!")
         })
     }
-    const generateImage = (title, description) => {
-        if (title.trim().length < 5 || description.trim().length < 5) {
-            alert("Title and description must be at least 5 characters long")
-            return
-        }
-        if (generatingImage) {
-            alert("Please wait for the previous request to complete")
-            return
-        }
-        setGeneratingImage(true)
-        dispatch(generateImage({ title, description })).then((res) => {
-            // console.log(res)
-            handleInputChange({ target: { name: 'thumbnail', value: res.payload.thumbnail } });
-        }).catch((err) => {
-            console.log(err)
-            notifyError("Failed to generate image")
-        }).finally(() => {
-            setGeneratingImage(false)
-        })
-    }
     const canProceed = () => {
         switch (currentStep) {
             case 1:
@@ -138,7 +125,7 @@ const GlobalModuleModal = ({
             case 2:
                 return contentType === "Upload File" ? newContent.primaryFile : newContent.externalResource || newContent.richText;
             case 3:
-                return newContent.duration && newContent.category && newContent.team 
+                return newContent.duration && newContent.category && newContent.team
             default:
                 return true;
         }
@@ -182,7 +169,7 @@ const GlobalModuleModal = ({
             // console.log(moduleData)
             // ✅ Dispatch or API call with formData
             const res = await dispatch(createContent(moduleData))
-            if(createContent.fulfilled.match(res)) {
+            if (createContent.fulfilled.match(res)) {
                 showNotification({
                     type: "success",
                     title: "Module added successfully",
@@ -190,7 +177,7 @@ const GlobalModuleModal = ({
                     duration: 5000,
                 })
                 setShowModal(false)
-            }else{
+            } else {
                 showNotification({
                     type: "error",
                     title: "Failed to add Module",
@@ -233,9 +220,9 @@ const GlobalModuleModal = ({
         // Extend here for other providers if needed
         return normalizeYouTube(url);
     };
-    const handleEditContent = async() => {
+    const handleEditContent = async () => {
         const res = await dispatch(updateContent({ id: editContentId, updatedData: newContent }));
-        if(updateContent.fulfilled.match(res)) {
+        if (updateContent.fulfilled.match(res)) {
             showNotification({
                 type: "success",
                 title: "Module updated successfully",
@@ -243,7 +230,7 @@ const GlobalModuleModal = ({
                 duration: 5000,
             })
             setShowEditModal(false)
-        }else{
+        } else {
             showNotification({
                 type: "error",
                 title: "Failed to update Module",
@@ -277,7 +264,7 @@ const GlobalModuleModal = ({
     const closeFilePreview = () => {
         setFilePreview((prev) => {
             if (prev.isBlob && prev.url) {
-                try { URL.revokeObjectURL(prev.url); } catch (_) {}
+                try { URL.revokeObjectURL(prev.url); } catch (_) { }
             }
             return { open: false, url: null, name: '', type: '', isBlob: false };
         });
@@ -292,34 +279,97 @@ const GlobalModuleModal = ({
     const handleRemoveThumbnail = () => {
         handleInputChange({ target: { name: 'thumbnail', value: null } });
     };
-    const handleSaveDraft = () => {
-        const confirm = window.confirm("The files will be removed when you save the draft")
-        //ok or cancel
 
-        if (confirm) {
-            if (!drafts) {
-                const drafts = [];
-                drafts.push(newContent);
-                newContent.primaryFile = null;
-                newContent.additionalFile = null;
-                newContent.thumbnail = null;
-                localStorage.setItem('drafts', JSON.stringify(drafts));
-            } else {
-                const drafts = JSON.parse(localStorage.getItem('drafts'));
-                drafts.push(newContent);
-                localStorage.setItem('drafts', JSON.stringify(drafts));
+    const autoSave = useCallback(
+        debounce(async (content) => {
+            try {
+                // ❌ Do not autosave while editing a saved module
+                if (showEditModal && !draftId) return;
+
+                // ❌ Do not autosave empty content
+                if (!content?.title && !content?.description) return;
+
+                setDraftStatus("saving");
+
+                const cleanedContent = { ...content };
+
+                // Remove empty values
+                Object.keys(cleanedContent).forEach((key) => {
+                    if (cleanedContent[key] === "" || cleanedContent[key] === undefined) {
+                        delete cleanedContent[key];
+                    }
+                });
+
+                // Remove invalid relations
+                if (!cleanedContent.team) delete cleanedContent.team;
+                if (!cleanedContent.subteam) delete cleanedContent.subteam;
+
+                let result;
+
+                // 🟢 UPDATE EXISTING DRAFT
+                if (draftId) {
+                    result = await dispatch(
+                        updateDraft({
+                            id: draftId,
+                            updatedData: {
+                                ...cleanedContent,
+                                lastUpdated: new Date().toISOString(),
+                            },
+                        })
+                    );
+
+                    if (!updateDraft.fulfilled.match(result)) {
+                        throw new Error("Draft update failed");
+                    }
+                }
+
+                // 🟡 CREATE NEW DRAFT (LOCKED)
+                else {
+                    if (isCreatingDraftRef.current) return;
+
+                    isCreatingDraftRef.current = true;
+
+                    result = await dispatch(
+                        addDraft({
+                            ...cleanedContent,
+                            status: "Draft",
+                            createdDate: new Date().toISOString(),
+                            lastUpdated: new Date().toISOString(),
+                        })
+                    );
+
+                    if (addDraft.fulfilled.match(result)) {
+                        setDraftId(result.payload.uuid);
+                    } else {
+                        throw new Error("Draft creation failed");
+                    }
+
+                    isCreatingDraftRef.current = false;
+                }
+
+                setDraftStatus("saved");
+                setTimeout(() => setDraftStatus("idle"), 2000);
+            } catch (error) {
+                console.error("Auto-save error:", error);
+                setDraftStatus("error");
+                setTimeout(() => setDraftStatus("idle"), 3000);
+                isCreatingDraftRef.current = false;
             }
-            setShowModal(false);
-        }
+        }, 2000),
+        [dispatch, draftId, showEditModal]
+    );
 
-    };
-    // console.log(JSON.parse(drafts).title)
-    const deleteDraft = () => {
-        const drafts = JSON.parse(localStorage.getItem('drafts'));
-        drafts.filter((draft) => draft.title !== newContent.title);
-        localStorage.setItem('drafts', JSON.stringify(drafts));
-        setShowModal(false);
-    };
+    useEffect(() => {
+        if (!showModal && !showEditModal) return;
+
+        autoSave(newContent);
+
+        return () => autoSave.cancel();
+    }, [newContent, showModal, showEditModal, autoSave]);
+
+
+
+
     const nextStep = () => currentStep < totalSteps && setCurrentStep(currentStep + 1);
     const prevStep = () => currentStep > 1 && setCurrentStep(currentStep - 1);
 
@@ -335,7 +385,18 @@ const GlobalModuleModal = ({
                             <GoBook size={24} color="#5570f1" />
                         </div>
                         <div>
-                            <h2>{showEditModal ? "Edit Module" : "Add New Module"}</h2>
+                            <span style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                                <h2>{showEditModal ? "Edit Module" : "Add New Module"}</h2>
+                                {(
+                                    <div style={{ marginLeft: '10px' }}>
+                                        <AutoSaving
+                                            status={draftStatus}
+                                            lastSaved={new Date().toISOString()}
+                                        />
+                                    </div>
+                                )}
+
+                            </span>
                             <p className="addOrg-header-subtitle">
                                 Step {currentStep} of {totalSteps} : {currentStep === 1 ? "Basic Information" : currentStep === 2 ? "Files and Resources" : currentStep === 3 ? "Meta Data and Configurations" : ""}
                             </p>
@@ -344,11 +405,12 @@ const GlobalModuleModal = ({
                     <button
                         type="button"
                         className="addOrg-close-btn"
-                        onClick={() => setShowModal(false)}
+                        onClick={() => { setShowModal(false); setDraftId(null) }}
                         aria-label="Close modal"
                     >
                         <GoX size={20} />
                     </button>
+
                 </div>
                 <div className="module-overlay__progress">
                     <div
@@ -403,43 +465,43 @@ const GlobalModuleModal = ({
 
                             </div>
                             <button
-                                    type="button"
-                                    className="survey-assess-btn-link"
-                                    onClick={() => setAiHelpOpen(prev => !prev)}
-                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4f46e5', background: 'transparent' }}
-                                    aria-expanded={aiHelpOpen}
-                                    aria-controls="ai-help-panel"
-                                >
-                                    <Info size={16} /> How create with ai works
-                                </button>
+                                type="button"
+                                className="survey-assess-btn-link"
+                                onClick={() => setAiHelpOpen(prev => !prev)}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4f46e5', background: 'transparent' }}
+                                aria-expanded={aiHelpOpen}
+                                aria-controls="ai-help-panel"
+                            >
+                                <Info size={16} /> How create with ai works
+                            </button>
                             <button className='btn-primary' style={{ width: '70%', margin: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => enhanceTexthelper(newContent.title, newContent.description)}>{aiProcessing ? "Please Wait.." : "Create with AI ✨"}</button>
                             {aiHelpOpen && (
-                                    <div
-                                        id="ai-help-panel"
-                                        style={{
-                                            width: '70%',
-                                            margin: '0 auto 12px',
-                                            background: '#eef2ff',
-                                            border: '1px solid #e2e8f0',
-                                            borderRadius: 8,
-                                            padding: '10px 12px',
-                                            color: '#1f2937',
-                                            fontSize: 14
-                                        }}
-                                    >
-                                        <div style={{ fontWeight: 600, marginBottom: 6 }}>Create with AI – How it works</div>
-                                        <ul style={{ marginLeft: 16, listStyle: 'disc' }}>
-                                            <li>Fill <strong>Title</strong> and <strong>Description</strong>. These are required to enable the button.</li>
+                                <div
+                                    id="ai-help-panel"
+                                    style={{
+                                        width: '70%',
+                                        margin: '0 auto 12px',
+                                        background: '#eef2ff',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: 8,
+                                        padding: '10px 12px',
+                                        color: '#1f2937',
+                                        fontSize: 14
+                                    }}
+                                >
+                                    <div style={{ fontWeight: 600, marginBottom: 6 }}>Create with AI – How it works</div>
+                                    <ul style={{ marginLeft: 16, listStyle: 'disc' }}>
+                                        <li>Fill <strong>Title</strong> and <strong>Description</strong>. These are required to enable the button.</li>
 
-                                            <li>Click <strong>“Create with AI ✨”</strong>And wait for a moment, You get enhanced title,description,tags and learning outcomes</li>
-                                        </ul>
-                                    </div>
-                                )}
+                                        <li>Click <strong>“Create with AI ✨”</strong>And wait for a moment, You get enhanced title,description,tags and learning outcomes</li>
+                                    </ul>
+                                </div>
+                            )}
 
                             <div className="module-overlay__form-group">
                                 <label className="module-overlay__form-label">
-                                    <span style={{display:'flex',alignItems:'center',gap:'5px'}}>Learning Outcomes <span className="module-overlay__required">*</span>
-                                    {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}</span>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Learning Outcomes <span className="module-overlay__required">*</span>
+                                        {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}</span>
                                 </label>
                                 <div className="module-overlay__learning-outcomes">
                                     {learningOutcomes.map((outcome, index) => (
@@ -480,8 +542,8 @@ const GlobalModuleModal = ({
 
                             <div className="module-overlay__form-group">
                                 <label className="module-overlay__form-label">
-                                    <span style={{display:'flex',alignItems:'center',gap:'5px'}}>Tags<span className='module-overlay__required'>*</span>
-                                    {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}</span>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Tags<span className='module-overlay__required'>*</span>
+                                        {aiProcessing && <span><CustomLoader2 size={16} text={'Loading...'} /></span>}</span>
                                 </label>
                                 <input
                                     type="text"
@@ -875,7 +937,7 @@ const GlobalModuleModal = ({
                                         ))}
                                     </select>
                                 </div>
-                                
+
                                 <div className="module-overlay__form-group">
                                     <label className="module-overlay__form-label">
                                         Target Team <span className="module-overlay__required">*</span>
@@ -943,10 +1005,10 @@ const GlobalModuleModal = ({
                                     />
                                     Allow learners submissions
                                 </label>
-                                <p style={{ fontSize: '12px', color: '#666',marginLeft:"30px" }}>Allow learners to submit their work for grading and feedback.
+                                <p style={{ fontSize: '12px', color: '#666', marginLeft: "30px" }}>Allow learners to submit their work for grading and feedback.
                                     Please enable this if you have an additional file.
                                 </p>
-                                <div className="module-overlay__form-group" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' ,marginTop:"120px"}}>
+                                <div className="module-overlay__form-group" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: "120px" }}>
                                     {/* <button className='btn-primary' onClick={handleSaveDraft} disabled={editContentId}>Save Draft</button> */}
                                 </div>
                             </div>
@@ -959,7 +1021,7 @@ const GlobalModuleModal = ({
                 {filePreview.open && (
                     <div className="addOrg-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="filePreviewTitle">
                         <div className="addOrg-modal-content" style={{ maxWidth: '1000px', width: '199%', height: '90vh', display: 'flex', flexDirection: 'column' }}>
-                        <div className="addOrg-modal-header">
+                            <div className="addOrg-modal-header">
                                 <div className="addOrg-header-content">
                                     <div className="addOrg-header-icon">
                                         <EyeIcon size={24} color="#5570f1" />
@@ -1006,7 +1068,7 @@ const GlobalModuleModal = ({
                         </button>
 
                         <div className="module-overlay__action-buttons" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                                    {currentStep === totalSteps && <button className='btn-secondary' onClick={() => setPreview(true)} disabled={!canProceed()} ><EyeIcon size={16} />Preview</button>}
+                            {currentStep === totalSteps && <button className='btn-secondary' onClick={() => setPreview(true)} disabled={!canProceed()} ><EyeIcon size={16} />Preview</button>}
 
                             <button className="btn-secondary" onClick={() => setShowModal(false)} aria-label="Cancel " disabled={uploading}>
                                 Cancel

@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
 import api from '../../../services/api';
 import CustomLoader from '../../../components/common/Loading/CustomLoader';
+import './PasswordModal.css';
+import { GoX } from 'react-icons/go';
 
 const PasswordChangeModal = ({ isOpen, onClose }) => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading,setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = async(e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -23,139 +28,188 @@ const PasswordChangeModal = ({ isOpen, onClose }) => {
       setError('New passwords do not match.');
       return;
     }
-    try {
-        setLoading(true)
-        const response = await api.put('/api/globalAdmin/changeGlobalPassword', { currentPassword, newPassword });
-        console.log(response)
-        if(response.status === 200){
-            setLoading(false)
-            onClose();
-        }
-    } catch (error) {
-        setLoading(false)
-        console.error('Error changing password:', error);
-        setError('Failed to change password. Please try again.');
+
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters long.');
+      return;
     }
 
-    setError('');
-    // onSubmit({ currentPassword, newPassword });
+    try {
+      setLoading(true);
+      const response = await api.put('/api/globalAdmin/changeGlobalPassword', { 
+        currentPassword, 
+        newPassword 
+      });
+      
+      if (response.status === 200) {
+        setLoading(false);
+        onClose();
+      }
+    } catch (error) {
+      setLoading(false);
+      console.error('Error changing password:', error);
+      setError(error.response?.data?.message || 'Failed to change password. Please try again.');
+    }
+  };
+
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
   };
 
   return (
-    <div style={styles.overlay}>
-      <div style={styles.modal}>
-        <h2 style={styles.modalTitle}>Change Password</h2>
-        {error && <p style={styles.error}>{error}</p>}
-        {loading ? <CustomLoader text="Changing Password..." /> : <form onSubmit={handleSubmit} >
-          <div style={styles.formGroup}>
-            <label htmlFor="currentPassword">Current Password</label>
-            <input
-              id="currentPassword"
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              autoComplete="current-password"
-              placeholder="Enter your current password"
-              required
-              style={styles.input}
-            />
-          </div>
-          <div style={styles.formGroup}>
-            <label htmlFor="newPassword">New Password</label>
-            <input
-              id="newPassword"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              autoComplete="new-password"
-              placeholder="Enter your new password"
-              required
-              style={styles.input}
-            />
-          </div>
-          <div style={styles.formGroup}>
-            <label htmlFor="confirmPassword">Confirm New Password</label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              autoComplete="new-password"
-              placeholder="Confirm your new password"
-              required
-              style={styles.input}
-            />
-          </div>
-          <div style={styles.buttons}>
-            <button type="button" onClick={onClose} style={styles.cancelButton}>Cancel</button>
+    <div className="password-modal-overlay" onClick={handleOverlayClick}>
+      <div className="password-modal">
+        <div className="password-modal-header">
+          <h2 className="password-modal-title">Change Password</h2>
+          <button 
+            className="password-modal-close" 
+            onClick={onClose}
+            aria-label="Close modal"
+          >
+            <GoX size={24} color="white"/>
+          </button>
+        </div>
 
-            <button type="submit" style={styles.submitButton} onClick={handleSubmit}>Change Password</button>
+        {error && (
+          <div className="password-modal-error">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <span>{error}</span>
           </div>
-        </form>}
+        )}
+
+        {loading ? (
+          <div className="password-modal-loader">
+            <CustomLoader text="Changing Password..." />
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="password-modal-form">
+            <div className="password-form-group">
+              <label htmlFor="currentPassword">Current Password</label>
+              <div className="password-input-wrapper">
+                <input
+                  id="currentPassword"
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  autoComplete="current-password"
+                  placeholder="Enter your current password"
+                  required
+                  className="password-input"
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  aria-label={showCurrentPassword ? "Hide password" : "Show password"}
+                >
+                  {showCurrentPassword ? (
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                      <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="password-form-group">
+              <label htmlFor="newPassword">New Password</label>
+              <div className="password-input-wrapper">
+                <input
+                  id="newPassword"
+                  type={showNewPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  autoComplete="new-password"
+                  placeholder="Enter your new password"
+                  required
+                  className="password-input"
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  aria-label={showNewPassword ? "Hide password" : "Show password"}
+                >
+                  {showNewPassword ? (
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                      <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              <p className="password-hint">Must be at least 8 characters long</p>
+            </div>
+
+            <div className="password-form-group">
+              <label htmlFor="confirmPassword">Confirm New Password</label>
+              <div className="password-input-wrapper">
+                <input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
+                  placeholder="Confirm your new password"
+                  required
+                  className="password-input"
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  {showConfirmPassword ? (
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                      <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="password-modal-buttons">
+              <button 
+                type="button" 
+                onClick={onClose} 
+                className="password-cancel-button"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                className="password-submit-button"
+              >
+                Change Password
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
-};
-
-const styles = {
-  overlay: {
-    position: 'fixed',
-    top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    display: 'flex', justifyContent: 'center', alignItems: 'center',
-    zIndex: 1000,
-  },
-  modalTitle: {
-    fontSize: '18px',
-    fontWeight: '600',
-    marginBottom: '16px',
-  },
-  modal: {
-    background: '#fff',
-    borderRadius: '8px',
-    padding: '24px',
-    width: '320px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-    boxSizing: 'border-box',
-  },
-  formGroup: {
-    marginBottom: '16px',
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  input: {
-    padding: '8px 10px',
-    fontSize: '14px',
-    marginTop: '6px',
-    borderRadius: '6px',
-    border: '1px solid #ccc',
-    outline: 'none',
-  },
-  error: {
-    color: 'red',
-    marginBottom: '12px',
-  },
-  buttons: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: '12px',
-  },
-  submitButton: {
-    backgroundColor: '#5570f1',
-    border: 'none',
-    padding: '10px 16px',
-    borderRadius: '6px',
-    color: '#fff',
-    fontWeight: '600',
-    cursor: 'pointer',
-  },
-  cancelButton: {
-    backgroundColor: '#e0e0e0',
-    border: 'none',
-    padding: '10px 16px',
-    borderRadius: '6px',
-    cursor: 'pointer',
-  },
 };
 
 export default PasswordChangeModal;

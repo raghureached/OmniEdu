@@ -8,6 +8,10 @@ const submissionSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         refPath:"refPath"
     },
+    learningPathId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"LearningPath"
+    },
     refPath:{
         type: String,
         required:true,

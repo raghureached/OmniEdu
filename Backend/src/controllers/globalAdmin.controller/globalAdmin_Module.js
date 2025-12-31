@@ -1,58 +1,12 @@
+const { default: mongoose } = require("mongoose");
 const GlobalModule = require("../../models/globalModule_model");
-const { z } = require("zod");
 const { logActivity } = require("../../utils/activityLogger");
-
-const CONTENT_TYPES = ["PDF", "DOCX", "Theory"];
-
-const createContentSchema = z
-  .object({
-    title: z.string().min(1, "Title is required"),
-    type: z.enum(CONTENT_TYPES, {
-      message: `Type must be one of: ${CONTENT_TYPES.join(", ")}`,
-    }),
-    content: z.string().optional(),
-    is_active: z.boolean().optional(),
-    pushable_to_orgs: z.boolean().optional(),
-    file_url: z.string().url("Invalid file URL").optional(),
-  })
-  .refine(
-    (data) => {
-      if (data.type === "Theory") return !!data.content;
-      if (["PDF", "DOCX"].includes(data.type)) return !!data.file_url;
-      return true;
-    },
-    {
-      message:
-        "Invalid content: Theory requires content text, PDF/DOCX require file_url",
-    }
-  );
-
-const updateContentSchema = createContentSchema.partial();
 
 const addContent = async (req, res) => {
   try {
-    // const {
-    //   title,
-    //   type,
-    //   content,
-    //   is_active,
-    //   pushable_to_orgs,
-    // } = req.body;
-    // const parsed = createContentSchema.safeParse({
-    //   ...req.body,
-    //   file_url: req.uploadedFile?.url || req.body.file_url,
-    // });
-    // if (!parsed.success) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: "Validation failed",
-    //     errors: parsed.error.flatten(),
-    //   });
-    // }
     const primaryFile = req.uploadedFiles?.primaryFile?.[0]?.url;
     const additionalFile = req.uploadedFiles?.additionalFile?.[0]?.url;
     const thumbnail = req.uploadedFiles?.thumbnail?.[0]?.url;
-    // console.log(req.body)
     const { title, trainingType, team, subteam, category, submissionEnabled, feedbackEnabled, instructions, badges, stars, credits, description, externalResource, pushable_to_orgs, tags, duration, learningOutcomes, prerequisites, richText } = req.body;
     const created_by = req.user?._id || null;
     const newModule = new GlobalModule({
@@ -72,6 +26,7 @@ const addContent = async (req, res) => {
       additionalFile,
       thumbnail,
       pushable_to_orgs,
+      status:"Saved",
       learning_outcomes: learningOutcomes,
       prerequisites: prerequisites.split(","),
       instructions,
@@ -97,7 +52,6 @@ const addContent = async (req, res) => {
       data: newModule
     });
   } catch (error) {
-    console.log(error)
     await logActivity({
       userId: req.user._id,
       action: "Create",
@@ -155,8 +109,8 @@ const getContentById = async (req, res) => {
 }
 const bulkDelete = async (req, res) => {
   try {
-    // console.log(req.body)
     const deletedModules = await GlobalModule.deleteMany({ uuid: { $in: req.body } })
+    console.log(req.body)
     await logActivity({
       userId: req.user._id,
       action: "Delete",
@@ -203,14 +157,11 @@ const editContent = async (req, res) => {
       learningOutcomes,
       prerequisites
     } = req.body;
-    // console.log(req.body)
-    // 🧩 Extract uploaded file URLs safely
     const uploadedFiles = req.uploadedFiles || {};
     const primaryFileUrl = uploadedFiles.primaryFile?.[0]?.url || null;
     const additionalFileUrl = uploadedFiles.additionalFile?.[0]?.url || null;
     const thumbnailUrl = uploadedFiles.thumbnail?.[0]?.url || null;
 
-    // 🧠 Build the update object dynamically
     const updateData = {
       title,
       trainingType,
@@ -233,12 +184,10 @@ const editContent = async (req, res) => {
       prerequisites,
     };
 
-    // Only add file URLs if present
     if (primaryFileUrl) updateData.primaryFile = primaryFileUrl;
     if (additionalFileUrl) updateData.additionalFile = additionalFileUrl;
     if (thumbnailUrl) updateData.thumbnail = thumbnailUrl;
 
-    // ✨ Update module
     const updatedModule = await GlobalModule.findOneAndUpdate(
       { uuid: req.params.id },
       updateData,
@@ -252,7 +201,6 @@ const editContent = async (req, res) => {
       });
     }
 
-    // 📝 Log admin action
     await logActivity({
       userId: req.user._id,
       action: "Update",
@@ -329,11 +277,278 @@ const deleteContent = async (req, res) => {
   }
 }
 
+const addDraft = async (req, res) => {
+  try {
+    const created_by = req.user?._id;
+    if (!created_by) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const {
+      title,
+      description,
+      trainingType,
+      team,
+      subteam,
+      category,
+      submissionEnabled,
+      feedbackEnabled,
+      instructions,
+      badges,
+      stars,
+      credits,
+      externalResource,
+      pushable_to_orgs,
+      tags,
+      duration,
+      learningOutcomes,
+      prerequisites,
+      richText,
+    } = req.body;
+
+    // 🔐 Prevent duplicate drafts per user + title
+    const existingDraft = await GlobalModule.findOne({
+      created_by,
+      status: "Draft",
+      title,
+    });
+
+    if (existingDraft) {
+      return res.status(200).json({
+        success: true,
+        message: "Draft already exists",
+        data: existingDraft,
+      });
+    }
+
+    const payload = {
+      title,
+      description,
+      trainingType,
+      team,
+      subteam,
+      category,
+      submissionEnabled,
+      feedbackEnabled,
+      instructions,
+      badges,
+      stars,
+      credits,
+      externalResource,
+      pushable_to_orgs,
+      tags,
+      duration,
+      richText,
+      status: "Draft",
+      created_by,
+      learning_outcomes: learningOutcomes || [],
+      prerequisites: Array.isArray(prerequisites)
+        ? prerequisites
+        : prerequisites?.split(",").map((p) => p.trim()),
+    };
+
+    const draft = await GlobalModule.create(payload);
+
+    return res.status(201).json({
+      success: true,
+      message: "Draft created",
+      data: draft,
+    });
+  } catch (error) {
+    console.error("addDraft error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create draft",
+      error: error.message,
+    });
+  }
+};
+
+
+// In your updateDraft controller
+const updateDraft = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = { ...req.body };
+
+    // Normalize fields
+    if (updates.learningOutcomes) {
+      updates.learning_outcomes = updates.learningOutcomes;
+      delete updates.learningOutcomes;
+    }
+
+    if (updates.prerequisites && !Array.isArray(updates.prerequisites)) {
+      updates.prerequisites = updates.prerequisites
+        .split(",")
+        .map((p) => p.trim());
+    }
+
+    // Remove empty fields
+    Object.keys(updates).forEach((key) => {
+      if (updates[key] === "" || updates[key] === undefined) {
+        delete updates[key];
+      }
+    });
+
+    updates.lastUpdated = new Date();
+
+    const updatedDraft = await GlobalModule.findOneAndUpdate(
+      { uuid: id, status: "Draft" },
+      { $set: updates },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedDraft) {
+      return res.status(404).json({
+        success: false,
+        message: "Draft not found or not editable",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Draft updated successfully",
+      data: updatedDraft,
+    });
+  } catch (error) {
+    console.error("updateDraft error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update draft",
+      error: error.message,
+    });
+  }
+};
+
+
+const deleteDraft = async (req, res) => {
+  try {
+    const draft = await GlobalModule.findOneAndDelete({ 
+      uuid: req.params.id,
+      status: "Draft" // Only delete if it's a draft
+    });
+
+    if (!draft) {
+      return res.status(404).json({
+        success: false,
+        message: 'Draft not found or already deleted'
+      });
+    }
+
+    // Log the deletion activity
+    await logActivity({
+      userId: req.user._id,
+      action: "Delete Draft",
+      details: `Draft "${draft.title}" (${draft.uuid}) was deleted`,
+      userRole: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "success",
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Draft deleted successfully'
+    });
+  } catch (error) {
+    await logActivity({
+      userId: req.user?._id,
+      action: "Delete Draft",
+      details: `Failed to delete draft: ${error.message}`,
+      userRole: req.user?.role,
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      status: "failed",
+    });
+
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to delete draft',
+      error: error.message
+    });
+  }
+};
+
+const getDrafts = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search = '', sortBy = 'createdAt', sortOrder = -1 } = req.query;
+    
+    const query = {
+      status: "Draft",
+      ...(search && {
+        $or: [
+          { title: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } }
+        ]
+      })
+    };
+
+    const sort = { [sortBy]: Number(sortOrder) };
+    
+    const drafts = await GlobalModule.find(query)
+      .sort(sort)
+      .limit(Number(limit))
+      .skip((Number(page) - 1) * Number(limit))
+      .select('-__v'); // Exclude version key
+
+    const total = await GlobalModule.countDocuments(query);
+
+    return res.status(200).json({
+      success: true,
+      data: drafts,
+      pagination: {
+        total,
+        page: Number(page),
+        totalPages: Math.ceil(total / Number(limit)),
+        limit: Number(limit)
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch drafts',
+      error: error.message
+    });
+  }
+};
+
+const getDraftById = async (req, res) => {
+  try {
+    const draft = await GlobalModule.findOne({ 
+      uuid: req.params.id,
+      status: "Draft" 
+    }).select('-__v');
+
+    if (!draft) {
+      return res.status(404).json({
+        success: false,
+        message: 'Draft not found'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: draft
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch draft',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   addContent,
   getContent,
   editContent,
   deleteContent,
   getContentById,
-  bulkDelete
+  bulkDelete,
+  updateDraft,
+  addDraft,
+  deleteDraft,
+  getDrafts,
+  getDraftById
 }

@@ -10,14 +10,14 @@ import { fetchSurveys, updateSurvey, getSurveyById } from '../../../store/slices
 import { ChevronLeft, ChevronRight, Filter, Search } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import { useNotification } from '../../../components/common/Notification/NotificationProvider.jsx';
-import {categories} from '../../../utils/constants.js'
+import { categories } from '../../../utils/constants.js'
 import { GoX } from 'react-icons/go';
 import { useRef } from 'react';
 
 const GlobalCreateAssignment = () => {
     const dispatch = useDispatch();
     const { showNotification } = useNotification();
-    
+
     // State declarations
     const [currentStep, setCurrentStep] = useState(1);
     const [showFilters, setShowFilters] = useState(false);
@@ -31,7 +31,7 @@ const GlobalCreateAssignment = () => {
     const [contentSearchTerm, setContentSearchTerm] = useState('');
     const [orgSearchTerm, setOrgSearchTerm] = useState('');
     const [selectedOrgs, setSelectedOrgs] = useState([]);
-    
+
     const { organizations, loading } = useSelector(state => state.organizations);
     const { surveys } = useSelector(state => state.surveys);
     const { items: content } = useSelector(state => state.content);
@@ -204,7 +204,7 @@ const GlobalCreateAssignment = () => {
         allContentItems = [...content, ...assessments, ...surveys];
     }
     const filteredContentItems = allContentItems.filter(item => {
-        const matchesSearch = !contentSearchTerm || 
+        const matchesSearch = !contentSearchTerm ||
             item.title.toLowerCase().includes(contentSearchTerm.toLowerCase());
         const matchesType = !contentType || item.type === contentType;
         const matchesCategory = !category || item.category === category;
@@ -263,7 +263,11 @@ const GlobalCreateAssignment = () => {
 
                     {/* Step 1: Choose Organization */}
                     {currentStep === 1 && (
-                        <div className="global-assign-assignment-step-content">
+                        <div className="global-assign-assignment-step-content" style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            height: '70vh' // Adjust this value as needed
+                        }}>
                             <h2 className="global-assign-step-title">Step 1: Choose Target Audience</h2>
                             {/* <div className="global-assign-content-selection-note">Select one Organization to assign.</div> */}
                             <div className='roles-search-bar'>
@@ -431,17 +435,17 @@ const GlobalCreateAssignment = () => {
                                         </select>
                                     </div>
                                     <div style={{ display: 'flex', gap: '10px', marginTop: '15px', justifyContent: 'flex-end' }}>
-                                        <button 
-                                            type='button' 
-                                            className='btn-secondary' 
+                                        <button
+                                            type='button'
+                                            className='btn-secondary'
                                             onClick={handleClearFilters}
                                             style={{ padding: '6px 12px', fontSize: '14px' }}
                                         >
                                             Clear
                                         </button>
-                                        <button 
-                                            type='button' 
-                                            className='btn-primary' 
+                                        <button
+                                            type='button'
+                                            className='btn-primary'
                                             onClick={handleApplyFilters}
                                             style={{ padding: '6px 12px', fontSize: '14px' }}
                                         >
