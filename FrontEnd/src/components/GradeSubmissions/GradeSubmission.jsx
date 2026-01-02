@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import './GradeSubmission.css';
 import { ChevronDown, Search, X } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { categories } from '../../../utils/constants';
-import { adminFetchSubmissions, admingradeSubmission } from '../../../store/slices/adminSubmissionSlice';
+
+import { adminFetchSubmissions, admingradeSubmission } from '../../store/slices/adminSubmissionSlice';
 import { useParams } from 'react-router-dom';
+import { notifyError, notifySuccess } from '../../utils/notification';
 const GradeSubmission = () => {
   const dispatch = useDispatch();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -81,6 +82,7 @@ const GradeSubmission = () => {
     setSelectedSubmission(null);
     setGradeValue('');
     setFeedback('');
+    dispatch(adminFetchSubmissions(moduleId));
   };
 
   const handleSaveGrade = async () => {
@@ -95,13 +97,41 @@ const GradeSubmission = () => {
         grade: gradeValue,
         feedback: feedback
       })).unwrap();
+      if (admingradeSubmission.fulfilled.match(result)) {
+        notifySuccess(result.message);
+        closeModal();
 
-      console.log('Grade saved successfully:', result);
-      closeModal();
+
+      }
+
+      // console.log('Grade saved successfully:', result);
     } catch (error) {
       console.error('Failed to save grade:', error);
     }
   };
+  // Add this function to your component
+  const handleDownloadSubmission = async (e, submission) => {
+    e.preventDefault();
+    try {
+      // console.log(submission)
+      // Get the file URL from the submission data
+      const fileUrl = submission.fileUrl; // Adjust this based on your actual data structure
+
+      // Create a temporary anchor element
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = `submission_${submission.learner.replace(/\s+/g, '_')}_${Date.now()}.${fileUrl.split('.').pop()}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      // Optionally show an error notification
+      notifyError('Failed to download submission file');
+    }
+  };
+
+
 
   // Module dropdown handlers
   const handleModuleSelect = (module) => {
@@ -143,79 +173,7 @@ const GradeSubmission = () => {
       ) : (
         <>
           <div className="grade-sub-filters">
-            {/* <div className="grade-sub-filter-group" ref={moduleDropdownRef}>
-              <div className="grade-sub-searchable-dropdown">
-                <div
-                  className="grade-sub-dropdown-trigger"
-                  onClick={() => setModuleDropdownOpen(!moduleDropdownOpen)}
-                >
-                  <span className={moduleFilter ? 'grade-sub-selected-value' : 'grade-sub-placeholder'}>
-                    {moduleFilter || 'Filter by Module'}
-                  </span>
-                  <div className="grade-sub-dropdown-icons">
-                    {moduleFilter && (
-                      <X
-                        size={16}
-                        className="grade-sub-clear-icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleModuleClear();
-                        }}
-                      />
-                    )}
-                    <ChevronDown
-                      size={16}
-                      className={`grade-sub-chevron ${moduleDropdownOpen ? 'open' : ''}`}
-                    />
-                  </div>
-                </div>
 
-                {moduleDropdownOpen && (
-                  <div className="grade-sub-dropdown-menu">
-                    <div className="grade-sub-search-input-wrapper">
-                      <Search size={16} className="grade-sub-search-icon" />
-                      <input
-                        type="text"
-                        className="grade-sub-search-input"
-                        placeholder="Search modules..."
-                        value={moduleSearchTerm}
-                        onChange={(e) => setModuleSearchTerm(e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </div>
-
-                    <div className="grade-sub-dropdown-options">
-                      {filteredModules.length > 0 ? (
-                        filteredModules.map((module, index) => (
-                          <div
-                            key={index}
-                            className="grade-sub-dropdown-option"
-                            onClick={() => handleModuleSelect(module)}
-                          >
-                            {module}
-                          </div>
-                        ))
-                      ) : (
-                        <div className="grade-sub-no-results">
-                          No modules found
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div> */}
-            {/* <div className="grade-sub-filter-group">
-              <select
-                className="grade-sub-input"
-                value={teamFilter}
-                onChange={(e) => setTeamFilter(e.target.value)}
-              >
-                <option value="">Filter by Team</option>
-                <option value="Development Team">Development Team</option>
-                <option value="Sales Team">Sales Team</option>
-              </select>
-            </div> */}
             <div className="grade-sub-filter-group">
               <input
                 type="search"
@@ -240,10 +198,10 @@ const GradeSubmission = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredSubmissions.length === 0 && 
-                <td>
-                  <p>No submissions found</p>
-                </td>}
+                {filteredSubmissions.length === 0 &&
+                  <td>
+                    <p>No submissions found</p>
+                  </td>}
                 {filteredSubmissions.map(submission => (
                   <tr key={submission.id}>
                     <td>{submission.learner}</td>
@@ -284,7 +242,11 @@ const GradeSubmission = () => {
 
                 <div className="grade-sub-form-group">
                   <label className="grade-sub-form-label">Submission</label>
-                  <a href="#" className="grade-sub-submission-link" target="_blank" rel="noopener noreferrer">
+                  <a
+                    href="#"
+                    className="grade-sub-submission-link"
+                    onClick={(e) => handleDownloadSubmission(e, selectedSubmission)}
+                  >
                     View Learner's Submission File
                   </a>
                 </div>

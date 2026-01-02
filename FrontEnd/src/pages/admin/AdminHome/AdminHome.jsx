@@ -8,6 +8,7 @@ import { getContentCountsAll } from '../../../utils/contentCountsService'
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line
 } from 'recharts';
+import { fetchPermissions } from '../../../store/slices/roleSlice';
 
 const AdminHome = () => {
   const dispatch = useDispatch();
@@ -34,6 +35,20 @@ const AdminHome = () => {
     || user?.organizationUUID
     || user?.organizationId
     || user?.organization?.id;
+    useEffect(() => {
+          // Initial fetch
+          dispatch(fetchPermissions());
+      
+          // Set up interval for periodic updates (every 5 minutes)
+          const permissionsInterval = setInterval(() => {
+            dispatch(fetchPermissions());
+          }, 5 * 60 * 1000); // 5 minutes in milliseconds
+      
+          // Cleanup interval on unmount
+          return () => {
+            clearInterval(permissionsInterval);
+          };
+        }, [dispatch]);
 
   // Mock data for Organization Performance
   const organizationData = [

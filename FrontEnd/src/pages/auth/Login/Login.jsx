@@ -155,7 +155,7 @@ const Login = () => {
         </div>
 
         <div className="signup-link">
-          Don't have an account? <Link to="/signup">Please contact your administrator</Link>
+          Don't have an account? <a href="mailto:support@omniedu.com">Please contact OmniEdu Team!</a>
         </div>
       </div>
     </div>

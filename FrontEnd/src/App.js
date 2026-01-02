@@ -76,7 +76,7 @@ import AdminAnalyticsDashboard from './pages/admin/AdminAnalytics/AdminAnalytics
 import TicketsTable from './pages/admin/AdminSupport/TicketsTable';
 import UserTicketsTable from './pages/user/Support/UserTicketsTable';
 import GlobalTicketsTable from './pages/globalAdmin/Tickets/TicketsTable';
-import GradeSubmission from './pages/globalAdmin/GradeSubmissions/GradeSubmission';
+import GradeSubmission from './components/GradeSubmissions/GradeSubmission';
 import { fetchPermissions } from './store/slices/RolePermissionSlice';
 import NotAllowed from './pages/NotAllowed/NotAllowed';
 

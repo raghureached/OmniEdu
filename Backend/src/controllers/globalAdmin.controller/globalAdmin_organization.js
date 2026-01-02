@@ -123,12 +123,13 @@ const addOrganization = async (req, res) => {
 
     const org = Array.isArray(newOrg) ? newOrg[0] : newOrg;
     const password = name.toLowerCase().replace(/\s/g, "").slice(0, 6) + "@123";
+    const adminId = await Role.findOne({ name: "Administrator" })
     const user = await User.create([{
       name,
       email,
       password,
       organization_id: org._id,
-      global_role_id: "68c67caae94bfd6484cd0d00",
+      global_role_id: adminId._id,
     }], { session, ordered: true })
     // await user.save({ session });
     

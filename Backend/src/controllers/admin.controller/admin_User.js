@@ -68,7 +68,6 @@ const addUser = async (req, res) => {
 
     const password = "12345678";
 
-    // Create User (single doc, not array)
     const user = await User.create([{
       name,
       email,

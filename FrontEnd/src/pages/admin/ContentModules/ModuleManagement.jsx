@@ -1104,16 +1104,16 @@ const ModuleManagement = () => {
                     </td>
                     <td>
                       <div style={{ display: "flex", gap: "10px" }}>
-                        
-                          <button
-                            className={`global-action-btn ${content.status === 'Draft' || content?.submissionEnabled ? 'analytics' : ''}`}
-                            onClick={() => handleViewSubmissions(content._id)}
-                            title="View Submissions"
-                            disabled={content.status === 'Draft' || !content?.submissionEnabled}
-                          >
-                            <File size={16} />
-                          </button>
-                        
+
+                        <button
+                          className={`global-action-btn ${content.status === 'Draft' || content?.submissionEnabled ? 'analytics' : ''}`}
+                          onClick={() => handleViewSubmissions(content._id)}
+                          title="View Submissions"
+                          disabled={content.status === 'Draft' || !content?.submissionEnabled}
+                        >
+                          <File size={16} />
+                        </button>
+
 
                         <button className="global-action-btn edit" onClick={() => {
                           setEditContentId(content.uuid)
@@ -1121,16 +1121,16 @@ const ModuleManagement = () => {
                         }}>
                           <Edit3 size={16} />
                         </button>
-                        
-                          <button
-                            className={`global-action-btn ${content.status !== 'Draft' ? 'analytics' : ''}`}
-                            onClick={() => handleAnalyticsClick(content.uuid)}
-                            title="View Analytics"
-                            disabled={content.status === 'Draft' }
-                          >
-                            <BarChart3 size={16} />
-                          </button>
-                        
+
+                        <button
+                          className={`global-action-btn ${content.status !== 'Draft' ? 'analytics' : ''}`}
+                          onClick={() => handleAnalyticsClick(content.uuid)}
+                          title="View Analytics"
+                          disabled={content.status === 'Draft'}
+                        >
+                          <BarChart3 size={16} />
+                        </button>
+
                         <button
                           className="global-action-btn delete"
                           onClick={() => handleDeleteContent(content.uuid)}

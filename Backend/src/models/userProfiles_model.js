@@ -14,10 +14,6 @@ const userProfileSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    // designation_id: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: "Designation",
-    // },
     designation:{
       type:String,
       default:null
