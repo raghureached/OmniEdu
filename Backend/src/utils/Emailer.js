@@ -1,16 +1,12 @@
-import { MailerSend, Sender, EmailParams } from "mailersend";
+import Mailjet from "node-mailjet";
 
-const mailerSend = new MailerSend({
-  apiKey: process.env.MAILERSEND_API_KEY,
+const mailjet = new Mailjet({
+  apiKey: process.env.MAILJET_API_KEY,
+  apiSecret: process.env.MAILJET_SECRET_KEY,
 });
 
-const sentFrom = new Sender(
-  process.env.MAIL_FROM,
-  "OmniEdu Team"
-);
-
-export const transporter = null; // Not needed with MailerSend
-
+// Not needed with Mailjet, but kept for compatibility
+export const transporter = null;
 export const sendMail = async (to, subject, text) => {
   const footer = `
 Regards,
@@ -30,18 +26,41 @@ You are receiving this email because you registered on our platform.
   `;
 
   try {
-    const emailParams = new EmailParams()
-      .setFrom(sentFrom)
-      .setTo([new Sender(to, to.split('@')[0])])
-      .setSubject(subject)
-      .setHtml(messageHtml)
-      .setText(messageText);
+    const request = await mailjet
+      .post("send", { version: "v3.1" })
+      .request({
+        Messages: [
+          {
+            From: {
+              Email: process.env.MAIL_FROM || "noreply@yourdomain.com",
+              Name: "OmniEdu Team"
+            },
+            To: [
+              {
+                Email: to,
+                Name: to.split('@')[0]
+              }
+            ],
+            Subject: subject,
+            TextPart: messageText,
+            HTMLPart: messageHtml
+          }
+        ]
+      });
 
-    const response = await mailerSend.email.send(emailParams);
-    console.log('Email sent successfully:', response);
-    return response;
+    console.log('Email sent successfully to:', to);
+    return { success: true, data: request.body };
   } catch (error) {
-    console.error('Error sending email:', error);
-    throw error;
+    console.warn('Warning: Failed to send email to', to, '-', 
+      error.statusCode ? `Status: ${error.statusCode}` : '',
+      error.message || 'Unknown error'
+    );
+    return { 
+      success: false, 
+      error: {
+        status: error.statusCode,
+        message: error.message || 'Failed to send email'
+      }
+    };
   }
 };
