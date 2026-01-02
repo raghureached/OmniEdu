@@ -315,7 +315,7 @@ const editUser = async (req, res) => {
       userAgent: req.headers['user-agent'],
       status: "failed",
     });
-    
+
     return res.status(500).json({
       isSuccess: false,
       message: 'Failed to update user',
@@ -349,7 +349,7 @@ const deleteUser = async (req, res) => {
 
     // Commit the transaction
     await session.commitTransaction();
-    
+
     await logActivity({
       userId: req.user._id,
       action: "Delete",
@@ -359,7 +359,7 @@ const deleteUser = async (req, res) => {
       userAgent: req.headers['user-agent'],
       status: "success",
     });
-    
+
     return res.status(200).json({
       isSuccess: true,
       message: "User deleted successfully",
@@ -368,7 +368,7 @@ const deleteUser = async (req, res) => {
   } catch (error) {
     // Rollback transaction in case of error
     await session.abortTransaction();
-    
+
     await logActivity({
       userId: req.user._id,
       action: "Delete",
@@ -378,7 +378,7 @@ const deleteUser = async (req, res) => {
       userAgent: req.headers['user-agent'],
       status: "failed",
     });
-    
+
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to delete user",
@@ -479,7 +479,7 @@ const getUsers = async (req, res) => {
 
     const pagination = { page, limit, total, totalPages, hasMore };
 
-   
+
     return res.status(200).json({
       isSuccess: true,
       message: "Users fetched successfully",

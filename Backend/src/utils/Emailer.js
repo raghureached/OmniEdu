@@ -1,23 +1,23 @@
-import nodemailer from "nodemailer";
+import { MailerSend, Sender, EmailParams } from "mailersend";
 
-export const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: 465,  
-  secure: true,  // Gmail SSL
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD,  // MUST be Gmail App Password
-  },
+const mailerSend = new MailerSend({
+  apiKey: process.env.MAILERSEND_API_KEY,
 });
 
+const sentFrom = new Sender(
+  process.env.MAIL_FROM,
+  "OmniEdu Team"
+);
+
+export const transporter = null; // Not needed with MailerSend
+
 export const sendMail = async (to, subject, text) => {
-  // console.log(to, subject, text)
   const footer = `
 Regards,
 OmniEdu Team
 https://www.omniedu.com
 You are receiving this email because you registered on our platform.
-`;
+  `;
 
   const messageText = `${text}\n\n${footer}`;
 
@@ -30,22 +30,18 @@ You are receiving this email because you registered on our platform.
   `;
 
   try {
-    await transporter.sendMail({
-      from: `"OmniEdu" <${process.env.SMTP_USER}>`,
-      to,
-      subject,
-      text: messageText,
-      html: messageHtml,
-      headers: {
-        "X-Priority": "3",
-        "X-Mailer": "OmniEdu Mailer",
-        "Disposition-Notification-To": process.env.SMTP_USER,
-      }
-    });
+    const emailParams = new EmailParams()
+      .setFrom(sentFrom)
+      .setTo([new Sender(to, to.split('@')[0])])
+      .setSubject(subject)
+      .setHtml(messageHtml)
+      .setText(messageText);
 
-    console.log("Email sent successfully");
+    const response = await mailerSend.email.send(emailParams);
+    console.log('Email sent successfully:', response);
+    return response;
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error('Error sending email:', error);
     throw error;
   }
 };
