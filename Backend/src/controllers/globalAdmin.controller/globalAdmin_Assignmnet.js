@@ -95,39 +95,26 @@ const createAssignment = async (req, res) => {
         if (notifyUsers && Array.isArray(organizations) && organizations.length > 0) {
 
             const emailJobs = organizations
-                .filter(org => org?.email) // validate email existence
+                .filter(org => org?.email)
                 .map(org => {
-                    return sendMail({
-                        to: org.email,
-                        subject: 'Access to New Content Granted',
-                        text: `Hello ${org.name || ''},
+                    const emailText = `Hello ${org.name || ''},
 
 You have been granted access to new content.
 Please log in to your dashboard to explore it.
 
+Content: ${contentName}
+Access your dashboard at: https://omniedu-fe587.web.app/
+
 Regards,
-Platform Team`,
-                        html: `
-          <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-            <h2>New Content Available 🎉</h2>
-            <p>Hello ${org.name || 'there'},</p>
-            <p>
-              You have been <strong>granted access to new content</strong>.
-              Please log in to your dashboard to explore it.
-            </p>
-            <a href="https://omniedu-fe587.web.app/"
-               style="display:inline-block;margin-top:12px;
-               padding:10px 16px;background:#1C88C7;color:#fff;
-               text-decoration:none;border-radius:6px;">
-              Go to Dashboard
-            </a>
-            <p style="margin-top:20px;font-size:12px;color:#666;">
-              If you were not expecting this email, you can ignore it safely.
-            </p>
-          </div>
-        `
-                    });
+Platform Team`;
+
+                    return sendMail(
+                        org.email,
+                        'Access to New Content Granted',
+                        emailText
+                    );
                 });
+                // console.log(emailJobs)
 
             const results = await Promise.allSettled(emailJobs);
 

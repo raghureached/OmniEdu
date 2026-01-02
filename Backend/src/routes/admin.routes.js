@@ -36,6 +36,7 @@ const { getOrganizationCreationDate, getCourseDistribution, getUsersData, calcul
 const { createAdminTicket, getAdminTickets, updateAdminTicketStatus, updateAdminTicket, deleteAdminTicket , getTicketDetails,
   addTicketComment, getTicketStats} = require("../controllers/admin.controller/admin_Tickets");
 const { getPermissions } = require("../controllers/permissions.controller");
+const { gradeSubmission, getSubmissions } = require("../controllers/admin.controller/admin_Submissions");
 
 
 const router = require("express").Router();
@@ -176,6 +177,9 @@ router.route("/getTicketDetails/:ticketId").get(getTicketDetails);
 router.route("/addTicketComment/:ticketId").post(addTicketComment);
 
 
+////Submissions
 
+router.route('/gradeSubmission').post(gradeSubmission)
+router.route('/getSubmissions/:moduleId').get(getSubmissions)
 
 module.exports = router;

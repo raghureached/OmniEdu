@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from "react-redux";
 
 import {
@@ -58,7 +58,19 @@ const AnalyticsViewNew = () => {
     startDate: '',
     endDate: ''
   });
+  const customDatePickerRef = useRef(null);
 
+  useEffect(()=>{
+    const handleClickOutside = (event) => {
+      if (customDatePickerRef.current && !customDatePickerRef.current.contains(event.target)) {
+        setShowCustomDatePicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [customDatePickerRef]);
 
   // Generate trend data based on current values
   const generateTrendData = (currentValue, days = 7) => {
@@ -232,12 +244,6 @@ const AnalyticsViewNew = () => {
         <div className="header-filters" style={{ display: "flex", flexDirection: "column" }}>
           <div className="filter-group-enhanced">
             <label>Organization</label>
-            {/* <select value={orgId} onChange={(e) => setOrgId(e.target.value)} className="filter-select-enhanced">
-              <option value="all">All Organizations</option>
-              {organizations?.map((org, index) => (
-                <option key={index} value={org._id}>{org.name}</option>
-              ))}
-            </select> */}
             <CustomSelect
               value={orgId}
               options={[
@@ -300,7 +306,7 @@ const AnalyticsViewNew = () => {
             </button>
           </div>
           {showCustomDatePicker && (
-            <div className="custom-date-picker">
+            <div className="custom-date-picker" ref={customDatePickerRef}>
               <div className="date-inputs">
                 <div className="date-input-group">
                   <label>From:</label>

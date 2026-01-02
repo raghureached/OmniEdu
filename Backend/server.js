@@ -49,6 +49,7 @@ app.use((req, res, next) => {
   next();
 });
 const path = require('path');
+const { sendMail } = require("./src/utils/Emailer");
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/globalAdmin',authenticate,authorize(['GlobalAdmin']),globalAdminRouter)
@@ -60,6 +61,8 @@ app.post('/api/sendOtp', require('./src/controllers/OTP').sendOTP)
 app.post('/api/verifyOtp', require('./src/controllers/OTP').verifyOTP)
 app.get('/api/getPermissions', authenticate,require('./src/controllers/permissions.controller').getPermissions)
 app.use('/api/activity',authenticate,activityLogRouter)
+
+app.get('/testMail',async(req,res)=>{await sendMail("raghu071003@gmail.com","Test Mail","This is a test mail")})
 app.listen(PORT, () => {
   console.log(`Server is running at PORT:${PORT}`);
 });

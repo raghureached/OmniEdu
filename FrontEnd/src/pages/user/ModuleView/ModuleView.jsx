@@ -7,9 +7,9 @@ import { EyeIcon, Plus, ThumbsUp, ThumbsDown, Send, ChevronLeft, ChevronRight, U
 import VideoPlayer from '../../../components/VideoPlayer/VideoPlayer';
 import api from '../../../services/api';
 import LoadingScreen from '../../../components/common/Loading/Loading';
-import { notifySuccess } from '../../../utils/notification';
+import { notifyError, notifySuccess } from '../../../utils/notification';
 
-const ModuleView = ({id,lpId}) => {
+const ModuleView = ({ id, lpId }) => {
     const navigate = useNavigate();
     const [data, setData] = useState(null);
     const [activeTab, setActiveTab] = useState('preview');
@@ -23,8 +23,9 @@ const ModuleView = ({id,lpId}) => {
     const [loading, setLoading] = useState(false);
     const { moduleId, inProgress, assignId } = useParams();
     const [assignment, setAssignment] = useState(null);
+    const [isSubmitted, setIsSubmitted] = useState(false);
     useEffect(() => {
-        if(inProgress === "true" || inProgress){
+        if (inProgress === "true" || inProgress) {
             setActiveTab('resources');
         }
     }, [inProgress]);
@@ -33,10 +34,10 @@ const ModuleView = ({id,lpId}) => {
             setLoading(true);
             const uuid = id || moduleId;
             const fetchData = async () => {
-                let response 
-                if(!assignId || assignId === "undefined"){
+                let response
+                if (!assignId || assignId === "undefined") {
                     response = await api.get(`/api/user/enrolled/getModule/${uuid}`);
-                }else{
+                } else {
                     response = await api.get(`/api/user/getModule/${uuid}`);
                 }
                 setData(response.data);
@@ -53,7 +54,7 @@ const ModuleView = ({id,lpId}) => {
             setLoading(false);
             console.error('Error fetching module data:', error);
         }
-        
+
     }, [moduleId]);
 
     useEffect(() => {
@@ -98,6 +99,25 @@ const ModuleView = ({id,lpId}) => {
         }
 
     }, [data]);
+    useEffect(() => {
+        const checkSubmission = async () => {
+            if (!data?._id) return;
+
+            try {
+                const response = await api.get(`/api/user/getSubmission/${data._id}`);
+                if (response.data.success && response.data.data) {
+                    setIsSubmitted(true);
+                    setSubmission({
+                        name: response.data.data.file_url.split('/').pop(),
+                        url: response.data.data.file_url
+                    });
+                }
+            } catch (error) {
+                console.log("No submission found or error fetching submission:", error);
+            }
+        };
+        checkSubmission();
+    }, [data?._id]);
 
     const getFileExt = (nameOrUrl = '') => {
         const clean = String(nameOrUrl).split('?')[0].split('#')[0];
@@ -221,33 +241,45 @@ const ModuleView = ({id,lpId}) => {
         const input = document.getElementById('uploadFiles');
         if (input) input.value = '';
     };
-
-    const handleSaveDraft = () => {
-        alert('Draft saved (dummy action).');
-    };
-    const handleSubmitFile = () => {
-        if(!submission) return;
-        const formData = new FormData();
-        formData.append('file', submission);
-        if(id){
-           formData.append('lpId', lpId);
-           formData.append('refPath', 'Module');
-        }else{
-
+    const handleSubmitFile = async () => {
+        if (!submission) return;
+        setLoading(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', submission);
+            formData.append('moduleId', data._id);
+            formData.append('refPath', id ? 'OrganizationModule' : (assignId && assignId !== "undefined" ? 'OrganizationModule' : 'GlobalModule'));
+            if (id) formData.append('lpId', lpId);
+            const res = await api.post(`/api/user/submitFile`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            if (res.status === 201) {
+                setIsSubmitted(true);
+                notifySuccess("File submitted successfully");
+            } else if (res.status === 400 && res.data?.message === "You have already submitted for this module") {
+                setIsSubmitted(true);
+                notifySuccess("You've already submitted for this module");
+            }
+        } catch (error) {
+            console.error('Error submitting file:', error);
+            if (error.response?.status === 400) {
+                notifyError(error.response.data.message || "You've already submitted for this module");
+            } else {
+                notifyError("Failed to submit file. Please try again.");
+            }
+        } finally {
+            setLoading(false);
         }
-        formData.append('moduleId', id);
-        
-        const res = api.post(`/api/user/submitFile/${id}`, formData);
-        if (res.status === 200) {
-            notifySuccess("File submitted successfully");
-        }
-        return;
-        
-        
     }
 
-    const handleComplete = async() => {
-        if(id){
+    const handleComplete = async () => {
+        if(data.submissionEnabled){
+            if(!submission){
+                alert("Please submit a file before marking the module complete");
+                return;
+            }
+        }
+        if (id) {
             const res = await api.post(`/api/user/markComplete/${lpId}/${data._id}`);
             if (res.status === 200) {
                 alert('Module marked complete!');
@@ -259,9 +291,9 @@ const ModuleView = ({id,lpId}) => {
                 stars: data.stars,
                 badges: data.badges,
                 credits: data.credits,
-                duration:data.duration
+                duration: data.duration
             }
-            
+
             const res = await api.post(`/api/user/markComplete/${data._id}`, rewards);
             if (res.status === 200) {
                 alert('Module marked complete!');
@@ -287,38 +319,38 @@ const ModuleView = ({id,lpId}) => {
     };
 
     // Progress header removed; tabs moved to modal header
-    if(loading){
+    if (loading) {
         return <LoadingScreen text="Fetching module data..." />;
     }
 
     return (
         <div >
-            
+
             <div className={` ${id ? 'user-mod-wrap-lp' : 'user-mod-wrap'}`} >
                 <div className="user-mod-panel">
-                        <div className="assigned-header">
-                            {moduleId && <div className="tabs">
-                                <button
-                                    className={`tab-button `}
-                                    onClick={() => window.history.back()}
-                                >
-                                   <span style={{display: 'flex', alignItems: 'center',textDecoration:"underline"}}><ChevronLeft size={20} /></span>
-                                </button>
-                                <button
-                                    className={`tab-button ${activeTab === 'preview' ? 'active' : ''}`}
-                                    onClick={() => setActiveTab('preview')}
-                                >
-                                    Preview
-                                </button>
-                                <button
-                                    className={`tab-button ${activeTab === 'resources' ? 'active' : ''}`}
-                                    onClick={() => setActiveTab('resources')}
-                                >
-                                    Resources
-                                </button>
-                            </div>}
-                            {id && <div className="tabs">
-                                {/* <button
+                    <div className="assigned-header">
+                        {moduleId && <div className="tabs">
+                            <button
+                                className={`tab-button `}
+                                onClick={() => window.history.back()}
+                            >
+                                <span style={{ display: 'flex', alignItems: 'center', textDecoration: "underline" }}><ChevronLeft size={20} /></span>
+                            </button>
+                            <button
+                                className={`tab-button ${activeTab === 'preview' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('preview')}
+                            >
+                                Preview
+                            </button>
+                            <button
+                                className={`tab-button ${activeTab === 'resources' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('resources')}
+                            >
+                                Resources
+                            </button>
+                        </div>}
+                        {id && <div className="tabs">
+                            {/* <button
                                     className={`tab-button ${activeTab === 'preview' ? 'active' : ''}`}
                                     onClick={() => setActiveTab('preview')}
                                 >
@@ -330,8 +362,8 @@ const ModuleView = ({id,lpId}) => {
                                 >
                                     Resources
                                 </button> */}
-                            </div>}
-                        </div>
+                        </div>}
+                    </div>
 
                     <div className="user-mod-content">
 
@@ -515,110 +547,151 @@ const ModuleView = ({id,lpId}) => {
                                             </div>
                                         </div>
                                     )}
-                                    {(data.submissionEnabled || data.submissionsEnabled) && <div>
-                                    <div className="user-mod-card">
-                                        <h3 style={{ margin: "10px" }} className="user-mod-card-title">Submission <span className='module-overlay__required'>*</span></h3>
+                                    {(data.submissionEnabled || data.submissionsEnabled) && (
+                                        <div className="user-mod-card">
+                                            <h3 style={{ margin: "10px" }} className="user-mod-card-title">
+                                                {isSubmitted ? 'Submitted Work' : 'Submission'}
+                                                {!isSubmitted && <span className='module-overlay__required'>*</span>}
+                                            </h3>
 
-                                        <input
-                                            type="file"
-                                            name="primaryFile"
-                                            style={{ display: 'none' }}
-                                            accept=".pdf,.doc,.docx,.mp4,.mp3,.scorm,.png,.jpg,.jpeg,.gif,.webp"
-                                            id="uploadFiles"
-                                            onChange={handleFileChange}
-                                        />
-                                        {submission ? (
-                                            <div className="module-overlay__uploaded-file-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: "980px" }}>
-                                                <span className="module-overlay__uploaded-file-name" title={typeof submission === 'string' ? submission.split('/').pop() : submission.name}>
-                                                    {typeof submission === 'string' ? submission.split('/').pop() : submission.name}
-                                                </span>
-                                                <div className="module-overlay__file-actions">
+                                            {isSubmitted ? (
+                                                <div className="module-overlay__submitted-container">
+                                                    <div className="module-overlay__submitted-file">
+                                                        <span className="module-overlay__uploaded-file-name">
+                                                            {typeof submission === 'string'
+                                                                ? submission.split('/').pop()
+                                                                : submission?.name || 'Submission'}
+                                                        </span>
+                                                        <a
+                                                            href={typeof submission === 'string' ? submission : submission?.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="btn-primary"
+                                                        >
+                                                            <EyeIcon size={16} /> View Submission
+                                                        </a>
+                                                    </div>
+                                                    <div className="module-overlay__submission-status">
+                                                        <span className="module-overlay__status-badge">Submitted</span>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <input
+                                                        type="file"
+                                                        name="primaryFile"
+                                                        style={{ display: 'none' }}
+                                                        accept=".pdf,.doc,.docx,.mp4,.mp3,.scorm,.png,.jpg,.jpeg,.gif,.webp"
+                                                        id="uploadFiles"
+                                                        onChange={handleFileChange}
+                                                        disabled={loading}
+                                                    />
+                                                    {submission ? (
+                                                        <div className="module-overlay__uploaded-file-container">
+                                                            <span
+                                                                className="module-overlay__uploaded-file-name"
+                                                                title={typeof submission === 'string' ? submission.split('/').pop() : submission.name}
+                                                            >
+                                                                {typeof submission === 'string' ? submission.split('/').pop() : submission.name}
+                                                            </span>
+                                                            <div className="module-overlay__file-actions">
+                                                                <button
+                                                                    type="button"
+                                                                    className="module-overlay__btn-preview"
+                                                                    onClick={() => handlePreviewFile(submission)}
+                                                                    disabled={loading}
+                                                                >
+                                                                    <EyeIcon size={16} /> Preview
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="module-overlay__btn-delete"
+                                                                    onClick={handleRemoveFile}
+                                                                    disabled={loading}
+                                                                >
+                                                                    <RiDeleteBin2Fill size={16} /> Delete
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="module-overlay__btn-submit"
+                                                                    onClick={handleSubmitFile}
+                                                                    disabled={loading}
+                                                                >
+                                                                    {loading ? 'Submitting...' : (
+                                                                        <><Upload size={16} /> Submit</>
+                                                                    )}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <label
+                                                            htmlFor="uploadFiles"
+                                                            className="module-overlay__upload-label"
+                                                            tabIndex={0}
+                                                            onKeyPress={e => {
+                                                                if (e.key === 'Enter' && !loading) document.getElementById('uploadFiles').click();
+                                                            }}
+                                                        >
+                                                            <Plus size={16} /> {loading ? 'Uploading...' : 'Upload File'}
+                                                        </label>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+                                    {data.feedbackEnabled ? (
+                                        <div className="user-mod-card">
+                                            <div className="feedback-header-row">
+                                                <h3 className="feedback-title">Feedback</h3>
+                                                <div className="feedback-actions">
                                                     <button
                                                         type="button"
-                                                        className="module-overlay__btn-preview"
-                                                        onClick={() => handlePreviewFile(submission)}
-                                                        aria-label="Preview uploaded file"
+                                                        className={`feedback-btn ${feedbackReaction === 'like' ? 'active like' : ''}`}
+                                                        onClick={() => toggleReaction('like')}
+                                                        aria-pressed={feedbackReaction === 'like'}
                                                     >
-                                                        <EyeIcon size={16} /> Preview
+                                                        <ThumbsUp size={16} /> Like
                                                     </button>
                                                     <button
                                                         type="button"
-                                                        className="module-overlay__btn-delete"
-                                                        onClick={handleRemoveFile}
-                                                        aria-label="Delete uploaded file"
+                                                        className={`feedback-btn ${feedbackReaction === 'dislike' ? 'active dislike' : ''}`}
+                                                        onClick={() => toggleReaction('dislike')}
+                                                        aria-pressed={feedbackReaction === 'dislike'}
                                                     >
-                                                        <RiDeleteBin2Fill size={16} /> Delete
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="module-overlay__btn-delete"
-                                                        
-                                                        aria-label="Delete uploaded file"
-                                                    >
-                                                        <Upload size={16} /> Submit
+                                                        <ThumbsDown size={16} /> Dislike
                                                     </button>
                                                 </div>
                                             </div>
-                                        ) : (
-                                            <label htmlFor="uploadFiles" className="module-overlay__upload-label" tabIndex={0} onKeyPress={e => { if (e.key === 'Enter') document.getElementById('uploadFiles').click(); }}>
-                                                <Plus size={16} /> Upload File
-                                            </label>
-                                        )}
-                                    </div>
-                                </div>}
-                                {data.feedbackEnabled ? (
-                                    <div className="user-mod-card">
-                                        <div className="feedback-header-row">
-                                            <h3 className="feedback-title">Feedback</h3>
-                                            <div className="feedback-actions">
-                                                <button
-                                                    type="button"
-                                                    className={`feedback-btn ${feedbackReaction === 'like' ? 'active like' : ''}`}
-                                                    onClick={() => toggleReaction('like')}
-                                                    aria-pressed={feedbackReaction === 'like'}
-                                                >
-                                                    <ThumbsUp size={16} /> Like
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className={`feedback-btn ${feedbackReaction === 'dislike' ? 'active dislike' : ''}`}
-                                                    onClick={() => toggleReaction('dislike')}
-                                                    aria-pressed={feedbackReaction === 'dislike'}
-                                                >
-                                                    <ThumbsDown size={16} /> Dislike
-                                                </button>
+                                            <div className="feedback-input-row">
+                                                <input
+                                                    type="text"
+                                                    className="feedback-input"
+                                                    placeholder="Add a comment (max 50 chars)"
+                                                    value={feedbackComment}
+                                                    onChange={handleCommentChange}
+                                                    maxLength={50}
+                                                />
+                                                <div className="feedback-right">
+                                                    <span className="feedback-count">{feedbackComment.length}/50</span>
+                                                    <button
+                                                        type="button"
+                                                        className="feedback-submit"
+                                                        onClick={handleFeedbackSubmit}
+                                                        disabled={!feedbackReaction && feedbackComment.trim().length === 0}
+                                                    >
+                                                        <Send size={14} /> Submit
+                                                    </button>
+                                                </div>
                                             </div>
+                                            {data.feedback && (
+                                                <div className="user-mod-iframe-container" style={{ marginTop: 8 }}>
+                                                    <iframe src={data.feedback} frameBorder="0" title="Feedback"></iframe>
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="feedback-input-row">
-                                            <input
-                                                type="text"
-                                                className="feedback-input"
-                                                placeholder="Add a comment (max 50 chars)"
-                                                value={feedbackComment}
-                                                onChange={handleCommentChange}
-                                                maxLength={50}
-                                            />
-                                            <div className="feedback-right">
-                                                <span className="feedback-count">{feedbackComment.length}/50</span>
-                                                <button
-                                                    type="button"
-                                                    className="feedback-submit"
-                                                    onClick={handleFeedbackSubmit}
-                                                    disabled={!feedbackReaction && feedbackComment.trim().length === 0}
-                                                >
-                                                    <Send size={14} /> Submit
-                                                </button>
-                                            </div>
-                                        </div>
-                                        {data.feedback && (
-                                            <div className="user-mod-iframe-container" style={{ marginTop: 8 }}>
-                                                <iframe src={data.feedback} frameBorder="0" title="Feedback"></iframe>
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : null}
+                                    ) : null}
                                 </div>
-                                
+
 
                                 <div className="user-mod-actions">
                                     <div></div>

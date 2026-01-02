@@ -131,6 +131,10 @@ const addOrganization = async (req, res) => {
       global_role_id: "68c67caae94bfd6484cd0d00",
     }], { session, ordered: true })
     // await user.save({ session });
+    
+
+    await session.commitTransaction();
+    await session.endSession();
     await sendMail(
       email,
       "Welcome to OmniEdu – Your Account is Now Active!",
@@ -152,9 +156,6 @@ const addOrganization = async (req, res) => {
       We’re excited to have you with us.  
       Welcome aboard!`
     );
-
-    await session.commitTransaction();
-    await session.endSession();
     await logActivity({
         userId: req.user._id,
         action: "Create",

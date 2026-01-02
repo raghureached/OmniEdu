@@ -11,6 +11,7 @@ export const transporter = nodemailer.createTransport({
 });
 
 export const sendMail = async (to, subject, text) => {
+  // console.log(to, subject, text)
   const footer = `
 Regards,
 OmniEdu Team

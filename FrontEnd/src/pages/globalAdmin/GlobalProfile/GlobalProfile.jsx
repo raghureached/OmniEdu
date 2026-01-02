@@ -13,6 +13,7 @@ const GlobalProfile = () => {
   };
 
   const getUserInitials = () => {
+    if (!user || !user.name) return "NA";
     const name = user.name;
     const nameParts = name.split(" ");
     if (nameParts.length >= 2) {

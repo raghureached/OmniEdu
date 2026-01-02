@@ -100,20 +100,7 @@ const SurveyView = ({ id }) => {
                                 Resources
                             </button>
                         </div>}
-                        {id && <div className="tabs">
-                            {/* <button
-                                                            className={`tab-button ${activeTab === 'preview' ? 'active' : ''}`}
-                                                            onClick={() => setActiveTab('preview')}
-                                                        >
-                                                            Preview
-                                                        </button>
-                                                        <button
-                                                            className={`tab-button ${activeTab === 'resources' ? 'active' : ''}`}
-                                                            onClick={() => setActiveTab('resources')}
-                                                        >
-                                                            Resources
-                                                        </button> */}
-                        </div>}
+                        
                     </div>
                     <div className="user-mod-content">
 
@@ -137,35 +124,9 @@ const SurveyView = ({ id }) => {
                                             </div>
                                         </div>
 
-                                        <div className="user-mod-stats-row">
-                                            {/* <div className="user-mod-stat" data-tooltip="Total run-time of all videos and activities">
-                                                    <span className="user-mod-icon">⏱</span>{durationMins ? `${durationMins} mins` : '—'}
-                                                </div> */}
-                                            {/* <div className="user-mod-stat" data-tooltip="Credits awarded after completion">
-                                                    <span className="user-mod-icon">🎓</span>{credits} Credit{Number(credits) === 1 ? '' : 's'}
-                                                </div>
-                                                <div className="user-mod-stat" data-tooltip="Badges achievable in this module">
-                                                    <span className="user-mod-icon">🏅</span>{badges} Badge{Number(badges) === 1 ? '' : 's'}
-                                                </div>
-                                                <div className="user-mod-stat" data-tooltip="Stars achievable in this module">
-                                                    <span className="user-mod-icon">⭐</span>{stars} Star{Number(stars) === 1 ? '' : 's'}
-                                                </div> */}
-                                        </div>
-
+                                       
                                         <div className="user-mod-small-row">
-                                            {/* <div className="user-mod-card">
-                                                    <h3>Prerequisites</h3>
-                                                    {prerequisitesArr.length ? (
-                                                        <ul className="user-mod-learn-list">
-                                                            {prerequisitesArr.map((p, idx) => (
-                                                                <li key={idx}>• {p}</li>
-                                                            ))}
-                                                        </ul>
-                                                    ) : (
-                                                        <p className="user-mod-prereq">Nil</p>
-                                                    )}
-                                                </div> */}
-
+                                            
                                             <div className="user-mod-card">
                                                 <h3>Tags</h3>
                                                 <div className="user-mod-tags-wrap">
@@ -193,14 +154,15 @@ const SurveyView = ({ id }) => {
                                         <div className="user-mod-details">
                                             <div className="user-mod-card">
                                                 <h3>Overview</h3>
-                                                <p style={{ color: "#0f1724", fontWeight: "400" }}>{description}</p>
+                                                <p style={{ color: "#0f1724", fontWeight: "400" }}>{description.slice(0, 100)}<span style={{ color: "#0f1724", fontWeight: "400" }}>...</span></p>
+                                                
                                             </div>
 
-                                            {/* <div className="user-mod-card">
-                                                  <h2>Questions{data.sections}</h2>
-                                                   
-                                                </div> */}
-                                        </div>
+                                                {/* <div className="user-mod-card">
+                                                    <h2>Questions{data.sections}</h2>
+                                                    
+                                                    </div> */}
+                                            </div>
                                     </div>
                                 </div>
 

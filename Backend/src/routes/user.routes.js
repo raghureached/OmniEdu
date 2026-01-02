@@ -21,7 +21,7 @@ const { getTickets, createTicket, updateTicketStatus, updateTicket, deleteTicket
 const { getTicketStats,getTicketDetails,
   addTicketComment } = require("../controllers/user_controller/user_Tickets")
 const { getUserActivity } = require("../controllers/user_controller/user_activity")
-const { createSubmission } = require("../controllers/user_controller/user_submission")
+const { createSubmission, fetchSubmission } = require("../controllers/user_controller/user_submission")
 const { upload } = require("../middleware/multer_middleware")
 const { uploadToCloudinary } = require("../utils/uploadOnCloud")
 
@@ -92,6 +92,7 @@ router.route("/analytics/getUserRewards").get(getUserRewards)
 // router.route("/analytics/gamification").get(getGamificationStats)
 
 router.route("/submitFile").post(upload.single("file"),uploadToCloudinary("submissions"), createSubmission);
+router.route("/getSubmission/:moduleId").get(fetchSubmission);
 
 ///////////NOTIFICATION////////////
 router.route("/getNotification").get(getNotification)

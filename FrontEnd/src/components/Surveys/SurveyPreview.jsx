@@ -7,7 +7,6 @@ const SurveyPreview = ({
     onClose,
     formData,
     formElements,
-    groups = [],
     feedback,embedded
 }) => {
     const [sectionPreviewIndex, setSectionPreviewIndex] = useState(0);
