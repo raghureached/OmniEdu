@@ -9,18 +9,6 @@ const { logActivity } = require("../../utils/activityLogger");
 const Organization = require("../../models/organization_model");
 
 // ✅ Validation
-const createRoleSchema = z.object({
-  name: z.string().min(1, "Role name is required"),
-  description: z.string().trim().optional().default(""),
-  sections: z
-    .array(
-      z.object({
-        name: z.string().min(1, "Section name is required"),
-        permissions: z.array(z.string().min(1, "Permission id required"))
-      })
-    )
-    .nonempty("At least one section is required"),
-});
 
 const addRole = async (req, res) => {
   try {
