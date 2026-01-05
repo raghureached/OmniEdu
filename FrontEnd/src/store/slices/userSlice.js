@@ -176,6 +176,8 @@ const userSlice = createSlice({
     filters: {
       status: '',
       role: '',
+      team: '',
+      subteam: '',
       search: '',
       page: 1,
       limit: 20,
@@ -219,6 +221,8 @@ const userSlice = createSlice({
       state.filters = {
         status: '',
         role: '',
+        team: '',
+        subteam: '',
         search: '',
         page: 1,
         limit: state.pageSize || 20,

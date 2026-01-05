@@ -68,6 +68,7 @@ const addUser = async (req, res) => {
 
     const password = "12345678";
 
+    // Create User (single doc, not array)
     const user = await User.create([{
       name,
       email,
@@ -314,7 +315,7 @@ const editUser = async (req, res) => {
       userAgent: req.headers['user-agent'],
       status: "failed",
     });
-
+    
     return res.status(500).json({
       isSuccess: false,
       message: 'Failed to update user',
@@ -348,7 +349,7 @@ const deleteUser = async (req, res) => {
 
     // Commit the transaction
     await session.commitTransaction();
-
+    
     await logActivity({
       userId: req.user._id,
       action: "Delete",
@@ -358,7 +359,7 @@ const deleteUser = async (req, res) => {
       userAgent: req.headers['user-agent'],
       status: "success",
     });
-
+    
     return res.status(200).json({
       isSuccess: true,
       message: "User deleted successfully",
@@ -367,7 +368,7 @@ const deleteUser = async (req, res) => {
   } catch (error) {
     // Rollback transaction in case of error
     await session.abortTransaction();
-
+    
     await logActivity({
       userId: req.user._id,
       action: "Delete",
@@ -377,7 +378,7 @@ const deleteUser = async (req, res) => {
       userAgent: req.headers['user-agent'],
       status: "failed",
     });
-
+    
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to delete user",
@@ -396,7 +397,7 @@ const getUsers = async (req, res) => {
     const limit = parseInt(req.query.limit, 10) || 50;
     const skip = (page - 1) * limit;
 
-    const { status, role, search } = req.query;
+    const { status, role, search, team, subteam } = req.query;
 
     const escapeRegex = (value = "") => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -430,6 +431,79 @@ const getUsers = async (req, res) => {
 
     if (role) {
       andConditions.push({ global_role_id: role });
+    }
+
+    // Team/Subteam filtering via UserProfile teams membership
+    if ((typeof team === 'string' && team.trim()) || (typeof subteam === 'string' && subteam.trim())) {
+      const rawTeamId = (typeof team === 'string' && team.trim()) ? team.trim() : null;
+      const rawSubTeamId = (typeof subteam === 'string' && subteam.trim()) ? subteam.trim() : null;
+      const toObjectIdIfValid = (v) => (v && mongoose.Types.ObjectId.isValid(v) ? new mongoose.Types.ObjectId(v) : v);
+      const teamId = toObjectIdIfValid(rawTeamId);
+      const subTeamId = toObjectIdIfValid(rawSubTeamId);
+
+      // Build profile filter for membership; we will also restrict to org users below
+      const profileFilter = {};
+
+      // Build $and of conditions that each may be an $or across legacy and new fields
+      const membershipConds = [];
+      if (teamId) {
+        membershipConds.push({
+          $or: [
+            { 'teams.team_id': teamId },
+            { team_id: teamId }, // legacy single team field
+          ],
+        });
+      }
+      if (subTeamId) {
+        membershipConds.push({
+          $or: [
+            { 'teams.sub_team_id': subTeamId },
+            { sub_team_id: subTeamId }, // legacy single subteam field
+          ],
+        });
+      }
+
+      const finalProfileFilter = membershipConds.length
+        ? { ...profileFilter, $and: membershipConds }
+        : profileFilter;
+
+      // First get all users in this organization (respect baseQuery)
+      const orgUsers = await User.find(baseQuery).select('_id uuid').lean();
+      const orgUserIdSet = new Set(orgUsers.map(u => String(u._id)));
+      const orgUserUuidSet = new Set(orgUsers.map(u => String(u.uuid)).filter(Boolean));
+
+      // Find profiles that match team/subteam, then restrict to org users
+      const matchingProfiles = await UserProfile.find(finalProfileFilter)
+        .select('user_id')
+        .lean();
+
+      // user_id may be stored as ObjectId or as UUID string in some datasets
+      const allowedUserIds = [];
+      for (const p of matchingProfiles) {
+        const uid = p.user_id;
+        if (!uid) continue;
+        if (typeof uid === 'string') {
+          if (orgUserUuidSet.has(String(uid))) {
+            // map uuid to _id
+            const mapped = orgUsers.find(u => String(u.uuid) === String(uid));
+            if (mapped?._id) allowedUserIds.push(mapped._id);
+          }
+        } else {
+          if (orgUserIdSet.has(String(uid))) {
+            allowedUserIds.push(uid);
+          }
+        }
+      }
+      // If nothing matches, make the query return empty result efficiently
+      if (allowedUserIds.length === 0) {
+        return res.status(200).json({
+          isSuccess: true,
+          message: 'Users fetched successfully',
+          data: [],
+          pagination: { page, limit, total: 0, totalPages: 0, hasMore: false },
+        });
+      }
+      andConditions.push({ _id: { $in: allowedUserIds } });
     }
 
     if (typeof search === "string" && search.trim()) {
@@ -478,7 +552,7 @@ const getUsers = async (req, res) => {
 
     const pagination = { page, limit, total, totalPages, hasMore };
 
-
+   
     return res.status(200).json({
       isSuccess: true,
       message: "Users fetched successfully",

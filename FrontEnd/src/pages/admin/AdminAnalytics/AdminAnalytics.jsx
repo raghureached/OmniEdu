@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LineChart,
@@ -58,6 +58,161 @@ const CHART_COLORS = ['#011F5B', '#1C88C7', '#10b981', '#f59e0b', '#8b5cf6'];
 const AdminAnalyticsDashboard = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
+  const [isDateRangeLoading, setIsDateRangeLoading] = useState(false);
+  const [initialDataLoaded, setInitialDataLoaded] = useState({
+    organizationDate: false,
+    courseLibrary: false,
+    teams: false,
+    subteams: false,
+    usageTrend: false,
+    courseAdoption: false,
+    courseMetrics: false,
+    userData: false
+  });
+
+  // Check if all initial data is loaded
+  const checkAllDataLoaded = (loadedState) => {
+    return Object.values(loadedState).every(loaded => loaded === true);
+  };
+
+  // Handle time range changes with loading state
+  const handleTimeRangeChange = (newTimeRange) => {
+    setIsDateRangeLoading(true);
+    // Reset initial data loading state to prevent blinking during time range changes
+    setInitialDataLoaded({
+      organizationDate: true, // Keep this as true since it doesn't change with time range
+      courseLibrary: false,
+      teams: true, // Keep this as true since it doesn't change with time range
+      subteams: true, // Keep this as true since it doesn't change with time range
+      usageTrend: false,
+      courseAdoption: false,
+      courseMetrics: false,
+      userData: false
+    });
+    setIsLoading(true); // Set loading to true during time range changes
+    setTimeRange(newTimeRange);
+    setUserFilters(prev => ({ ...prev, timeRange: newTimeRange }));
+    
+    // Fetch data conditionally by active view
+    const userPromises = [
+      fetchUsageTrendWithFilters({ ...userFilters, timeRange: newTimeRange }),
+      fetchEngagementHeatmap(newTimeRange),
+      fetchUserData(newTimeRange),
+      newTimeRange === 'mtd' || newTimeRange === 'custom'
+        ? fetchAtRiskLearners(newTimeRange)
+        : fetchAtRiskLearners(newTimeRange === '7d' ? 7 : newTimeRange === '30d' ? 30 : 90)
+    ];
+    const coursePromises = [
+      fetchCourseMetrics(newTimeRange),
+      fetchCourseAdoptionWithFilters({ ...courseAdoptionFilters, timeRange: newTimeRange }),
+      fetchCourseLibraryWithTimeRange({ ...courseFilters, timeRange: newTimeRange }),
+      fetchCoursePerformanceInsights({ ...coursePerformanceFilters, timeRange: newTimeRange })
+    ];
+
+    Promise.all([
+      ...(activeView === 'users' ? userPromises : []),
+      ...(activeView === 'courses' ? coursePromises : [])
+    ]).finally(() => {
+      setIsDateRangeLoading(false);
+    });
+  };
+
+  // Handle user status filter changes with loading state
+  const handleUserStatusChange = (newUserStatus) => {
+    setIsDateRangeLoading(true);
+    // Reset only the data that depends on user status
+    setInitialDataLoaded(prev => ({
+      ...prev,
+      usageTrend: false,
+      userData: false
+    }));
+    setIsLoading(true); // Set loading to true during filter changes
+    setUserFilters(prev => ({ ...prev, userStatus: newUserStatus }));
+    
+    // Fetch only the data that depends on user status
+    Promise.all([
+      fetchUsageTrendWithFilters({ ...userFilters, userStatus: newUserStatus }),
+      fetchUserData(userFilters.timeRange),
+      // Handle at-risk learners based on user status
+      fetchAtRiskLearners(userFilters.timeRange === '7d' ? 7 : userFilters.timeRange === '30d' ? 30 : 90)
+    ]).finally(() => {
+      setIsDateRangeLoading(false);
+    });
+  };
+
+  // Handle custom date range changes with loading state
+  const handleCustomDateRangeApply = () => {
+    if (!customDateRange.startDate || !customDateRange.endDate) return;
+    
+    setIsDateRangeLoading(true);
+    // Reset initial data loading state to prevent blinking during time range changes
+    setInitialDataLoaded({
+      organizationDate: true, // Keep this as true since it doesn't change with time range
+      courseLibrary: false,
+      teams: true, // Keep this as true since it doesn't change with time range
+      subteams: true, // Keep this as true since it doesn't change with time range
+      usageTrend: false,
+      courseAdoption: false,
+      courseMetrics: false,
+      userData: false
+    });
+    setIsLoading(true); // Set loading to true during time range changes
+    setTimeRange('custom');
+    setUserFilters(prev => ({ 
+      ...prev, 
+      timeRange: 'custom',
+      startDate: customDateRange.startDate,
+      endDate: customDateRange.endDate
+    }));
+    
+    // Fetch data conditionally by active view
+    const userPromises = [
+      fetchUsageTrendWithFilters({ 
+        ...userFilters, 
+        timeRange: 'custom',
+        startDate: customDateRange.startDate,
+        endDate: customDateRange.endDate
+      }),
+      fetchEngagementHeatmap('custom', {
+        startDate: customDateRange.startDate,
+        endDate: customDateRange.endDate
+      }),
+      fetchUserData('custom'),
+      fetchAtRiskLearners('custom', {
+        startDate: customDateRange.startDate,
+        endDate: customDateRange.endDate
+      })
+    ];
+    const coursePromises = [
+      fetchCourseMetrics('custom'),
+      fetchCourseAdoptionWithFilters({ 
+        ...courseAdoptionFilters, 
+        timeRange: 'custom',
+        startDate: customDateRange.startDate,
+        endDate: customDateRange.endDate
+      }),
+      fetchCourseLibraryWithTimeRange({ 
+        ...courseFilters, 
+        timeRange: 'custom',
+        startDate: customDateRange.startDate,
+        endDate: customDateRange.endDate
+      }),
+      fetchCoursePerformanceInsights({ 
+        ...coursePerformanceFilters, 
+        timeRange: 'custom',
+        startDate: customDateRange.startDate,
+        endDate: customDateRange.endDate
+      })
+    ];
+
+    Promise.all([
+      ...(activeView === 'users' ? userPromises : []),
+      ...(activeView === 'courses' ? coursePromises : [])
+    ]).finally(() => {
+      setIsDateRangeLoading(false);
+      setShowCustomDatePicker(false);
+    });
+  };
   const [timeRange, setTimeRange] = useState('7d');
   const [customDateRange, setCustomDateRange] = useState({
     startDate: null,
@@ -82,6 +237,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
     surveys: 0,
     learningPaths: 0,
   });
+  const courseMetricsRequestInFlight = useRef(false);
   const [activeView, setActiveView] = useState('users'); // 'users' or 'courses'
   const [showFilters, setShowFilters] = useState(false);
   const [showUserFilters, setShowUserFilters] = useState(false);
@@ -146,9 +302,11 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
         }
       } catch (error) {
         console.error('Error fetching organization creation date:', error);
+      } finally {
+        setInitialDataLoaded(prev => ({ ...prev, organizationDate: true }));
       }
     };
-    fetchOrganizationCreationDate();
+    // fetchOrganizationCreationDate();
 
     const fetchCourseLibrary = async () => {
       try {
@@ -156,9 +314,11 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
         setCourseLibrary(response.data.courseLibrary);
       } catch (error) {
         console.error('Error fetching course library:', error);
+      } finally {
+        setInitialDataLoaded(prev => ({ ...prev, courseLibrary: true }));
       }
     };
-    fetchCourseLibrary();
+    // fetchCourseLibrary();
 
     const fetchTeams = async () => {
       try {
@@ -166,6 +326,8 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
         setTeams(response.data.teams);
       } catch (error) {
         console.error('Error fetching teams:', error);
+      } finally {
+        setInitialDataLoaded(prev => ({ ...prev, teams: true }));
       }
     };
     fetchTeams();
@@ -176,6 +338,8 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
         setSubteams(response.data.subteams);
       } catch (error) {
         console.error('Error fetching subteams:', error);
+      } finally {
+        setInitialDataLoaded(prev => ({ ...prev, subteams: true }));
       }
     };
     fetchSubteams();
@@ -187,9 +351,11 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
         // console.log(response.data.data)
       } catch (error) {
         console.error('Error fetching usage trend:', error);
+      } finally {
+        setInitialDataLoaded(prev => ({ ...prev, usageTrend: true }));
       }
     };
-    fetchUsageTrend();
+    // fetchUsageTrend();
 
     const fetchCourseAdoption = async (filters = {}) => {
       try {
@@ -203,16 +369,20 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
         setCourseAdoption(response.data.data.courseAdoption);
       } catch (error) {
         console.error('Error fetching course adoption:', error);
+      } finally {
+        setInitialDataLoaded(prev => ({ ...prev, courseAdoption: true }));
       }
     };
-    fetchCourseAdoption(courseFilters);
+    // fetchCourseAdoption(courseFilters);
 
     // Fetch overall course library data for stats
-    fetchOverallCourseLibrary();
+    // fetchOverallCourseLibrary();
   }, [])
 
   // Fetch dynamic course metrics
   const fetchCourseMetrics = async (selectedTimeRange = timeRange) => {
+    if (courseMetricsRequestInFlight.current) return;
+    courseMetricsRequestInFlight.current = true;
     try {
       const response = await getContentCounts(selectedTimeRange);
       if (response.success) {
@@ -232,13 +402,18 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
         surveys: 8,
         learningPaths: 6,
       });
+    } finally {
+      setInitialDataLoaded(prev => ({ ...prev, courseMetrics: true }));
+      courseMetricsRequestInFlight.current = false;
     }
   };
 
-  // Initial fetch of course metrics
+  // Fetch course metrics only when in courses view and timeRange changes
   useEffect(() => {
-    fetchCourseMetrics('7d'); // Default to 7 days
-  }, [])
+    if (activeView === 'courses') {
+      fetchCourseMetrics(timeRange);
+    }
+  }, [activeView, timeRange])
 
   // Fetch dynamic user data
   const fetchUserData = async (selectedTimeRange = timeRange) => {
@@ -248,13 +423,34 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
       setUserData(response.data.data);
     } catch (error) {
       console.error('Error fetching user data:', error);
+    } finally {
+      setInitialDataLoaded(prev => ({ ...prev, userData: true }));
     }
   };
 
   // Initial fetch of user data
+  // useEffect(() => {
+  //   fetchUserData('7d'); // Default to 7 days
+  // }, [])
+
+  // Monitor initial data loading and set isLoading accordingly
   useEffect(() => {
-    fetchUserData('7d'); // Default to 7 days
-  }, [])
+    if (checkAllDataLoaded(initialDataLoaded)) {
+      setIsLoading(false);
+    }
+  }, [initialDataLoaded]);
+
+  // Fallback: Ensure loading is complete after 10 seconds even if some requests fail
+  useEffect(() => {
+    const fallbackTimer = setTimeout(() => {
+      if (isLoading) {
+        console.warn('Loading fallback triggered - some requests may have failed');
+        setIsLoading(false);
+      }
+    }, 10000);
+
+    return () => clearTimeout(fallbackTimer);
+  }, [isLoading]);
 
   const fetchUsageTrendWithFilters = async (filters = {}) => {
     setIsUsageTrendLoading(true);
@@ -666,9 +862,9 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   // }, [])
 
   // Sync courseFilters.timeRange with timeRange
-  useEffect(() => {
-    setCourseFilters(prev => ({ ...prev, timeRange: timeRange }));
-  }, [timeRange]);
+  // useEffect(() => {
+  //   setCourseFilters(prev => ({ ...prev, timeRange: timeRange }));
+  // }, [timeRange]);
 
   // Calculate dynamic completion rate
   const calculateCompletionRate = () => {
@@ -889,13 +1085,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
 
   });
 
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-  }, [timeRange, selectedTeam]);
-
+  
   const formatNumber = (n) => (n != null ? n.toLocaleString('en-IN') : '--');
   // Add this ViewToggle component before the MetricCard component definition
   const ViewToggle = ({ activeView, onViewChange }) => (
@@ -921,7 +1111,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   );
   const MetricCard = ({ icon: Icon, label, value, subtitle, trend, trendValue, color, delay = 0, onClick }) => (
     <div
-      className={`metric-card-enhanced ${onClick ? 'clickable' : ''}`}
+      className={`analytics-metric-card-enhanced ${onClick ? 'clickable' : ''}`}
       style={{ animationDelay: `${delay}ms` }}
       onClick={onClick}
     >
@@ -989,11 +1179,70 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
     if (diffDays === 1) return '1 day ago';
     return `${diffDays} days ago`;
   };
-  if (isLoading) {
+  if (isLoading || isDateRangeLoading) {
     return (
-      <div className="loading-container">
-        <div className="loading-spinner-enhanced" />
-        <div className="loading-text">Loading Admin Analytics...</div>
+      <div className="analytics-container">
+        {/* Header with loading skeleton */}
+        <div className="analytics-page-header">
+          <div className="header-content">
+            <div className="header-badge" style={{ background: '#f3f4f6', width: '120px', height: '24px' }}></div>
+            <div className="page-title" style={{ background: '#f3f4f6', width: '200px', height: '32px', borderRadius: '8px' }}></div>
+            <div className="page-subtitle" style={{ background: '#f3f4f6', width: '400px', height: '16px', borderRadius: '4px' }}></div>
+          </div>
+          <div className="header-filters" style={{ display: "flex", flexDirection: "column" }}>
+            <div className="filter-group-enhanced">
+              <div style={{ width: '100px', height: '16px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '8px' }}></div>
+              <div style={{ width: '200px', height: '40px', background: '#f3f4f6', borderRadius: '8px' }}></div>
+            </div>
+            <div className="filter-group-enhanced">
+              <div style={{ width: '100px', height: '16px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '8px' }}></div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {['7D', '1M', '3M', '6M'].map((range) => (
+                  <div key={range} style={{ width: '40px', height: '32px', background: '#f3f4f6', borderRadius: '6px' }}></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Loading metrics skeleton */}
+        <div className="metrics-grid-enhanced">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="analytics-metric-card-enhanced" style={{ background: '#f9fafb' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ width: '40px', height: '40px', background: '#e5e7eb', borderRadius: '8px' }}></div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ width: '120px', height: '16px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '8px' }}></div>
+                  <div style={{ width: '80px', height: '12px', background: '#f3f4f6', borderRadius: '4px' }}></div>
+                </div>
+              </div>
+              <div style={{ width: '60px', height: '24px', background: '#e5e7eb', borderRadius: '4px' }}></div>
+            </div>
+          ))}
+        </div>
+
+        {/* Loading charts skeleton */}
+        <div className="charts-grid">
+          <div className="chart-panel" style={{ background: '#f9fafb' }}>
+            <div style={{ width: '200px', height: '20px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '16px' }}></div>
+            <div style={{ width: '100%', height: '300px', background: '#f3f4f6', borderRadius: '8px' }}></div>
+          </div>
+          <div className="chart-panel" style={{ background: '#f9fafb' }}>
+            <div style={{ width: '200px', height: '20px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '16px' }}></div>
+            <div style={{ width: '100%', height: '300px', background: '#f3f4f6', borderRadius: '8px' }}></div>
+          </div>
+        </div>
+
+        {/* Support stats skeleton */}
+        <div className="support-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px', marginTop: '24px' }}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="support-stat" style={{ background: '#f9fafb', padding: '16px', borderRadius: '8px' }}>
+              <div style={{ width: '60px', height: '16px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '8px' }}></div>
+              <div style={{ width: '40px', height: '24px', background: '#e5e7eb', borderRadius: '4px', marginBottom: '8px' }}></div>
+              <div style={{ width: '80px', height: '12px', background: '#f3f4f6', borderRadius: '4px' }}></div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -1001,7 +1250,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   return (
     <div className="analytics-container">
       {/* Header */}
-      <div className="page-header">
+      <div className="analytics-page-header">
         <div className="header-content">
           <div className="header-badge">
             <Zap size={14} />
@@ -1014,80 +1263,33 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
         </div>
 
         <div className="header-filters">
+          
           <div className="view-toggle-container">
             <div className="view-toggle-wrapper">
               <button
                 className={`view-toggle-button ${timeRange === '7d' ? 'active' : ''}`}
-                onClick={() => {
-                  setTimeRange('7d');
-                  setUserFilters(prev => ({ ...prev, timeRange: '7d' }));
-                  fetchUsageTrendWithFilters({ ...userFilters, timeRange: '7d' });
-                  fetchEngagementHeatmap('7d');
-                  fetchAtRiskLearners(7);
-                  // Also fetch course data with new time range
-                  if (activeView === 'courses') {
-                    fetchCourseAdoptionWithFilters({ ...courseAdoptionFilters, timeRange: '7d' });
-                    fetchCourseLibraryWithTimeRange({ ...courseFilters, timeRange: '7d' });
-                    fetchCoursePerformanceInsights({ ...coursePerformanceFilters, timeRange: '7d' });
-                  }
-                }}
+                onClick={() => handleTimeRangeChange('7d')}
               >
                 <Calendar size={16} />
                 <span>7 Days</span>
               </button>
                 <button
                 className={`view-toggle-button ${timeRange === 'mtd' ? 'active' : ''}`}
-                onClick={() => {
-                  setTimeRange('mtd');
-                  setUserFilters(prev => ({ ...prev, timeRange: 'mtd' }));
-                  fetchUsageTrendWithFilters({ ...userFilters, timeRange: 'mtd' });
-                  fetchEngagementHeatmap('mtd');
-                  fetchAtRiskLearners('mtd');
-                  // Also fetch course data with new time range
-                  if (activeView === 'courses') {
-                    fetchCourseAdoptionWithFilters({ ...courseAdoptionFilters, timeRange: 'mtd' });
-                    fetchCourseLibraryWithTimeRange({ ...courseFilters, timeRange: 'mtd' });
-                    fetchCoursePerformanceInsights({ ...coursePerformanceFilters, timeRange: 'mtd' });
-                  }
-                }}
+                onClick={() => handleTimeRangeChange('mtd')}
               >
                 <Calendar size={16} />
                 <span>Month to Date</span>
               </button>
               <button
                 className={`view-toggle-button ${timeRange === '30d' ? 'active' : ''}`}
-                onClick={() => {
-                  setTimeRange('30d');
-                  setUserFilters(prev => ({ ...prev, timeRange: '30d' }));
-                  fetchUsageTrendWithFilters({ ...userFilters, timeRange: '30d' });
-                  fetchEngagementHeatmap('30d');
-                  fetchAtRiskLearners(30);
-                  // Also fetch course data with new time range
-                  if (activeView === 'courses') {
-                    fetchCourseAdoptionWithFilters({ ...courseAdoptionFilters, timeRange: '30d' });
-                    fetchCourseLibraryWithTimeRange({ ...courseFilters, timeRange: '30d' });
-                    fetchCoursePerformanceInsights({ ...coursePerformanceFilters, timeRange: '30d' });
-                  }
-                }}
+                onClick={() => handleTimeRangeChange('30d')}
               >
                 <Calendar size={16} />
                 <span>1 Month</span>
               </button>
               <button
                 className={`view-toggle-button ${timeRange === '90d' ? 'active' : ''}`}
-                onClick={() => {
-                  setTimeRange('90d');
-                  setUserFilters(prev => ({ ...prev, timeRange: '90d' }));
-                  fetchUsageTrendWithFilters({ ...userFilters, timeRange: '90d' });
-                  fetchEngagementHeatmap('90d');
-                  fetchAtRiskLearners(90);
-                  // Also fetch course data with new time range
-                  if (activeView === 'courses') {
-                    fetchCourseAdoptionWithFilters({ ...courseAdoptionFilters, timeRange: '90d' });
-                    fetchCourseLibraryWithTimeRange({ ...courseFilters, timeRange: '90d' });
-                    fetchCoursePerformanceInsights({ ...coursePerformanceFilters, timeRange: '90d' });
-                  }
-                }}
+                onClick={() => handleTimeRangeChange('90d')}
               >
                 <Calendar size={16} />
                 <span>3 Months</span>
@@ -1104,11 +1306,11 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
               </button>
             </div>
           </div>
-          <ViewToggle
+            <ViewToggle
             activeView={activeView}
             onViewChange={setActiveView}
           />
-
+        
 
         </div>
       </div>
@@ -1156,7 +1358,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                 </div>
               </div>
               <div className="quick-select-buttons">
-                <button 
+                {/* <button 
                   className="quick-select-btn"
                   onClick={() => {
                     const today = new Date();
@@ -1195,65 +1397,19 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                   disabled={!organizationCreatedDate}
                 >
                   All Time
-                </button>
+                </button> */}
               </div>
             </div>
             <div className="modal-footer">
               <button 
-                className="cancel-btn"
+                className="btn-secondary"
                 onClick={() => setShowCustomDatePicker(false)}
               >
                 Cancel
               </button>
               <button 
-                className="apply-btn"
-                onClick={() => {
-                  if (customDateRange.startDate && customDateRange.endDate) {
-                    setTimeRange('custom');
-                    setUserFilters(prev => ({ 
-                      ...prev, 
-                      timeRange: 'custom',
-                      startDate: customDateRange.startDate,
-                      endDate: customDateRange.endDate
-                    }));
-                    fetchUsageTrendWithFilters({ 
-                      ...userFilters, 
-                      timeRange: 'custom',
-                      startDate: customDateRange.startDate,
-                      endDate: customDateRange.endDate
-                    });
-                    fetchEngagementHeatmap('custom', {
-                      startDate: customDateRange.startDate,
-                      endDate: customDateRange.endDate
-                    });
-                    fetchAtRiskLearners('custom', {
-                      startDate: customDateRange.startDate,
-                      endDate: customDateRange.endDate
-                    });
-                    // Also fetch course data with new time range
-                    if (activeView === 'courses') {
-                      fetchCourseAdoptionWithFilters({ 
-                        ...courseAdoptionFilters, 
-                        timeRange: 'custom',
-                        startDate: customDateRange.startDate,
-                        endDate: customDateRange.endDate
-                      });
-                      fetchCourseLibraryWithTimeRange({ 
-                        ...courseFilters, 
-                        timeRange: 'custom',
-                        startDate: customDateRange.startDate,
-                        endDate: customDateRange.endDate
-                      });
-                      fetchCoursePerformanceInsights({ 
-                        ...coursePerformanceFilters, 
-                        timeRange: 'custom',
-                        startDate: customDateRange.startDate,
-                        endDate: customDateRange.endDate
-                      });
-                    }
-                    setShowCustomDatePicker(false);
-                  }
-                }}
+                className="btn-primary"
+                onClick={handleCustomDateRangeApply}
                 disabled={!customDateRange.startDate || !customDateRange.endDate}
               >
                 Apply
@@ -1445,7 +1601,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                     <label>Time Range</label>
                     <select
                       value={userFilters.timeRange}
-                      onChange={(e) => setUserFilters(prev => ({ ...prev, timeRange: e.target.value }))}
+                      onChange={(e) => handleTimeRangeChange(e.target.value)}
                       className="filter-select-enhanced"
                       style={{ minWidth: 'auto', width: '100%' }}
                     >
@@ -1460,7 +1616,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                     <label>User Status</label>
                     <select
                       value={userFilters.userStatus}
-                      onChange={(e) => setUserFilters(prev => ({ ...prev, userStatus: e.target.value }))}
+                      // onChange={(e) => handleUserStatusChange(e.target.value)}
                       className="filter-select-enhanced"
                       style={{ minWidth: 'auto', width: '100%' }}
                     >
@@ -1504,14 +1660,14 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                     onClick={() => {
                       setIsUsageTrendLoading(true);
                       fetchUsageTrendWithFilters(userFilters);
-                      fetchEngagementHeatmap(userFilters.timeRange);
+                      // fetchEngagementHeatmap(userFilters.timeRange);
                       // Handle new time ranges for fetchAtRiskLearners
-                      if (userFilters.timeRange === 'mtd' || userFilters.timeRange === 'custom') {
-                        fetchAtRiskLearners(userFilters.timeRange);
-                      } else {
-                        const days = userFilters.timeRange === '7d' ? 7 : userFilters.timeRange === '30d' ? 30 : 90;
-                        fetchAtRiskLearners(days);
-                      }
+                      // if (userFilters.timeRange === 'mtd' || userFilters.timeRange === 'custom') {
+                      //   fetchAtRiskLearners(userFilters.timeRange);
+                      // } else {
+                      //   const days = userFilters.timeRange === '7d' ? 7 : userFilters.timeRange === '30d' ? 30 : 90;
+                      //   fetchAtRiskLearners(days);
+                      // }
                       // setShowUserFilters(false); // Close filter panel
                       
                       console.log('User filters applied:', userFilters);
@@ -1543,13 +1699,9 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                   {/* Reset Filters Button */}
                   <button
                     onClick={() => {
-                      setUserFilters({ timeRange: '30d', userStatus: 'all' });
-                      setTimeRange('30d');
+                      handleTimeRangeChange('30d'); // Use the proper handler
+                      handleUserStatusChange('all'); // Use the proper handler
                       // setShowUserFilters(false); // Close filter panel
-                      // Load default data
-                      fetchUsageTrendWithFilters({ timeRange: '30d', userStatus: 'all' });
-                      fetchEngagementHeatmap('30d');
-                      fetchAtRiskLearners(30);
                     }}
                     style={{
                       padding: '12px 20px',
@@ -2866,7 +3018,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginTop: '20px' }}>
               {/* Top Performing Courses */}
-              <div style={{ background: '#f9fafb', padding: '20px', borderRadius: '16px' }}>
+              <div style={{ background: '#f9fafb', padding: '20px', borderRadius: '16px',minHeight: "369px"}}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                   <TrendingUp size={18} style={{ color: COLORS.success }} />
                   <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#111827' }}>
@@ -2936,9 +3088,10 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                   ) : (
                     <div style={{ 
                       textAlign: 'center', 
-                      padding: '40px 20px', 
+                      padding: '125px 20px', 
                       color: '#6b7280',
                       fontSize: '14px'
+
                     }}>
                       <div style={{ marginBottom: '8px' }}>
                         {coursePerformanceFilters.content === 'modules' ? 'No top performing modules available' :
@@ -3028,7 +3181,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                   ) : (
                     <div style={{ 
                       textAlign: 'center', 
-                      padding: '40px 20px', 
+                      padding: '125px 20px', 
                       color: '#6b7280',
                       fontSize: '14px'
                     }}>

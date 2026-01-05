@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { BookOpen, Users, Award, TrendingUp, ClipboardCheck, ListChecks, GraduationCap, PencilLine, ClipboardList, MessageSquare, Activity, HelpCircle, Megaphone } from 'lucide-react';
+import { BookOpen, Users, Award, TrendingUp, ClipboardCheck, ListChecks, GraduationCap, PencilLine, ClipboardList, MessageSquare, Activity, HelpCircle, Megaphone, Clock, UserCheck, Calendar } from 'lucide-react';
 import './AdminHome.css';
 import { fetchMessagesForAdmin } from '../../../store/slices/globalMessageSlice';
 import { getContentCountsAll } from '../../../utils/contentCountsService'
+import api from '../../../services/api';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line
 } from 'recharts';
-import { fetchPermissions } from '../../../store/slices/roleSlice';
 
 const AdminHome = () => {
   const dispatch = useDispatch();
@@ -23,6 +23,13 @@ const AdminHome = () => {
     learningPaths: { total: 0 }
   });
   const [countsLoading, setCountsLoading] = useState(true);
+  const [userAnalytics, setUserAnalytics] = useState({
+    dailyActiveUsers: 0,
+    monthlyActiveUsers: 0,
+    totalUsers: 0,
+    avgTimeOnPlatform: 0
+  });
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const {permissions} = useSelector((state)=>state.rolePermissions)
   // Try to infer organization id/uuid from user payload (supports multiple backend shapes)
   const orgId = user?.organization?.uuid
@@ -35,20 +42,6 @@ const AdminHome = () => {
     || user?.organizationUUID
     || user?.organizationId
     || user?.organization?.id;
-    useEffect(() => {
-          // Initial fetch
-          dispatch(fetchPermissions());
-      
-          // Set up interval for periodic updates (every 5 minutes)
-          const permissionsInterval = setInterval(() => {
-            dispatch(fetchPermissions());
-          }, 5 * 60 * 1000); // 5 minutes in milliseconds
-      
-          // Cleanup interval on unmount
-          return () => {
-            clearInterval(permissionsInterval);
-          };
-        }, [dispatch]);
 
   // Mock data for Organization Performance
   const organizationData = [
@@ -100,6 +93,43 @@ const AdminHome = () => {
     };
 
     fetchCounts();
+  }, []);
+
+  // Fetch user analytics data
+  useEffect(() => {
+    const fetchUserAnalytics = async () => {
+      try {
+        setAnalyticsLoading(true);
+        
+        // Fetch real user analytics data from backend
+        const response = await api.get('/api/admin/analytics/getUserData', {
+          params: { timeRange: 'all' } // No time range filter for Admin Home
+        });
+        
+        if (response.data && response.data.data) {
+          const data = response.data.data;
+          setUserAnalytics({
+            dailyActiveUsers: data.dau || 0,
+            monthlyActiveUsers: data.mau || 0,
+            totalUsers: data.totalUsers || 0,
+            avgTimeOnPlatform: parseInt(data.avgTimeOnPlatform?.match(/\d+/)?.[0] || 0) || 0
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch user analytics:', error);
+        // Fallback to mock data if API fails
+        setUserAnalytics({
+          dailyActiveUsers: 1247,
+          monthlyActiveUsers: 3892,
+          totalUsers: 5234,
+          avgTimeOnPlatform: 42
+        });
+      } finally {
+        setAnalyticsLoading(false);
+      }
+    };
+
+    fetchUserAnalytics();
   }, []);
 
   // Keep hover effect visible while scrolling by tracking the element under the pointer
@@ -240,85 +270,118 @@ const AdminHome = () => {
 
         {/* 3-column row: two stats + quick links */}
         <div className="admin-summary-grid">
-          {/* Stat Card 1: Organization Performance */}
+          {/* Stat Card 1: User Analytics */}
           <div className="admin-quick-links-card">
-            {/* <h3 className="admin-quick-links-title">Organization Performance</h3> */}
-            <h2 className="admin-message-card-title"style={{ marginBottom: '1rem' }} >Completion Rates by Organization</h2>
-            <div style={{ width: '100%', height: 250 }}>
-              <ResponsiveContainer>
-                <BarChart data={organizationData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                  <XAxis dataKey="name" stroke="#666" />
-                  <YAxis stroke="#666" />
-                  <Tooltip
-                    wrapperStyle={{ backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '8px', padding: '10px' }}
-                  />
-                  <Legend/>
-                  <Bar dataKey="completionRate" name="Completion Rate%" fill="#0088FE" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="assessmentPassRate" name="Pass Rate%" fill="#00C49F" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+            <h2 className="admin-message-card-title" style={{ marginBottom: '18px', marginTop: '10px' }}>User Analytics</h2>
+            <div className="adminhome-stats-grid">
+              <div className="adminhome-stat-card">
+                <div className="adminhome-stat-icon" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
+                  <UserCheck size={24} />
+                </div>
+                <div className="adminhome-stat-info">
+                  <div className="adminhome-stat-number">
+                    {analyticsLoading ? '...' : userAnalytics.dailyActiveUsers.toLocaleString()}
+                  </div>
+                  <div className="adminhome-stat-label">Daily Active Users</div>
+                </div>
+              </div>
+
+              <div className="adminhome-stat-card">
+                <div className="adminhome-stat-icon" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' }}>
+                  <Calendar size={24} />
+                </div>
+                <div className="adminhome-stat-info">
+                  <div className="adminhome-stat-number">
+                    {analyticsLoading ? '...' : userAnalytics.monthlyActiveUsers.toLocaleString()}
+                  </div>
+                  <div className="adminhome-stat-label">Monthly Active Users</div>
+                </div>
+              </div>
+
+              <div className="adminhome-stat-card">
+                <div className="adminhome-stat-icon" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' }}>
+                  <Users size={24} />
+                </div>
+                <div className="adminhome-stat-info">
+                  <div className="adminhome-stat-number">
+                    {analyticsLoading ? '...' : userAnalytics.totalUsers.toLocaleString()}
+                  </div>
+                  <div className="adminhome-stat-label">Total Users</div>
+                </div>
+              </div>
+
+              <div className="adminhome-stat-card">
+                <div className="adminhome-stat-icon" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>
+                  <Clock size={24} />
+                </div>
+                <div className="adminhome-stat-info">
+                  <div className="adminhome-stat-number">
+                    {analyticsLoading ? '...' : `${userAnalytics.avgTimeOnPlatform}m`}
+                  </div>
+                  <div className="adminhome-stat-label">Avg Time on Platform</div>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Stat Card 2: User Engagement Analytics */}
           <div className="admin-quick-links-card">
-            <h2 className="admin-message-card-title" style={{ marginBottom: '2rem' }}>Courses Statistics</h2>
-            <div className="admin-stats-grid">
-              <div className="admin-stat-card">
-                <div className="admin-stat-icon">
+            <h2 className="admin-message-card-title"  style={{ marginBottom: '18px', marginTop: '10px' }}>Course Analytics</h2>
+            <div className="adminhome-stats-grid">
+              <div className="adminhome-stat-card">
+                <div className="adminhome-stat-icon" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
                   <BookOpen size={24} />
                 </div>
-                <div className="admin-stat-info">
-                  <div className="admin-stat-number">
+                <div className="adminhome-stat-info">
+                  <div className="adminhome-stat-number">
                     {countsLoading ? '...' : (contentCounts?.modules?.total || 0)}
                   </div>
-                  <div className="admin-stat-label">Total Modules</div>
+                  <div className="adminhome-stat-label">Total Modules</div>
                   {/* <div className="admin-stat-sublabel">
                     {countsLoading ? '...' : contentCounts.modules.published} Published
                   </div> */}
                 </div>
               </div>
 
-              <div className="admin-stat-card">
-                <div className="admin-stat-icon">
+              <div className="adminhome-stat-card">
+                <div className="adminhome-stat-icon" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' }}>
                   <ClipboardCheck size={24} />
                 </div>
-                <div className="admin-stat-info">
-                  <div className="admin-stat-number">
+                <div className="adminhome-stat-info">
+                  <div className="adminhome-stat-number">
                     {countsLoading ? '...' : (contentCounts?.assessments?.total || 0)}
                   </div>
-                  <div className="admin-stat-label">Total Assessments</div>
+                  <div className="adminhome-stat-label">Total Assessments</div>
                   {/* <div className="admin-stat-sublabel">
                     {countsLoading ? '...' : contentCounts.assessments.published} Published
                   </div> */}
                 </div>
               </div>
 
-              <div className="admin-stat-card">
-                <div className="admin-stat-icon">
+              <div className="adminhome-stat-card">
+                <div className="adminhome-stat-icon" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' }}>
                   <ListChecks size={24} />
                 </div>
-                <div className="admin-stat-info">
-                  <div className="admin-stat-number">
+                <div className="adminhome-stat-info">
+                  <div className="adminhome-stat-number">
                     {countsLoading ? '...' : (contentCounts?.surveys?.total || 0)}
                   </div>
-                  <div className="admin-stat-label">Total Surveys</div>
+                  <div className="adminhome-stat-label">Total Surveys</div>
                   {/* <div className="admin-stat-sublabel">
                     {countsLoading ? '...' : contentCounts.surveys.published} Published
                   </div> */}
                 </div>
               </div>
 
-              <div className="admin-stat-card">
-                <div className="admin-stat-icon">
+              <div className="adminhome-stat-card">
+                <div className="adminhome-stat-icon" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>
                   <GraduationCap size={24} />
                 </div>
-                <div className="admin-stat-info">
-                  <div className="admin-stat-number">
+                <div className="adminhome-stat-info">
+                  <div className="adminhome-stat-number">
                     {countsLoading ? '...' : (contentCounts?.learningPaths?.total || 0)}
                   </div>
-                  <div className="admin-stat-label">Total Learning Paths</div>
+                  <div className="adminhome-stat-label">Total Learning Paths</div>
                   {/* <div className="admin-stat-sublabel">
                     Active Programs
                   </div> */}

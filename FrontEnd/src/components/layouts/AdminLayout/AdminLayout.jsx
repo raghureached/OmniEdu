@@ -229,12 +229,13 @@ const AdminLayout = () => {
           </li>
            <li>
             <Link
-              to="/admin/content-modules"
+              to="/admin/documents"
               className={
-                isActive("/admin/content-modules") ? "admin_link_active" : ""
+                isActive("/admin/documents") ? "admin_link_active" : ""
               }
             >
-              <BookOpen size={20} />
+             
+              <LibraryBig size={20}/>
               {!sidebarCollapsed && (
                 <span className="admin_sidebar_names">Documents</span>
               )}
@@ -409,6 +410,8 @@ const AdminLayout = () => {
               {location.pathname.includes("/admin/groups") &&
                 "Groups Management"}
               {location.pathname.includes("/admin/roles") && "Roles Management"}
+               {location.pathname.includes("/admin/documents") &&
+                "Documents"}
               {location.pathname.includes("/admin/content-modules") &&
                 "Content Modules"}
               {location.pathname.includes("/admin/content-assessments") &&

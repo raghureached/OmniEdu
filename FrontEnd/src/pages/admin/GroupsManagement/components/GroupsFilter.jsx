@@ -231,7 +231,7 @@ const GroupsFilter = ({
             disabled={!Array.isArray(selectedGroups) || selectedGroups.length === 0}
             title={Array.isArray(selectedGroups) && selectedGroups.length === 0 ? 'Select at least one team to export' : undefined}
           >
-            Export <Share size={16} color="#6b7280" />
+            Export <Share size={16} color="#6b7280" /> {selectedGroups.length > 0 && `(${selectedGroups.length})`}
           </button>
 
           <button

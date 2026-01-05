@@ -1143,13 +1143,13 @@ const QuestionsForm = ({
                                         type="button"
                                         className="btn-primary"
                                         onClick={() => {
-                                            setFormData(prev => ({ ...prev, status: 'Saved' }));
+                                            setFormData(prev => ({ ...prev, status: 'Draft' }));
                                             if (currentAssessment) {
                                                 console.log('Updating assessment:', currentAssessment);
-                                                handleUpdateAssessment('Saved');
+                                                handleUpdateAssessment('Draft');
                                             } else {
                                                 console.log('Creating new assessment');
-                                                handleSaveAssessment(undefined, 'Saved');
+                                                handleSaveAssessment(undefined, 'Draft');
                                             }
                                         }}
                                         disabled={!canProceedToNext()}

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, Filter, ChevronDown, BarChart3 } from 'lucide-react';
+import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, Filter, ChevronDown, BarChart3, Share } from 'lucide-react';
 import { RiDeleteBinFill } from 'react-icons/ri';
 import { GoX } from 'react-icons/go';
 import './AdminAssessments.css'
@@ -13,6 +13,8 @@ import api from '../../../services/api';
 import { notifyError, notifySuccess } from '../../../utils/notification';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
 import SelectionBanner from '../../../components/Banner/SelectionBanner';
+import ExportModal from '../../../components/common/ExportModal/ExportModal';
+import { exportAssessmentsWithSelection } from '../../../utils/assessmentExport';
 import { categories } from '../../../utils/constants';
 import AnalyticsPop from '../../../components/AnalyticsPopup/AnalyticsPop';
 
@@ -92,6 +94,7 @@ const AdminAssessments = () => {
   const [selectionScope, setSelectionScope] = useState("none");
   const [selectedPageRef, setSelectedPageRef] = useState(null);
   const [allSelectionCount, setAllSelectionCount] = useState(null);
+  const [showExportModal, setShowExportModal] = useState(false);
   //confirm
   const { confirm } = useConfirm();
   
@@ -114,6 +117,7 @@ const AdminAssessments = () => {
         console.error('Error fetching groups:', error);
       }
     };
+ 
     fetchGroups(); // fetch teams/subteams
   }, []);
 
@@ -124,7 +128,7 @@ const AdminAssessments = () => {
     setFormData({
       title: '',
       description: '',
-      status: 'Saved',
+      status: 'Draft',
       duration: '',            // NEW
       tags: [],                // NEW
       team: '',                // NEW
@@ -299,7 +303,23 @@ const AdminAssessments = () => {
     }
   };
 
+// Export handlers (component scope)
+const handleExport = () => {
+  setShowExportModal(true);
+};
 
+const handleExportConfirm = (exportScope) => {
+  try {
+    if (exportScope === 'selected') {
+      exportAssessmentsWithSelection(assessments, selectedIds, excludedIds, allSelected, groups, []);
+    } else if (exportScope === 'all') {
+      exportAssessmentsWithSelection(assessments, [], [], false, groups, []);
+    }
+  } catch (e) {
+    console.error('Export assessments failed', e);
+    notifyError('Failed to export assessments');
+  }
+};
   
   // Filter handlers
   const handleFilterChange = (e) => {
@@ -536,7 +556,7 @@ const AdminAssessments = () => {
       setFormData({
         title: full.title || '',
         description: full.description || '',
-        status: full.status || 'Saved',
+        status: full.status || 'Draft',
         duration: full.duration || '',
         tags: full.tags || [],
         team: full.team || '',
@@ -611,7 +631,7 @@ const AdminAssessments = () => {
       setFormData({
         title: assessment.title || '',
         description: assessment.description || '',
-        status: assessment.status || 'Saved',
+        status: assessment.status || 'Draft',
         duration: assessment.duration || '',
         tags: assessment.tags || [],
         team: assessment.team || '',
@@ -686,7 +706,7 @@ const AdminAssessments = () => {
       unlimited_attempts: Boolean(formData.unlimited_attempts),
       percentage_to_pass: formData.percentage_to_pass,
       display_answers: formData.display_answers,
-      status: statusOverride ?? (formData.status || 'Saved'),
+      status: statusOverride ?? (formData.status || 'Draft'),
       created_by: authUser?._id || authUser?.uuid || authUser?.id,
       // Newly added fields
       credits: Number.isFinite(formData.credits) ? formData.credits : 0,
@@ -1066,7 +1086,8 @@ const AdminAssessments = () => {
               setFilters(prev => ({
                 ...prev,
                 search: e.target.value,
-                status: prev.status
+                status: prev.status,
+                category: prev.category
               }));
             }}
           />
@@ -1090,6 +1111,18 @@ const AdminAssessments = () => {
             <Filter size={16} />
             Filter
           </button>
+        <button
+  className="control-btn"
+  onClick={handleExport}
+  title={derivedSelectedCount > 0 ? "Export selected assessments to CSV" : "Open export options"}
+  disabled={derivedSelectedCount === 0}
+  style={{
+    opacity: (assessments?.length || 0) === 0 ? 0.5 : 1,
+    cursor: (assessments?.length || 0) === 0 ? 'not-allowed' : 'pointer'
+  }}
+>
+  Export <Share size={16} color="#6b7280" /> {derivedSelectedCount > 0 && `(${derivedSelectedCount})`}
+</button>
           <button
             ref={bulkButtonRef}
             className="control-btn"
@@ -1127,7 +1160,7 @@ const AdminAssessments = () => {
               onChange={handleFilterChange}
             >
               <option value="">All</option>
-              <option value="Saved">Saved</option>
+              {/* <option value="Saved">Saved</option> */}
               <option value="Draft">Draft</option>
               <option value="Published">Published</option>
             </select>
@@ -1425,7 +1458,7 @@ const AdminAssessments = () => {
                   <th>Assessment Details</th>
                   <th>Questions</th>
                   <th>Status</th>
-                  <th>Date Created</th>
+                  <th>Date Published</th>
                   <th style={{textAlign: 'center'}}>Actions</th>
                 </tr>
               </thead>
@@ -1441,7 +1474,11 @@ const AdminAssessments = () => {
                     const matchesStatus = !filters.status ||
                       assessment.status?.toLowerCase() === filters.status.toLowerCase();
 
-                    return matchesSearch && matchesStatus;
+                    // Apply category filter
+                    const matchesCategory = !filters.category ||
+                      (assessment.category || '').toLowerCase() === filters.category.toLowerCase();
+
+                    return matchesSearch && matchesStatus && matchesCategory;
                   })
                   .map(assessment => (
                     <tr key={assessment.uuid || assessment._id || assessment.id} className="assess-table-row">
@@ -1512,13 +1549,14 @@ const AdminAssessments = () => {
                           >
                             <Edit3 size={14} />
                           </button>
+                          {assessment.status !== 'Draft' && (
                           <button
                             className="global-action-btn analytics"
                             onClick={() => handleAssessmentAnalytics(assessment.uuid || assessment._id || assessment.id)}
                             title="View Analytics"
                           >
                             <BarChart3 size={14} />
-                          </button>
+                          </button>)}
                           <button
                             className="global-action-btn delete"
                             onClick={() => handleDeleteAssessment(assessment.uuid)}
@@ -1615,6 +1653,14 @@ const AdminAssessments = () => {
         loading={analyticsLoading}
         analyticsType="assessment"
       />
+      <ExportModal
+  isOpen={showExportModal}
+  onClose={() => setShowExportModal(false)}
+  onConfirm={handleExportConfirm}
+  selectedCount={derivedSelectedCount}
+  totalCount={pagination?.total || assessments.length || 0}
+  exportType="assessments"
+/>
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { adminfetchContent, admindeleteContent, admincreateContent, adminupdateContent, adminbulkDeleteContent } from '../../../store/slices/adminModuleSlice';
 import "./ModuleManagement.css"
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X, Filter, Plus, BarChart3, Download, Share, File } from 'lucide-react';
+import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X, Filter, Plus, BarChart3, Download ,Share} from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading'
 import { RiDeleteBinFill } from "react-icons/ri";
 import { FiEdit3 } from "react-icons/fi";
@@ -83,12 +83,12 @@ const ModuleManagement = () => {
     thumbnail: "",
     submissionEnabled: false,
   });
-  const [teams, setTeams] = useState([])
+  const [teams,setTeams] = useState([])
   const [subteams, setSubteams] = useState([])
   const [uploading, setUploading] = useState(false)
   useEffect(() => {
     dispatch(adminfetchContent());
-
+    
   }, [dispatch]);
 
   // Handle navigation state for filters from AdminAnalytics
@@ -103,7 +103,7 @@ const ModuleManagement = () => {
       };
       setFilters(newFilters);
       setTempFilters(newFilters);
-
+      
       // If timeRange is provided, we might need to filter modules based on creation date
       if (location.state.timeRange) {
         // This would require backend support to filter by creation date
@@ -120,7 +120,7 @@ const ModuleManagement = () => {
         const matchesCategory = !filters.category || filters.category === '' || item.category === filters.category;
         const matchesTeam = !filters.team || filters.team === '' || item.team === filters.team;
         const matchesSubteam = !filters.subteam || filters.subteam === '' || item.subteam === filters.subteam;
-
+        
         // Apply time range filter
         let matchesTimeRange = true;
         if (filters.timeRange && filters.timeRange !== '') {
@@ -129,13 +129,13 @@ const ModuleManagement = () => {
           cutoffDate.setDate(cutoffDate.getDate() - days);
           matchesTimeRange = new Date(item.createdAt) >= cutoffDate;
         }
-
+        
         return matchesCategory && matchesTeam && matchesSubteam && matchesTimeRange;
       }) || [];
-
+      
       // For published modules: count only published modules matching the filters
       const publishedFiltered = totalFiltered.filter(item => item.status === 'Published');
-
+      
       setFilteredCounts({
         total: totalFiltered.length,
         published: publishedFiltered.length
@@ -159,7 +159,7 @@ const ModuleManagement = () => {
         console.log(error);
       }
     }
-
+    
     const fetchSubteams = async () => {
       try {
         const res = await api.get('/api/admin/analytics/getSubteams');
@@ -168,7 +168,7 @@ const ModuleManagement = () => {
         console.log(error);
       }
     }
-
+    
     fetchTeams();
     fetchSubteams();
 
@@ -184,17 +184,17 @@ const ModuleManagement = () => {
       checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
       note: 'Associated items will be removed.',
     });
-    if (!confirmed) return;
-    const res = await dispatch(admindeleteContent(contentId));
-    if (admindeleteContent.fulfilled.match(res)) {
-      notifySuccess("Content deleted successfully");
-    } else {
-      notifyError("Failed to delete content", {
-        message: res.payload.message,
-        title: "Failed to delete content"
-      });
-    }
-
+    if (!confirmed)  return;
+      const res = await dispatch(admindeleteContent(contentId));
+      if (admindeleteContent.fulfilled.match(res)) {
+        notifySuccess("Content deleted successfully");
+      } else {
+        notifyError("Failed to delete content", {
+          message: res.payload.message,
+          title: "Failed to delete content"
+        });
+      }
+    
   };
 
   const handleAnalyticsClick = async (contentId) => {
@@ -202,12 +202,12 @@ const ModuleManagement = () => {
       setAnalyticsLoading(true);
       setShowAnalytics(true);
       console.log('Fetching analytics for content ID:', contentId);
-
+      
       // Fetch analytics data for the specific content
       const response = await api.get(`/api/admin/analytics/content/${contentId}`);
       console.log('Analytics response:', response.data);
       setAnalyticsData(response.data.data);
-
+      
     } catch (error) {
       console.error('Error fetching analytics:', error);
       notifyError('Failed to load analytics data');
@@ -226,15 +226,15 @@ const ModuleManagement = () => {
       if (exportScope === 'selected') {
         // Export based on selection criteria and filters
         exportModulesWithSelection(
-          items,
-          selectedIds,
-          excludedIds,
-          allSelected,
-          teams,
-          subteams,
+          items, 
+          selectedIds, 
+          excludedIds, 
+          allSelected, 
+          teams, 
+          subteams, 
           filters
         );
-
+        
         // Show appropriate success message
         if (allSelected) {
           const exportCount = totalItems - excludedIds.length;
@@ -244,18 +244,20 @@ const ModuleManagement = () => {
         } else {
           notifySuccess('Filtered modules exported successfully');
         }
+        clearSelection();
       } else if (exportScope === 'all') {
         // Export all modules
         exportModulesWithSelection(
-          items,
+          items, 
           [], // No selected IDs
           [], // No excluded IDs  
           false, // Not all selected
-          teams,
-          subteams,
+          teams, 
+          subteams, 
           { status: '', category: '', team: '', subteam: '', search: '' } // No filters
         );
         notifySuccess(`${items.length} modules exported successfully`);
+        clearSelection();
       }
     } catch (error) {
       console.error('Export error:', error);
@@ -303,7 +305,7 @@ const ModuleManagement = () => {
     const matchesStatus = !filters.status || item.status === filters.status;
     const matchesTeam = !filters.team || filters.team === '' || item.team === filters.team;
     const matchesSubteam = !filters.subteam || filters.subteam === '' || item.subteam === filters.subteam;
-
+    
     // Apply time range filter based on creation date
     let matchesTimeRange = true;
     if (filters.timeRange && filters.timeRange !== '') {
@@ -624,12 +626,14 @@ const ModuleManagement = () => {
             title: "Failed to delete modules"
           });
         }
+        
       } catch (error) {
         notifyError("Failed to delete modules", {
           message: error.message,
           title: "Failed to delete modules"
         });
       }
+      clearSelection();
     }
   }
 
@@ -702,10 +706,6 @@ const ModuleManagement = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showFilters, showBulkAction]);
-
-  const handleViewSubmissions = (contentId) => {
-    navigate(`/admin/viewSubmissions/${contentId}`);
-  }
 
   if (loading) {
     return <LoadingScreen text={"Loading Content..."} />
@@ -786,12 +786,12 @@ const ModuleManagement = () => {
               onClick={handleExport}
               title={derivedSelectedCount > 0 ? "Export selected modules to CSV" : "Select modules to export"}
               disabled={derivedSelectedCount === 0}
-              style={{
+              style={{ 
                 opacity: derivedSelectedCount === 0 ? 0.5 : 1,
                 cursor: derivedSelectedCount === 0 ? 'not-allowed' : 'pointer'
               }}
             >
-
+             
               Export<Share size={16} color="#6b7280" /> {derivedSelectedCount > 0 && `(${derivedSelectedCount})`}
             </button>
             {showFilters && (
@@ -868,13 +868,13 @@ const ModuleManagement = () => {
                   </select>
                 </div>
                 <div className="filter-actions">
-                  <button className="btn-secondary" onClick={resetFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>
+                <button className="btn-secondary" onClick={resetFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>
                     Clear
                   </button>
                   <button className="btn-primary" onClick={handleFilter} style={{ padding: '6px 12px', fontSize: '14px' }}>
                     Apply
                   </button>
-
+                  
                 </div>
               </div>
             )}
@@ -905,11 +905,12 @@ const ModuleManagement = () => {
                 </div>
                 <div className="bulk-action-actions" style={{ display: "flex", justifyContent: "center" }}>
                   <button
-                    className="bulk-action-delete-btn"
+                    className="btn-primary"
+                    style={{background:"red"}}
                     disabled={derivedSelectedCount === 0}
                     onClick={() => handleBulkDelete(selectedIds)}
                   >
-                    <RiDeleteBinFill size={16} color="#fff" />
+                    <RiDeleteBinFill size={16} />
                     <span>Delete</span>
                   </button>
                 </div>
@@ -920,6 +921,78 @@ const ModuleManagement = () => {
           </div>
         </div>
       </div>
+
+      {/* {selectionScope !== 'none' && derivedSelectedCount > 0 && (
+        <div
+          className="module-selection-banner"
+          style={{ margin: '12px 0', justifyContent: 'center' }}
+        >
+          {selectionScope === 'page' ? (
+            <>
+              <span>
+                All {visibleIds.length}{' '}
+                {visibleIds.length === 1 ? 'module' : 'modules'} on this page are selected.
+              </span>
+              {totalItems > visibleIds.length && (
+                <button
+                  type="button"
+                  className="selection-action action-primary"
+                  onClick={handleSelectAllAcrossPages}
+                  disabled={false}
+                >
+                  {`Select all ${totalItems} modules`}
+                </button>
+              )}
+              <button
+                type="button"
+                className="selection-action action-link"
+                onClick={clearSelection}
+              >
+                Clear selection
+              </button>
+            </>
+          ) : selectionScope === 'all' ? (
+            <>
+              <span>
+                All {derivedSelectedCount}{' '}
+                {derivedSelectedCount === 1 ? 'module' : 'modules'} are selected across
+                all pages.
+              </span>
+              <button
+                type="button"
+                className="selection-action action-link"
+                onClick={clearSelection}
+              >
+                Clear selection
+              </button>
+            </>
+          ) : (
+            <>
+              <span>
+                {derivedSelectedCount}{' '}
+                {derivedSelectedCount === 1 ? 'module' : 'modules'} selected.
+              </span>
+              {totalItems > derivedSelectedCount && (
+                <button
+                  type="button"
+                  className="selection-action action-primary"
+                  onClick={handleSelectAllAcrossPages}
+                >
+                  {`Select all ${totalItems} modules`}
+                </button>
+              )}
+              <button
+                type="button"
+                className="selection-action action-link"
+                onClick={clearSelection}
+              >
+                Clear selection
+              </button>
+            </>
+          )}
+        </div>
+      )} */}
+
       <SelectionBanner
         selectionScope={selectionScope}
         selectedCount={derivedSelectedCount}
@@ -932,8 +1005,8 @@ const ModuleManagement = () => {
         variant="default"
         showWelcomeMessage={true}
       />
-      {showModal && <ModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading} handleRichInputChange={handleRichInputChange} error={error} teams={teams} />}
-      {showEditModal && <ModuleModal showModal={showEditModal} setShowModal={setShowEditModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} showEditModal={showEditModal} setShowEditModal={setShowEditModal} editContentId={editContentId} handleRichInputChange={handleRichInputChange} error={error} teams={teams} />}
+      {showModal && <ModuleModal showModal={showModal} setShowModal={setShowModal} newContent={newContent} handleInputChange={handleInputChange} handleAddContent={handleAddContent} uploading={uploading} setUploading={setUploading} handleRichInputChange={handleRichInputChange} error={error} teams={teams}/>}
+      {showEditModal && <ModuleModal showModal={showEditModal} setShowModal={setShowEditModal} newContent={newContent} handleInputChange={handleInputChange} uploading={uploading} setUploading={setUploading} showEditModal={showEditModal} setShowEditModal={setShowEditModal} editContentId={editContentId} handleRichInputChange={handleRichInputChange} error={error} teams={teams}/>}
       {showExportModal && (
         <ExportModal
           isOpen={showExportModal}
@@ -968,40 +1041,43 @@ const ModuleManagement = () => {
           <table className="data-table">
             <thead>
               <tr>
+                {/* <th><input type="checkbox" checked={topCheckboxChecked}
+                  ref={(el) => el && (el.indeterminate = topCheckboxIndeterminate)}
+                  onChange={(e) => handleSelectAllToggle(e.target.checked)} /></th> */}
                 <th>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, position: 'relative' }}>
-
-                    <div style={{ gap: 4 }}>
-                      <input
-                        type="checkbox"
-                        checked={topCheckboxChecked}
-                        ref={(el) => el && (el.indeterminate = topCheckboxIndeterminate)}
-                        onChange={(e) => handleSelectAllToggle(e.target.checked)}
-                      />
+                    {/* Master checkbox (same as before) */}
+                    <div style={{gap:4}}>
+                    <input
+                      type="checkbox"
+                      checked={topCheckboxChecked}
+                      ref={(el) => el && (el.indeterminate = topCheckboxIndeterminate)}
+                      onChange={(e) => handleSelectAllToggle(e.target.checked)}
+                    />
                     </div>
 
                     {/* Dropdown trigger (Chevron) */}
                     <div>
-                      <button
-                        type="button"
-                        ref={selectionTriggerRef}
-                        className={`module-select-all-menu-toggle ${selectionMenuOpen ? 'open' : ''}`}
-                        aria-haspopup="menu"
-                        aria-expanded={selectionMenuOpen}
-                        aria-label="Selection options"
-                        onClick={() => {
-                          const btn = selectionTriggerRef.current;
-                          if (btn) {
-                            const rect = btn.getBoundingClientRect();
-                            const offset = 8;
-                            setSelectionMenuPos({ top: rect.bottom + offset, left: rect.left });
-                          }
-                          setSelectionMenuOpen((prev) => !prev);
-                        }}
-                        style={{ padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }}
-                      >
-                        <ChevronDown size={15} className="chevron" />
-                      </button>
+                    <button
+                      type="button"
+                      ref={selectionTriggerRef}
+                      className={`module-select-all-menu-toggle ${selectionMenuOpen ? 'open' : ''}`}
+                      aria-haspopup="menu"
+                      aria-expanded={selectionMenuOpen}
+                      aria-label="Selection options"
+                      onClick={() => {
+                        const btn = selectionTriggerRef.current;
+                        if (btn) {
+                          const rect = btn.getBoundingClientRect();
+                          const offset = 8;
+                          setSelectionMenuPos({ top: rect.bottom + offset, left: rect.left });
+                        }
+                        setSelectionMenuOpen((prev) => !prev);
+                      }}
+                      style={{ padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }}
+                    >
+                      <ChevronDown size={15} className="chevron" />
+                    </button>
                     </div>
                   </div>
 
@@ -1016,7 +1092,7 @@ const ModuleManagement = () => {
                         top: selectionMenuPos.top,
                         left: selectionMenuPos.left,
                         gap: '5px',
-
+                        
                       }}
                     >
                       <button
@@ -1024,7 +1100,7 @@ const ModuleManagement = () => {
                         role="menuitem"
                         onClick={() => handleSelectionOption('all')}
                         className={selectionScope === 'all' ? 'selected' : ''}
-
+                    
                       >
                         <span>Select all pages ({totalItems})</span>
                         {selectionScope === 'all' && (
@@ -1041,7 +1117,7 @@ const ModuleManagement = () => {
                         role="menuitem"
                         onClick={() => handleSelectionOption('page')}
                         className={selectionScope === 'page' ? 'selected' : ''}
-
+                       
                       >
                         <span>Select this page ({visibleIds.length})</span>
                         {selectionScope === 'page' && (
@@ -1060,7 +1136,7 @@ const ModuleManagement = () => {
                 <th>Status</th>
                 <th>Team</th>
                 <th>Date Published</th>
-                <th style={{ textAlign: 'center' }}>Actions</th>
+                <th style={{textAlign: 'center'}}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -1104,40 +1180,30 @@ const ModuleManagement = () => {
                     </td>
                     <td>
                       <div style={{ display: "flex", gap: "10px" }}>
-
-                        <button
-                          className={`global-action-btn ${content.status === 'Draft' || content?.submissionEnabled ? 'analytics' : ''}`}
-                          onClick={() => handleViewSubmissions(content._id)}
-                          title="View Submissions"
-                          disabled={content.status === 'Draft' || !content?.submissionEnabled}
-                        >
-                          <File size={16} />
-                        </button>
-
-
-                        <button className="global-action-btn edit" onClick={() => {
+                      <button className="global-action-btn edit" onClick={() => {
                           setEditContentId(content.uuid)
                           openEditModal(content);
                         }}>
                           <Edit3 size={16} />
                         </button>
-
-                        <button
-                          className={`global-action-btn ${content.status !== 'Draft' ? 'analytics' : ''}`}
-                          onClick={() => handleAnalyticsClick(content.uuid)}
-                          title="View Analytics"
-                          disabled={content.status === 'Draft'}
-                        >
-                          <BarChart3 size={16} />
-                        </button>
-
+                         {content.status !== 'Draft' && (
+                          <button
+                            className="global-action-btn analytics"
+                            onClick={() => handleAnalyticsClick(content.uuid)}
+                            title="View Analytics"
+                          >
+                            <BarChart3 size={16} />
+                          </button>
+                        )}
                         <button
                           className="global-action-btn delete"
                           onClick={() => handleDeleteContent(content.uuid)}
                         >
                           <Trash2 size={16} />
                         </button>
-
+                       
+                        
+                       
                       </div>
                     </td>
                   </tr>
@@ -1292,9 +1358,9 @@ const ModuleManagement = () => {
           </div>
         </div>
       )}
-
+      
       {/* Analytics Popup */}
-      <AnalyticsPop
+      <AnalyticsPop 
         isOpen={showAnalytics}
         onClose={() => setShowAnalytics(false)}
         data={analyticsData}

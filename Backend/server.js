@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const path = require("path");
 require("./src/config/mongoDBConfig");
 const logger = require("./src/utils/logger");
 const helmetMiddleware = require("./src/config/helmetConfig");
@@ -17,6 +18,7 @@ const cookieParser = require("cookie-parser");
 const { authenticate, authorize } = require("./src/middleware/auth_middleware");
 const activityLogRouter = require("./src/routes/globalAdmin.activityLogs.routes");
 const startSubscriptionUpdater = require("./src/utils/updateSubscriptions");
+const scormRouter = require("./src/routes/scorm.routes");
 
 // connectDB
 startSubscriptionUpdater()
@@ -36,6 +38,10 @@ app.use(session({
 // Initialize Passport
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(
+  "/scorm_content",
+  express.static(path.join(__dirname, "scorm_content"))
+);
 
 app.use(helmetMiddleware); //before passing to the routes, securing the SITE using helmet
 app.use(corsMiddleware) //cors config...
@@ -48,7 +54,6 @@ app.use((req, res, next) => {
   logger.info(`Request Body -${JSON.stringify(req.body)}`);
   next();
 });
-const path = require('path');
 const { sendMail } = require("./src/utils/Emailer");
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -57,6 +62,7 @@ app.use('/auth',authRouter)
 app.use('/api/admin',authenticate,authorize(['Administrator']),adminRouter)
 app.use('/dev',devRouter)
 app.use('/api/user',authenticate,userRouter)
+app.use('/api/scorm', authenticate,scormRouter);
 app.post('/api/sendOtp', require('./src/controllers/OTP').sendOTP)
 app.post('/api/verifyOtp', require('./src/controllers/OTP').verifyOTP)
 app.get('/api/getPermissions', authenticate,require('./src/controllers/permissions.controller').getPermissions)

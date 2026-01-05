@@ -34,7 +34,7 @@ import AdminPortalActivity from './pages/admin/AdminPortalActivity/AdminPortalAc
 import AdminAssessments from './pages/admin/AdminAssessments/AdminAssessments';
 import ModuleManagement from './pages/admin/ContentModules/ModuleManagement';
 import AdminSurveys from './pages/admin/AdminSurveys/AdminSurvey';
-
+import AdminDocuments from './pages/admin/AdminDocuments/DocumentsManagement';
 // Global Admin Pages 
 import OrganizationManagement from './pages/globalAdmin/OrganizationManagement/OrganizationManagement';
 import GlobalRolesManagement from './pages/globalAdmin/GlobalRolesManagement/GlobalRolesManagement';
@@ -77,8 +77,11 @@ import TicketsTable from './pages/admin/AdminSupport/TicketsTable';
 import UserTicketsTable from './pages/user/Support/UserTicketsTable';
 import GlobalTicketsTable from './pages/globalAdmin/Tickets/TicketsTable';
 import GradeSubmission from './components/GradeSubmissions/GradeSubmission';
+
 import { fetchPermissions } from './store/slices/RolePermissionSlice';
 import NotAllowed from './pages/NotAllowed/NotAllowed';
+import SCORMModules from './pages/admin/SCORM/SCORMModules';
+import Player from './components/ScormPlayer/ScormPlayer';
 
 function App() {
   const dispatch = useDispatch();
@@ -137,12 +140,14 @@ function App() {
           <Route path="completed" element={<Completed />} />
           <Route path="mandatory" element={<Mandatory />} />
           <Route path="change-password" element={<ChangePassword />} />
+          <Route path="scorm/player" element={<Player />} />
           <Route path='support' element={permissions.includes("Support Button Access") ? <UserTicketsTable /> : <NotAllowed />} />
         </Route>
         <Route path="/admin/*" element={<AdminLayout />}>
           <Route index element={<AdminHome />} />
           <Route path="users" element={<UsersManagement />} />
           <Route path="groups" element={<GroupsManagement />} />
+          <Route path="documents" element={<AdminDocuments />} />
           <Route path="content-modules" element={<ModuleManagement />} />
           <Route path="content-assessments" element={<AdminAssessments />} />
           <Route path="learning-paths" element={<LearningPaths />} />
@@ -158,8 +163,7 @@ function App() {
           <Route path="activity-log" element={permissions.includes("Activity History Access") ? <AdminActivityLog /> : <NotAllowed />} />
           <Route path="change-password" element={<ChangePassword />} />
           <Route path='support' element={permissions.includes("Support Button Access") ? <TicketsTable /> : <NotAllowed />}/>
-          <Route path='viewSubmissions/:moduleId' element={<GradeSubmission />} />
-
+          <Route path="scorm" element={<SCORMModules />} />
         </Route>
         <Route path="/global-admin/*" element={<GlobalAdminLayout />}>
           <Route index element={<GlobalAdminHome />} />
@@ -184,9 +188,13 @@ function App() {
           <Route path='support' element={<GlobalTicketsTable />} />
           <Route path='support/:role' element={<GlobalTicketsTable />} />
           <Route path='grade-submissions' element={<GradeSubmission />} />
+          <Route path="scorm" element={<SCORMModules />} />
+
         </Route>
         <Route element={<NavbarOnly />}>
           {/* ORG ASSIGNMENTS */}
+          <Route path="player" element={<Player />} />
+
           <Route path="/module/:moduleId/:assignId" element={<ModuleView />} />
           <Route path="/module/:moduleId/:assignId/:inProgress" element={<ModuleView />} />
           <Route path="assessment/:assessmentId/:assignId" element={<AssessmentView />} />
@@ -215,6 +223,7 @@ function App() {
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="*" element={<div>Page Not Found</div>} />
         <Route path='test' element={<NotAllowed />} />
+
     
 
 

@@ -36,6 +36,7 @@ const { getOrganizationCreationDate, getCourseDistribution, getUsersData, calcul
 const { createAdminTicket, getAdminTickets, updateAdminTicketStatus, updateAdminTicket, deleteAdminTicket , getTicketDetails,
   addTicketComment, getTicketStats} = require("../controllers/admin.controller/admin_Tickets");
 const { getPermissions } = require("../controllers/permissions.controller");
+const {addDocument,editDocument,deleteDocument,previewDocument,searchDocuments, getDocuments, documentbulkDelete, getDocumentById} = require("../controllers/admin.controller/admin_Document");
 const { gradeSubmission, getSubmissions } = require("../controllers/admin.controller/admin_Submissions");
 
 
@@ -71,6 +72,14 @@ router.route('/getQuestionsRandom/:id').get(getQuestionsRandom)
 router.route('/editQuestion/:id').put(editQuestion)
 router.route('/deleteQuestion/:id').delete(deleteQuestion)
 router.post('/uploadFile', uploadQuestionFile.single('file'),uploadToCloudinary('questions'), fileUploadHandler);
+
+////Documents
+router.route('/createDocument').post(uploadContent.fields([{name:'primaryFile',maxCount:1},{name:'additionalFile',maxCount:1},{name:'thumbnail',maxCount:1}]),uploadMultipleToCloudinary,addDocument)
+router.route('/editDocument/:id').put(uploadContent.fields([{name:'primaryFile',maxCount:1},{name:'additionalFile',maxCount:1},{name:'thumbnail',maxCount:1}]),uploadMultipleToCloudinary,editDocument)
+router.route('/deleteDocument/:id').delete(deleteDocument)
+router.route('/getDocuments').get(getDocuments)
+router.route('/bulkDeleteDocument').delete(documentbulkDelete)
+router.route('/getDocumentById/:id').get(getDocumentById)
 
 //////Module////////
 
@@ -177,9 +186,8 @@ router.route("/getTicketDetails/:ticketId").get(getTicketDetails);
 router.route("/addTicketComment/:ticketId").post(addTicketComment);
 
 
-////Submissions
+
 
 router.route('/gradeSubmission').post(gradeSubmission)
-router.route('/getSubmissions/:moduleId').get(getSubmissions)
-
+router.route('/getSubmissions/:moduleId').get(getSubmissions) 
 module.exports = router;

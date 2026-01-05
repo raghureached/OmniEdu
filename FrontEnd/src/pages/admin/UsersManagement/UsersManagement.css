@@ -1229,3 +1229,228 @@ body {
   box-shadow: 0 6px 16px rgba(1, 31, 91, 0.4);
 }
 
+
+/* Users Filter Styles */
+.users_management-filter-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.users_management-filter-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.users_management-search-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.users_management-search-box label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.users_management-search-box input {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.users_management-search-box input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.users_management-filter-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.users_management-btn-filter,
+.users_management-btn-clear-filter {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.users_management-btn-filter {
+  background: #3b82f6;
+  color: white;
+}
+
+.users_management-btn-filter:hover {
+  background: #2563eb;
+}
+
+.users_management-btn-clear-filter {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.users_management-btn-clear-filter:hover {
+  background: #e5e7eb;
+}
+
+.users_management-action-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.users_management-btn-add,
+.users_management-btn-import,
+.users_management-btn-export,
+.users_management-btn-delete-selected,
+.users_management-btn-edit-group {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.users_management-btn-add {
+  background: #10b981;
+  color: white;
+}
+
+.users_management-btn-add:hover {
+  background: #059669;
+}
+
+.users_management-btn-import {
+  background: #8b5cf6;
+  color: white;
+}
+
+.users_management-btn-import:hover {
+  background: #7c3aed;
+}
+
+.users_management-btn-export {
+  background: #f59e0b;
+  color: white;
+}
+
+.users_management-btn-export:hover {
+  background: #d97706;
+}
+
+.users_management-btn-delete-selected {
+  background: #ef4444;
+  color: white;
+}
+
+.users_management-btn-delete-selected:hover {
+  background: #dc2626;
+}
+
+.users_management-btn-edit-group {
+  background: #6b7280;
+  color: white;
+}
+
+.users_management-btn-edit-group:hover {
+  background: #4b5563;
+}
+
+.users_management-btn-icon {
+  font-weight: bold;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .users_management-filter-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .users_management-filter-actions {
+    flex-direction: column;
+  }
+  
+  .users_management-action-buttons {
+    flex-direction: column;
+  }
+}
+
+ 
+
+
+/* Filter Panel Layout */
+.filter-panel {
+  position: absolute;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  border: 1px solid #e2e8f0;
+  z-index: 1000;
+  min-width: 280px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.filter-group {
+  margin-bottom: 16px;
+}
+
+.filter-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.filter-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.filter-group select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-group select:disabled {
+  background: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.user-filter-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}

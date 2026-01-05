@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchContent, deleteContent } from '../../../store/slices/contentSlice';
 import LearningPathModal from './LearningPathModal';
 import './LearningPaths.css';
-import { ChevronDown, Edit3, FileText, Filter, Plus, Search, Trash2, Users, BarChart3 } from 'lucide-react';
+import { ChevronDown, Edit3, FileText, Filter, Plus, Search, Trash2, Users, BarChart3, Share } from 'lucide-react';
 import { getLearningPaths } from '../../../store/slices/learningPathSlice';
 import { deleteLearningPath } from '../../../store/slices/learningPathSlice';
 import LoadingScreen from '../../../components/common/Loading/Loading';
@@ -14,6 +14,9 @@ import { categories } from '../../../utils/constants';
 import AnalyticsPop from '../../../components/AnalyticsPopup/AnalyticsPop';
 import api from '../../../services/api';
 import { notifyError, notifySuccess } from '../../../utils/notification';
+import ExportModal from '../../../components/common/ExportModal/ExportModal';
+import { exportLearningPathsWithSelection } from '../../../utils/learningPathExport';
+import CustomSelect from '../../../components/dropdown/DropDown';
 
 
 const LearningPaths = () => {
@@ -53,9 +56,57 @@ const LearningPaths = () => {
     dispatch(getLearningPaths());
   }, [dispatch]);
 
+  // Close filter/bulk panels on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const target = event.target;
+      const filterBtn = filterButtonRef.current;
+      const bulkBtn = bulkButtonRef.current;
+      const filterPanel = filterPanelRef.current;
+      const bulkPanel = bulkPanelRef.current;
+
+      if (
+        (showFilters || showBulkAction) &&
+        !(
+          (filterPanel && filterPanel.contains(target)) ||
+          (bulkPanel && bulkPanel.contains(target)) ||
+          (filterBtn && filterBtn.contains(target)) ||
+          (bulkBtn && bulkBtn.contains(target))
+        )
+      ) {
+        setShowFilters(false);
+        setShowBulkAction(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showFilters, showBulkAction]);
+
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setTempFilters(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Export handlers
+  const handleExport = () => {
+    setShowExportModal(true);
+  };
+  const handleExportConfirm = (exportScope) => {
+    try {
+      if (exportScope === 'selected') {
+        exportLearningPathsWithSelection(filteredPaths, selectedIds, excludedIds, allSelected);
+      } else if (exportScope === 'all') {
+        exportLearningPathsWithSelection(filteredPaths, [], [], false);
+      }
+      clearSelection();
+    } catch (e) {
+      console.error('Export learning paths failed', e);
+      notifyError('Failed to export learning paths');
+    }
+     clearSelection();
   };
 
   const handleFilter = () => {
@@ -90,6 +141,7 @@ const LearningPaths = () => {
   const [selectionScope, setSelectionScope] = useState("none");
   const [selectedPageRef, setSelectedPageRef] = useState(null);
   const [allSelectionCount, setAllSelectionCount] = useState(null);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // Normalize ID
   const resolveId = (p) => p?.uuid || p?.id;
@@ -261,6 +313,7 @@ const LearningPaths = () => {
       setSelectedIds([]);
       setShowBulkAction(false);
     }
+    clearSelection();
   };
 
   const handleDeletePath = (pathId) => {
@@ -422,8 +475,20 @@ const LearningPaths = () => {
             <Filter size={16} />
             Filter
           </button>
+          <button
+            className="control-btn"
+            onClick={handleExport}
+            title={derivedSelectedCount > 0 ? "Export selected learning paths to CSV" : "Open export options"}
+            disabled={derivedSelectedCount === 0}
+            style={{
+              opacity: (filteredPaths?.length || 0) === 0 ? 0.5 : 1,
+              cursor: (filteredPaths?.length || 0) === 0 ? 'not-allowed' : 'pointer'
+            }}
+          >
+            Export <Share size={16} color="#6b7280" /> {derivedSelectedCount > 0 && `(${derivedSelectedCount})`}
+          </button>
           {showFilters && (
-            <div ref={filterPanelRef} className="adminmodule-filter-panel" style={{ "left": "-40px" }}>
+            <div ref={filterPanelRef} className="adminmodule-filter-panel" style={{ "left": "-40px",width:"220px" }}>
               <span
                 style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px" }}
                 onClick={() => setShowFilters(false)}
@@ -432,39 +497,38 @@ const LearningPaths = () => {
               </span>
               <div className="filter-group">
                 <label>Status</label>
-                <select
-                  name="status"
-                  value={tempFilters?.status || ""}
-                  onChange={handleFilterChange}
-                >
-                  <option value="">All</option>
-                  <option value="Saved">Saved</option>
-                  <option value="Draft">Draft</option>
-                  <option value="Published">Published</option>
-
-                </select>
+                <CustomSelect
+                  value={(tempFilters?.status || '') || 'All'}
+                  options={[
+                    { value: 'All', label: 'All' },
+                    { value: 'Draft', label: 'Draft' },
+                    { value: 'Published', label: 'Published' },
+                  ]}
+                  onChange={(value) =>
+                    setTempFilters(prev => ({ ...prev, status: value === 'All' ? '' : value }))
+                  }
+                  placeholder="Select Status"
+                  searchable={false}
+                />
               </div>
               <div className="filter-group">
                 <label>Category</label>
-                <select
-                  name="category"
-                  value={tempFilters?.category || ""}
-                  onChange={handleFilterChange}
-                >
-                  <option value="">All</option>
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={(tempFilters?.category || '') || 'All'}
+                  options={[{ value: 'All', label: 'All' }, ...categories.map(c => ({ value: c, label: c }))]}
+                  onChange={(value) =>
+                    setTempFilters(prev => ({ ...prev, category: value === 'All' ? '' : value }))
+                  }
+                  placeholder="Select Category"
+                  searchable={true}
+                />
               </div>
 
               <div className="filter-actions">
-                <button className="btn-primary" onClick={handleFilter}>
+                <button className="btn-primary" onClick={handleFilter} style={{ padding: '6px 12px', fontSize: '14px' }}>
                   Apply
                 </button>
-                <button className="reset-btn" onClick={resetFilters}>
+                <button className="reset-btn" onClick={resetFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>
                   Clear
                 </button>
               </div>
@@ -484,7 +548,7 @@ const LearningPaths = () => {
             }}
           > Bulk Action <ChevronDown size={16} /></button>
           {showBulkAction && (
-            <div ref={bulkPanelRef} className="adminmodules-bulk-action-panel" style={{ "left": "-40px", "right": "1000px" }}>
+            <div ref={bulkPanelRef} className="adminmodules-bulk-action-panel" style={{ "left": "183px", "right": "1000px" }}>
               <div className="bulk-action-header">
                 <label className="bulk-action-title">Items Selected: {derivedSelectedCount}</label>
                 <GoX
@@ -497,7 +561,8 @@ const LearningPaths = () => {
               </div>
               <div className="bulk-action-actions" style={{ display: "flex", justifyContent: "center" }}>
                 <button
-                  className="bulk-action-delete-btn"
+                  className="btn-primary"
+                  style={{background:"red"}}
                   disabled={derivedSelectedCount === 0}
                   onClick={() => handleBulkDelete(selectedIds)}
                 >
@@ -836,6 +901,14 @@ const LearningPaths = () => {
         data={analyticsData}
         loading={analyticsLoading}
         analyticsType="learningPath"
+      />
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onConfirm={handleExportConfirm}
+        selectedCount={derivedSelectedCount}
+        totalCount={filteredPaths.length}
+        exportType="learningpaths"
       />
     </div>
   );

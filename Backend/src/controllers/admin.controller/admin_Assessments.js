@@ -1129,12 +1129,13 @@ const searchAssessment = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 50;
         const skip = (page - 1) * limit;
-        const { status, search = "" } = req.query;
+        const { status, category, search = "" } = req.query;
 
         const filter = {
             organization_id,
             title: { $regex: search, $options: "i" },
             ...(status && { status }),
+            ...(category && { category }),
         };
 
         const total = await OrganizationAssessments.countDocuments(filter);

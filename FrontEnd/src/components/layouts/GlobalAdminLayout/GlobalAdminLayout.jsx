@@ -240,6 +240,12 @@ const GlobalAdminLayout = () => {
                         </Link>
                     </li>
                     <li>
+                        <Link to="/global-admin/scorm" className={isActive("/global-admin/scorm") ? "globaladmin_link_active" : ""}>
+                            <NotepadText size={20} />
+                            {!sidebarCollapsed && <span className="globaladmin_sidebar_names">Scorm</span>}
+                        </Link>
+                    </li>
+                    <li>
                         <Link to="/global-admin/assignments" className={isActive("/global-admin/assignments") ? "globaladmin_link_active" : ""}>
                                           <NotebookPen size={20} />
                             

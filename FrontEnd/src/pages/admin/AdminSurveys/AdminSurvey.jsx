@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, ChevronDown, Filter, BarChart3 } from 'lucide-react';
+import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, ChevronDown, Filter, BarChart3, Share } from 'lucide-react';
 import { GoX } from 'react-icons/go';
 import { RiDeleteBinFill } from 'react-icons/ri';
 import './AdminSurvey.css'
@@ -24,6 +24,8 @@ import { notifyError, notifySuccess } from '../../../utils/notification';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
 import SelectionBanner from '../../../components/Banner/SelectionBanner';
 import AnalyticsPop from '../../../components/AnalyticsPopup/AnalyticsPop';
+import ExportModal from '../../../components/common/ExportModal/ExportModal';
+import { exportSurveysWithSelection } from '../../../utils/surveyExport';
 const AdminSurveys = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
@@ -60,6 +62,25 @@ const AdminSurveys = () => {
         left: rect.left + window.scrollX,
       });
     }
+  };
+
+  // Export handlers
+  const handleExport = () => {
+    setShowExportModal(true);
+   
+  };
+  const handleExportConfirm = (exportScope) => {
+    try {
+      if (exportScope === 'selected') {
+        exportSurveysWithSelection(assessments, selectedIds, excludedIds, allSelected, groups, []);
+      } else if (exportScope === 'all') {
+        exportSurveysWithSelection(assessments, [], [], false, groups, []);
+      }
+    } catch (e) {
+      console.error('Export surveys failed', e);
+      notifyError('Failed to export surveys');
+    }
+    clearSelection();
   };
 
   const updateBulkPanelPosition = () => {
@@ -134,7 +155,7 @@ const AdminSurveys = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    status: 'Saved',
+    status: 'Draft',
     duration: '',            // NEW
     tags: [],                // NEW
     team: '',
@@ -205,6 +226,7 @@ const AdminSurveys = () => {
   const [selectionScope, setSelectionScope] = useState("none");
   const [selectedPageRef, setSelectedPageRef] = useState(null);
   const [allSelectionCount, setAllSelectionCount] = useState(null);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // Normalize ID
   const resolveId = (a) => a?.uuid || a?._id || a?.id;
@@ -382,7 +404,7 @@ const AdminSurveys = () => {
     setFormData({
       title: '',
       description: '',
-      status: 'Saved',
+      status: 'Draft',
       // duration: '',            // NEW
       tags: [],                // NEW
       team: '',                // NEW
@@ -477,7 +499,7 @@ const AdminSurveys = () => {
       setFormData({
         title: full.title || '',
         description: full.description || '',
-        status: full.status || 'Saved',
+        status: full.status || 'Draft',
         // duration: full.duration || '',
         tags: full.tags || [],
         team: full.team || '',
@@ -545,7 +567,7 @@ const AdminSurveys = () => {
       setFormData({
         title: assessment.title || '',
         description: assessment.description || '',
-        status: assessment.status || 'Saved',
+        status: assessment.status || 'Draft',
         duration: assessment.duration || '',
         tags: assessment.tags || [],
         team: assessment.team || '',
@@ -627,7 +649,7 @@ const AdminSurveys = () => {
     const payload = {
       title: surveyTitle,
       description: surveyDescription,
-      status: statusOverride ?? (formData.status || 'Saved'),
+      status: statusOverride ?? (formData.status || 'Draft'),
       // duration: formData.duration,
       tags: Array.isArray(formData.tags) ? formData.tags : [],
       team: formData.team,
@@ -1031,6 +1053,19 @@ const AdminSurveys = () => {
             Filter
           </button>
 
+          <button
+            className="control-btn"
+            onClick={handleExport}
+            title={derivedSelectedCount > 0 ? "Export selected surveys to CSV" : "Open export options"}
+            disabled={(assessments?.length || 0) === 0}
+            style={{
+              opacity: (assessments?.length || 0) === 0 ? 0.5 : 1,
+              cursor: (assessments?.length || 0) === 0 ? 'not-allowed' : 'pointer'
+            }}
+          >
+            Export <Share size={16} color="#6b7280" /> {derivedSelectedCount > 0 && `(${derivedSelectedCount})`}
+          </button>
+
           {/* <button className="control-btn">
                   <Share size={16} />
                   Share
@@ -1078,7 +1113,7 @@ const AdminSurveys = () => {
               onChange={handleFilterChange}
             >
               <option value="">All</option>
-              <option value="Saved">Saved</option>
+              {/* <option value="Saved">Saved</option> */}
               <option value="Draft">Draft</option>
               <option value="Published">Published</option>
             </select>
@@ -1086,10 +1121,10 @@ const AdminSurveys = () => {
 
 
           <div className="filter-actions">
-          <button className="btn-secondary" onClick={resetFilters}>
+          <button className="btn-secondary" onClick={resetFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>
               Clear
             </button>
-            <button className="btn-primary" onClick={handleFilter}>
+            <button className="btn-primary" onClick={handleFilter} style={{ padding: '6px 12px', fontSize: '14px' }}>
               Apply
             </button>
            
@@ -1350,7 +1385,7 @@ const AdminSurveys = () => {
                   <th>Survey Details</th>
                   <th>Questions</th>
                   <th>Status</th>
-                  <th>Date Created</th>
+                  <th>Date Published</th>
                   <th style={{textAlign: 'center'}}>Actions</th>
                 </tr>
               </thead>
@@ -1414,13 +1449,14 @@ const AdminSurveys = () => {
                         >
                           <Edit3 size={14} />
                         </button>
+                         {assessment.status !== 'Draft' && (
                         <button
                           className="global-action-btn edit analytics"
                           onClick={() => handleSurveyAnalytics(assessment.uuid || assessment._id || assessment.id)}
                           title="View Analytics"
                         >
                           <BarChart3 size={14} />
-                        </button>
+                        </button>)}
                         <button
                           className="global-action-btn edit delete"
                           onClick={() => handleDeleteAssessment(assessment.uuid)}
@@ -1498,6 +1534,15 @@ const AdminSurveys = () => {
         groups={groups}
 
       />}
+
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onConfirm={handleExportConfirm}
+        selectedCount={derivedSelectedCount}
+        totalCount={pagination?.total || assessments.length || 0}
+        exportType="surveys"
+      />
       <AnalyticsPop
         isOpen={showAnalytics}
         onClose={() => setShowAnalytics(false)}

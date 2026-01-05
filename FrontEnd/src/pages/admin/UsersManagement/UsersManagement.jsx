@@ -109,12 +109,19 @@ const UsersManagement = () => {
   const [tempFilters, setTempFilters] = useState({
     status: '',
     role: '',
+    team: '',
+    subteam: '',
   });
   const [roles, setRoles] = useState([]);
   const [teams, setTeams] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef(null);
+  // Refs to support outside-click closing for panels
+  const filterPanelRef = useRef(null);
+  const bulkPanelRef = useRef(null);
+  const filterBtnRef = useRef(null);
+  const bulkBtnRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
   //search
@@ -308,6 +315,8 @@ const UsersManagement = () => {
     const initialFilters = {
       status: '',
       role: '',
+      team: '',
+      subteam: '',
     };
     setTempFilters(initialFilters);
     setSearchTerm('');
@@ -1547,17 +1556,39 @@ const UsersManagement = () => {
     });
   };
 
+  // Close filter and bulk panels when clicking outside
+  useEffect(() => {
+    const handleDocumentClick = (e) => {
+      const target = e.target;
+      // Close Filters panel
+      if (showFilters) {
+        const clickedInsidePanel = filterPanelRef.current && filterPanelRef.current.contains(target);
+        const clickedOnButton = filterBtnRef.current && filterBtnRef.current.contains(target);
+        if (!clickedInsidePanel && !clickedOnButton) {
+          setShowFilters(false);
+        }
+      }
+      // Close Bulk Actions panel
+      if (showBulkAction) {
+        const clickedInsideBulk = bulkPanelRef.current && bulkPanelRef.current.contains(target);
+        const clickedOnBulkBtn = bulkBtnRef.current && bulkBtnRef.current.contains(target);
+        if (!clickedInsideBulk && !clickedOnBulkBtn) {
+          setShowBulkAction(false);
+        }
+      }
+    };
+    document.addEventListener('mousedown', handleDocumentClick);
+    return () => document.removeEventListener('mousedown', handleDocumentClick);
+  }, [showFilters, showBulkAction]);
+
 
   const currentPage = filters.page || currentPageState || 1;
   const itemsPerPage = filters.limit || pageSizeState || 20;
   const totalPages = Math.max(1, Math.ceil((totalCount || 0) / itemsPerPage));
-  // const paginatedUsers = Array.isArray(sortedUsers) ? sortedUsers : [];
-  // Apply pagination to the sorted users
+  // Use server-paginated users so backend filters (status/role/team/subteam/search) reflect directly in UI
   const paginatedUsers = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return Array.isArray(sortedUsers) ? sortedUsers.slice(startIndex, endIndex) : [];
-  }, [sortedUsers, currentPage, itemsPerPage]);
+    return Array.isArray(users) ? users : [];
+  }, [users]);
 
   const currentPageUserIds = paginatedUsers
     .map((user) => resolveUserId(user))
@@ -1875,6 +1906,7 @@ const UsersManagement = () => {
               className="control-btn"
               style={{ padding: '12px 12px' }}
               onClick={toggleFilters}
+              ref={filterBtnRef}
               type="button"
             >
               <Filter size={16} />
@@ -1904,11 +1936,11 @@ const UsersManagement = () => {
               disabled={!allSelected && selectedIds.length === 0}
               type="button"
             >
-              Export <Share size={16} color="#6b7280" />
+              Export <Share size={16} color="#6b7280" />{derivedSelectedCount > 0 && `(${derivedSelectedCount})`}
             </button>
 
             {showFilters && (
-              <div className="filter-panel" style={{ right: '185px', top: '50px' }}>
+              <div className="filter-panel" style={{ right: '185px', top: '50px' }} ref={filterPanelRef}>
                 <span
                   style={{
                     cursor: 'pointer',
@@ -1936,7 +1968,47 @@ const UsersManagement = () => {
                   </select>
                 </div>
 
-                {/* selection flyout now handled inside UsersTable */}
+                {/* Team filter */}
+                <div className="filter-group">
+                  <div style={{ fontSize: "15px", fontWeight: "600", color: "#26334d" }}><label>Team</label></div>
+                  <select
+                    name="team"
+                    value={tempFilters.team || ''}
+                    onChange={(e) => {
+                      const { value } = e.target;
+                      setTempFilters(prev => ({ ...prev, team: value, subteam: '' }));
+                    }}
+                  >
+                    <option value="">All Teams</option>
+                    {(Array.isArray(teams) ? teams : []).map(t => (
+                      <option key={t?._id || t?.id || t?.uuid} value={t?._id || t?.id || t?.uuid}>
+                        {t?.name || t?.teamName || 'Team'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Subteam filter (dependent on Team) */}
+                <div className="filter-group">
+                  <div style={{ fontSize: "15px", fontWeight: "600", color: "#26334d" }}><label>Subteam</label></div>
+                  <select
+                    name="subteam"
+                    value={tempFilters.subteam || ''}
+                    onChange={handleFilterChange}
+                    disabled={!tempFilters.team}
+                  >
+                    <option value="">All Subteams</option>
+                    {(() => {
+                      const teamObj = (Array.isArray(teams) ? teams : []).find(t => (t?._id || t?.id || t?.uuid) === tempFilters.team);
+                      const subs = Array.isArray(teamObj?.subTeams) ? teamObj.subTeams : [];
+                      return subs.map(st => (
+                        <option key={st?._id || st?.id || st?.uuid} value={st?._id || st?.id || st?.uuid}>
+                          {st?.name || st?.subTeamName || 'Subteam'}
+                        </option>
+                      ));
+                    })()}
+                  </select>
+                </div>
 
                 {/* <div className="filter-group">
                     <label>Role</label>
@@ -1979,6 +2051,7 @@ const UsersManagement = () => {
             <button
               className="control-btn"
               onClick={toggleBulkAction}
+              ref={bulkBtnRef}
               type="button"
             >
               {/* <Filter size={16} /> */}
@@ -1987,7 +2060,7 @@ const UsersManagement = () => {
             </button>
 
             {showBulkAction && (
-              <div className="bulk-action-panel" style={{ top: '50px', right: '-159px', padding: "15px" }}>
+              <div className="bulk-action-panel" style={{ top: '50px', right: '-159px', padding: "15px" }} ref={bulkPanelRef}>
                 <div className="bulk-action-header">
                   <label className="bulk-action-title">Items Selected: {derivedSelectedCount}</label>
                 </div>
