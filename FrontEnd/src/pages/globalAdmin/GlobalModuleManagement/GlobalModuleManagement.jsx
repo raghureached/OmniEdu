@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchContent, deleteContent, createContent, updateContent, bulkDeleteContent } from '../../../store/slices/contentSlice';
 import "./GlobalModuleManagement.css"
 import { useNavigate } from 'react-router-dom';
-import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X, Filter, BarChart3 } from 'lucide-react';
+import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X, Filter, BarChart3, File } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading'
 import { RiDeleteBinFill } from "react-icons/ri";
 import GlobalModuleModal from './GlobalModuleModal';
@@ -366,6 +366,9 @@ const GlobalModuleManagement = () => {
       submissionEnabled: content.submissionEnabled || false,
     });
   };
+  const handleViewSubmissions = (contentId) => {
+    navigate(`/global-admin/viewSubmissions/${contentId}`);
+  }
   const handleBulkDelete = async (ids) => {
     if (ids.length === 0) {
       alert("Please select at least one module to delete.")
@@ -632,7 +635,7 @@ const GlobalModuleManagement = () => {
         <table className="data-table">
           <thead>
             <tr>
-              
+
               <th>
                 <div
                   style={{
@@ -793,6 +796,14 @@ const GlobalModuleManagement = () => {
                 </td>
                 <td>
                   <div style={{ display: "flex", gap: "10px" }}>
+                    <button
+                      className={`global-action-btn ${content.status === 'Draft' || content?.submissionEnabled ? 'analytics' : ''}`}
+                      onClick={() => handleViewSubmissions(content._id)}
+                      title="View Submissions"
+                      disabled={content.status === 'Draft' || !content?.submissionEnabled}
+                    >
+                      <File size={16} />
+                    </button>
 
                     <button className="global-action-btn edit" onClick={() => {
                       handleEditClick(content)

@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './GradeSubmission.css';
-import { ChevronDown, Search, X } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-
-import { adminFetchSubmissions, admingradeSubmission } from '../../store/slices/adminSubmissionSlice';
+import { FetchSubmissions, gradeSubmission } from '../../store/slices/globalSubmissionsSlice';
 import { useParams } from 'react-router-dom';
 import { notifyError, notifySuccess } from '../../utils/notification';
 const GradeSubmission = () => {
@@ -22,7 +20,7 @@ const GradeSubmission = () => {
   const [moduleSearchTerm, setModuleSearchTerm] = useState('');
   const moduleDropdownRef = useRef(null);
 
-  const { items = [], loading = false, error = null } = useSelector((state) => state.adminSubmissions || {});
+  const { items = [], loading = false, error = null } = useSelector((state) => state.globalSubmissions || {});
   // console.log(items)
   const modules = [
     'Cyber Security Fundamentals',
@@ -34,7 +32,7 @@ const GradeSubmission = () => {
   ];
 
   useEffect(() => {
-    dispatch(adminFetchSubmissions(moduleId));
+    dispatch(FetchSubmissions(moduleId));
   }, []);
 
   // Transform API data to match component structure
@@ -82,7 +80,7 @@ const GradeSubmission = () => {
     setSelectedSubmission(null);
     setGradeValue('');
     setFeedback('');
-    dispatch(adminFetchSubmissions(moduleId));
+    dispatch(FetchSubmissions(moduleId));
   };
 
   const handleSaveGrade = async () => {
@@ -92,12 +90,12 @@ const GradeSubmission = () => {
     }
 
     try {
-      const result = await dispatch(admingradeSubmission({
+      const result = await dispatch(gradeSubmission({
         submissionId: selectedSubmission._id || selectedSubmission.submissionId,
         grade: gradeValue,
         feedback: feedback
       })).unwrap();
-      if (admingradeSubmission.fulfilled.match(result)) {
+      if (gradeSubmission.fulfilled.match(result)) {
         notifySuccess(result.message);
         closeModal();
 

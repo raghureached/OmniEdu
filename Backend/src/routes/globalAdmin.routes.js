@@ -46,7 +46,7 @@ const {
   updateGlobalAdminTicket,
   getGlobalAdminTicketStats
 } = require("../controllers/globalAdmin.controller/globalAdmin_tickets");
-const { gradeSubmission, getSubmissions } = require("../controllers/globalAdmin.controller/globalAdmin_grading");
+const { gradeSubmission, getSubmissions } = require("../controllers/globalAdmin.controller/globalAdmin_submissions");
 const { getActivityLogs, getActivityLogStats, testDatabase } = require("../controllers/globalAdmin.controller/globalAdmin_activityLogs");
 const { getUserDistribution, getOrganizationGrowth } = require("../controllers/globalAdmin.controller/globalAdmin_DashBoard");
 
@@ -148,7 +148,7 @@ router.route('/getUserDashBoardConfig/:id').get(getUserDashBoardConfig)
 router.route('/getUserDashBoardPermissions').get(getUserDashBoardPermissions)
 
 
-///////getTeams////////
+///////getTeams//////////
 router.route('/getGroups').get(getGroups)
 
 
@@ -189,15 +189,15 @@ router.route('/activity-logs/stats').get(getActivityLogStats)
 router.route('/activity-logs/test').get(testDatabase)
 
 
-// router.route('/analytics/content/:contentId').get(getContentAnalytics);
 router.route('/analytics/users/:orgId').get(getUsersData);
-// router.route('/analytics/user/:userId').get(getUserAnalytics);
-// router.route('/analytics/assessment/:assessmentId').get(getAssessmentAnalytics);
-// router.route('/analytics/survey/:surveyId').get(getSurveyAnalytics);
+
 
 router.route('/getUserDistribution').get(getUserDistribution)
 router.route('/getOrganizationGrowth').get(getOrganizationGrowth)
 
 
+
+router.route('/gradeSubmission').post(gradeSubmission)
+router.route('/getSubmissions/:moduleId').get(getSubmissions) 
 
 module.exports = router;
