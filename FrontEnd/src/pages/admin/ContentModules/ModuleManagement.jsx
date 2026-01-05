@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { adminfetchContent, admindeleteContent, admincreateContent, adminupdateContent, adminbulkDeleteContent } from '../../../store/slices/adminModuleSlice';
 import "./ModuleManagement.css"
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X, Filter, Plus, BarChart3, Download ,Share} from 'lucide-react';
+import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X, Filter, Plus, BarChart3, Download ,Share, File} from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading'
 import { RiDeleteBinFill } from "react-icons/ri";
 import { FiEdit3 } from "react-icons/fi";
@@ -220,6 +220,9 @@ const ModuleManagement = () => {
   const handleExport = () => {
     setShowExportModal(true);
   };
+   const handleViewSubmissions = (contentId) => {
+    navigate(`/admin/viewSubmissions/${contentId}`);
+  }
 
   const handleExportConfirm = (exportScope) => {
     try {
@@ -1180,6 +1183,14 @@ const ModuleManagement = () => {
                     </td>
                     <td>
                       <div style={{ display: "flex", gap: "10px" }}>
+                        <button
+                          className={`global-action-btn ${content.status === 'Draft' || content?.submissionEnabled ? 'analytics' : ''}`}
+                          onClick={() => handleViewSubmissions(content._id)}
+                          title="View Submissions"
+                          disabled={content.status === 'Draft' || !content?.submissionEnabled}
+                        >
+                          <File size={16} />
+                        </button>
                       <button className="global-action-btn edit" onClick={() => {
                           setEditContentId(content.uuid)
                           openEditModal(content);

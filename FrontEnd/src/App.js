@@ -164,6 +164,7 @@ function App() {
           <Route path="change-password" element={<ChangePassword />} />
           <Route path='support' element={permissions.includes("Support Button Access") ? <TicketsTable /> : <NotAllowed />}/>
           <Route path="scorm" element={<SCORMModules />} />
+          <Route path='viewSubmissions/:moduleId' element={<GradeSubmission />} />
         </Route>
         <Route path="/global-admin/*" element={<GlobalAdminLayout />}>
           <Route index element={<GlobalAdminHome />} />
