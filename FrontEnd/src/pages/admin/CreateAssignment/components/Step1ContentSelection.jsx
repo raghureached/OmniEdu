@@ -48,7 +48,6 @@ const Step1ContentSelection = ({
     if (selectedContentType === 'Learning Path') {
       return `${item.duration || 0} min • ${item.lessons.length || 0} resources`;
     } else if (selectedContentType === 'Assessment') {
-      // console.log(item.duration,item.questions)
       return `${item.duration || 0} min • ${item.questions.length || 0} questions`;
     }
     return `${item.duration || 0} minutes`;
@@ -60,6 +59,8 @@ const Step1ContentSelection = ({
       case 'Assessment': return 'assessment';
       case 'Survey': return 'survey';
       case 'Learning Path': return 'path';
+      case 'Document': return 'document';
+      case 'SCORM': return 'scorm';
       default: return '';
     }
   };
@@ -166,6 +167,40 @@ const Step1ContentSelection = ({
             <div className="radio-option-content">
               <div className="radio-option-title">Learning Path</div>
               <div className="radio-option-desc">Structured sequence of modules and assessments</div>
+            </div>
+          </div>
+          <div
+            className={`radio-option ${selectedContentType === 'Document' ? 'selected' : ''}`}
+            onClick={() => handleContentTypeSelect('Document')}
+          >
+            <input
+              type="radio"
+              name="contentType"
+              value="Document"
+              checked={selectedContentType === 'Document'}
+              onChange={() => { }}
+              // style={{ display: 'none' }}
+            />
+            <div className="radio-option-content">
+              <div className="radio-option-title">Document</div>
+              <div className="radio-option-desc">An index document containing URLs</div>
+            </div>
+          </div>
+          <div
+            className={`radio-option ${selectedContentType === 'SCORM' ? 'selected' : ''}`}
+            onClick={() => handleContentTypeSelect('SCORM')}
+          >
+            <input
+              type="radio"
+              name="contentType"
+              value="SCORM"
+              checked={selectedContentType === 'SCORM'}
+              onChange={() => { }}
+              // style={{ display: 'none' }}
+            />
+            <div className="radio-option-content">
+              <div className="radio-option-title">SCORM</div>
+              <div className="radio-option-desc">SCORM Package</div>
             </div>
           </div>
         </div>

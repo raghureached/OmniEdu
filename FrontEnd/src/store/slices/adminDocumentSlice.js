@@ -2,11 +2,12 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
 
 // Async thunks for content management
-export const adminfetchContent = createAsyncThunk(
+export const adminfetchDocument = createAsyncThunk(
   'adminDocument/fetchContent',
   async (filters, { rejectWithValue }) => {
     try {
       const response = await api.get('api/admin/getDocuments', { params: filters });
+      console.log(response.data.data)
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -117,16 +118,16 @@ const adminDocumentSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(adminfetchContent.pending, (state) => {
+      .addCase(adminfetchDocument.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(adminfetchContent.fulfilled, (state, action) => {
+      .addCase(adminfetchDocument.fulfilled, (state, action) => {
         state.loading = false;
         state.items = action.payload;
         state.totalCount = action.payload.totalCount;
       })
-      .addCase(adminfetchContent.rejected, (state, action) => {
+      .addCase(adminfetchDocument.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || 'Failed to fetch content';
       })

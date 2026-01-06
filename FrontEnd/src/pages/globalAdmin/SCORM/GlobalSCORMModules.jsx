@@ -8,14 +8,14 @@ import { GoX } from 'react-icons/go';
 import { RiDeleteBinFill } from 'react-icons/ri';
 import { notifySuccess, notifyError } from '../../../utils/notification';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
-import "../ContentModules/ModuleManagement.css";
+
 import ExportModal from '../../../components/common/ExportModal/ExportModal';
 import SelectionBanner from '../../../components/Banner/SelectionBanner';
 import {categories} from '../../../utils/constants';
-import ScormModuleModal from './UploadScorm';
+import ScormModuleModal from '../../admin/SCORM/UploadScorm';
 import { exportModulesWithSelection } from '../../../utils/moduleExport';
 
-const SCORMModules = () => {
+const GlobalSCORMModules = () => {
     const [modules, setModules] = useState([]);
     const [loading, setLoading] = useState(false);
     const [filters, setFilters] = useState({
@@ -93,7 +93,7 @@ useEffect(() => {
         if (!confirmed) return;
 
         try {
-            await Promise.all(ids.map(id => api.delete(`/api/scorm/${id}`)));
+            await Promise.all(ids.map(id => api.delete(`/api/scorm/global/${id}`)));
             notifySuccess(`${ids.length} module(s) deleted successfully`);
             fetchModules();
             clearSelection();
@@ -139,7 +139,7 @@ useEffect(() => {
     const fetchModules = async () => {
         setLoading(true);
         try {
-            const res = await api.get('/api/scorm/fetch');
+            const res = await api.get('/api/scorm/global/fetch');
             setModules(res.data.modules || []);
         } catch (error) {
             console.error("Failed to fetch SCORM modules:", error);
@@ -179,7 +179,7 @@ useEffect(() => {
     useEffect(() => {
         const fetchTeams = async () => {
             try {
-                const res = await api.get('/api/admin/getGroups');
+                const res = await api.get('/api/globalAdmin/getGroups');
                 setTeams(res.data?.data || []);
             } catch (error) {
                 console.log(error);
@@ -203,7 +203,7 @@ useEffect(() => {
     // Launch SCORM module
     const launchModule = async (id) => {
         try {
-            const res = await api.post('/api/scorm/launch', { moduleId: id });
+            const res = await api.post('/api/scorm/global/launch', { moduleId: id });
             navigate("/player", { state: { url: res.data.launchUrl } });
         } catch (error) {
             console.error("Failed to launch SCORM module:", error);
@@ -223,7 +223,7 @@ useEffect(() => {
         if (!confirmed) return;
 
         try {
-            await api.delete(`/api/scorm/${id}`);
+            await api.delete(`/api/scorm/global/${id}`);
             notifySuccess("SCORM module deleted successfully");
             fetchModules();
             clearSelection();
@@ -597,9 +597,9 @@ useEffect(() => {
                     <p>Get started by uploading your first SCORM package</p>
                     <button
                         className="btn-primary"
-                        onClick={() => navigate('/admin/scorm/upload')}
+                        onClick={() => setShowModal(true)}
                     >
-                        <Plus size={16} /> Upload SCORM
+                        <Plus size={16} /> Create SCORM Module
                     </button>
                 </div>
             ) : (
@@ -712,35 +712,6 @@ useEffect(() => {
                             })}
                         </tbody>
                     </table>
-                    {showModal && (
-                        <ScormModuleModal
-                            showModal={showModal}
-                            setShowModal={setShowModal}
-                            teams={teams}
-                            mode="create"
-                            onSuccess={() => fetchModules()}
-                        />
-                    )}
-                    {showEditModal && (
-                        <ScormModuleModal
-                            showModal={showEditModal}
-                            setShowModal={(open) => {
-                                setShowEditModal(open);
-                                if (!open) {
-                                    setEditingModule(null);
-                                    setEditContentId('');
-                                }
-                            }}
-                            teams={teams}
-                            mode="edit"
-                            module={editingModule}
-                            onSuccess={() => {
-                                fetchModules();
-                                setEditingModule(null);
-                                setEditContentId('');
-                            }}
-                        />
-                    )}
                     {totalPages > 1 && (
                         <div className="pagination">
                             <button
@@ -762,6 +733,37 @@ useEffect(() => {
                     )}
                 </div>
             )}
+            {showModal && (
+                <ScormModuleModal
+                    showModal={showModal}
+                    setShowModal={setShowModal}
+                    teams={teams}
+                    mode="create"
+                    isGlobal={true}
+                    onSuccess={() => fetchModules()}
+                />
+            )}
+            {showEditModal && (
+                <ScormModuleModal
+                    showModal={showEditModal}
+                    setShowModal={(open) => {
+                        setShowEditModal(open);
+                        if (!open) {
+                            setEditingModule(null);
+                            setEditContentId('');
+                        }
+                    }}
+                    teams={teams}
+                    mode="edit"
+                    module={editingModule}
+                    isGlobal={true}
+                    onSuccess={() => {
+                        fetchModules();
+                        setEditingModule(null);
+                        setEditContentId('');
+                    }}
+                />
+            )}
             {showExportModal && (
                 <ExportModal
                     isOpen={showExportModal}
@@ -777,4 +779,4 @@ useEffect(() => {
     );
 };
 
-export default SCORMModules;
+export default GlobalSCORMModules;

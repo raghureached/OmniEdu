@@ -76,10 +76,6 @@ const LearnerAnalytics = () => {
         assignedCourses: 0,
         overdueCourses: 0,
     });
-    const [Deadlines, setDeadlines] = useState({
-        upcomingDeadlines: [],
-        overdueAssignments: [],
-    });
     const [rewards, setRewards] = useState({
         stars: 0,
         badges: 0,
@@ -115,7 +111,7 @@ const LearnerAnalytics = () => {
                 const [
                     statsResponse,
                     moduleResponse,
-                    deadlinesResponse,
+                    
                     rewardsResponse,
                     assessmentResponse,
                     weeklyResponse
@@ -126,7 +122,6 @@ const LearnerAnalytics = () => {
                     api.get('/api/user/analytics/getCourseAnalytics', {
                         params: dateParams
                     }),
-                    api.get('/api/user/analytics/getDeadlinesAndOverDue'),
                     api.get('/api/user/analytics/getUserRewards'),
                     api.get('/api/user/analytics/getAssessmentPerformance', {
                         params: dateParams
@@ -139,7 +134,6 @@ const LearnerAnalytics = () => {
                 // Set all data at once
                 setStats(statsResponse.data.data);
                 setModuleAnalytics(moduleResponse.data.data);
-                setDeadlines(deadlinesResponse.data.data);
                 setRewards(rewardsResponse.data.data);
                 setAssessmentScores(assessmentResponse.data.data);
                 setWeeklyActivity(weeklyResponse.data.data);

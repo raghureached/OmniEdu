@@ -1,6 +1,4 @@
 const OrganizationModule = require("../../models/moduleOrganization_model");
-const { z } = require("zod");
-const UserProfile = require("../../models/userProfiles_model");
 
 
 const addModule = async (req, res) => {

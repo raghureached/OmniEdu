@@ -137,7 +137,8 @@ const getAnalyticsData = async (req, res) => {
         };
       })
     );
-
+    const topOrgData = orgData.sort((a, b) => b.users - a.users).slice(0, 4);
+      
     // Tickets
     const adminTickets = await adminTicket.find();
     const userTicketss = await userTickets.find();
@@ -157,7 +158,7 @@ const getAnalyticsData = async (req, res) => {
         totalUsers: { value: totalUsers, sublabel: "All Registered Users" },
         totalOrg: { value: organizations.length, sublabel: "All Organizations" }
       },
-      organizations: orgData,
+      organizations: topOrgData,
       ticketsData,
       timestamp: new Date()
     });

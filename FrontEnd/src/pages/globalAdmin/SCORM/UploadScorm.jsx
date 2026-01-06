@@ -7,7 +7,7 @@ import { categories } from "../../../utils/constants";
 import { notifyError, notifySuccess } from "../../../utils/notification";
 import api from "../../../services/api";
 
-const ScormModuleModal = ({ showModal, setShowModal, teams, onSuccess, mode = 'create', module = null, isGlobal = false }) => {
+const ScormModuleModal = ({ showModal, setShowModal, teams, onSuccess, mode = 'create', module = null }) => {
   const totalSteps = 3;
   const [currentStep, setCurrentStep] = useState(1);
 
@@ -148,7 +148,7 @@ const ScormModuleModal = ({ showModal, setShowModal, teams, onSuccess, mode = 'c
           .map((s) => s.trim())
           .filter(Boolean);
 
-        await api.put(isGlobal ? `/api/scorm/global/${module._id}` : `/api/scorm/${module._id}`, {
+        await api.put(`/api/scorm/${module._id}`, {
           title: form.title,
           description: form.description,
           tags,
@@ -181,7 +181,7 @@ const ScormModuleModal = ({ showModal, setShowModal, teams, onSuccess, mode = 'c
         fd.append("subteam", form.subteam);
         fd.append("status", form.status || "Draft");
 
-        await api.post(isGlobal ? "/api/scorm/global/upload" : "/api/scorm/upload", fd,{headers: {"Content-Type": "multipart/form-data"}});
+        await api.post("/api/scorm/upload", fd,{headers: {"Content-Type": "multipart/form-data"}});
         notifySuccess("SCORM module created successfully");
       }
 

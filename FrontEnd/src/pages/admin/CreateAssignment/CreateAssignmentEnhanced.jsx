@@ -10,14 +10,14 @@ import { getLearningPaths } from '../../../store/slices/learningPathSlice';
 import { admincreateAssignment } from '../../../store/slices/adminAssignmnetSlice';
 import api from '../../../services/api';
 import LoadingScreen from '../../../components/common/Loading/Loading';
-
 // Import step components
 import Step1ContentSelection from './components/Step1ContentSelection';
 import Step2UserSelection from './components/Step2UserSelection';
 import Step3ScheduleSettings from './components/Step3ScheduleSettings';
 import Step4ReviewConfirm from './components/Step4ReviewConfirm';
-import SummaryPanel from './components/SummaryPanel';
 import { notifyError, notifySuccess } from '../../../utils/notification';
+import { fetchAdminScorms } from '../../../store/slices/adminScormSlice';
+import { adminfetchDocument } from '../../../store/slices/adminDocumentSlice';
 
 const CreateAssignmentEnhanced = () => {
   const dispatch = useDispatch();
@@ -38,6 +38,9 @@ const CreateAssignmentEnhanced = () => {
     dispatch(fetchUsers());
     dispatch(fetchSurveys());
     dispatch(getLearningPaths());
+    dispatch(fetchAdminScorms());
+    dispatch(adminfetchDocument());
+    // console.log(documents)
     fetchGroups();
   }, [dispatch]);
 
@@ -47,6 +50,8 @@ const CreateAssignmentEnhanced = () => {
   const { assessments } = useSelector(state => state.globalAssessments);
   const { learningPaths } = useSelector(state => state.learningPaths);
   const { users, loading } = useSelector(state => state.users);
+  const { items:documents } = useSelector(state => state.adminDocument);
+  const { scorms } = useSelector(state => state.adminScorm);
 
   // Component state
   const [currentStep, setCurrentStep] = useState(1);
@@ -89,6 +94,10 @@ const CreateAssignmentEnhanced = () => {
         return surveys || [];
       case 'Learning Path':
         return learningPaths || [];
+      case 'Document':
+        return documents || [];
+      case 'SCORM':
+        return scorms || [];
       default:
         return [];
     }

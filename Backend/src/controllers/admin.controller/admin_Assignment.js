@@ -6,7 +6,9 @@ const LearningPath = require("../../models/learningPath_model");
 const OrganizationAssessments = require("../../models/organizationAssessments_model");
 const Module = require("../../models/moduleOrganization_model");
 const OrganizationSurveys = require("../../models/organizationSurveys_model");
-const { sendMail } = require("../../utils/Emailer");
+const OrganizationDocument = require("../../models/documentOrganization_model");
+const ScormModule = require("../../models/scorm/scormModule");
+const { sendMailtoIds } = require("../../utils/Emailer");
 const Notification = require("../../models/Notification_model");
 const { logActivity } = require("../../utils/activityLogger");
 // If you also track user progress
@@ -53,9 +55,13 @@ const createAssignment = async (req, res) => {
           ? "OrganizationAssessments"
           : normalizedType === "Survey"
             ? "OrganizationSurvey"
-            : normalizedType === "Learning Path" || normalizedType === "LearningPath"
+            : (normalizedType === "Learning Path" || normalizedType === "LearningPath")
               ? "LearningPath"
-              : null;
+              : normalizedType === "Document"
+                ? "OrganizationDocument"
+                : normalizedType === "SCORM"
+                  ? "ScormModule"
+                  : null;
 
     let lp = null;
     if (content_type === "LearningPath" && contentId) {
@@ -158,6 +164,7 @@ const createAssignment = async (req, res) => {
     }
     // Create progress records for targeted users
     let targetUserIds = [];
+    let emailUserIds = [];
     if (isIndividual) {
       targetUserIds = Array.isArray(assignedUsers) ? assignedUsers : [];
     } else if (Array.isArray(groups) && groups.length > 0) {
@@ -186,6 +193,7 @@ const createAssignment = async (req, res) => {
       const uniqueTargetUserIds = targetUserIds.filter(
         uid => !existingUserIds.has(uid.toString())
       );
+      emailUserIds = uniqueTargetUserIds;
 
 
       // If everyone already has this content, just return without creating a new assignment
@@ -238,8 +246,6 @@ const createAssignment = async (req, res) => {
         if (elementsProgress && elementsProgress.length > 0) {
           updateData.elements = elementsProgress;
 
-        } else {
-          console.log(`No elements to add for user ${uid}`);
         }
 
         return {
@@ -287,6 +293,12 @@ const createAssignment = async (req, res) => {
       updatePromises.push(OrganizationSurveys.updateOne({ _id: assignment.contentId }, { status: "Published" }).session(session));
     }
 
+    if (content_type === "OrganizationDocument") {
+      updatePromises.push(OrganizationDocument.updateOne({ _id: assignment.contentId }, { status: "Published" }).session(session));
+    } else if (content_type === "ScormModule") {
+      updatePromises.push(ScormModule.updateOne({ _id: assignment.contentId }, { status: "Published" }).session(session));
+    }
+
     if (updatePromises.length > 0) {
       await Promise.all(updatePromises);
     }
@@ -296,8 +308,8 @@ const createAssignment = async (req, res) => {
 
     // Send email outside of transaction (non-critical operation)
     try {
-      if (sendEmail) {
-        await sendMail();
+      if (sendEmail && Array.isArray(emailUserIds) && emailUserIds.length > 0) {
+        await sendMailtoIds(emailUserIds, "You have been assigned a new assignment", `You have been assigned a new assignment: ${contentName}`);
       }
     } catch (error) {
       console.log("Email sending failed:", error);

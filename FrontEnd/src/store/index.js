@@ -27,6 +27,7 @@ import rolePermissionsReducer from './slices/RolePermissionSlice'
 import adminDocumentReducer from './slices/adminDocumentSlice'
 import adminSubmissionSlice from './slices/adminSubmissionSlice'
 import globalSubmissionSlice from './slices/globalSubmissionsSlice'
+import adminScormReducer from './slices/adminScormSlice'
 
 const store = configureStore({
   reducer: {
@@ -58,7 +59,7 @@ const store = configureStore({
     rolePermissions: rolePermissionsReducer,
     adminDocument: adminDocumentReducer,
     adminSubmissions: adminSubmissionSlice,
-    
+    adminScorm: adminScormReducer,
     
   },
   middleware: (getDefaultMiddleware) =>

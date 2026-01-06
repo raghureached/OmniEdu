@@ -3,7 +3,7 @@ const { SUCCESS } = require("../utils/scorm.constants");
 const AdmZip = require("adm-zip");
 const path = require("path");
 const fs = require("fs");
-const ScormModule = require("../models/scorm/scormModule");
+const GlobalScormModule = require("../models/scorm/globalScormModule");
 const { parseManifest } = require("../utils/scormParser");
 const mongoose = require("mongoose");
 
@@ -33,16 +33,16 @@ const injectScormApi = (entryFilePath, registrationId) => {
     const rid = "${registrationId}";
     window.API = {
       LMSInitialize: function () {
-        fetch("/api/scorm/initialize", { method: "POST" });
+        fetch("//api/scorm/global/initialize", { method: "POST" });
         return "true";
       },
       LMSGetValue: function (key) {
-        return fetch("/api/scorm/value?registrationId=" + rid + "&key=" + key)
+        return fetch("/api/scorm/global/value?registrationId=" + rid + "&key=" + key)
           .then(r => r.json())
           .then(d => d.value || "");
       },
       LMSSetValue: function (key, value) {
-        fetch("/api/scorm/value", {
+        fetch("/api/scorm/global/value", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ registrationId: rid, key, value })
@@ -50,11 +50,11 @@ const injectScormApi = (entryFilePath, registrationId) => {
         return "true";
       },
       LMSCommit: function () {
-        fetch("/api/scorm/commit", { method: "POST" });
+        fetch("/api/scorm/global/commit", { method: "POST" });
         return "true";
       },
       LMSFinish: function () {
-        fetch("/api/scorm/finish", {
+        fetch("/api/scorm/global/finish", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ registrationId: rid })
@@ -101,13 +101,12 @@ exports.uploadScorm = async (req, res) => {
     injectScormApi(entryFilePath, registrationId);
 
     // Create the module with all fields
-    const module = await ScormModule.create({
+    const module = await GlobalScormModule.create({
       title,
       description,
       tags: Array.isArray(tags) ? tags : tags.split(',').map(t => t.trim()),
       team: team || null,
       subteam: subteam || null,
-      organization_id: req.user?.organization_id || null,
       category,
       credits: parseInt(credits) || 2,
       prerequisites: Array.isArray(prerequisites) ? 
@@ -121,7 +120,7 @@ exports.uploadScorm = async (req, res) => {
       scormPath: extractPath,
       createdBy: req.user._id,
       created_by: req.user._id,
-      global: false
+      global: true
     });
 
     res.json({
@@ -153,7 +152,7 @@ exports.getScormModules = async (req, res) => {
       limit = 10
     } = req.query;
 
-    const query = { global: false, organization_id: req.user?.organization_id };
+    const query = { global: true };
 
     if (status) query.status = status;
     if (team) query.team = team;
@@ -170,7 +169,7 @@ exports.getScormModules = async (req, res) => {
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const [modules, total] = await Promise.all([
-      ScormModule.find(query)
+      GlobalScormModule.find(query)
         .populate('team', 'name')
         .populate('subteam', 'name')
         .populate('createdBy', 'name email')
@@ -178,7 +177,7 @@ exports.getScormModules = async (req, res) => {
         .skip(skip)
         .limit(parseInt(limit))
         .lean(),
-      ScormModule.countDocuments(query)
+      GlobalScormModule.countDocuments(query)
     ]);
 
     res.json({
@@ -206,7 +205,7 @@ exports.getScormModules = async (req, res) => {
  */
 exports.getScormModule = async (req, res) => {
   try {
-    const module = await ScormModule.findOne({ _id: req.params.id, global: false, organization_id: req.user?.organization_id })
+    const module = await GlobalScormModule.findOne({ _id: req.params.id, global: true ,organization_id:null})
       .populate('team', 'name')
       .populate('subteam', 'name')
       .populate('createdBy', 'name email');
@@ -273,8 +272,8 @@ exports.updateScormModule = async (req, res) => {
       ...(status && { status })
     };
 
-    const updatedModule = await ScormModule.findOneAndUpdate(
-      { _id: req.params.id, global: false, organization_id: req.user?.organization_id },
+    const updatedModule = await GlobalScormModule.findOneAndUpdate(
+      { _id: req.params.id, global: true },
       updateData,
       { new: true, runValidators: true }
     );
@@ -305,7 +304,7 @@ exports.updateScormModule = async (req, res) => {
  */
 exports.deleteScormModule = async (req, res) => {
   try {
-    const module = await ScormModule.findOneAndDelete({ _id: req.params.id, global: false, organization_id: req.user?.organization_id });
+    const module = await GlobalScormModule.findOneAndDelete({ _id: req.params.id, global: true });
 
     if (!module) {
       return res.status(404).json({
@@ -344,7 +343,7 @@ exports.launch = async (req, res) => {
     const { moduleId } = req.body;
     const userId = req.user._id;
 
-    const module = await ScormModule.findOne({ _id: moduleId, global: false, organization_id: req.user?.organization_id });
+    const module = await GlobalScormModule.findOne({ _id: moduleId });
     if (!module) {
       return res.status(404).json({ message: "Module not found" });
     }
@@ -405,7 +404,7 @@ exports.finish = async (req, res) => {
 
 exports.getScormModules = async (req, res) => {
   try {
-    const modules = await ScormModule.find().sort({ createdAt: -1 });
+    const modules = await GlobalScormModule.find().sort({ createdAt: -1 });
     res.json({ success: true, modules });
   } catch (error) {
     console.error("Error fetching SCORM modules:", error);

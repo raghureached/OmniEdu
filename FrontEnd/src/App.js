@@ -81,6 +81,7 @@ import GradeSubmission from './components/GradeSubmissions/GradeSubmission';
 import { fetchPermissions } from './store/slices/RolePermissionSlice';
 import NotAllowed from './pages/NotAllowed/NotAllowed';
 import SCORMModules from './pages/admin/SCORM/SCORMModules';
+import GlobalSCORMModules from './pages/globalAdmin/SCORM/GlobalSCORMModules';
 import Player from './components/ScormPlayer/ScormPlayer';
 
 function App() {
@@ -190,8 +191,9 @@ function App() {
           <Route path='support/:role' element={<GlobalTicketsTable />} />
           <Route path='grade-submissions' element={<GradeSubmission />} />
           <Route path='viewSubmissions/:moduleId' element={<GradeSubmission />} />
+        
 
-          <Route path="scorm" element={<SCORMModules />} />
+          <Route path="scorm" element={<GlobalSCORMModules />} />
 
         </Route>
         <Route element={<NavbarOnly />}>
@@ -226,6 +228,7 @@ function App() {
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="*" element={<div>Page Not Found</div>} />
         <Route path='test' element={<NotAllowed />} />
+        <Route path='loading' element={<LoadingScreen />} />
 
     
 

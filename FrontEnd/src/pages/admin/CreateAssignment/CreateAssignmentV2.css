@@ -148,8 +148,8 @@
 
 /* Radio Group */
 .cae-scope .radio-group {
-  display: flex;
-  /* flex-direction: column; */
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 12px;
 }
 
@@ -343,6 +343,14 @@
 .cae-scope .item-badge.path {
   background: #e8f5e9;
   color: #388e3c;
+}
+.cae-scope .item-badge.document {
+  background: #cccecc;
+  color: #388d8e;
+}
+.cae-scope .item-badge.scorm {
+  background: #e8f5e9;
+  color: #8e8b38;
 }
 
 /* User Selection Mode */

@@ -1,5 +1,5 @@
 import Mailjet from "node-mailjet";
-
+import User from "./../models/users_model.js"
 const mailjet = new Mailjet({
   apiKey: process.env.MAILJET_API_KEY,
   apiSecret: process.env.MAILJET_SECRET_KEY,
@@ -26,6 +26,16 @@ You are receiving this email because you registered on our platform.
   `;
 
   try {
+    const recipients = Array.isArray(to)
+      ? to.filter(Boolean).map((email) => ({ Email: email, Name: (email || '').split('@')[0] || 'User' }))
+      : to
+        ? [{ Email: to, Name: (to || '').split('@')[0] || 'User' }]
+        : [];
+
+    if (!recipients.length) {
+      console.warn('sendMail called with no recipients');
+      return { success: true, info: 'No recipients, skipped sending' };
+    }
     const request = await mailjet
       .post("send", { version: "v3.1" })
       .request({
@@ -35,12 +45,7 @@ You are receiving this email because you registered on our platform.
               Email: process.env.MAIL_FROM || "noreply@yourdomain.com",
               Name: "OmniEdu Team"
             },
-            To: [
-              {
-                Email: to,
-                Name: to.split('@')[0]
-              }
-            ],
+            To: recipients,
             Subject: subject,
             TextPart: messageText,
             HTMLPart: messageHtml
@@ -48,7 +53,7 @@ You are receiving this email because you registered on our platform.
         ]
       });
 
-    console.log('Email sent successfully to:', to);
+    console.log('Email sent successfully to:', Array.isArray(to) ? to : [to]);
     return { success: true, data: request.body };
   } catch (error) {
     console.warn('Warning: Failed to send email to', to, '-', 
@@ -63,4 +68,10 @@ You are receiving this email because you registered on our platform.
       }
     };
   }
+};
+
+export const sendMailtoIds = async (ids, subject, text) => {
+  const users = await User.find({ _id: { $in: ids } }).select("email");
+  const to = users.map(user => user.email);
+  return sendMail(to, subject, text);
 };

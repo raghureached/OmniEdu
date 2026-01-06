@@ -16,7 +16,7 @@ const assignmentSchema = new mongoose.Schema(
     assign_type: {
       type: String,
       required: true,
-      enum: ["OrganizationModule", "OrganizationAssessments", "OrganizationSurvey", "LearningPath"]
+      enum: ["OrganizationModule", "OrganizationAssessments", "OrganizationSurvey", "LearningPath","OrganizationDocument","ScormModule"]
     },
     contentId: {
       type: mongoose.Schema.Types.ObjectId,

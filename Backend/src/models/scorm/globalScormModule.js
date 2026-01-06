@@ -1,11 +1,10 @@
 const mongoose = require("mongoose");
 const { v4: uuidv4 } = require("uuid");
 
-const ScormModuleSchema = new mongoose.Schema({
+const GlobalScormModuleSchema = new mongoose.Schema({
   entryPoint: String,
   scormPath: String,
   createdBy: mongoose.Schema.Types.ObjectId,
-  status: { type: String, default: "Draft" },
   uuid: {
     type: String,
     default: uuidv4,
@@ -21,7 +20,6 @@ const ScormModuleSchema = new mongoose.Schema({
     type: [String],
     default: []
   },
-
   team: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Team",
@@ -31,12 +29,6 @@ const ScormModuleSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "SubTeam",
     default: null,
-  },
-  organization_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Organization",
-    default: null,
-    index: true,
   },
   category: {
     type: String,
@@ -80,10 +72,6 @@ const ScormModuleSchema = new mongoose.Schema({
     enum: ["Published", "Draft"],
     default: "Draft",
   },
-  global: {
-    type: Boolean,
-    default: false,
-  },
 }, { timestamps: true });
 
-module.exports = mongoose.model("ScormModule", ScormModuleSchema);
+module.exports = mongoose.model("GlobalScormModule", GlobalScormModuleSchema);

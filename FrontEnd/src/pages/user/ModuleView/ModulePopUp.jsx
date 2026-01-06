@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GoBook } from 'react-icons/go';
+import api from '../../../services/api';
 
-const ModulePopUp = ({ isOpen, onClose, data,enroll }) => {
+const ModulePopUp = ({ isOpen, onClose, data }) => {
     const navigate = useNavigate();
     const [showAll, setShowAll] = useState(false);
     const [showDescription, setShowDescription] = useState(false);
@@ -10,7 +11,6 @@ const ModulePopUp = ({ isOpen, onClose, data,enroll }) => {
     const title = data?.title || 'Untitled Module';
     const category = data?.category || 'Uncategorized';
     const trainingType = data?.trainingType || '—';
-
     const team = data?.team.name || '—';
     const subteam = data?.subteam.name || '—';
     const durationMins = data?.duration || null;
@@ -27,6 +27,34 @@ const ModulePopUp = ({ isOpen, onClose, data,enroll }) => {
         navigate(-1);
     }
     if (!open) return null;
+    
+
+    
+    let model;
+    if(data.type === "module"){
+        model = "GlobalModule"
+    }else if(data.type === "survey"){
+        model = "GlobalSurveys"
+    }else if(data.type = "assessment"){
+        model = "GlobalAssessments"
+    }
+    const payload = {
+        who:"",
+        model:model,
+        type:data.type,
+        name:data.title,
+    }
+
+    const enroll = () => {
+        try {
+            const response = api.post(`/api/user/enroll/${data._id}`,payload);
+            if (response.data.status === "success" || response.data.status === 200) {
+                navigate('/dashboard');
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    }
 
 
     return (

@@ -134,6 +134,24 @@ const LearningHub = () => {
       </section> */}
       <section className="learning-learning-section">
         <div className="learning-section-header">
+          <h3>Workspace</h3>
+          {assigned.length > 0 && <span className="learning-view-all" onClick={()=>navigate("user/assigned")}>View All</span>}
+        </div>
+
+        <div className="learning-modules-grid">
+          {loading ? (
+            renderSkeleton(2)
+          ) : (
+            assigned.length > 0 ?
+              assigned.slice(0,4).map(item => (
+                item?.assignment_id?.contentId && <CourseCard key={item.id} assign_id={item.assignment_id._id} data={item.assignment_id.contentId} status={item.status} progressPct={item.progress_pct} contentType={item.contentType} />
+              ))
+              : "You have no Assigned trainings."
+          )}
+        </div>
+      </section>
+      <section className="learning-learning-section">
+        <div className="learning-section-header">
           <h3>Assigned</h3>
           {assigned.length > 0 && <span className="learning-view-all" onClick={()=>navigate("user/assigned")}>View All</span>}
         </div>

@@ -11,7 +11,44 @@ button:hover { background: #005f87; }
 .slide { display: none; }
 .active { display: block; }
 </style>
-</head>
+
+  <script>
+  (function () {
+    const rid = "695d36f5eb60ed0eaf2148d7";
+    window.API = {
+      LMSInitialize: function () {
+        fetch("/api/scorm/initialize", { method: "POST" });
+        return "true";
+      },
+      LMSGetValue: function (key) {
+        return fetch("/api/scorm/value?registrationId=" + rid + "&key=" + key)
+          .then(r => r.json())
+          .then(d => d.value || "");
+      },
+      LMSSetValue: function (key, value) {
+        fetch("/api/scorm/value", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ registrationId: rid, key, value })
+        });
+        return "true";
+      },
+      LMSCommit: function () {
+        fetch("/api/scorm/commit", { method: "POST" });
+        return "true";
+      },
+      LMSFinish: function () {
+        fetch("/api/scorm/finish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ registrationId: rid })
+        });
+        return "true";
+      }
+    };
+  })();
+  </script>
+  </head>
 <body>
 <div id="slides">
 

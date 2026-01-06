@@ -14,7 +14,7 @@ const createSurvey = async (req, res) => {
   let session;
   try {
     const { title, description, sections, tags = [], team, subteam, status, noOfSections, noOfQuestions } = req.body;
-   console.log("log in surveys controller:",req.body)
+  //  console.log("log in surveys controller:",req.body)
     const created_by = req.user?.id || req.body.created_by; // Ensure created_by is passed or derived
 
     if (!title || !title.trim()) {

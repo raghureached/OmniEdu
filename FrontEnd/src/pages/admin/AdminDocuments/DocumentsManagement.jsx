@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { adminfetchContent, admindeleteContent, admincreateContent, adminupdateContent, adminbulkDeleteContent } from '../../../store/slices/adminDocumentSlice';
+import { adminfetchDocument, admindeleteContent, admincreateContent, adminupdateContent, adminbulkDeleteContent } from '../../../store/slices/adminDocumentSlice';
 import "./DocumentsManagement.css"
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X, Filter, Plus, BarChart3, Download ,Share} from 'lucide-react';
@@ -86,8 +86,7 @@ const DocumentsManagement = () => {
   const [subteams, setSubteams] = useState([])
   const [uploading, setUploading] = useState(false)
   useEffect(() => {
-    dispatch(adminfetchContent());
-    
+    dispatch(adminfetchDocument());
   }, [dispatch]);
 
   // Handle navigation state for filters from AdminAnalytics
