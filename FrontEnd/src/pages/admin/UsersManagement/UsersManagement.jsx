@@ -48,7 +48,7 @@ import { notify, notifyError, notifySuccess, notifyWarning } from '../../../util
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
 import SelectionBanner from '../../../components/Banner/SelectionBanner';
 import { Users } from 'lucide-react';
-
+import ImportModal from '../../../components/ImportModal/ImportModal';
 const UsersManagement = () => {
   const dispatch = useDispatch();
   const {
@@ -116,7 +116,7 @@ const UsersManagement = () => {
   const [teams, setTeams] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [isImporting, setIsImporting] = useState(false);
-  const fileInputRef = useRef(null);
+  // const fileInputRef = useRef(null);
   // Refs to support outside-click closing for panels
   const filterPanelRef = useRef(null);
   const bulkPanelRef = useRef(null);
@@ -138,7 +138,8 @@ const UsersManagement = () => {
   const [refetchIndex, setRefetchIndex] = useState(0);
   //export modal
   const [showExportModal, setShowExportModal] = useState(false);
-  
+  //import modal
+  const [showImportModal, setShowImportModal] = useState(false);
   // Highlighted user from navigation state
   const [highlightedUser, setHighlightedUser] = useState(null);
   // Centralized fetch: runs when filters change OR when we explicitly bump refetchIndex
@@ -501,12 +502,15 @@ const UsersManagement = () => {
     return matched ? (matched._id || matched.id || matched.uuid || matched.value) : null;
   };
 
+  // const handleImportButtonClick = () => {
+  //   if (fileInputRef.current) {
+  //     fileInputRef.current.value = '';
+  //     fileInputRef.current.click();
+  //   }
+  // };
   const handleImportButtonClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-      fileInputRef.current.click();
-    }
-  };
+  setShowImportModal(true);
+};
   ///email verification
   const isValidEmail = (email) => {
     if (!email) return false;
@@ -666,200 +670,379 @@ const UsersManagement = () => {
     return regex.test(name.trim());
   };
 
-  const handleImportUsers = async (event) => {
-    const file = event?.target?.files?.[0];
-    if (!file) return;
+  // const handleImportUsers = async (event) => {
+  //   const file = event?.target?.files?.[0];
+  //   if (!file) return;
 
-    setIsImporting(true);
+  //   setIsImporting(true);
 
-    try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data, { type: "array" });
+  //   try {
+  //     const data = await file.arrayBuffer();
+  //     const workbook = XLSX.read(data, { type: "array" });
 
-      if (!workbook.SheetNames.length) {
-        notifyError("No sheets found.");
-        return;
-      }
+  //     if (!workbook.SheetNames.length) {
+  //       notifyError("No sheets found.");
+  //       return;
+  //     }
 
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+  //     const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  //     const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-      if (!rawRows.length) {
-        notifyError("No data found in file.");
-        return;
-      }
+  //     if (!rawRows.length) {
+  //       notifyError("No data found in file.");
+  //       return;
+  //     }
 
-      // Build lookups from current state for dedupe
-      const teamLookup = new Map();
-      const subTeamLookup = new Map();
+  //     // Build lookups from current state for dedupe
+  //     const teamLookup = new Map();
+  //     const subTeamLookup = new Map();
 
-      const registerTeam = (teamObj) => {
-        if (!teamObj) return;
-        const id = resolveTeamIdentifier(teamObj);
-        const nameKey = toTrimmedString(teamObj?.name || teamObj?.teamName).toLowerCase();
-        if (nameKey) teamLookup.set(nameKey, teamObj);
-        const subs = Array.isArray(teamObj?.subTeams) ? teamObj.subTeams : [];
-        subs.forEach((st) => {
-          const subName = toTrimmedString(st?.name || st?.subTeamName).toLowerCase();
-          const subId = resolveSubTeamIdentifier(st);
-          if (!id || !subName) return;
-          subTeamLookup.set(`${id}::${subName}`, st);
-          // also map by ID for robustness when name missing
-          if (subId) subTeamLookup.set(`${id}::${subId}`, st);
+  //     const registerTeam = (teamObj) => {
+  //       if (!teamObj) return;
+  //       const id = resolveTeamIdentifier(teamObj);
+  //       const nameKey = toTrimmedString(teamObj?.name || teamObj?.teamName).toLowerCase();
+  //       if (nameKey) teamLookup.set(nameKey, teamObj);
+  //       const subs = Array.isArray(teamObj?.subTeams) ? teamObj.subTeams : [];
+  //       subs.forEach((st) => {
+  //         const subName = toTrimmedString(st?.name || st?.subTeamName).toLowerCase();
+  //         const subId = resolveSubTeamIdentifier(st);
+  //         if (!id || !subName) return;
+  //         subTeamLookup.set(`${id}::${subName}`, st);
+  //         // also map by ID for robustness when name missing
+  //         if (subId) subTeamLookup.set(`${id}::${subId}`, st);
+  //       });
+  //     };
+
+  //     (Array.isArray(teams) ? teams : []).forEach(registerTeam);
+
+  //     let successCount = 0;
+  //     const failedUsers = [];
+
+  //     for (let index = 0; index < rawRows.length; index++) {
+  //       const rowNum = index + 2;
+  //       const row = normalizeRow(rawRows[index]);
+
+  //       const name = toTrimmedString(getValue(row, ["name"]));
+  //       const email = toTrimmedString(getValue(row, ["email"]));
+  //       const designation = toTrimmedString(getValue(row, ["designation"]));
+  //       const teamName = toTrimmedString(getValue(row, ["team", "team name"]));
+  //       const subTeamName = toTrimmedString(getValue(row, ["subteam", "sub team", "sub team name"]));
+  //       let roleName = toTrimmedString(getValue(row, ["role"])) || "General User";
+  //       const custom1 = toTrimmedString(getValue(row, ["custom1", "custom 1"]));
+
+  //       // --- TEAM & SUBTEAM NAME VALIDATION ---
+  //       if (teamName && !isValidTeamName(teamName)) {
+  //         failedUsers.push({
+  //           name, email, designation, teamName, subTeamName, roleName, custom1,
+  //           reason: "Invalid characters in Team name. Only letters, numbers, spaces, / and - are allowed"
+  //         });
+  //         continue;
+  //       }
+
+  //       if (subTeamName && !isValidTeamName(subTeamName)) {
+  //         failedUsers.push({
+  //           name, email, designation, teamName, subTeamName, roleName, custom1,
+  //           reason: "Invalid characters in Subteam name. Only letters, numbers, spaces, / and - are allowed"
+  //         });
+  //         continue;
+  //       }
+
+  //       // --- VALIDATION RULES ---
+  //       if (!name || !email) {
+  //         failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Name or Email missing" });
+  //         continue;
+  //       }
+
+  //       if (!isValidEmail(email)) {
+  //         failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Invalid email format" });
+  //         continue;
+  //       }
+
+  //       if (!isValidLength(name, 80)) {
+  //         failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Name exceeds 80 characters" });
+  //         continue;
+  //       }
+
+  //       if (!isValidLength(designation, 100)) {
+  //         failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Designation too long" });
+  //         continue;
+  //       }
+
+  //       if (!isValidLength(custom1, 200)) {
+  //         failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Custom1 exceeds limit" });
+  //         continue;
+  //       }
+
+  //       // Validate role
+  //       const roleId = findRoleIdByName(roleName);
+  //       if (!roleId) {
+  //         failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: `Role "${roleName}" not found` });
+  //         continue;
+  //       }
+
+  //       // --- TEAM + SUBTEAM LOGIC ---
+  //       let teamObj = null;
+  //       let subTeamObj = null;
+
+  //       try {
+  //         // --- BLOCK INACTIVE TEAM BEFORE TEAM CREATION / USER IMPORT ---
+  //         if (teamName) {
+  //           // Find team in existing state
+  //           const existingTeam = teams?.find(
+  //             (t) => t?.name?.trim().toLowerCase() === teamName.trim().toLowerCase()
+  //           );
+
+  //           if (existingTeam) {
+  //             const teamStatus = existingTeam?.status?.toLowerCase();
+
+  //             if (teamStatus === "inactive") {
+  //               failedUsers.push({
+  //                 name,
+  //                 email,
+  //                 designation,
+  //                 teamName,
+  //                 subTeamName,
+  //                 roleName,
+  //                 custom1,
+  //                 reason: "Cannot import user into an inactive team",
+  //               });
+  //               continue;
+  //             }
+  //           }
+  //         }
+
+  //         if (teamName) teamObj = await ensureTeamByName(teamName, teamLookup, dispatch, createTeam, setTeams, setDepartments);
+  //         if (teamObj && subTeamName) subTeamObj = await ensureSubTeamByName(teamObj, subTeamName, subTeamLookup, dispatch, createSubTeam, setTeams);
+  //       } catch (err) {
+  //         failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: err?.message || "Team/Subteam error" });
+  //         continue;
+  //       }
+
+  //       // --- CREATE USER PAYLOAD ---
+  //       const payload = {
+  //         name,
+  //         email,
+  //         designation,
+  //         team: teamObj ? resolveTeamIdentifier(teamObj) : undefined,
+  //         subteam: subTeamObj ? resolveSubTeamIdentifier(subTeamObj) : undefined,
+  //         role: roleId,
+  //         custom1,
+  //         invite: false,
+  //       };
+
+  //       try {
+  //         await dispatch(createUser(payload)).unwrap();
+  //         successCount++;
+  //       } catch (err) {
+  //         failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: err?.message || "Failed to create user/User already exists" });
+  //       }
+  //     }
+
+  //     // ---- Refresh data ----
+  //     if (successCount > 0) {
+  //       setRefetchIndex(i => i + 1);
+  //       getTeams();
+  //     }
+
+
+  //     if (failedUsers.length > 0) {
+  //       // Show modal instead of notification
+  //       setImportResults({
+  //         successCount: successCount,
+  //         failedRows: failedUsers
+  //       });
+  //       setShowFailedImportModal(true);
+  //     } else {
+  //       notifySuccess(`Imported ${successCount} user(s).`, { title: "Import successful." });
+  //       clearAllSelections();
+  //     }
+  //   } catch (err) {
+  //     // console.error("Import error:", err);
+  //     notifyError("Import failed. Please check the file.");
+  //   } finally {
+  //     if (event?.target) event.target.value = "";
+  //     setIsImporting(false);
+  //   }
+  // };
+ const handleImportFromModal = async (file) => {
+  if (!file) return;
+
+  setIsImporting(true);
+
+  try {
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type: "array" });
+
+    if (!workbook.SheetNames.length) {
+      notifyError("No sheets found.");
+      return;
+    }
+
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+    if (!rawRows.length) {
+      notifyError("No data found in file.");
+      return;
+    }
+
+    // Build lookups from current state for dedupe
+    const teamLookup = new Map();
+    const subTeamLookup = new Map();
+
+    const registerTeam = (teamObj) => {
+      if (!teamObj) return;
+      const id = resolveTeamIdentifier(teamObj);
+      const nameKey = toTrimmedString(teamObj?.name || teamObj?.teamName).toLowerCase();
+      if (nameKey) teamLookup.set(nameKey, teamObj);
+      const subs = Array.isArray(teamObj?.subTeams) ? teamObj.subTeams : [];
+      subs.forEach((st) => {
+        const subName = toTrimmedString(st?.name || st?.subTeamName).toLowerCase();
+        const subId = resolveSubTeamIdentifier(st);
+        if (!id || !subName) return;
+        subTeamLookup.set(`${id}::${subName}`, st);
+        if (subId) subTeamLookup.set(`${id}::${subId}`, st);
+      });
+    };
+
+    (Array.isArray(teams) ? teams : []).forEach(registerTeam);
+
+    let successCount = 0;
+    const failedUsers = [];
+
+    for (let index = 0; index < rawRows.length; index++) {
+      const rowNum = index + 2;
+      const row = normalizeRow(rawRows[index]);
+
+      const name = toTrimmedString(getValue(row, ["name"]));
+      const email = toTrimmedString(getValue(row, ["email"]));
+      const designation = toTrimmedString(getValue(row, ["designation"]));
+      const teamName = toTrimmedString(getValue(row, ["team", "team name"]));
+      const subTeamName = toTrimmedString(getValue(row, ["subteam", "sub team", "sub team name"]));
+      let roleName = toTrimmedString(getValue(row, ["role"])) || "General User";
+      const custom1 = toTrimmedString(getValue(row, ["custom1", "custom 1"]));
+
+      // Validation
+      if (teamName && !isValidTeamName(teamName)) {
+        failedUsers.push({
+          name, email, designation, teamName, subTeamName, roleName, custom1,
+          reason: "Invalid characters in Team name. Only letters, numbers, spaces, / and - are allowed"
         });
-      };
+        continue;
+      }
 
-      (Array.isArray(teams) ? teams : []).forEach(registerTeam);
+      if (subTeamName && !isValidTeamName(subTeamName)) {
+        failedUsers.push({
+          name, email, designation, teamName, subTeamName, roleName, custom1,
+          reason: "Invalid characters in Subteam name. Only letters, numbers, spaces, / and - are allowed"
+        });
+        continue;
+      }
 
-      let successCount = 0;
-      const failedUsers = [];
+      if (!name || !email) {
+        failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Name or Email missing" });
+        continue;
+      }
 
-      for (let index = 0; index < rawRows.length; index++) {
-        const rowNum = index + 2;
-        const row = normalizeRow(rawRows[index]);
+      if (!isValidEmail(email)) {
+        failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Invalid email format" });
+        continue;
+      }
 
-        const name = toTrimmedString(getValue(row, ["name"]));
-        const email = toTrimmedString(getValue(row, ["email"]));
-        const designation = toTrimmedString(getValue(row, ["designation"]));
-        const teamName = toTrimmedString(getValue(row, ["team", "team name"]));
-        const subTeamName = toTrimmedString(getValue(row, ["subteam", "sub team", "sub team name"]));
-        let roleName = toTrimmedString(getValue(row, ["role"])) || "General User";
-        const custom1 = toTrimmedString(getValue(row, ["custom1", "custom 1"]));
+      if (!isValidLength(name, 80)) {
+        failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Name exceeds 80 characters" });
+        continue;
+      }
 
-        // --- TEAM & SUBTEAM NAME VALIDATION ---
-        if (teamName && !isValidTeamName(teamName)) {
-          failedUsers.push({
-            name, email, designation, teamName, subTeamName, roleName, custom1,
-            reason: "Invalid characters in Team name. Only letters, numbers, spaces, / and - are allowed"
-          });
-          continue;
-        }
+      if (!isValidLength(designation, 100)) {
+        failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Designation too long" });
+        continue;
+      }
 
-        if (subTeamName && !isValidTeamName(subTeamName)) {
-          failedUsers.push({
-            name, email, designation, teamName, subTeamName, roleName, custom1,
-            reason: "Invalid characters in Subteam name. Only letters, numbers, spaces, / and - are allowed"
-          });
-          continue;
-        }
+      if (!isValidLength(custom1, 200)) {
+        failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Custom1 exceeds limit" });
+        continue;
+      }
 
-        // --- VALIDATION RULES ---
-        if (!name || !email) {
-          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Name or Email missing" });
-          continue;
-        }
+      const roleId = findRoleIdByName(roleName);
+      if (!roleId) {
+        failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: `Role "${roleName}" not found` });
+        continue;
+      }
 
-        if (!isValidEmail(email)) {
-          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Invalid email format" });
-          continue;
-        }
+      let teamObj = null;
+      let subTeamObj = null;
 
-        if (!isValidLength(name, 80)) {
-          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Name exceeds 80 characters" });
-          continue;
-        }
+      try {
+        if (teamName) {
+          const existingTeam = teams?.find(
+            (t) => t?.name?.trim().toLowerCase() === teamName.trim().toLowerCase()
+          );
 
-        if (!isValidLength(designation, 100)) {
-          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Designation too long" });
-          continue;
-        }
-
-        if (!isValidLength(custom1, 200)) {
-          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Custom1 exceeds limit" });
-          continue;
-        }
-
-        // Validate role
-        const roleId = findRoleIdByName(roleName);
-        if (!roleId) {
-          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: `Role "${roleName}" not found` });
-          continue;
-        }
-
-        // --- TEAM + SUBTEAM LOGIC ---
-        let teamObj = null;
-        let subTeamObj = null;
-
-        try {
-          // --- BLOCK INACTIVE TEAM BEFORE TEAM CREATION / USER IMPORT ---
-          if (teamName) {
-            // Find team in existing state
-            const existingTeam = teams?.find(
-              (t) => t?.name?.trim().toLowerCase() === teamName.trim().toLowerCase()
-            );
-
-            if (existingTeam) {
-              const teamStatus = existingTeam?.status?.toLowerCase();
-
-              if (teamStatus === "inactive") {
-                failedUsers.push({
-                  name,
-                  email,
-                  designation,
-                  teamName,
-                  subTeamName,
-                  roleName,
-                  custom1,
-                  reason: "Cannot import user into an inactive team",
-                });
-                continue;
-              }
+          if (existingTeam) {
+            const teamStatus = existingTeam?.status?.toLowerCase();
+            if (teamStatus === "inactive") {
+              failedUsers.push({
+                name, email, designation, teamName, subTeamName, roleName, custom1,
+                reason: "Cannot import user into an inactive team",
+              });
+              continue;
             }
           }
-
-          if (teamName) teamObj = await ensureTeamByName(teamName, teamLookup, dispatch, createTeam, setTeams, setDepartments);
-          if (teamObj && subTeamName) subTeamObj = await ensureSubTeamByName(teamObj, subTeamName, subTeamLookup, dispatch, createSubTeam, setTeams);
-        } catch (err) {
-          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: err?.message || "Team/Subteam error" });
-          continue;
         }
 
-        // --- CREATE USER PAYLOAD ---
-        const payload = {
-          name,
-          email,
-          designation,
-          team: teamObj ? resolveTeamIdentifier(teamObj) : undefined,
-          subteam: subTeamObj ? resolveSubTeamIdentifier(subTeamObj) : undefined,
-          role: roleId,
-          custom1,
-          invite: false,
-        };
-
-        try {
-          await dispatch(createUser(payload)).unwrap();
-          successCount++;
-        } catch (err) {
-          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: err?.message || "Failed to create user/User already exists" });
-        }
+        if (teamName) teamObj = await ensureTeamByName(teamName, teamLookup, dispatch, createTeam, setTeams, setDepartments);
+        if (teamObj && subTeamName) subTeamObj = await ensureSubTeamByName(teamObj, subTeamName, subTeamLookup, dispatch, createSubTeam, setTeams);
+      } catch (err) {
+        failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: err?.message || "Team/Subteam error" });
+        continue;
       }
 
-      // ---- Refresh data ----
-      if (successCount > 0) {
-        setRefetchIndex(i => i + 1);
-        getTeams();
-      }
+      const payload = {
+        name,
+        email,
+        designation,
+        team: teamObj ? resolveTeamIdentifier(teamObj) : undefined,
+        subteam: subTeamObj ? resolveSubTeamIdentifier(subTeamObj) : undefined,
+        role: roleId,
+        custom1,
+        invite: false,
+      };
 
-
-      if (failedUsers.length > 0) {
-        // Show modal instead of notification
-        setImportResults({
-          successCount: successCount,
-          failedRows: failedUsers
-        });
-        setShowFailedImportModal(true);
-      } else {
-        notifySuccess(`Imported ${successCount} user(s).`, { title: "Import successful." });
-        clearAllSelections();
+      try {
+        await dispatch(createUser(payload)).unwrap();
+        successCount++;
+      } catch (err) {
+        failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: err?.message || "Failed to create user/User already exists" });
       }
-    } catch (err) {
-      // console.error("Import error:", err);
-      notifyError("Import failed. Please check the file.");
-    } finally {
-      if (event?.target) event.target.value = "";
-      setIsImporting(false);
     }
-  };
+
+    // Refresh data
+    if (successCount > 0) {
+      setRefetchIndex(i => i + 1);
+      getTeams();
+    }
+
+    // Close modal
+    setShowImportModal(false);
+
+    if (failedUsers.length > 0) {
+      setImportResults({
+        successCount: successCount,
+        failedRows: failedUsers
+      });
+      setShowFailedImportModal(true);
+    } else {
+      notifySuccess(`Imported ${successCount} user(s).`, { title: "Import successful." });
+      clearAllSelections();
+    }
+  } catch (err) {
+    notifyError("Import failed. Please check the file.");
+    setShowImportModal(false);
+  } finally {
+    setIsImporting(false);
+  }
+};
   const userFailedColumns = [
     { key: "name", label: "Name" },
     { key: "email", label: "Email" },
@@ -1121,17 +1304,19 @@ const UsersManagement = () => {
         name: user?.name || '',
         email: user?.email || '',
         designation: user.profile?.designation || '',
+        employeeID: user.profile?.employee_id || '',
         role: typeof user?.global_role_id === 'string'
           ? user.global_role_id
           : user?.global_role_id?.name || user?.global_role_id?.title || '',
         team: teamNames.join(', '),
-        subteam: subTeamNames.join(', ')
+        subteam: subTeamNames.join(', '),
+        custom1: user.profile?.custom1 || '',
       };
     });
 
     // Define CSV headers
-    const headers = ['name', 'email', 'designation', 'role', 'team', 'subteam'];
-    const headerLabels = ['Name', 'Email', 'Designation', 'Role', 'Team', 'Subteam'];
+    const headers = ['name', 'email', 'designation', 'employeeID', 'role', 'team', 'subteam', 'custom1'];
+    const headerLabels = ['Name', 'Email', 'Designation', 'Employee ID', 'Role', 'Team', 'Subteam', 'Custom1'];
 
     // Helper to escape CSV values
     const escapeCsvValue = (value) => {
@@ -1585,10 +1770,15 @@ const UsersManagement = () => {
   const currentPage = filters.page || currentPageState || 1;
   const itemsPerPage = filters.limit || pageSizeState || 20;
   const totalPages = Math.max(1, Math.ceil((totalCount || 0) / itemsPerPage));
-  // Use server-paginated users so backend filters (status/role/team/subteam/search) reflect directly in UI
+  // Use sorted users for client-side sorting when no server filters are applied
   const paginatedUsers = useMemo(() => {
-    return Array.isArray(users) ? users : [];
-  }, [users]);
+    // If there are active filters (status, role, team, subteam, search), use server data
+    if (filters.status || filters.role || filters.team || filters.subteam || filters.search) {
+      return Array.isArray(users) ? users : [];
+    }
+    // Otherwise use client-side sorted data
+    return sortedUsers;
+  }, [users, sortedUsers, filters]);
 
   const currentPageUserIds = paginatedUsers
     .map((user) => resolveUserId(user))
@@ -1850,7 +2040,13 @@ const UsersManagement = () => {
   //   { value: 'sales', label: 'Sales' },
   //   { value: 'support', label: 'Support' }
   // ];
-
+// Template configuration for user import
+const USER_IMPORT_TEMPLATE = {
+  headers: ['Name', 'Email', 'Designation', 'Team', 'Subteam', 'Role', 'Custom1'],
+  sampleData: [
+    
+  ]
+};
   if (loading) {
     return <LoadingScreen text={"Loading users..."} />;
   }
@@ -1912,14 +2108,14 @@ const UsersManagement = () => {
               <Filter size={16} />
               Filter
             </button>
-            <input
+            {/* <input
               ref={fileInputRef}
               type="file"
               accept=".csv,.xlsx"
               style={{ display: 'none' }}
               onChange={handleImportUsers}
-            />
-            <button
+            /> */}
+            {/* <button
               className="control-btn"
               style={{ padding: '12px 12px' }}
               onClick={handleImportButtonClick}
@@ -1927,7 +2123,16 @@ const UsersManagement = () => {
               type="button"
             >
               {isImporting ? 'Importing…' : 'Import'} <Import size={16} color="#6b7280" />
-            </button>
+            </button> */}
+            <button
+  className="control-btn"
+  style={{ padding: '12px 12px' }}
+  onClick={handleImportButtonClick}
+  disabled={isImporting}
+  type="button"
+>
+  {isImporting ? 'Importing…' : 'Import'} <Import size={16} color="#6b7280" />
+</button>
             <button
               className="control-btn"
               style={{ padding: '12px 12px' }}
@@ -2521,6 +2726,17 @@ const UsersManagement = () => {
           hasMembers={true}
           exportType="users" // ✅ Specify this is for users
         />
+        <ImportModal
+  isOpen={showImportModal}
+  onClose={() => setShowImportModal(false)}
+  onImport={handleImportFromModal}
+  templateHeaders={USER_IMPORT_TEMPLATE.headers}
+  templateData={USER_IMPORT_TEMPLATE.sampleData}
+  title="Import Users"
+  acceptedFormats=".csv,.xlsx,.xls"
+  maxSizeText="Maximum size: 25 MB"
+  isImporting={isImporting}
+/>
       </div>
     </div>
   );

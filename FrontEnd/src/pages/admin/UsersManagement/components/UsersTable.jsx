@@ -263,8 +263,12 @@ const UsersTable = ({
                 <div className="users-user-avatar">{nameInitial}</div>
               </div>
               <div className="users-user-info">
-                <div className="users-user-name">{user?.name || '-'}</div>
-                <div className="users-email-cell">{user?.email || '-'}</div>
+                <div className="users-user-name" title={user?.name || '-'}>
+                  {(user?.name || '-').length > 20 ? `${(user?.name || '-').substring(0, 20)}...` : (user?.name || '-')}
+                </div>
+                <div className="users-email-cell" title={user?.email || '-'}>
+                  {(user?.email || '-').length > 25 ? `${(user?.email || '-').substring(0, 25)}...` : (user?.email || '-')}
+                </div>
 
               </div>
             </div>

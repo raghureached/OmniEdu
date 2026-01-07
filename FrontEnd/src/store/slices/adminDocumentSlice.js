@@ -7,7 +7,7 @@ export const adminfetchDocument = createAsyncThunk(
   async (filters, { rejectWithValue }) => {
     try {
       const response = await api.get('api/admin/getDocuments', { params: filters });
-      console.log(response.data.data)
+      // console.log(response.data.data)
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);

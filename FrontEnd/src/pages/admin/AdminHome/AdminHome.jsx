@@ -274,41 +274,41 @@ const AdminHome = () => {
           <div className="admin-quick-links-card">
             <h2 className="admin-message-card-title" style={{ marginBottom: '18px', marginTop: '10px' }}>User Analytics</h2>
             <div className="adminhome-stats-grid">
-              <div className="adminhome-stat-card">
+              <Link to="/admin/analytics" className="adminhome-stat-card clickable-stat-card">
                 <div className="adminhome-stat-icon" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
                   <UserCheck size={24} />
                 </div>
                 <div className="adminhome-stat-info">
-                  <div className="adminhome-stat-number">
+                  <div className={`adminhome-stat-number ${!analyticsLoading  ? 'adminhome-stat-underline' : ''}`}>
                     {analyticsLoading ? '...' : userAnalytics.dailyActiveUsers.toLocaleString()}
                   </div>
                   <div className="adminhome-stat-label">Daily Active Users</div>
                 </div>
-              </div>
+              </Link>
 
-              <div className="adminhome-stat-card">
+              <Link to="/admin/analytics" className="adminhome-stat-card clickable-stat-card">
                 <div className="adminhome-stat-icon" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' }}>
                   <Calendar size={24} />
                 </div>
                 <div className="adminhome-stat-info">
-                  <div className="adminhome-stat-number">
+                  <div className={`adminhome-stat-number ${!analyticsLoading  ? 'adminhome-stat-underline' : ''}`}>
                     {analyticsLoading ? '...' : userAnalytics.monthlyActiveUsers.toLocaleString()}
                   </div>
                   <div className="adminhome-stat-label">Monthly Active Users</div>
                 </div>
-              </div>
+              </Link>
 
-              <div className="adminhome-stat-card">
+              <Link to="/admin/users" className="adminhome-stat-card clickable-stat-card">
                 <div className="adminhome-stat-icon" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' }}>
                   <Users size={24} />
                 </div>
                 <div className="adminhome-stat-info">
-                  <div className="adminhome-stat-number">
+                  <div className={`adminhome-stat-number ${!analyticsLoading  ? 'adminhome-stat-underline' : ''}`}>
                     {analyticsLoading ? '...' : userAnalytics.totalUsers.toLocaleString()}
                   </div>
                   <div className="adminhome-stat-label">Total Users</div>
                 </div>
-              </div>
+              </Link>
 
               <div className="adminhome-stat-card">
                 <div className="adminhome-stat-icon" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>
@@ -328,12 +328,12 @@ const AdminHome = () => {
           <div className="admin-quick-links-card">
             <h2 className="admin-message-card-title"  style={{ marginBottom: '18px', marginTop: '10px' }}>Course Analytics</h2>
             <div className="adminhome-stats-grid">
-              <div className="adminhome-stat-card">
+              <Link to="/admin/content-modules" className="adminhome-stat-card clickable-stat-card">
                 <div className="adminhome-stat-icon" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
                   <BookOpen size={24} />
                 </div>
                 <div className="adminhome-stat-info">
-                  <div className="adminhome-stat-number">
+                  <div className={`adminhome-stat-number ${!countsLoading  ? 'adminhome-stat-underline' : ''}`}>
                     {countsLoading ? '...' : (contentCounts?.modules?.total || 0)}
                   </div>
                   <div className="adminhome-stat-label">Total Modules</div>
@@ -341,14 +341,14 @@ const AdminHome = () => {
                     {countsLoading ? '...' : contentCounts.modules.published} Published
                   </div> */}
                 </div>
-              </div>
+              </Link>
 
-              <div className="adminhome-stat-card">
+              <Link to="/admin/content-assessments" className="adminhome-stat-card clickable-stat-card">
                 <div className="adminhome-stat-icon" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' }}>
                   <ClipboardCheck size={24} />
                 </div>
                 <div className="adminhome-stat-info">
-                  <div className="adminhome-stat-number">
+                  <div className={`adminhome-stat-number ${!countsLoading ? 'adminhome-stat-underline' : ''}`}>
                     {countsLoading ? '...' : (contentCounts?.assessments?.total || 0)}
                   </div>
                   <div className="adminhome-stat-label">Total Assessments</div>
@@ -356,14 +356,14 @@ const AdminHome = () => {
                     {countsLoading ? '...' : contentCounts.assessments.published} Published
                   </div> */}
                 </div>
-              </div>
+              </Link>
 
-              <div className="adminhome-stat-card">
+              <Link to="/admin/manage-surveys" className="adminhome-stat-card clickable-stat-card">
                 <div className="adminhome-stat-icon" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' }}>
                   <ListChecks size={24} />
                 </div>
                 <div className="adminhome-stat-info">
-                  <div className="adminhome-stat-number">
+                  <div className={`adminhome-stat-number ${!countsLoading ? 'adminhome-stat-underline' : ''}`}>
                     {countsLoading ? '...' : (contentCounts?.surveys?.total || 0)}
                   </div>
                   <div className="adminhome-stat-label">Total Surveys</div>
@@ -371,14 +371,14 @@ const AdminHome = () => {
                     {countsLoading ? '...' : contentCounts.surveys.published} Published
                   </div> */}
                 </div>
-              </div>
+              </Link>
 
-              <div className="adminhome-stat-card">
+              <Link to="/admin/learning-paths" className="adminhome-stat-card clickable-stat-card">
                 <div className="adminhome-stat-icon" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>
                   <GraduationCap size={24} />
                 </div>
                 <div className="adminhome-stat-info">
-                  <div className="adminhome-stat-number">
+                  <div className={`adminhome-stat-number ${!countsLoading  ? 'adminhome-stat-underline' : ''}`}>
                     {countsLoading ? '...' : (contentCounts?.learningPaths?.total || 0)}
                   </div>
                   <div className="adminhome-stat-label">Total Learning Paths</div>
@@ -386,7 +386,7 @@ const AdminHome = () => {
                     Active Programs
                   </div> */}
                 </div>
-              </div>
+              </Link>
             </div>
           </div>
 

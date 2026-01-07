@@ -80,6 +80,30 @@
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
+
+/* Clickable stat cards */
+.adminhome-stat-card.clickable-stat-card {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.adminhome-stat-card.clickable-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.adminhome-stat-card.clickable-stat-card:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.adminhome-stat-underline {
+  text-decoration: underline;
+  text-decoration-color: black;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 1px;
+}
 .adminhome-stat-icon {
   width: 48px;
   height: 48px;

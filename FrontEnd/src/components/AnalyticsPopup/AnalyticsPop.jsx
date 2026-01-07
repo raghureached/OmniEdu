@@ -442,7 +442,7 @@ const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false, an
                                             </td>
                                             <td>
                                                 <span className={`score-cell ${getScoreColor(item.score)}`}>
-                                                    {item.score}%
+                                                    {item.score === '-' ? '0' : item.score}%
                                                 </span>
                                             </td>
                                             <td>

@@ -1,0 +1,307 @@
+/* ImportModal.css */
+
+.import-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.import-modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+.import-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.import-modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.import-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  transition: all 0.2s;
+  border-radius: 6px;
+}
+
+.import-modal-close:hover {
+  background-color: #f3f4f6;
+  color: #111827;
+}
+
+.import-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.import-dropzone {
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  transition: all 0.3s;
+  background-color: #f9fafb;
+  cursor: pointer;
+}
+
+.import-dropzone.active {
+  border-color: #1D6F42;
+  background-color: #f0fdf4;
+}
+
+.import-dropzone.has-file {
+  border-color: #011F5B;
+  background-color: #eff4ff;
+}
+
+.import-dropzone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.excel-icon {
+  margin-bottom: 8px;
+  opacity: 0.8;
+  transition: all 0.3s;
+}
+
+.excel-icon.selected {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.dropzone-text {
+  font-size: 15px;
+  color: #4b5563;
+  margin: 0;
+  font-weight: 500;
+}
+
+.choose-file-link {
+  background: none;
+  border: none;
+  color: #011F5B;
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: underline;
+  font-size: 15px;
+  padding: 0;
+  transition: all 0.2s;
+}
+
+.choose-file-link:hover {
+  color: #011F5B;
+}
+
+.selected-file-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 8px 0 4px;
+  word-break: break-word;
+}
+
+.selected-file-size {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 12px;
+}
+
+.change-file-btn {
+  background: none;
+  border: 2px solid #1D6F42;
+  color: #1D6F42;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.change-file-btn:hover {
+  background-color: #1D6F42;
+  color: white;
+}
+
+.import-info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding: 0 4px;
+}
+
+.import-info-text {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.import-template-section {
+  margin-top: 28px;
+  padding: 20px;
+  background-color: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.template-icon {
+  flex-shrink: 0;
+}
+
+.template-content {
+  flex: 1;
+}
+
+.template-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px;
+}
+
+.template-description {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.template-download-btn {
+  background: white;
+  border: 1px solid #d1d5db;
+  color: #374151;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.template-download-btn:hover {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.import-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.import-btn-cancel {
+  background: white;
+  border: 1px solid #d1d5db;
+  color: #374151;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.import-btn-cancel:hover:not(:disabled) {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.import-btn-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.import-btn-primary {
+  background: #1D6F42;
+  border: none;
+  color: white;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.import-btn-primary:hover:not(:disabled) {
+  background-color: #0F4C2A;
+}
+
+.import-btn-primary:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .import-modal-content {
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+    max-height: 100vh;
+  }
+
+  .import-dropzone {
+    padding: 32px 16px;
+  }
+
+  .import-template-section {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .import-info-row {
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .import-modal-footer {
+    flex-direction: column-reverse;
+  }
+
+  .import-btn-cancel,
+  .import-btn-primary {
+    width: 100%;
+  }
+}

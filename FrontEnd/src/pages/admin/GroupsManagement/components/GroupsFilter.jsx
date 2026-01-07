@@ -214,12 +214,19 @@ const GroupsFilter = ({
             <Filter size={16} />
             Filter
           </button>
-          <button
+          {/* <button
             className="control-btn"
             onClick={() => document.getElementById('import-groups')?.click()}
           >
             Import <Import size={16} color="#6b7280" />
+          </button> */}
+          <button
+            className="control-btn"
+            onClick={handleImportGroups}  // Changed from clicking hidden input
+          >
+            Import <Import size={16} color="#6b7280" />
           </button>
+
           <button
             className="control-btn"
             onClick={() => {
@@ -257,13 +264,13 @@ const GroupsFilter = ({
           </button>
 
           {/* Hidden inputs for Import/Export still available from actions */}
-          <input
+          {/* <input
             type="file"
             id="import-groups"
             style={{ display: "none" }}
             onChange={handleImportGroups}
             accept=".csv,.xlsx,.json"
-          />
+          /> */}
         </div>
       </div>
 
@@ -319,7 +326,7 @@ const GroupsFilter = ({
               Deactivate
             </button> */}
             <button
-               className="btn-primary"
+              className="btn-primary"
               //  disabled={group.status === "Inactive"}
               disabled={selectedGroups.length === 0 || groups.status === "Inactive"}
               onClick={handleBulkDeactivate} style={{ backgroundColor: '#9e9e9e' }}

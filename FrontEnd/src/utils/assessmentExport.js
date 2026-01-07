@@ -8,23 +8,29 @@ function toCsvValue(val) {
 }
 
 function buildCsvRows(assessments, teamsList = [], subteamsList = []) {
-  // Exact order and labels requested by user
+  // Exact order and labels requested by user - all fields from Create Assessment except questions
   const headers = [
     'Assessment Title',
     'Assessment Description',
     'Tags',
     'Thumbnail link',
+    'Level',
     'no of questions',
     'Duration',
     'Attempts',
-    'Team',
-    'SubTeam',
+    'Unlimited Attempts',
     'Pass Percentage (0-100)',
     'Display Answers',
+    'Instructions',
     'Credits',
     'Stars',
     'Badges',
-    'Category'
+    'Category',
+    'Team',
+    'SubTeam',
+    'Shuffle Questions',
+    'Shuffle Options',
+    'Status'
   ];
 
   const lines = [headers.map(toCsvValue).join(',')];
@@ -113,18 +119,24 @@ function buildCsvRows(assessments, teamsList = [], subteamsList = []) {
       a.description || '',
       Array.isArray(a.tags) ? a.tags.join('|') : (a.tags || ''),
       a.thumbnail || a.thumbnailUrl || a.image || '',
+      a.Level || a.level || '',
       questionsCount,
       // Duration can be number or string; preserve value
       typeof a.duration === 'number' ? a.duration : (a.duration || ''),
       Number.isFinite(a.attempts) ? a.attempts : (a.attempts || ''),
-      resolveTeamName(a),
-      resolveSubteamName(a),
+      a.unlimited_attempts ? 'Yes' : 'No',
       passPct,
       displayAnswers,
+      a.instructions || '',
       Number.isFinite(a.credits) ? a.credits : (a.credits || ''),
       Number.isFinite(a.stars) ? a.stars : (a.stars || ''),
       Number.isFinite(a.badges) ? a.badges : (a.badges || ''),
-      a.category || ''
+      a.category || '',
+      resolveTeamName(a),
+      resolveSubteamName(a),
+      a.shuffle_questions ? 'Yes' : 'No',
+      a.shuffle_options ? 'Yes' : 'No',
+      a.status || ''
     ];
     lines.push(row.map(toCsvValue).join(','));
   });

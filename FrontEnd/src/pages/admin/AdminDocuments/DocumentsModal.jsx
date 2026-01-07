@@ -101,7 +101,8 @@ const DocumentsModal = ({
     const canProceed = () => {
         switch (currentStep) {
             case 1:
-                return newContent.title && newContent.description && newContent.learningOutcomes.length > 0 && newContent.tags.length > 0 && newContent.prerequisites !== "";
+                return newContent.title && newContent.description; 
+                      
             case 2:
                 return contentType === "Upload File" ? newContent.primaryFile : newContent.externalResource || newContent.richText;
             case 3:
@@ -379,7 +380,7 @@ const DocumentsModal = ({
                                 onChange={handleInputChange}
                                 className="addOrg-form-input"
                                 placeholder="Add instructions for the document"
-                                style={{ width: '100%' }}
+                                style={{ width: '100%' ,marginBottom:"15px"}}
                             />
 
                             {contentType === 'Upload File' ? (
@@ -643,7 +644,7 @@ const DocumentsModal = ({
                         </button>
 
                         <div className="document-overlay__action-buttons" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                            {currentStep === totalSteps && <button className='btn-secondary' onClick={() => setPreview(true)} disabled={!canProceed()} ><EyeIcon size={16} /> Preview</button>}
+                            {/* {currentStep === totalSteps && <button className='btn-secondary' onClick={() => setPreview(true)} disabled={!canProceed()} ><EyeIcon size={16} /> Preview</button>} */}
 
                             <button className="btn-secondary" onClick={() => setShowModal(false)} aria-label="Cancel " disabled={uploading}>
                                 Cancel
@@ -653,7 +654,7 @@ const DocumentsModal = ({
                                     type="button"
                                     className="btn-primary"
                                     onClick={nextStep}
-                                    // disabled={!canProceed() || uploading}
+                                    disabled={!canProceed() || uploading}
                                     aria-label="Next Step"
 
                                 >

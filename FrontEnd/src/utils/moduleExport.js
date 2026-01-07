@@ -10,13 +10,21 @@ export const exportModulesToCSV = (modules, filters = {}) => {
     'Tags',
     'Prerequisites',
     'Thumbnail Link',
+    'Instructions',
+    'Primary File',
+    'Additional File',
+    'External Resource',
+    'External File',
     'Duration',
     'Credits',
     'Stars',
     'Badges',
     'Category',
     'Target Team',
-    'Target Subteam'
+    'Target Subteam',
+    'submission feedback',
+    'Submission Enabled', 
+    'Status',
   ];
 
   // Transform module data to CSV format
@@ -52,6 +60,13 @@ export const exportModulesToCSV = (modules, filters = {}) => {
     // Get thumbnail URL
     const thumbnailLink = module.thumbnail || module.primaryFile || '';
 
+    // Get file names
+    const getFileName = (file) => {
+      if (!file) return '';
+      if (typeof file === 'string') return file.split('/').pop();
+      return file.name || '';
+    };
+
     return [
       module.title || '',
       module.description || '',
@@ -59,13 +74,21 @@ export const exportModulesToCSV = (modules, filters = {}) => {
       tags,
       module.prerequisites || '',
       thumbnailLink,
+      module.instructions || '',
+      getFileName(module.primaryFile),
+      getFileName(module.additionalFile),
+      module.externalResource || '',
+      getFileName(module.externalFile),
       module.duration || '',
       module.credits || 0,
       module.stars || 0,
       module.badges || 0,
       module.category || '',
       getTeamName(module.team, filters.teams),
-      getSubteamName(module.subteam, filters.subteams)
+      getSubteamName(module.subteam, filters.subteams),
+      module.feedbackEnabled ? 'Yes' : 'No',
+      module.submissionEnabled ? 'Yes' : 'No',
+      module.status || ''
     ];
   });
 

@@ -1089,18 +1089,18 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   const formatNumber = (n) => (n != null ? n.toLocaleString('en-IN') : '--');
   // Add this ViewToggle component before the MetricCard component definition
   const ViewToggle = ({ activeView, onViewChange }) => (
-    <div className="view-toggle-container">
+    <div className="analytics-view-toggle-container">
       {/* <span className="view-toggle-label"></span> */}
-      <div className="view-toggle-wrapper">
+      <div className="analytics-view-toggle-wrapper">
         <button
-          className={`view-toggle-button ${activeView === 'users' ? 'active' : ''}`}
+          className={`analytics-view-toggle-button ${activeView === 'users' ? 'active' : ''}`}
           onClick={() => onViewChange('users')}
         >
           <Users size={16} />
           <span>Users</span>
         </button>
         <button
-          className={`view-toggle-button ${activeView === 'courses' ? 'active' : ''}`}
+          className={`analytics-view-toggle-button ${activeView === 'courses' ? 'active' : ''}`}
           onClick={() => onViewChange('courses')}
         >
           <BookOpen size={16} />
@@ -1128,7 +1128,9 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
       </div>
       <div className="metric-content">
         <div className="metric-label-enhanced">{label}</div>
-        <div className="metric-value-enhanced">{value}</div>
+        <div 
+          className={`metric-value-enhanced ${(label === "Daily Active Users" || label === "Monthly Active Users" || label === "Total Users" || label === "Modules" || label === "Assessments" || label === "Surveys" || label === "Learning Paths")  && value !== "--" ? 'metric-value-underline' : ''}`}
+        >{value}</div>
         {subtitle && <div className="metric-subtitle">{subtitle}</div>}
       </div>
     </div>
@@ -1249,21 +1251,26 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
 
   return (
     <div className="analytics-container">
-      {/* Header */}
+    
+   {/* Header */}
       <div className="analytics-page-header">
-        <div className="header-content">
-          <div className="header-badge">
+        {/* First row: Badge and View Toggle */}
+        <div className="header-row-1">
+          <div className="header-badge" style={{marginBottom:'0px'}}>
             <Zap size={14} />
             <span>Admin Dashboard</span>
           </div>
-          <h1 className="page-title">Platform Analytics</h1>
-          <p className="page-subtitle">
-            Comprehensive insights into course performance, learner engagement, and platform health
-          </p>
+
+          <ViewToggle
+            activeView={activeView}
+            onViewChange={setActiveView}
+          />
         </div>
 
-        <div className="header-filters">
-          
+        {/* Second row: Title and Time Range */}
+        <div className="header-row-2">
+          <h1 className="page-title">Platform Analytics</h1>
+
           <div className="view-toggle-container">
             <div className="view-toggle-wrapper">
               <button
@@ -1273,7 +1280,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                 <Calendar size={16} />
                 <span>7 Days</span>
               </button>
-                <button
+              <button
                 className={`view-toggle-button ${timeRange === 'mtd' ? 'active' : ''}`}
                 onClick={() => handleTimeRangeChange('mtd')}
               >
@@ -1294,7 +1301,6 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                 <Calendar size={16} />
                 <span>3 Months</span>
               </button>
-            
               <button
                 className={`view-toggle-button ${timeRange === 'custom' ? 'active' : ''}`}
                 onClick={() => {
@@ -1306,15 +1312,15 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
               </button>
             </div>
           </div>
-            <ViewToggle
-            activeView={activeView}
-            onViewChange={setActiveView}
-          />
-        
+        </div>
 
+        {/* Third row: Subtitle */}
+        <div className="header-row-3">
+          <p className="page-subtitle">
+            Comprehensive insights into course performance and learner engagement
+          </p>
         </div>
       </div>
-
       {/* Custom Date Picker Modal */}
       {showCustomDatePicker && (
         <div className="modal-overlay">
@@ -1336,7 +1342,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                     type="date"
                     value={customDateRange.startDate ? customDateRange.startDate.toISOString().split('T')[0] : ''}
                     onChange={(e) => {
-                      const date = new Date(e.target.value);
+                      const date = e.target.value ? new Date(e.target.value) : null;
                       setCustomDateRange(prev => ({ ...prev, startDate: date }));
                     }}
                     min={organizationCreatedDate ? organizationCreatedDate.toISOString().split('T')[0] : ''}
@@ -1349,7 +1355,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                     type="date"
                     value={customDateRange.endDate ? customDateRange.endDate.toISOString().split('T')[0] : ''}
                     onChange={(e) => {
-                      const date = new Date(e.target.value);
+                      const date = e.target.value ? new Date(e.target.value) : null;
                       setCustomDateRange(prev => ({ ...prev, endDate: date }));
                     }}
                     min={customDateRange.startDate ? customDateRange.startDate.toISOString().split('T')[0] : organizationCreatedDate ? organizationCreatedDate.toISOString().split('T')[0] : ''}
@@ -1475,7 +1481,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
               trendValue={5.3}
               color="color-quaternary"
               delay={200}
-              onClick={() => setShowGiftPopup(true)}
+              // onClick={() => setShowGiftPopup(true)}
             />
 
           </div>
@@ -1486,8 +1492,8 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
             <div id="usage-trend-chart" className="chart-panel">
               <div className="panel-header-enhanced">
                 <div>
-                  <h3 className="panel-title">Usage Trend</h3>
-                  <p className="panel-description">Daily and monthly active users over time</p>
+                  <h3 className="panel-title">User Login</h3>
+                  <p className="panel-description">Track your user login</p>
                 </div>
                 <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                   {/* <Activity size={20} className="panel-icon" /> */}
@@ -1616,7 +1622,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                     <label>User Status</label>
                     <select
                       value={userFilters.userStatus}
-                      // onChange={(e) => handleUserStatusChange(e.target.value)}
+                      onChange={(e) => setUserFilters(prev => ({ ...prev, userStatus: e.target.value }))}
                       className="filter-select-enhanced"
                       style={{ minWidth: 'auto', width: '100%' }}
                     >
@@ -1770,8 +1776,8 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
           <div className="chart-panel">
             <div className="panel-header-enhanced">
               <div>
-                <h3 className="panel-title">At-Risk Learners</h3>
-                <p className="panel-description">Learners requiring intervention or support</p>
+                <h3 className="panel-title"> Learners With No Login Activity </h3>
+                {/* <p className="panel-description">Learners requiring intervention or support</p> */}
               </div>
               <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                   {/* <Activity size={20} className="panel-icon" /> */}
@@ -2257,7 +2263,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
               icon={FileText}
               label="Modules"
               value={formatNumber(courseMetrics.modules)}
-              subtitle="Available modules"
+              subtitle={`Available modules - ${getTimeRangeSubtitle()}`}
               trend="up"
               trendValue={8.3}
               color="color-primary"
@@ -2268,7 +2274,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
               icon={ClipboardList}
               label="Assessments"
               value={formatNumber(courseMetrics.assessments)}
-              subtitle="Available assessments"
+              subtitle={`Available assessments - ${getTimeRangeSubtitle()}`}
               trend="up"
               trendValue={12.7}
               color="color-assessment"
@@ -2279,7 +2285,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
               icon={CheckCircle}
               label="Surveys"
               value={formatNumber(courseMetrics.surveys)}
-              subtitle="Available surveys"
+              subtitle={`Available surveys - ${getTimeRangeSubtitle()}`}
               trend="up"
               trendValue={6.2}
               color="color-tertiary"
@@ -2290,7 +2296,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
               icon={Route}
               label="Learning Paths"
               value={formatNumber(courseMetrics.learningPaths)}
-              subtitle="Available learning paths"
+              subtitle={`Available learning paths - ${getTimeRangeSubtitle()}`}
               trend="up"
               trendValue={15.8}
               color="color-neutral"
@@ -3030,11 +3036,13 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                   </h4>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {coursePerformanceData && coursePerformanceData.length > 0 ? (
-                    coursePerformanceData
-                      .filter(course => course.performanceLevel === 'Top Performing')
-                      .slice(0, 5)
-                      .map((course, idx) => (
+                  {(() => {
+                    const topPerformingCourses = coursePerformanceData && coursePerformanceData.length > 0 
+                      ? coursePerformanceData.filter(course => course.performanceLevel === 'Top Performing').slice(0, 5)
+                      : [];
+                    
+                    return topPerformingCourses.length > 0 ? (
+                      topPerformingCourses.map((course, idx) => (
                       <div
                         key={idx}
                         style={{
@@ -3106,7 +3114,8 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                           'User activity is needed for top performance metrics'}
                       </div>
                     </div>
-                  )}
+                  );
+                  })()}
                 </div>
               </div>
 
@@ -3123,11 +3132,13 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                   </h4>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {coursePerformanceData && coursePerformanceData.length > 0 ? (
-                    coursePerformanceData
-                      .filter(course => course.performanceLevel === 'Needs Attention')
-                      .slice(0, 5)
-                      .map((course, idx) => (
+                  {(() => {
+                    const needingAttentionCourses = coursePerformanceData && coursePerformanceData.length > 0 
+                      ? coursePerformanceData.filter(course => course.performanceLevel === 'Needs Attention').slice(0, 5)
+                      : [];
+                    
+                    return needingAttentionCourses.length > 0 ? (
+                      needingAttentionCourses.map((course, idx) => (
                       <div
                         key={idx}
                         style={{
@@ -3186,13 +3197,22 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                       fontSize: '14px'
                     }}>
                       <div style={{ marginBottom: '8px' }}>
-                        No courses needing attention
+                        {coursePerformanceFilters.content === 'modules' ? 'No modules needing attention' :
+                         coursePerformanceFilters.content === 'assessments' ? 'No assessments needing attention' :
+                         coursePerformanceFilters.content === 'surveys' ? 'No surveys needing attention' :
+                         coursePerformanceFilters.content === 'learningpaths' ? 'No learning paths needing attention' :
+                         'No courses needing attention'}
                       </div>
                       <div style={{ fontSize: '12px', opacity: 0.7 }}>
-                        All courses are performing well
+                        {coursePerformanceFilters.content === 'modules' ? 'All modules are performing well' :
+                         coursePerformanceFilters.content === 'assessments' ? 'All assessments are performing well' :
+                         coursePerformanceFilters.content === 'surveys' ? 'All surveys are performing well' :
+                         coursePerformanceFilters.content === 'learningpaths' ? 'All learning paths are performing well' :
+                         'All courses are performing well'}
                       </div>
                     </div>
-                  )}
+                  );
+                  })()}
                 </div>
               </div>
             </div>

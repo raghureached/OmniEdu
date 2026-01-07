@@ -34,7 +34,6 @@ const assignmentSchema = new mongoose.Schema(
     name: { type: String, required: false, trim: true },
     assign_on: { type: Date, default: Date.now },
     due_date: { type: Date, required: false },
-    // Store separate time components if needed by UI
     assignTime: { type: String, default: null },
     dueTime: { type: String, default: null },
     notify_users: { type: Boolean, default: true },

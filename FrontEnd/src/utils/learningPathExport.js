@@ -22,6 +22,9 @@ function buildCsvRows(paths, teamsList = [], subteamsList = []) {
     'Category',
     'Team',
     'SubTeam',
+    'Enforce path order',
+    'Bypass individual rewards',
+    'Enable feedback/reactions'
   ];
   const lines = [headers.map(toCsvValue).join(',')];
 
@@ -104,6 +107,9 @@ function buildCsvRows(paths, teamsList = [], subteamsList = []) {
       p.category || '',
       resolveTeamName(p),
       resolveSubteamName(p),
+      p.enforceOrder ? 'Yes' : 'No',
+      p.bypassRewards ? 'Yes' : 'No',
+      p.enableFeedback ? 'Yes' : 'No'
     ];
     lines.push(row.map(toCsvValue).join(','));
   });

@@ -79,19 +79,34 @@
   font-weight: 500;
 }
 
-        .analytics-page-header {
+      .analytics-page-header {
           background: white;
           border-radius: 24px;
           padding: 32px;
           margin-bottom: 24px;
           box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 24px;
           animation: slideDown 0.6s ease-out;
         }
 
+        .header-row-1 {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 24px;
+          margin-bottom: 20px;
+        }
+
+        .header-row-2 {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 24px;
+          /* margin-bottom: 16px; */
+        }
+
+        .header-row-3 {
+          display: flex;
+        }
         @keyframes slideDown {
           from {
             opacity: 0;
@@ -117,7 +132,7 @@
           border-radius: 20px;
           font-size: 12px;
           font-weight: 600;
-          margin-bottom: 12px;
+          /* margin-bottom: 12px; */
           animation: pulse 2s ease-in-out infinite;
         }
 
@@ -338,6 +353,13 @@
           margin-bottom: 4px;
         }
 
+        .metric-value-underline {
+          text-decoration: underline;
+          text-decoration-color: black;
+          text-decoration-thickness: 2px;
+          text-underline-offset: 1px;
+        }
+
         .metric-subtitle {
           font-size: 13px;
           color: #6b7280;
@@ -535,7 +557,7 @@
   background: #f9fafb;
   /* padding: 6px; */
   border-radius: 12px;
-  border: 2px solid #e5e7eb;
+  /* border: 2px solid #e5e7eb; */
 }
 
 .view-toggle-wrapper {
@@ -547,7 +569,7 @@
 }
 
 .view-toggle-button {
-  padding: 10px 24px;
+  padding: 10px 12px;
   border: none;
   background: transparent;
   color: #6b7280;
@@ -895,25 +917,26 @@
   }
 }
 
-.view-toggle-container {
+.analytics-view-toggle-container {
   display: flex;
   align-items: center;
   /* gap: 12px; */
   background: #f9fafb;
-  /* padding: 6px; */
+  padding: 1px;
   border-radius: 12px;
   border: 2px solid #e5e7eb;
 }
 
-.view-toggle-wrapper {
+.analytics-view-toggle-wrapper {
   display: flex;
   background: white;
   border-radius: 10px;
   padding: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  /* min-width: 628px */
 }
 
-.view-toggle-button {
+.analytics-view-toggle-button {
   padding: 10px 24px;
   border: none;
   background: transparent;
@@ -928,9 +951,12 @@
   gap: 8px;
   position: relative;
   overflow: hidden;
+  min-width: 304px;
+  justify-content: center;
 }
 
-.view-toggle-button::before {
+
+.analytics-view-toggle-button::before {
   content: '';
   position: absolute;
   top: 0;
@@ -943,43 +969,43 @@
   z-index: 0;
 }
 
-.view-toggle-button span {
+.analytics-view-toggle-button span {
   position: relative;
   z-index: 1;
 }
 
-.view-toggle-button svg {
+.analytics-view-toggle-button svg {
   position: relative;
   z-index: 1;
   transition: transform 0.3s;
 }
 
-.view-toggle-button:hover {
+.analytics-view-toggle-button:hover {
   color: #1C88C7;
   transform: translateY(-1px);
 }
 
-.view-toggle-button:hover svg {
+.analytics-view-toggle-button:hover svg {
   transform: scale(1.1);
 }
 
-.view-toggle-button.active {
+.analytics-view-toggle-button.active {
   background: linear-gradient(135deg, #011F5B, #1C88C7);
   color: white;
   box-shadow: 0 4px 12px rgba(1, 31, 91, 0.3);
 }
 
-.view-toggle-button.active::before {
+.analytics-view-toggle-button.active::before {
   opacity: 1;
 }
 
-.view-toggle-button.active:hover {
+.analytics-view-toggle-button.active:hover {
   color: white;
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(1, 31, 91, 0.4);
 }
 
-.view-toggle-label {
+.analytics-view-toggle-label {
   font-size: 12px;
   font-weight: 600;
   color: #6b7280;
@@ -1012,17 +1038,17 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .view-toggle-container {
+  .analytics-view-toggle-container {
     width: 100%;
     flex-direction: column;
     align-items: stretch;
   }
   
-  .view-toggle-wrapper {
+  .analytics-view-toggle-wrapper {
     width: 100%;
   }
   
-  .view-toggle-button {
+  .analytics-view-toggle-button {
     flex: 1;
     justify-content: center;
   }
@@ -1235,21 +1261,3 @@
     
 
 
-
-
-/* Separate class for users/courses toggle with 50% width each */
-.analytics-view-toggle-wrapper {
-  display: flex;
-  background: white;
-  border-radius: 10px;
-  padding: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  width: 100%;
-  max-width: 300px;
-}
-
-.analytics-view-toggle-wrapper .view-toggle-button {
-  flex: 1;
-  padding: 10px 16px;
-  justify-content: center;
-}

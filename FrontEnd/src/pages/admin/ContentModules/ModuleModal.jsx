@@ -580,6 +580,9 @@ const ModuleModal = ({
                                 <div className="module-overlay__form-group">
                                     <div>
                                         <label className="module-overlay__form-label">Upload File <span className='module-overlay__required'>*</span></label>
+                                        <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px' }}>
+                                            Supported: PDF, DOC, DOCX, MP4, MP3, SCORM (Max: 100MB)
+                                        </div>
 
                                         <input
                                             type="file"
@@ -622,6 +625,9 @@ const ModuleModal = ({
 
                                     <div style={{ marginTop: '100px' }}>
                                         <label className="module-overlay__form-label">Additional File</label>
+                                        <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px' }}>
+                                            Supported: PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, CSV, TXT (Max: 50MB)
+                                        </div>
                                         <input
                                             type="file"
                                             name="additionalFile"
@@ -667,6 +673,9 @@ const ModuleModal = ({
                                     <FullRichTextEditor value={newContent.richText || ''} onChange={handleRichInputChange} />
 
                                     <label className="module-overlay__form-label" style={{ marginTop: '20px' }}>External Resource</label>
+                                    <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px' }}>
+                                        Supported: YouTube, Vimeo, Loom links (auto-embed)
+                                    </div>
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <input
                                             type="text"
@@ -706,7 +715,7 @@ const ModuleModal = ({
                                         </div>
                                     )}
                                     <div style={{ marginTop: '20px' }}>
-                                        <label className="module-overlay__form-label">Additional File</label>
+                                        <label className="module-overlay__form-label">External File</label>
                                         <input
                                             type="file"
                                             name="additionalFile"

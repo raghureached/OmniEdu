@@ -191,8 +191,6 @@ function App() {
           <Route path='support/:role' element={<GlobalTicketsTable />} />
           <Route path='grade-submissions' element={<GradeSubmission />} />
           <Route path='viewSubmissions/:moduleId' element={<GradeSubmission />} />
-        
-
           <Route path="scorm" element={<GlobalSCORMModules />} />
 
         </Route>

@@ -296,6 +296,19 @@ const AdminLayout = () => {
               )}
             </Link>
           </li>
+          <li>
+            <Link
+              to="/admin/scorm"
+              className={
+                isActive("/admin/scorm") ? "admin_link_active" : ""
+              }
+            >
+              <Award size={20} />
+              {!sidebarCollapsed && (
+                <span className="admin_sidebar_names">Scorm</span>
+              )}
+            </Link>
+          </li>
           
           <li className="admin_menu_section">
             {!sidebarCollapsed && (

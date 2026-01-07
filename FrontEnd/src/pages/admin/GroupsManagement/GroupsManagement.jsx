@@ -36,7 +36,7 @@ import { Users } from 'lucide-react';
 import { notifyError, notifyInfo, notifySuccess, notifyWarning } from '../../../utils/notification';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
 import SelectionBanner from '../../../components/Banner/SelectionBanner';
-
+import ImportModal from '../../../components/ImportModal/ImportModal';
 const GroupsManagement = () => {
   const dispatch = useDispatch();
   const { groups, loading, error, totalCount, currentPage, pageSize } = useSelector((state) => state.groups);
@@ -73,14 +73,17 @@ const GroupsManagement = () => {
   const [teamsToDeactivate, setTeamsToDeactivate] = useState([]);
   //export model
   const [showExportModal, setShowExportModal] = useState(false);
+  //import model
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   //FAILED MODEL
   const [showFailedImportModal, setShowFailedImportModal] = useState(false);
   const [importResults, setImportResults] = useState({
     successCount: 0,
     failedRows: []
   });
- //confirm
- const { confirm } = useConfirm();
+  //confirm
+  const { confirm } = useConfirm();
   const editMode = !!currentGroup;
 
   useEffect(() => {
@@ -515,7 +518,7 @@ const GroupsManagement = () => {
     setShowForm(true);
   };
 
-  const handleDeleteGroup = async(groupId) => {
+  const handleDeleteGroup = async (groupId) => {
     const confirmed = await confirm({
       title: 'Are you sure you want to delete this group?',
       message: 'This action will permanently remove the group from the system.',
@@ -526,8 +529,8 @@ const GroupsManagement = () => {
       checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
       note: 'Associated items will be removed.',
     });
-    
-      if (confirmed) {
+
+    if (confirmed) {
       try {
         const res = dispatch(deleteGroup(groupId));
         notifySuccess("Group Deleted Successfully")
@@ -558,7 +561,7 @@ const GroupsManagement = () => {
       checkboxLabel: 'I understand that this data cannot be retrieved after deleting.',
       note: 'All associated items will be removed.',
     });
-    if (!confirmed)  return;
+    if (!confirmed) return;
 
     // for (const groupId of selectedGroupIds) {
     //   await dispatch(deleteGroup(groupId));
@@ -673,10 +676,173 @@ const GroupsManagement = () => {
     URL.revokeObjectURL(url);
   };
 
-  const handleImportGroups = async (event) => {
-    const file = event.target.files?.[0];
+  // const handleImportGroups = async (event) => {
+  //   const file = event.target.files?.[0];
+  //   if (!file) return;
+
+  //   const failedRows = [];
+  //   const created = [];
+  //   const updated = [];
+
+  //   try {
+  //     const text = await file.text();
+  //     const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
+
+  //     if (!lines.length) {
+  //       notifyError("File is empty.");
+  //       return;
+  //     }
+
+  //     // Parse CSV header
+  //     const header = lines.shift().split(",");
+  //     const colTeam = header.findIndex((h) => h.trim().toLowerCase() === "team name");
+  //     const colSub = header.findIndex((h) => h.trim().toLowerCase() === "subteam name");
+
+  //     if (colTeam === -1 || colSub === -1) {
+  //       notifyError('CSV must contain "Team Name" and "Subteam Name".');
+  //       return;
+  //     }
+
+  //     // Parse rows
+  //     const parsedRows = lines.map((line) => {
+  //       const cols = line.split(",");
+  //       return {
+  //         teamName: (cols[colTeam] || "").trim(),
+  //         subTeamName: (cols[colSub] || "").trim(),
+  //       };
+  //     });
+
+  //     // Build lookup map from existing groups
+  //     const teamMap = new Map();
+  //     normalizedGroups.forEach((t) => {
+  //       teamMap.set(t.teamName.trim(), {
+  //         ...t,
+  //         subTeams: t.subTeams || [],
+  //       });
+  //     });
+
+  //     // Process each CSV row
+  //     for (const row of parsedRows) {
+  //       const teamName = row.teamName.trim();
+  //       const subTeamName = row.subTeamName.trim();
+  //       // ❗ INSERT THIS BLOCK HERE
+  //       if (!allowedPattern.test(teamName)) {
+  //         failedRows.push({ teamName, subTeamName, reason: "Invalid team name characters" });
+  //         continue;
+  //       }
+  //       if (!allowedPattern.test(subTeamName)) {
+  //         failedRows.push({ teamName, subTeamName, reason: "Invalid subteam name characters" });
+  //         continue;
+  //       }
+  //       if (!teamName) {
+  //         failedRows.push({ teamName, subTeamName, reason: "Missing Team Name" });
+  //         continue;
+  //       }
+  //       if (!subTeamName) {
+  //         failedRows.push({ teamName, subTeamName, reason: "Missing Subteam Name" });
+  //         continue;
+  //       }
+
+  //       const existingTeam = teamMap.get(teamName);
+
+  //       // TEAM DOES NOT EXIST → CREATE
+  //       if (!existingTeam) {
+  //         try {
+  //           const teamRes = await dispatch(
+  //             createTeam({ teamName, status: "Active" })
+  //           ).unwrap();
+
+  //           const teamId = teamRes?.team?._id;
+  //           if (!teamId) throw new Error("Team created but no ID returned.");
+
+  //           await dispatch(
+  //             createSubTeam({ subTeamName, team_id: teamId })
+  //           ).unwrap();
+
+  //           created.push(`${teamName} → ${subTeamName}`);
+
+  //           teamMap.set(teamName, {
+  //             teamName,
+  //             id: teamId,
+  //             subTeams: [{ name: subTeamName }],
+  //           });
+  //         } catch (err) {
+  //           failedRows.push({
+  //             teamName,
+  //             subTeamName,
+  //             reason: "Failed to create team or subteam",
+  //           });
+  //         }
+  //         continue;
+  //       }
+
+  //       // TEAM EXISTS → Check subteam
+  //       const subExists = existingTeam.subTeams.some(
+  //         (st) => st.name.trim() === subTeamName
+  //       );
+
+  //       if (subExists) {
+  //         failedRows.push({
+  //           teamName,
+  //           subTeamName,
+  //           reason: "Subteam already exists under this team",
+  //         });
+  //         continue;
+  //       }
+
+  //       // SUBTEAM DOES NOT EXIST → CREATE SUBTEAM
+  //       try {
+  //         await dispatch(
+  //           createSubTeam({
+  //             subTeamName,
+  //             team_id: existingTeam.id || existingTeam._id,
+  //           })
+  //         ).unwrap();
+
+  //         updated.push(`${teamName} + ${subTeamName}`);
+  //         existingTeam.subTeams.push({ name: subTeamName });
+
+  //       } catch (err) {
+  //         failedRows.push({
+  //           teamName,
+  //           subTeamName,
+  //           reason: "Failed to create subteam",
+  //         });
+  //       }
+  //     }
+
+  //     // Refresh groups
+  //     if (created.length || updated.length) {
+  //       fetchGroupData();
+  //     }
+
+  //     // ---- FINAL RESULT HANDLING ----
+  //     const createdCount = created.length + updated.length;
+
+  //     if (failedRows.length > 0) {
+  //       // Show modal instead of notification
+  //       setImportResults({
+  //         successCount: createdCount,
+  //         failedRows: failedRows
+  //       });
+  //       setShowFailedImportModal(true);
+  //     } else {
+  //       notifySuccess(`Imported ${createdCount} group(s).`, {
+  //         title: "Import Successful",
+  //       });
+  //     }
+
+  //   } catch (err) {
+  //     console.error(err);
+  //     notifyError("Import failed. Please check your file.");
+  //   } finally {
+  //     event.target.value = "";
+  //   }
+  // };
+  const handleImportGroups = async (file) => {
     if (!file) return;
 
+    setIsImporting(true);
     const failedRows = [];
     const created = [];
     const updated = [];
@@ -722,7 +888,7 @@ const GroupsManagement = () => {
       for (const row of parsedRows) {
         const teamName = row.teamName.trim();
         const subTeamName = row.subTeamName.trim();
-        // ❗ INSERT THIS BLOCK HERE
+
         if (!allowedPattern.test(teamName)) {
           failedRows.push({ teamName, subTeamName, reason: "Invalid team name characters" });
           continue;
@@ -813,11 +979,13 @@ const GroupsManagement = () => {
         fetchGroupData();
       }
 
-      // ---- FINAL RESULT HANDLING ----
+      // Close modal
+      setShowImportModal(false);
+
+      // Final result handling
       const createdCount = created.length + updated.length;
 
       if (failedRows.length > 0) {
-        // Show modal instead of notification
         setImportResults({
           successCount: createdCount,
           failedRows: failedRows
@@ -833,9 +1001,15 @@ const GroupsManagement = () => {
       console.error(err);
       notifyError("Import failed. Please check your file.");
     } finally {
-      event.target.value = "";
+      setIsImporting(false);
     }
   };
+
+  // Add handler to open import modal
+  const handleOpenImportModal = () => {
+    setShowImportModal(true);
+  };
+
   const groupFailedColumns = [
     { key: "teamName", label: "Team Name" },
     { key: "subTeamName", label: "Subteam Name" },
@@ -1002,10 +1176,10 @@ const GroupsManagement = () => {
         if (!id) {
           throw new Error('Unable to determine group identifier for update.');
         }
-        const res=await dispatch(updateTeam({ id, teamData: mappedPayload })).unwrap();
+        const res = await dispatch(updateTeam({ id, teamData: mappedPayload })).unwrap();
         notifySuccess(res?.message || "Team updated successfully");
       } else {
-        const res =await dispatch(createTeam(mappedPayload)).unwrap();
+        const res = await dispatch(createTeam(mappedPayload)).unwrap();
         notifySuccess(res?.message || "Team created successfully");
       }
 
@@ -1440,13 +1614,12 @@ const GroupsManagement = () => {
       // notifyError("Only letters, numbers, / and - are allowed in Subteam Name");
       return;
     }
-    try{
-    const res=await dispatch(createSubTeam(data.data)).unwrap();
-    notifySuccess(res?.message||"SubTeam created successfully")
-    fetchGroupData();
+    try {
+      const res = await dispatch(createSubTeam(data.data)).unwrap();
+      notifySuccess(res?.message || "SubTeam created successfully")
+      fetchGroupData();
     }
-    catch(err)
-    {
+    catch (err) {
       notifyError("Failed to create SubTeam")
     }
   };
@@ -1490,7 +1663,7 @@ const GroupsManagement = () => {
             onBackendFilter={handleBackendFilter}   // NEW
             onFilter={handleFilter}
             handleCreateGroup={handleCreateGroup}
-            handleImportGroups={handleImportGroups}
+            handleImportGroups={handleOpenImportModal}  // Changed this line
             // handleExportGroups={handleExportGroups}
             handleExportGroups={() => setShowExportModal(true)}  // ✅ Changed this line
             handleBulkDelete={handleBulkDelete}
@@ -1553,7 +1726,7 @@ const GroupsManagement = () => {
                         <p style={{ color: '#dc2626', fontSize: '12px', marginLeft: "4px" }}>
                           Only letters, numbers, / and - are allowed in Team Name.
                         </p>
-                        
+
                       </div>
                       <div className="addOrg-form-group">
                         <label className="addOrg-form-label">
@@ -1651,7 +1824,7 @@ const GroupsManagement = () => {
               )}
             </div>
           )} */}
-           <SelectionBanner
+          <SelectionBanner
             selectionScope={selectionScope}
             selectedCount={derivedSelectedCount}
             currentPageCount={currentPageIds.length}
@@ -1760,7 +1933,7 @@ const GroupsManagement = () => {
             count={teamsToDeactivate.length}
             onCancel={() => {
               setShowDeactivateModal(false)
-              
+
             }
             }
             onConfirm={async () => {
@@ -1788,7 +1961,7 @@ const GroupsManagement = () => {
           />
           <ExportModal
             isOpen={showExportModal}
-            onClose={() => { setShowExportModal(false);  }}
+            onClose={() => { setShowExportModal(false); }}
             onConfirm={async () => {
               await handleExportGroups();
               clearSelection();
@@ -1798,6 +1971,20 @@ const GroupsManagement = () => {
             hasMembers={derivedSelectedCount > 0 && derivedSelectedCount < totalItems}
             exportType="groups"
           />
+          <ImportModal
+            isOpen={showImportModal}
+            onClose={() => setShowImportModal(false)}
+            onImport={handleImportGroups}
+            templateHeaders={["Team Name", "Subteam Name"]}
+            templateData={[
+            
+            ]}
+            title="Import Teams & Subteams"
+            acceptedFormats=".csv,.xlsx,.xls"
+            maxSizeText="Maximum size: 25 MB"
+            isImporting={isImporting}
+          />
+
 
         </div>
       </div>
