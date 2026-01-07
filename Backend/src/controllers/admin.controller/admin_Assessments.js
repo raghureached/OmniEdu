@@ -6,6 +6,8 @@ const fs = require('fs');
 const mongoose = require("mongoose");
 const csv = require("csv-parser");
 const { logActivity } = require("../../utils/activityLogger");
+const ForUserAssignment = require("../../models/forUserAssigments_model");
+const UserContentProgress = require("../../models/userContentProgress_model");
 
 const UPLOADS_DIR = path.join(__dirname, '../../../uploads');
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -803,79 +805,6 @@ const editAssessment = async (req, res) => {
         }
     }
 }
-//with transactions
-// const editAssessment = async (req, res) => {
-//     const session = await mongoose.startSession();
-//     session.startTransaction();
-//     try {
-//       const { id } = req.params;
-//       const qPayload = Array.isArray(req.body.questions) ? req.body.questions : [];
-
-//       // Update assessment core details
-//       const assessment = await OrganizationAssessments.findOneAndUpdate(
-//         { uuid: id },
-//         { ...req.body },
-//         { new: true, session }
-//       );
-
-//       if (!assessment) throw new Error("Assessment not found");
-
-//       const newQuestionIds = [];
-
-//       for (const q of qPayload) {
-//         if (q._id) {
-//           await OrganizationAssessmentQuestion.findByIdAndUpdate(q._id, q, { new: true, session });
-//           newQuestionIds.push(q._id);
-//         } else {
-//           const newQ = new OrganizationAssessmentQuestion(q);
-//           const savedQ = await newQ.save({ session });
-//           newQuestionIds.push(savedQ._id);
-//         }
-//       }
-
-//       // Update question references
-//       if (newQuestionIds.length > 0) {
-//         assessment.questions = newQuestionIds;
-//         await assessment.save({ session });
-//       }
-
-//       await session.commitTransaction();
-//       session.endSession();
-
-//       const populated = await OrganizationAssessments.findById(assessment._id).populate("questions");
-//       res.status(200).json({
-//         success: true,
-//         message: "Assessment updated successfully",
-//         data: populated
-//       });
-//     } catch (error) {
-//       await session.abortTransaction();
-//       session.endSession();
-//       res.status(500).json({
-//         success: false,
-//         message: "Failed to update assessment",
-//         error: error.message
-//       });
-//     }
-//   };
-
-
-// const deleteAssessment = async (req, res) => {
-//     try {
-//         const assessment = await OrganizationAssessments.findOneAndDelete({ uuid: req.params.id })
-//         return res.status(200).json({
-//             isSuccess: true,
-//             message: "Assessment deleted successfully",
-//             data: assessment
-//         })
-//     } catch (error) {
-//         return res.status(500).json({
-//             isSuccess: false,
-//             message: "Failed to delete assessment",
-//             error: error.message
-//         })
-//     }
-// }
 const deleteAssessment = async (req, res) => {
     let session;
     let transactionCommitted = false; // Track transaction state
@@ -888,7 +817,8 @@ const deleteAssessment = async (req, res) => {
 
         const { id } = req.params;
         const assessment = await OrganizationAssessments.findOne({ uuid: id, organization_id });
-
+        const deletedAssignments = await ForUserAssignment.deleteMany({contentId:assessment._id})
+        const userProgress = await UserContentProgress.deleteMany({assignment_id:deletedAssignments._id})
         if (!assessment) {
             return res.status(404).json({
                 success: false,

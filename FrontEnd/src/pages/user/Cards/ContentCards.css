@@ -61,6 +61,17 @@
   /* Emerald green - growth and progress focused */
   box-shadow: 0 10px 30px -5px rgba(16, 185, 129, 0.3);
 }
+.document {
+  background: linear-gradient(135deg, #66baea 0%, #764ba2 100%);
+  /* Deep purple to violet - sophisticated and professional */
+  box-shadow: 0 10px 30px -5px rgba(102, 126, 234, 0.3);
+}
+.scorm {
+  background: linear-gradient(135deg, #c5ea66 0%, #7ca24b 100%);
+  /* Deep purple to violet - sophisticated and professional */
+  box-shadow: 0 10px 30px -5px rgba(102, 126, 234, 0.3);
+}
+
 
 .badge {
   /* background: rgba(255, 255, 255, 0.95); */

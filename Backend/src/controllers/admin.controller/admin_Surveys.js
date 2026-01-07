@@ -8,6 +8,8 @@ const { logActivity } = require("../../utils/activityLogger");
 
 /// aligned with new question and survey models, with adapter for `elements`
 const mongoose = require("mongoose");
+const ForUserAssignment = require("../../models/forUserAssigments_model");
+const UserContentProgress = require("../../models/userContentProgress_model");
 
 const createSurvey = async (req, res) => {
   let session;
@@ -326,6 +328,8 @@ const deleteSurvey = async (req, res) => {
 
     // --- Step 4: Delete the survey itself ---
     const deletedSurvey = await OrganizationSurveys.findOneAndDelete({ uuid: req.params.id, organization_id }, { session });
+    const deletedAssignments = await ForUserAssignment.deleteMany({contentId:deletedSurvey._id})
+    const userProgress = await UserContentProgress.deleteMany({contentId:deletedAssignments._id})
 
     await session.commitTransaction();
     transactionCommitted = true; // Mark as committed

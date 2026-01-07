@@ -3,11 +3,11 @@ import api from '../../services/api';
 
 // Async thunks for assignment management
 export const adminfetchAssignments = createAsyncThunk(
-  'assignments/fetchAssignments',
+  'adminAssignments/fetchAssignments',
   async (filters, { rejectWithValue }) => {
     try {
-      const response = await api.get('/assignments', { params: filters });
-      return response.data;
+      const response = await api.get('/api/admin/getAssignments', { params: filters });
+      return response.data; // { isSuccess, message, data: [...] }
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -15,7 +15,7 @@ export const adminfetchAssignments = createAsyncThunk(
 );
 
 export const admincreateAssignment = createAsyncThunk(
-  'assignments/createAssignment',
+  'adminAssignments/createAssignment',
   async (assignmentData, { rejectWithValue }) => {
     try {
     console.log(assignmentData)
@@ -28,10 +28,10 @@ export const admincreateAssignment = createAsyncThunk(
 );
 
 export const adminupdateAssignment = createAsyncThunk(
-  'assignments/updateAssignment',
+  'adminAssignments/updateAssignment',
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/assignments/${id}`, data);
+      const response = await api.put(`/api/admin/editAssignment/${id}`, data);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -40,10 +40,10 @@ export const adminupdateAssignment = createAsyncThunk(
 );
 
 export const admindeleteAssignment = createAsyncThunk(
-  'assignments/deleteAssignment',
+  'adminAssignments/deleteAssignment',
   async (id, { rejectWithValue }) => {
     try {
-      await api.delete(`/assignments/${id}`);
+      await api.delete(`/api/admin/deleteAssignment/${id}`);
       return id;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -51,15 +51,29 @@ export const admindeleteAssignment = createAsyncThunk(
   }
 );
 
+export const admingetAssignment = createAsyncThunk(
+  'adminAssignments/getAssignment',
+  async (id, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`/api/admin/getAssignment/${id}`);
+      return res.data; // { isSuccess, data }
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: 'Failed to fetch assignment' });
+    }
+  }
+);
+
 // Assignment slice
 const adminAssignmentSlice = createSlice({
-  name: 'assignments',
+  name: 'adminAssignments',
   initialState: {
     items: [],
     loading: false,
     error: null,
     filters: {},
-    totalCount: 0
+    totalCount: 0,
+    selected: null,
+    selectedLoading: false,
   },
   reducers: {
     setFilters: (state, action) => {
@@ -78,8 +92,9 @@ const adminAssignmentSlice = createSlice({
       })
       .addCase(adminfetchAssignments.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload.items || action.payload;
-        state.totalCount = action.payload.totalCount || action.payload.length;
+        const arr = action.payload?.data || [];
+        state.items = Array.isArray(arr) ? arr : [];
+        state.totalCount = state.items.length;
       })
       .addCase(adminfetchAssignments.rejected, (state, action) => {
         state.loading = false;
@@ -88,20 +103,43 @@ const adminAssignmentSlice = createSlice({
       
       // Create assignment
       .addCase(admincreateAssignment.fulfilled, (state, action) => {
-        state.items.push(action.payload);
+        const created = action.payload?.data || action.payload;
+        if (created) state.items.push(created);
       })
       
       // Update assignment
       .addCase(adminupdateAssignment.fulfilled, (state, action) => {
-        const index = state.items.findIndex(item => item.id === action.payload.id);
+        const updated = action.payload?.data || action.payload;
+        const updatedId = updated?.uuid || updated?._id || updated?.id;
+        const index = state.items.findIndex(item => (item?.uuid || item?._id || item?.id) === updatedId);
         if (index !== -1) {
-          state.items[index] = action.payload;
+          state.items[index] = updated;
         }
       })
       
       // Delete assignment
       .addCase(admindeleteAssignment.fulfilled, (state, action) => {
-        state.items = state.items.filter(item => item.id !== action.payload);
+        const deletedId = action.payload;
+        state.items = state.items.map((item) => {
+          const id = item?.uuid || item?._id || item?.id;
+          if (id === deletedId) {
+            return { ...item, status: 'Removed' };
+          }
+          return item;
+        });
+      })
+      // Get single assignment
+      .addCase(admingetAssignment.pending, (state) => {
+        state.selectedLoading = true;
+        state.selected = null;
+      })
+      .addCase(admingetAssignment.fulfilled, (state, action) => {
+        state.selectedLoading = false;
+        state.selected = action.payload?.data || null;
+      })
+      .addCase(admingetAssignment.rejected, (state, action) => {
+        state.selectedLoading = false;
+        state.error = action.payload?.message || 'Failed to fetch assignment';
       });
   }
 });

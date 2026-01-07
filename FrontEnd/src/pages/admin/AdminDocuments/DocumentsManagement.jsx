@@ -180,7 +180,7 @@ const DocumentsManagement = () => {
       type: 'danger', // or 'warning', 'info'
       showCheckbox: true,
       checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
-      note: 'Associated items will be removed.',
+      note: 'Associated assignments will be removed for users.',
     });
     if (!confirmed)  return;
       const res = await dispatch(admindeleteContent(contentId));
@@ -606,7 +606,7 @@ const DocumentsManagement = () => {
       type: 'danger', // or 'warning', 'info'
       showCheckbox: true,
       checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
-      note: 'Associated items will be removed.',
+      note: 'Associated assignments will be removed for users.',
     });
     if (confirmed) {
       try {

@@ -28,6 +28,7 @@ import adminDocumentReducer from './slices/adminDocumentSlice'
 import adminSubmissionSlice from './slices/adminSubmissionSlice'
 import globalSubmissionSlice from './slices/globalSubmissionsSlice'
 import adminScormReducer from './slices/adminScormSlice'
+import adminAssignmentReducer from './slices/adminAssignmnetSlice'
 
 const store = configureStore({
   reducer: {
@@ -60,6 +61,7 @@ const store = configureStore({
     adminDocument: adminDocumentReducer,
     adminSubmissions: adminSubmissionSlice,
     adminScorm: adminScormReducer,
+    adminAssignments: adminAssignmentReducer,
     
   },
   middleware: (getDefaultMiddleware) =>

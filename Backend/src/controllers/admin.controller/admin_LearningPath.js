@@ -1,4 +1,6 @@
+const ForUserAssignment = require("../../models/forUserAssigments_model");
 const LearningPath = require("../../models/learningPath_model");
+const UserContentProgress = require("../../models/userContentProgress_model");
 
 const addLearningPath = async (req, res) => {
   try {
@@ -234,6 +236,8 @@ const getLearningPathById = async (req, res) => {
 
 const deleteLearningPath = async (req, res) => {
   const deletedLearningPath = await LearningPath.findOneAndDelete({ uuid: req.params.id })
+  const deletedAssignments = await ForUserAssignment.deleteMany({contentId:deletedLearningPath._id})
+  await UserContentProgress.deleteMany({assignment_id:deletedAssignments._id})
   if (!deletedLearningPath) {
     return res.status(404).json({
       isSuccess: false,

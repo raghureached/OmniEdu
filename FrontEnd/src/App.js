@@ -76,13 +76,15 @@ import AdminAnalyticsDashboard from './pages/admin/AdminAnalytics/AdminAnalytics
 import TicketsTable from './pages/admin/AdminSupport/TicketsTable';
 import UserTicketsTable from './pages/user/Support/UserTicketsTable';
 import GlobalTicketsTable from './pages/globalAdmin/Tickets/TicketsTable';
-import GradeSubmission from './components/GradeSubmissions/GradeSubmission';
+import GradeSubmission from './pages/globalAdmin/GradeSubmissions/GradeSubmission';
+import AdminGradeSubmission from './pages/admin/GradeSubmissions/GradeSubmission'
 
 import { fetchPermissions } from './store/slices/RolePermissionSlice';
 import NotAllowed from './pages/NotAllowed/NotAllowed';
 import SCORMModules from './pages/admin/SCORM/SCORMModules';
 import GlobalSCORMModules from './pages/globalAdmin/SCORM/GlobalSCORMModules';
 import Player from './components/ScormPlayer/ScormPlayer';
+import ViewAssignments from './pages/admin/ViewAssignments/ViewAssignments';
 
 function App() {
   const dispatch = useDispatch();
@@ -156,6 +158,7 @@ function App() {
           <Route path='analytics' element={<AdminAnalyticsDashboard />} />
           <Route path="manage-surveys" element={<AdminSurveys />} />
           <Route path="create-assignment" element={<CreateAssignmentEnhanced />} />
+          <Route path='view-assignments' element={<ViewAssignments />} />
           <Route path="manage-assignments" element={<ManageAssignment />} />
           <Route path="help-center" element={permissions.includes("Help Center Access") ? <AdminHelpCenter /> : <NotAllowed />} />
           <Route path="message-board" element={<AdminMessageBoard />} />
@@ -165,7 +168,7 @@ function App() {
           <Route path="change-password" element={<ChangePassword />} />
           <Route path='support' element={permissions.includes("Support Button Access") ? <TicketsTable /> : <NotAllowed />}/>
           <Route path="scorm" element={<SCORMModules />} />
-          <Route path='viewSubmissions/:moduleId' element={<GradeSubmission />} />
+          <Route path='viewSubmissions/:moduleId' element={<AdminGradeSubmission />} />
         </Route>
         <Route path="/global-admin/*" element={<GlobalAdminLayout />}>
           <Route index element={<GlobalAdminHome />} />

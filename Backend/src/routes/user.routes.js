@@ -1,6 +1,6 @@
 const { getAssignment } = require("../controllers/admin.controller/admin_Assignment")
 const { getUserAssignments, getSchedule } = require("../controllers/user_controller/user_assignments")
-const { getModule, getAssessment, getSurvey, getLearningPath, markComplete, markCompleteLP, getInProgress, updateStatus, enrolledbyUser, getRecomended, getCompleted, getAssigned, getEnrolledModule, getEnrolledAssessment, getCompletedinLP, getLeaderboard, getLeaderboardinTeam } = require("../controllers/user_controller/user_content")
+const { getModule, getAssessment, getSurvey, getLearningPath, markComplete, markCompleteLP, getInProgress, updateStatus, enrolledbyUser, getRecomended, getCompleted, getAssigned, getEnrolledModule, getEnrolledAssessment, getCompletedinLP, getLeaderboard, getLeaderboardinTeam, getWorkspace } = require("../controllers/user_controller/user_content")
 const { getMessage } = require("../controllers/user_controller/user_Message")
 const { getProfile } = require("../controllers/user_controller/user_profile")
 const { updateProgress, getUserProgress, getUserProgressById } = require("../controllers/user_controller/user_progress")
@@ -71,6 +71,7 @@ router.route("/getLeaderboard").get(getLeaderboard)
 router.route("/getLeaderboardinTeam").get(getLeaderboardinTeam)
 router.route("/updateAssessmentAttempt").post(updateAssessmentAttempt)
 router.route("/updateWeeklyProgress").post(updateLearningActivity)
+router.route("/getWorkspace").get(getWorkspace)
 
 
 /////////STATS?/////////////

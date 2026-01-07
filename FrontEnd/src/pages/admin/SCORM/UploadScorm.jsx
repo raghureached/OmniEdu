@@ -452,19 +452,6 @@ const ScormModuleModal = ({ showModal, setShowModal, teams, onSuccess, mode = 'c
               </div>
 
               <div className="module-overlay__form-row">
-                <div className="module-overlay__form-group">
-                  <label className="module-overlay__form-label">Status</label>
-                  <CustomSelect
-                    value={form.status}
-                    options={[
-                      { value: 'Draft', label: 'Draft' },
-                      { value: 'Published', label: 'Published' }
-                    ]}
-                    onChange={(v) => setForm((p) => ({ ...p, status: v }))}
-                    searchable={false}
-                    placeholder="Status"
-                  />
-                </div>
 
                 <div className="module-overlay__form-group">
                   <label className="module-overlay__form-label">
@@ -472,6 +459,7 @@ const ScormModuleModal = ({ showModal, setShowModal, teams, onSuccess, mode = 'c
                   </label>
                   <CustomSelect
                     value={form.category}
+                    
                     options={[
                       { value: "", label: "Select Category" },
                       ...categories.map((c) => ({

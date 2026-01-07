@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../../store/slices/authSlice';
 import { fetchNotifications, markNotificationAsRead } from '../../../store/slices/notificationSlice';
 import './AdminLayout.css';
-import { Menu, Home, User2, UserCheck, Shield, BookOpen, CircleUserRound, NotepadText, NotebookPen, LibraryBig, BookOpenCheck, MessageCircleCode, Award, BookCopy, Clock, HelpCircle, LogOut, Bell, X, ChartColumnIncreasing,Laptop, PenBox } from 'lucide-react';
+import { Menu, Home, User2, UserCheck, Shield, BookOpen, CircleUserRound, NotepadText, NotebookPen, LibraryBig, BookOpenCheck, MessageCircleCode, Award, BookCopy, Clock, HelpCircle, LogOut, Bell, X, ChartColumnIncreasing,Laptop, PenBox, Package } from 'lucide-react';
 import { fetchPermissions } from '../../../store/slices/roleSlice';
 import { GoGear, GoPeople } from 'react-icons/go';
 
@@ -303,7 +303,7 @@ const AdminLayout = () => {
                 isActive("/admin/scorm") ? "admin_link_active" : ""
               }
             >
-              <Award size={20} />
+              <Package size={20} />
               {!sidebarCollapsed && (
                 <span className="admin_sidebar_names">Scorm</span>
               )}

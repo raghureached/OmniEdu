@@ -440,7 +440,7 @@ const AdminSurveys = () => {
       type: 'danger', // or 'warning', 'info'
       showCheckbox: true,
       checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
-      note: 'Associated items will be removed.',
+      note: 'Associated assignments will be removed for users.',
     });
      if (!confirmed)  return;
     try {
@@ -937,7 +937,7 @@ const AdminSurveys = () => {
       type: 'danger', // or 'warning', 'info'
       showCheckbox: true,
       checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
-      note: 'Associated items will be removed.',
+      note: 'Associated assignments will be removed for users.',
     });
     if (!confirmed) return;
     try {

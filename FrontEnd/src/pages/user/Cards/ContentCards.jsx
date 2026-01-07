@@ -27,14 +27,17 @@ export const CourseCard = ({
     "in_progress": "Resume",
     "completed": "Review",
     "expired": "Expired",
-    "not_enrolled": "View"
+    "not_enrolled": "View",
+    "":"View"
   };
   const contentIcons = {
     "Module": "",
     "Assessment": "",
     "Survey": "",
     "Learning Path": "",
-    "Learningpath": ""
+    "Learningpath": "",
+    "Document":"",
+    "SCORM":""
   }
   const getIcon = (contentType) => {
     return contentIcons[contentType] + contentType;

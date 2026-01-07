@@ -1,4 +1,6 @@
+const ForUserAssignment = require("../../models/forUserAssigments_model");
 const OrganizationModule = require("../../models/moduleOrganization_model");
+const UserContentProgress = require("../../models/userContentProgress_model");
 
 
 const addModule = async (req, res) => {
@@ -184,24 +186,43 @@ const editModule = async (req, res) => {
 
 const deleteModule = async (req, res) => {
   try {
-    const deletedModule = await OrganizationModule.findOneAndDelete({ uuid: req.params.id })
+    // First, delete the OrganizationModule by uuid
+    const deletedModule = await OrganizationModule.findOneAndDelete({ uuid: req.params.id });
+
     if (!deletedModule) {
       return res.status(404).json({
         success: false,
-        message: "Content not found"
-      })
+        message: "Content not found",
+      });
     }
+
+    // Find assignments that reference this module by ObjectId
+    const relatedAssignments = await ForUserAssignment.find({
+      assign_type: "OrganizationModule",
+      contentId: deletedModule._id,
+    }).select("_id");
+
+    const assignmentIds = relatedAssignments.map((a) => a._id);
+
+    if (assignmentIds.length > 0) {
+      // Delete those assignments
+      await ForUserAssignment.deleteMany({ _id: { $in: assignmentIds } });
+      // Delete user progress entries linked to those assignments
+      await UserContentProgress.deleteMany({ assignment_id: { $in: assignmentIds } });
+    }
+
     return res.status(200).json({
       success: true,
-      message: "Content deleted successfully",
-      data: deletedModule
-    })
+      message: "Content and related data deleted successfully",
+      data: deletedModule,
+      meta: { deletedAssignments: assignmentIds.length },
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Failed to delete content",
-      error: error.message
-    })
+      error: error.message,
+    });
   }
 }
 

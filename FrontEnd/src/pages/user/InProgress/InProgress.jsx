@@ -5,7 +5,8 @@ import { useDispatch } from 'react-redux';
 import { fetchUserAssignments } from '../../../store/slices/userAssignmentSlice';
 import { CourseCard } from '../Cards/ContentCards';
 import LoadingScreen from '../../../components/common/Loading/Loading';
-import { Search } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
+import { GoX } from 'react-icons/go';
 import api from '../../../services/api';
 import './InProgress.css';
 const InProgress = () => {
@@ -13,9 +14,10 @@ const InProgress = () => {
   const [loading, setLoading] = useState(false);
   const [inProgressModules, setInProgressModules] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState({
-    search: ''
-  });
+  const [filters, setFilters] = useState({ search: '', type: '', category: '' });
+  const [tempFilters, setTempFilters] = useState({ search: '', type: '', category: '' });
+  const [showFilters, setShowFilters] = useState(false);
+  const [categories, setCategories] = useState([]);
   useEffect(() => {
     const fetchInProgress = async () => {
       try {
@@ -32,19 +34,36 @@ const InProgress = () => {
     fetchInProgress();
   }, []);
   const [activeTab, setActiveTab] = useState('training');
-  // const assignments = useSelector(state => state.userAssignments);
-  
-  // Filter modules based on search term
+
+  useEffect(() => {
+    const cats = new Set();
+    inProgressModules.forEach((item) => {
+      const content = item?.assignment_id?.contentId || item?.enrollment_id?.contentId;
+      if (content?.category) cats.add(content.category);
+    });
+    setCategories(Array.from(cats));
+  }, [inProgressModules]);
+
+  const normalizeType = (t) => {
+    if (!t) return '';
+    if (t.toLowerCase() === 'learningpath') return 'Learning Path';
+    return t;
+  };
+
   const filteredModules = inProgressModules.filter(item => {
     const content = item?.assignment_id?.contentId || item?.enrollment_id?.contentId;
     if (!content) return false;
-    
-    const searchLower = filters.search.toLowerCase();
-    return (
-      content.title?.toLowerCase().includes(searchLower) ||
-      content.description?.toLowerCase().includes(searchLower) ||
-      content.tags?.some(tag => tag.toLowerCase().includes(searchLower))
-    );
+
+    const searchLower = (filters.search || '').toLowerCase();
+    const haystack = `${content?.title || ''} ${content?.description || ''} ${(content?.tags || []).join(' ')}`.toLowerCase();
+    if (searchLower && !haystack.includes(searchLower)) return false;
+
+    const type = normalizeType(item?.contentType || '');
+    if (filters.type && normalizeType(filters.type) !== type) return false;
+
+    if (filters.category && filters.category !== (content?.category || '')) return false;
+
+    return true;
   });
   
   const currentItems = filteredModules;
@@ -71,9 +90,57 @@ const InProgress = () => {
               }));
             }}
           />
+          <button
+            className="control-btn"
+            style={{ marginLeft: 10 }}
+            onClick={() => setShowFilters((p) => !p)}
+          >
+            <Filter size={16} /> Filter
+          </button>
         </div>
       </div>
 
+      {showFilters && (
+        <div className="adminmodule-filter-panel" style={{ marginTop: 8 }}>
+          <span
+            style={{ cursor: 'pointer', position: 'absolute', right: 10, top: 10 }}
+            onClick={() => setShowFilters(false)}
+          >
+            <GoX size={20} color="#6b7280" />
+          </span>
+          <div className="filter-group">
+            <label>Type</label>
+            <select
+              name="type"
+              value={tempFilters?.type || ''}
+              onChange={(e) => setTempFilters((p) => ({ ...p, type: e.target.value }))}
+            >
+              <option value="">All</option>
+              <option value="Module">Module</option>
+              <option value="Assessment">Assessment</option>
+              <option value="Learning Path">Learning Path</option>
+              <option value="SCORM">SCORM</option>
+            </select>
+          </div>
+          <div className="filter-group">
+            <label>Category</label>
+            <select
+              name="category"
+              value={tempFilters?.category || ''}
+              onChange={(e) => setTempFilters((p) => ({ ...p, category: e.target.value }))}
+            >
+              <option value="">All</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-actions">
+            <button className="btn-secondary" onClick={() => { setTempFilters({ search: '', type: '', category: '' }); setFilters({ search: '', type: '', category: '' }); setShowFilters(false); }} style={{ padding: '6px 12px', fontSize: 14 }}>Clear</button>
+            <button className="btn-primary" onClick={() => { setFilters(tempFilters); setShowFilters(false); }} style={{ padding: '6px 12px', fontSize: 14 }}>Apply</button>
+          </div>
+        </div>
+      )}
       <div className="assigned-content">
         {currentItems.length > 0 ? (
           <div className="assigned-grid">

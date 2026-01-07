@@ -566,6 +566,46 @@ const getLeaderboardinTeam = async (req, res) => {
   }
 }
 
+const getWorkspace = async(req,res) =>{
+  try {
+    const userId = req.user._id;
+    const assigned = await UserContentProgress.find({
+      user_id: req.user._id,
+      status: "",
+    })
+      .populate([
+        {
+          path: "assignment_id",
+          select: "uuid name title description assign_type contentId assign_on due_date created_by",
+          populate: [
+            {
+              path: "contentId",
+              select:
+                "title description duration tags team subteam category status thumbnail credits stars badges uuid",
+            },
+            { path: "created_by", select: "name email" },
+          ],
+        },
+        {
+          path: "enrollment_id",
+          select: "uuid name assign_type contentId assign_on",
+          populate: [
+            {
+              path: "contentId",
+              select:
+                "title description duration tags team subteam category status thumbnail credits stars badges uuid",
+            },
+          ],
+        },
+      ])
+      .lean();
+    // const  = await UserContentProgress.find({ user_id: userId, status: "in_progress" }).populate("contentId");
+    return res.status(200).json(assigned);
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({ message: error.message });
+  }
+}
 module.exports = {
   getModule,
   getAssessment,
@@ -583,7 +623,8 @@ module.exports = {
   getEnrolledAssessment,
   getCompletedinLP,
   getLeaderboard,
-  getLeaderboardinTeam
+  getLeaderboardinTeam,
+  getWorkspace
 }
 
 

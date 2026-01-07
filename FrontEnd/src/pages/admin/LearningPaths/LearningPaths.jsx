@@ -17,6 +17,8 @@ import { notifyError, notifySuccess } from '../../../utils/notification';
 import ExportModal from '../../../components/common/ExportModal/ExportModal';
 import { exportLearningPathsWithSelection } from '../../../utils/learningPathExport';
 import CustomSelect from '../../../components/dropdown/DropDown';
+import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
+
 
 
 const LearningPaths = () => {
@@ -31,6 +33,7 @@ const LearningPaths = () => {
   const filterPanelRef = useRef(null);
   const bulkPanelRef = useRef(null);
   const [showBulkAction, setShowBulkAction] = useState(false);
+  const confirm = useConfirm();
   const [tempFilters, setTempFilters] = useState({
     status: '',
     category: ''
@@ -303,12 +306,21 @@ const LearningPaths = () => {
 
 
 
-  const handleBulkDelete = (ids) => {
+  const handleBulkDelete = async(ids) => {
     if (!ids || ids.length === 0) {
       alert('Please select at least one learning path to delete.');
       return;
     }
-    if (window.confirm('Are you sure you want to delete the selected learning paths?')) {
+    const confirmed = await confirm({
+      title: `Are you sure you want to delete these Learning Paths?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger', // or 'warning', 'info'
+      showCheckbox: true,
+      checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
+      note: 'Associated assignments will be removed for users.',
+    });
+    if (confirmed) {
       ids.forEach(id => dispatch(deleteLearningPath(id)));
       setSelectedIds([]);
       setShowBulkAction(false);
@@ -316,8 +328,17 @@ const LearningPaths = () => {
     clearSelection();
   };
 
-  const handleDeletePath = (pathId) => {
-    if (window.confirm('Are you sure you want to delete this learning path?')) {
+  const handleDeletePath = async (pathId) => {
+    const confirmed = await confirm({
+      title: `Are you sure you want to delete this Learning Path?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger', // or 'warning', 'info'
+      showCheckbox: true,
+      checkboxLabel: 'I understand that the data cannot be retrieved after deleting.',
+      note: 'Associated assignments will be removed for users.',
+    });
+    if (confirmed) {
       // Optional backend sync
       dispatch(deleteLearningPath(pathId));
     }

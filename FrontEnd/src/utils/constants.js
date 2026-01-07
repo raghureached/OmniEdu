@@ -1,3 +1,5 @@
+import thumbnailFallback from "../assets/thumbnailFallback.png";
+
 export const categories = [
     "Mandatory Training (Compliance & Regulations)",
     "Technical Skills",
@@ -8,3 +10,5 @@ export const categories = [
     "Onboarding & Orientation Training",
     "Wellness & Health",
 ];
+
+export {thumbnailFallback};

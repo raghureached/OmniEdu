@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './GradeSubmission.css';
 import { useDispatch, useSelector } from 'react-redux';
-import { FetchSubmissions, gradeSubmission } from '../../store/slices/globalSubmissionsSlice';
+import { adminFetchSubmissions,admingradeSubmission } from '../../../store/slices/adminSubmissionSlice';
 import { useParams } from 'react-router-dom';
-import { notifyError, notifySuccess } from '../../utils/notification';
-const GradeSubmission = () => {
+import { notifyError, notifySuccess } from '../../../utils/notification';
+const AdminGradeSubmission = () => {
   const dispatch = useDispatch();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
@@ -32,7 +32,7 @@ const GradeSubmission = () => {
   ];
 
   useEffect(() => {
-    dispatch(FetchSubmissions(moduleId));
+    dispatch(adminFetchSubmissions(moduleId));
   }, []);
 
   // Transform API data to match component structure
@@ -69,7 +69,7 @@ const GradeSubmission = () => {
   }, []);
 
   const openModal = (submission) => {
-    console.log(submission)
+    // console.log(submission)
     setSelectedSubmission(submission);
     setGradeValue(submission.grade || '');
     setIsModalOpen(true);
@@ -80,7 +80,7 @@ const GradeSubmission = () => {
     setSelectedSubmission(null);
     setGradeValue('');
     setFeedback('');
-    dispatch(FetchSubmissions(moduleId));
+    dispatch(adminFetchSubmissions(moduleId));
   };
 
   const handleSaveGrade = async () => {
@@ -90,12 +90,12 @@ const GradeSubmission = () => {
     }
 
     try {
-      const result = await dispatch(gradeSubmission({
+      const result = await dispatch(admingradeSubmission({
         submissionId: selectedSubmission._id || selectedSubmission.submissionId,
         grade: gradeValue,
         feedback: feedback
       })).unwrap();
-      if (gradeSubmission.fulfilled.match(result)) {
+      if (admingradeSubmission.fulfilled.match(result)) {
         notifySuccess(result.message);
         closeModal();
 
@@ -293,4 +293,4 @@ const GradeSubmission = () => {
   );
 };
 
-export default GradeSubmission;
+export default AdminGradeSubmission;

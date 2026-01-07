@@ -234,7 +234,7 @@ const createAssignment = async (req, res) => {
           user_id: uid,
           contentId: assignment.contentId,
           contentType: assignment.contentType,
-          status: "assigned",
+          status: content_type === "OrganizationDocument" ? "" :"assigned",
           progress_pct: 0,
           started_at: null,
           completed_at: null,
@@ -470,8 +470,7 @@ const editAssignment = async (req, res) => {
 const deleteAssignment = async (req, res) => {
   try {
     const { id } = req.params
-    const assignment = await ForUserAssignment.findOneAndDelete({ uuid: id })
-    
+    const assignment = await ForUserAssignment.findOneAndUpdate({ uuid: id },{status:"Removed"})
     await logActivity({
       userId: req.user._id,
       action: "Delete",
@@ -526,7 +525,8 @@ const getAssignments = async (req, res) => {
 const getAssignment = async (req, res) => {
   try {
     const { id } = req.params
-    const assignment = await ForUserAssignment.findOne({ uuid: id }).populate("contentId")
+    const assignment = await ForUserAssignment.findOne({ uuid: id }).populate("contentId assigned_users groups")
+
     return res.status(200).json({
       isSuccess: true,
       message: "Assignment fetched successfully",

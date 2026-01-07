@@ -6,6 +6,8 @@ const fs = require("fs");
 const ScormModule = require("../models/scorm/scormModule");
 const { parseManifest } = require("../utils/scormParser");
 const mongoose = require("mongoose");
+const ForUserAssignment = require("../models/forUserAssigments_model");
+const UserContentProgress = require("../models/userContentProgress_model");
 
 // Helper function to handle file operations
 const handleFileUpload = async (file, extractPath) => {
@@ -306,6 +308,8 @@ exports.updateScormModule = async (req, res) => {
 exports.deleteScormModule = async (req, res) => {
   try {
     const module = await ScormModule.findOneAndDelete({ _id: req.params.id, global: false, organization_id: req.user?.organization_id });
+    const deletedAssignments = await ForUserAssignment.deleteMany({contentId:module._id})
+    await UserContentProgress.deleteMany({assignment_id:deletedAssignments._id})
 
     if (!module) {
       return res.status(404).json({

@@ -43,6 +43,11 @@ const assignmentSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    status:{
+      type:String,
+      enum:["Assigned","Removed"],
+      default:"Assigned"
+    },
     groups:{
       type:[mongoose.Schema.Types.ObjectId],
       default:[],
