@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import './ContentCards.css';
 import {  useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
+import { useNotification } from '../../../components/common/Notification/NotificationProvider';
+import { notifySuccess } from '../../../utils/notification';
 import { useDispatch } from 'react-redux';
 import { fetchUserAssignments } from '../../../store/slices/userAssignmentSlice';
 
@@ -13,10 +15,11 @@ export const CourseCard = ({
   contentType,
   setShowModulePopUp,
   setPayload,
-  setData
+  setData,
+  ribbonTag
 
 }) => {
-  console.log(data,contentType)
+  // console.log(data,contentType)
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -98,7 +101,6 @@ export const CourseCard = ({
 
     if (status === "not_enrolled" && isGlobal) {
       const type = contentType?.toLowerCase()?.replace(/\s+/g, '');
-      console.log(type)
       if (!type) return;
 
       const isGlobal = data.who === "Global";
@@ -126,11 +128,13 @@ export const CourseCard = ({
 
   return (
     <div className="course-card">
+      
       <div className="course-image">
         <img src={data?.thumbnail} alt={data?.title} />
         <div className="badges">
           <span className={`badge ${contentType?.replace(/\s+/g, '').toLowerCase()}`} >{getIcon(contentType?.slice(0, 1).toUpperCase() + contentType?.slice(1))}</span>
         </div>
+        {ribbonTag && <div className="ribbon-tag">{ribbonTag}</div>}
       </div>
       <div className="course-content">
         <div className="course-header">

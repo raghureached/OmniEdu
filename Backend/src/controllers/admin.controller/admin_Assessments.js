@@ -8,6 +8,7 @@ const csv = require("csv-parser");
 const { logActivity } = require("../../utils/activityLogger");
 const ForUserAssignment = require("../../models/forUserAssigments_model");
 const UserContentProgress = require("../../models/userContentProgress_model");
+const LearningPath = require("../../models/learningPath_model");
 
 const UPLOADS_DIR = path.join(__dirname, '../../../uploads');
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -817,14 +818,31 @@ const deleteAssessment = async (req, res) => {
 
         const { id } = req.params;
         const assessment = await OrganizationAssessments.findOne({ uuid: id, organization_id });
-        const deletedAssignments = await ForUserAssignment.deleteMany({contentId:assessment._id})
-        const userProgress = await UserContentProgress.deleteMany({assignment_id:deletedAssignments._id})
         if (!assessment) {
             return res.status(404).json({
                 success: false,
                 message: "Assessment not found"
             });
         }
+
+        // Block delete if the assessment is part of any Learning Path
+        const referencedLP = await LearningPath.findOne({
+            $or: [
+                { "lessons.id": assessment._id },
+                { "lessons.uuid": id },
+            ],
+        }).select("_id title uuid");
+
+        if (referencedLP) {
+            return res.status(400).json({
+                success: false,
+                message: "This assessment is part of a Learning Path. Please remove it from the Learning Path first.",
+                learningPath: { id: referencedLP._id, title: referencedLP.title, uuid: referencedLP.uuid },
+            });
+        }
+
+        const deletedAssignments = await ForUserAssignment.deleteMany({ contentId: assessment._id });
+        const userProgress = await UserContentProgress.deleteMany({ assignment_id: deletedAssignments._id });
 
         // Start MongoDB session
         session = await mongoose.startSession();

@@ -346,6 +346,7 @@ const LearningHub = () => {
                       status={item.status}
                       progressPct={item.progress_pct}
                       contentType={normType}
+                      ribbonTag={item.who}
                     />
                   );
                 })
@@ -378,7 +379,8 @@ const LearningHub = () => {
                       status={item.status}
                       progressPct={item.progress_pct}
                       contentType={normType}
-                    />
+                      ribbonTag={item.who}
+                      />
                   );
                 })
                 : "You have no Assigned trainings."
@@ -411,6 +413,7 @@ const LearningHub = () => {
                       status="in_progress"
                       contentType={normType}
                       progressPct={m?.progress_pct}
+                      ribbonTag={m.who} 
                     />
                   );
                 })
@@ -441,6 +444,7 @@ const LearningHub = () => {
                       contentType={normType}
                       progressPct={100}
                       status="completed"
+                      ribbonTag={module.who} 
                     />
                   );
                 })

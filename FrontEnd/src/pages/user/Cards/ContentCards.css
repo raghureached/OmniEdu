@@ -231,3 +231,19 @@
   fill: #111827; /* slate-900 */
   font-weight: 700;
 }
+
+/* Top-right ribbon */
+.ribbon-tag {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: linear-gradient(135deg, #111827, #334155);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-bottom-left-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}

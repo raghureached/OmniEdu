@@ -4,6 +4,7 @@ const OrganizationSurveyQuestion = require("../../models/organizationSurveysQues
 const { v4: uuidv4 } = require("uuid");
 const GlobalSurveyFeedback = require("../../models/global_surveys_feedback");
 const OrganizationSurveySection = require("../../models/organizationSurveySection_model");
+const LearningPath = require("../../models/learningPath_model");
 const { logActivity } = require("../../utils/activityLogger");
 
 /// aligned with new question and survey models, with adapter for `elements`
@@ -304,6 +305,22 @@ const deleteSurvey = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Survey not found",
+      });
+    }
+
+    // Block delete if this survey is part of any Learning Path
+    const referencedLP = await LearningPath.findOne({
+      $or: [
+        { "lessons.id": survey._id },
+        { "lessons.uuid": req.params.id },
+      ],
+    }).select("_id title uuid");
+
+    if (referencedLP) {
+      return res.status(400).json({
+        success: false,
+        message: "This survey is part of a Learning Path. Please remove it from the Learning Path first.",
+        learningPath: { id: referencedLP._id, title: referencedLP.title, uuid: referencedLP.uuid },
       });
     }
 

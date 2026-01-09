@@ -246,8 +246,13 @@ const getInProgress = async (req, res) => {
         },
       ])
       .lean();
-    // const  = await UserContentProgress.find({ user_id: userId, status: "in_progress" }).populate("contentId");
-    return res.status(200).json(inProgress);
+    const inProgressWithWho = Array.isArray(inProgress)
+      ? inProgress.map((doc) => ({
+          ...doc,
+          who: doc?.enrollment_id ? "omniedu" : doc?.who,
+        }))
+      : inProgress;
+    return res.status(200).json(inProgressWithWho);
   } catch (error) {
     console.log(error)
     return res.status(500).json({ message: error.message });
@@ -339,7 +344,13 @@ const getCompleted = async (req, res) => {
         },
       ])
       .lean();
-    return res.status(200).json(completed);
+    const completedWithWho = Array.isArray(completed)
+      ? completed.map((doc) => ({
+          ...doc,
+          who: doc?.enrollment_id ? "omniedu" : doc?.who,
+        }))
+      : completed;
+    return res.status(200).json(completedWithWho);
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: error.message });
@@ -466,8 +477,13 @@ const getAssigned = async (req, res) => {
         },
       ])
       .lean();
-    // const  = await UserContentProgress.find({ user_id: userId, status: "in_progress" }).populate("contentId");
-    return res.status(200).json(assigned);
+    const assignedWithWho = Array.isArray(assigned)
+      ? assigned.map((doc) => ({
+          ...doc,
+          who: doc?.enrollment_id ? "omniedu" : doc?.who,
+        }))
+      : assigned;
+    return res.status(200).json(assignedWithWho);
   } catch (error) {
     console.log(error)
     return res.status(500).json({ message: error.message });

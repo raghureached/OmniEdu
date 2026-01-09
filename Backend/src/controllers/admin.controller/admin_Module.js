@@ -1,4 +1,5 @@
 const ForUserAssignment = require("../../models/forUserAssigments_model");
+const LearningPath = require("../../models/learningPath_model");
 const OrganizationModule = require("../../models/moduleOrganization_model");
 const UserContentProgress = require("../../models/userContentProgress_model");
 
@@ -186,15 +187,34 @@ const editModule = async (req, res) => {
 
 const deleteModule = async (req, res) => {
   try {
-    // First, delete the OrganizationModule by uuid
-    const deletedModule = await OrganizationModule.findOneAndDelete({ uuid: req.params.id });
+    // First, find the OrganizationModule by uuid
+    const moduleDoc = await OrganizationModule.findOne({ uuid: req.params.id });
 
-    if (!deletedModule) {
+    if (!moduleDoc) {
       return res.status(404).json({
         success: false,
-        message: "Content not found",
+        message: "Module not found",
       });
     }
+
+    // Block delete if this module is present in any LearningPath lessons by id or uuid
+    const referencedLP = await LearningPath.findOne({
+      $or: [
+        { "lessons.id": moduleDoc._id },
+        { "lessons.uuid": req.params.id },
+      ],
+    }).select("_id title uuid");
+
+    if (referencedLP) {
+      return res.status(400).json({
+        success: false,
+        message: "This module is part of a Learning Path. Please remove it from the Learning Path first.",
+        learningPath: { id: referencedLP._id, title: referencedLP.title, uuid: referencedLP.uuid },
+      });
+    }
+
+    // Safe to delete now
+    const deletedModule = await OrganizationModule.findOneAndDelete({ uuid: req.params.id });
 
     // Find assignments that reference this module by ObjectId
     const relatedAssignments = await ForUserAssignment.find({
