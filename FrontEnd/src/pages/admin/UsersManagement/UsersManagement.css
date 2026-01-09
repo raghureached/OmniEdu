@@ -491,7 +491,7 @@ body {
 }
 
 /* Bulk action panel */
-.bulk-action-panel {
+.user-bulk-action-panel {
   position: absolute;
   top: 150px;
   right: 120px;
@@ -503,7 +503,7 @@ body {
   min-width: 200px;
 }
 
-.bulk-action-panel h4 {
+.user-bulk-action-panel h4 {
   margin: 0 0 12px 0;
   font-size: 14px;
   color: #374151;
@@ -574,7 +574,7 @@ body {
     align-items: flex-start;
   }
   
-  .bulk-action-panel {
+  .user-bulk-action-panel {
     top: 120px;
     right: 16px;
     left: 16px;

@@ -114,7 +114,7 @@ const GroupsManagement = () => {
       } else {
         setFormData({
           teamName: '',
-          status: '',
+          status: 'active',
         });
       }
     }
@@ -1745,6 +1745,7 @@ const GroupsManagement = () => {
                           className="addOrg-form-input"
                           required
                           searchable={false}
+                          disabled={!editMode}
                         />
                       </div>
 

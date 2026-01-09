@@ -50,7 +50,7 @@
   position: absolute;
   top: 16px;
   right: 16px;
-  background: transparent;
+  background: white;
   border: none;
   color: #6b7280;
   cursor: pointer;
@@ -63,7 +63,7 @@
 }
 
 .modal-close:hover {
-  background: #f3f4f6;
+  /* background: #f3f4f6; */
   color: #111827;
 }
 

@@ -8,6 +8,7 @@ const ModulePopUp = ({ isOpen, onClose, data }) => {
     const [showAll, setShowAll] = useState(false);
     const [showDescription, setShowDescription] = useState(false);
     const [showOutcomes, setShowOutcomes] = useState(false);
+    const [loading, setLoading] = useState(false);
     const title = data?.title || 'Untitled Module';
     const category = data?.category || 'Uncategorized';
     const trainingType = data?.trainingType || '—';
@@ -28,14 +29,14 @@ const ModulePopUp = ({ isOpen, onClose, data }) => {
     }
     if (!open) return null;
     
-
+    // console.log(data)
     
     let model;
-    if(data.type === "module"){
+    if(data.type.toLowerCase() === "module"){
         model = "GlobalModule"
-    }else if(data.type === "survey"){
+    }else if(data.type.toLowerCase() === "survey"){
         model = "GlobalSurveys"
-    }else if(data.type = "assessment"){
+    }else if(data.type.toLowerCase() === "assessment"){
         model = "GlobalAssessments"
     }
     const payload = {
@@ -47,10 +48,12 @@ const ModulePopUp = ({ isOpen, onClose, data }) => {
 
     const enroll = () => {
         try {
+            setLoading(true);
             const response = api.post(`/api/user/enroll/${data._id}`,payload);
             if (response.data.status === "success" || response.data.status === 200) {
                 navigate('/dashboard');
             }
+            setLoading(false);
         } catch (error) {
             console.log(error);
         }
@@ -192,9 +195,10 @@ const ModulePopUp = ({ isOpen, onClose, data }) => {
                                         <div></div>
                                         <div className="global-preview-actions-buttons">
                                            
-                                            <button className="btn-primary" onClick={() => (enroll())}>
-                                                Enroll
+                                            <button className="btn-primary" onClick={() => (enroll())} disabled={loading}>
+                                                {loading ? "Loading...":"Enroll"}
                                             </button>
+                                            
                                         </div>
                                     </div>
                                 </div>

@@ -45,7 +45,7 @@ const GlobalModuleDetail = () => {
 
       <div className="content-meta">
         <span><strong>Training Type:</strong> {selectedContent.trainingType}</span>
-        <span><strong>Status:</strong> {selectedContent.status === 'Saved' ? 'Saved' : 'Published'}</span>
+        <span><strong>Status:</strong> {selectedContent.status === 'Draft' ? 'Draft' : 'Published'}</span>
         <span><strong>Category:</strong> {selectedContent.category}</span>
         <span><strong>Team ID:</strong> {selectedContent.team.name}</span>
         <span><strong>Created By:</strong> {selectedContent.created_by.name}</span>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import CustomSelect from '../../../components/dropdown/DropDown';
 import {
   Search,
   Filter,
@@ -15,7 +16,7 @@ import {
   Share,
   Import,
   Eye,
-  BarChart3
+  BarChart3,CirclePause
 } from 'lucide-react';
 import { RiDeleteBinFill } from 'react-icons/ri';
 import { FiEdit3 } from 'react-icons/fi';
@@ -42,6 +43,7 @@ import { GoX } from 'react-icons/go';
 import UserPreview from './components/UserPreview';
 import BulkAssignToTeam from './components/BulkAssignToTeam';
 import UsersTable from './components/UsersTable';
+import DeactivateModal from '../GroupsManagement/DeactivateModal';
 import AnalyticsPop from '../../../components/AnalyticsPopup/AnalyticsPop';
 import * as XLSX from 'xlsx';
 import { notify, notifyError, notifySuccess, notifyWarning } from '../../../utils/notification';
@@ -140,6 +142,9 @@ const UsersManagement = () => {
   const [showExportModal, setShowExportModal] = useState(false);
   //import modal
   const [showImportModal, setShowImportModal] = useState(false);
+  // deactivate modal
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [deactivateTargetUUIDs, setDeactivateTargetUUIDs] = useState([]);
   // Highlighted user from navigation state
   const [highlightedUser, setHighlightedUser] = useState(null);
   // Centralized fetch: runs when filters change OR when we explicitly bump refetchIndex
@@ -670,200 +675,8 @@ const UsersManagement = () => {
     return regex.test(name.trim());
   };
 
-  // const handleImportUsers = async (event) => {
-  //   const file = event?.target?.files?.[0];
-  //   if (!file) return;
 
-  //   setIsImporting(true);
-
-  //   try {
-  //     const data = await file.arrayBuffer();
-  //     const workbook = XLSX.read(data, { type: "array" });
-
-  //     if (!workbook.SheetNames.length) {
-  //       notifyError("No sheets found.");
-  //       return;
-  //     }
-
-  //     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  //     const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-
-  //     if (!rawRows.length) {
-  //       notifyError("No data found in file.");
-  //       return;
-  //     }
-
-  //     // Build lookups from current state for dedupe
-  //     const teamLookup = new Map();
-  //     const subTeamLookup = new Map();
-
-  //     const registerTeam = (teamObj) => {
-  //       if (!teamObj) return;
-  //       const id = resolveTeamIdentifier(teamObj);
-  //       const nameKey = toTrimmedString(teamObj?.name || teamObj?.teamName).toLowerCase();
-  //       if (nameKey) teamLookup.set(nameKey, teamObj);
-  //       const subs = Array.isArray(teamObj?.subTeams) ? teamObj.subTeams : [];
-  //       subs.forEach((st) => {
-  //         const subName = toTrimmedString(st?.name || st?.subTeamName).toLowerCase();
-  //         const subId = resolveSubTeamIdentifier(st);
-  //         if (!id || !subName) return;
-  //         subTeamLookup.set(`${id}::${subName}`, st);
-  //         // also map by ID for robustness when name missing
-  //         if (subId) subTeamLookup.set(`${id}::${subId}`, st);
-  //       });
-  //     };
-
-  //     (Array.isArray(teams) ? teams : []).forEach(registerTeam);
-
-  //     let successCount = 0;
-  //     const failedUsers = [];
-
-  //     for (let index = 0; index < rawRows.length; index++) {
-  //       const rowNum = index + 2;
-  //       const row = normalizeRow(rawRows[index]);
-
-  //       const name = toTrimmedString(getValue(row, ["name"]));
-  //       const email = toTrimmedString(getValue(row, ["email"]));
-  //       const designation = toTrimmedString(getValue(row, ["designation"]));
-  //       const teamName = toTrimmedString(getValue(row, ["team", "team name"]));
-  //       const subTeamName = toTrimmedString(getValue(row, ["subteam", "sub team", "sub team name"]));
-  //       let roleName = toTrimmedString(getValue(row, ["role"])) || "General User";
-  //       const custom1 = toTrimmedString(getValue(row, ["custom1", "custom 1"]));
-
-  //       // --- TEAM & SUBTEAM NAME VALIDATION ---
-  //       if (teamName && !isValidTeamName(teamName)) {
-  //         failedUsers.push({
-  //           name, email, designation, teamName, subTeamName, roleName, custom1,
-  //           reason: "Invalid characters in Team name. Only letters, numbers, spaces, / and - are allowed"
-  //         });
-  //         continue;
-  //       }
-
-  //       if (subTeamName && !isValidTeamName(subTeamName)) {
-  //         failedUsers.push({
-  //           name, email, designation, teamName, subTeamName, roleName, custom1,
-  //           reason: "Invalid characters in Subteam name. Only letters, numbers, spaces, / and - are allowed"
-  //         });
-  //         continue;
-  //       }
-
-  //       // --- VALIDATION RULES ---
-  //       if (!name || !email) {
-  //         failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Name or Email missing" });
-  //         continue;
-  //       }
-
-  //       if (!isValidEmail(email)) {
-  //         failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Invalid email format" });
-  //         continue;
-  //       }
-
-  //       if (!isValidLength(name, 80)) {
-  //         failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Name exceeds 80 characters" });
-  //         continue;
-  //       }
-
-  //       if (!isValidLength(designation, 100)) {
-  //         failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Designation too long" });
-  //         continue;
-  //       }
-
-  //       if (!isValidLength(custom1, 200)) {
-  //         failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Custom1 exceeds limit" });
-  //         continue;
-  //       }
-
-  //       // Validate role
-  //       const roleId = findRoleIdByName(roleName);
-  //       if (!roleId) {
-  //         failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: `Role "${roleName}" not found` });
-  //         continue;
-  //       }
-
-  //       // --- TEAM + SUBTEAM LOGIC ---
-  //       let teamObj = null;
-  //       let subTeamObj = null;
-
-  //       try {
-  //         // --- BLOCK INACTIVE TEAM BEFORE TEAM CREATION / USER IMPORT ---
-  //         if (teamName) {
-  //           // Find team in existing state
-  //           const existingTeam = teams?.find(
-  //             (t) => t?.name?.trim().toLowerCase() === teamName.trim().toLowerCase()
-  //           );
-
-  //           if (existingTeam) {
-  //             const teamStatus = existingTeam?.status?.toLowerCase();
-
-  //             if (teamStatus === "inactive") {
-  //               failedUsers.push({
-  //                 name,
-  //                 email,
-  //                 designation,
-  //                 teamName,
-  //                 subTeamName,
-  //                 roleName,
-  //                 custom1,
-  //                 reason: "Cannot import user into an inactive team",
-  //               });
-  //               continue;
-  //             }
-  //           }
-  //         }
-
-  //         if (teamName) teamObj = await ensureTeamByName(teamName, teamLookup, dispatch, createTeam, setTeams, setDepartments);
-  //         if (teamObj && subTeamName) subTeamObj = await ensureSubTeamByName(teamObj, subTeamName, subTeamLookup, dispatch, createSubTeam, setTeams);
-  //       } catch (err) {
-  //         failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: err?.message || "Team/Subteam error" });
-  //         continue;
-  //       }
-
-  //       // --- CREATE USER PAYLOAD ---
-  //       const payload = {
-  //         name,
-  //         email,
-  //         designation,
-  //         team: teamObj ? resolveTeamIdentifier(teamObj) : undefined,
-  //         subteam: subTeamObj ? resolveSubTeamIdentifier(subTeamObj) : undefined,
-  //         role: roleId,
-  //         custom1,
-  //         invite: false,
-  //       };
-
-  //       try {
-  //         await dispatch(createUser(payload)).unwrap();
-  //         successCount++;
-  //       } catch (err) {
-  //         failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: err?.message || "Failed to create user/User already exists" });
-  //       }
-  //     }
-
-  //     // ---- Refresh data ----
-  //     if (successCount > 0) {
-  //       setRefetchIndex(i => i + 1);
-  //       getTeams();
-  //     }
-
-
-  //     if (failedUsers.length > 0) {
-  //       // Show modal instead of notification
-  //       setImportResults({
-  //         successCount: successCount,
-  //         failedRows: failedUsers
-  //       });
-  //       setShowFailedImportModal(true);
-  //     } else {
-  //       notifySuccess(`Imported ${successCount} user(s).`, { title: "Import successful." });
-  //       clearAllSelections();
-  //     }
-  //   } catch (err) {
-  //     // console.error("Import error:", err);
-  //     notifyError("Import failed. Please check the file.");
-  //   } finally {
-  //     if (event?.target) event.target.value = "";
-  //     setIsImporting(false);
-  //   }
-  // };
+  
  const handleImportFromModal = async (file) => {
   if (!file) return;
 
@@ -1386,6 +1199,7 @@ const UsersManagement = () => {
         name: user.name || '',
         employeeId: profile.employee_id || user.employeeId || '',
         role: roleValue,
+        status: (typeof user.status === 'string' ? user.status : (user.status?.name || user.status?.label)) || 'active',
         team: '',
         subteam: '',
         department: user.department || '',
@@ -1402,6 +1216,7 @@ const UsersManagement = () => {
       setFormData({
         ...initialFormData,
         role: 'user',
+        status: 'active',
       });
     }
     setShowForm(true);
@@ -1420,6 +1235,7 @@ const UsersManagement = () => {
     name: '',
     employeeId: '',
     role: '',
+    status: 'active',
     team: '',
     subteam: '',
     department: '',
@@ -1689,35 +1505,22 @@ const UsersManagement = () => {
       }
     }
     else if (action === 'deactivate') {
-      try {
-        const requests = selectedItems
-          .map((userId) => {
-            const targetUser = users?.find((user) => resolveUserId(user) === userId);
-            const currentStatusRaw = typeof targetUser?.status === 'string'
-              ? targetUser?.status
-              : targetUser?.status?.name || targetUser?.status?.label;
-            if (currentStatusRaw?.toLowerCase() === 'inactive') {
-              return null;
-            }
-            return dispatch(updateUser({ id: userId, userData: { status: 'inactive' } })).unwrap();
-          })
-          .filter(Boolean);
-
-        if (requests.length === 0) {
-          alert('Selected users are already inactive.');
-          return;
-        }
-
-        await Promise.all(requests);
-        alert('Selected users deactivated successfully');
-        setSelectedItems([]);
-        setShowBulkAction(false);
-        setShowFilters(false);
-        setRefetchIndex(i => i + 1);
-      } catch (error) {
-        console.error('Failed to deactivate users:', error);
-        alert('Failed to deactivate selected users. Please try again.');
+      // Determine UUIDs, then open confirm modal
+      let targetUUIDs = [];
+      if (allSelected) {
+        const allIdsInFiltered = sortedUsers.map((u) => (u?.uuid || resolveUserId(u))).filter(Boolean);
+        const excludedSet = new Set(excludedIds);
+        targetUUIDs = allIdsInFiltered.filter((id) => !excludedSet.has(id));
+      } else {
+        targetUUIDs = Array.isArray(selectedIds) ? [...selectedIds] : [];
       }
+
+      if (targetUUIDs.length === 0) {
+        notifyWarning('No users selected to deactivate');
+        return;
+      }
+      setDeactivateTargetUUIDs(targetUUIDs);
+      setShowDeactivateModal(true);
     }
   };
 
@@ -1739,6 +1542,40 @@ const UsersManagement = () => {
       }
       return next;
     });
+  };
+
+  const handleConfirmDeactivate = async () => {
+    try {
+      const requests = deactivateTargetUUIDs
+        .map((uuid) => {
+          const targetUser = users?.find((user) => (user?.uuid || resolveUserId(user)) === uuid);
+          const currentStatusRaw = typeof targetUser?.status === 'string'
+            ? targetUser?.status
+            : targetUser?.status?.name || targetUser?.status?.label;
+          if (currentStatusRaw?.toLowerCase() === 'inactive') {
+            return null;
+          }
+          return dispatch(updateUser({ id: uuid, userData: { status: 'inactive' } })).unwrap();
+        })
+        .filter(Boolean);
+
+      if (requests.length === 0) {
+        notifyWarning('Selected users are already inactive.');
+        setShowDeactivateModal(false);
+        return;
+      }
+
+      await Promise.all(requests);
+      notifySuccess('Selected users deactivated successfully');
+      clearAllSelections();
+      setShowDeactivateModal(false);
+      setShowBulkAction(false);
+      setShowFilters(false);
+      setRefetchIndex(i => i + 1);
+    } catch (error) {
+      console.error('Failed to deactivate users:', error);
+      notifyError('Failed to deactivate selected users. Please try again.');
+    }
   };
 
   // Close filter and bulk panels when clicking outside
@@ -2159,60 +1996,68 @@ const USER_IMPORT_TEMPLATE = {
                 </span>
 
                 <div className="filter-group">
-                  <div style={{ fontSize: "15px", fontWeight: "600", color: "#26334d" }}>  <label>Status</label></div>
-
-                  <select
+                  <div style={{ fontSize: "15px", fontWeight: "600", color: "#26334d" }}><label>Status</label></div>
+                  <CustomSelect
                     name="status"
                     value={tempFilters.status || ''}
-                    onChange={handleFilterChange}
-                  >
-                    <option value="">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    {/* <option value="pending">Pending</option> */}
-                  </select>
+                    options={[
+                      { value: '', label: 'All Status' },
+                      { value: 'active', label: 'Active' },
+                      { value: 'inactive', label: 'Inactive' }
+                    ]}
+                    onChange={(value) => handleFilterChange({ target: { name: 'status', value } })}
+                    placeholder="Select Status"
+                    searchable={false}
+                    className="filter-select"
+                  />
                 </div>
 
                 {/* Team filter */}
                 <div className="filter-group">
                   <div style={{ fontSize: "15px", fontWeight: "600", color: "#26334d" }}><label>Team</label></div>
-                  <select
+                  <CustomSelect
                     name="team"
                     value={tempFilters.team || ''}
-                    onChange={(e) => {
-                      const { value } = e.target;
+                    options={[
+                      { value: '', label: 'All Teams' },
+                      ...(Array.isArray(teams) ? teams.map(t => ({
+                        value: t?._id || t?.id || t?.uuid,
+                        label: t?.name || t?.teamName || 'Team'
+                      })) : [])
+                    ]}
+                    onChange={(value) => {
                       setTempFilters(prev => ({ ...prev, team: value, subteam: '' }));
                     }}
-                  >
-                    <option value="">All Teams</option>
-                    {(Array.isArray(teams) ? teams : []).map(t => (
-                      <option key={t?._id || t?.id || t?.uuid} value={t?._id || t?.id || t?.uuid}>
-                        {t?.name || t?.teamName || 'Team'}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Select Team"
+                    className="filter-select"
+                  />
                 </div>
 
                 {/* Subteam filter (dependent on Team) */}
                 <div className="filter-group">
                   <div style={{ fontSize: "15px", fontWeight: "600", color: "#26334d" }}><label>Subteam</label></div>
-                  <select
+                  <CustomSelect
                     name="subteam"
                     value={tempFilters.subteam || ''}
-                    onChange={handleFilterChange}
-                    disabled={!tempFilters.team}
-                  >
-                    <option value="">All Subteams</option>
-                    {(() => {
-                      const teamObj = (Array.isArray(teams) ? teams : []).find(t => (t?._id || t?.id || t?.uuid) === tempFilters.team);
-                      const subs = Array.isArray(teamObj?.subTeams) ? teamObj.subTeams : [];
-                      return subs.map(st => (
-                        <option key={st?._id || st?.id || st?.uuid} value={st?._id || st?.id || st?.uuid}>
-                          {st?.name || st?.subTeamName || 'Subteam'}
-                        </option>
-                      ));
+                    options={(() => {
+                      const options = [{ value: '', label: 'All Subteams' }];
+                      if (tempFilters.team) {
+                        const teamObj = (Array.isArray(teams) ? teams : []).find(t => (t?._id || t?.id || t?.uuid) === tempFilters.team);
+                        const subs = Array.isArray(teamObj?.subTeams) ? teamObj.subTeams : [];
+                        subs.forEach(st => {
+                          options.push({
+                            value: st?._id || st?.id || st?.uuid,
+                            label: st?.name || st?.subTeamName || 'Subteam'
+                          });
+                        });
+                      }
+                      return options;
                     })()}
-                  </select>
+                    onChange={(value) => handleFilterChange({ target: { name: 'subteam', value } })}
+                    placeholder="Select Subteam"
+                    isDisabled={!tempFilters.team}
+                    className="filter-select"
+                  />
                 </div>
 
                 {/* <div className="filter-group">
@@ -2265,22 +2110,30 @@ const USER_IMPORT_TEMPLATE = {
             </button>
 
             {showBulkAction && (
-              <div className="bulk-action-panel" style={{ top: '50px', right: '-159px', padding: "15px" }} ref={bulkPanelRef}>
+              <div className="user-bulk-action-panel" style={{ top: '50px', right: '-92px', padding: "15px" }} ref={bulkPanelRef}>
                 <div className="bulk-action-header">
-                  <label className="bulk-action-title">Items Selected: {derivedSelectedCount}</label>
+                  <label className="bulk-action-title" style={{marginBottom:"10px"}}>Items Selected: {derivedSelectedCount}</label>
                 </div>
-                <div className="bulk-action-actions" style={{ display: 'flex', gap: 8, flexDirection: 'row', alignItems: 'center' }}>
+                <div className="bulk-action-actions" style={{ display: 'flex', gap: 10, flexDirection: 'column', alignItems: 'center' }}>
                   <button
-                    className="btn-primary"
+                    className="btn-primary" 
                     disabled={!allSelected && selectedIds.length === 0}
                     onClick={handleOpenAssignForSelected}
                   >
-                    Assign to Team
+                     <Users size={16} color="white" />Assign to Team
+                  </button>
+                  <button
+                    className="btn-primary" 
+                    disabled={!allSelected && selectedIds.length === 0}
+                    onClick={() => handleBulkAction('deactivate')}
+                    style={{ background: '#6b7280',width:"100%",justifyContent:"center" }}
+                  >
+                     <CirclePause size={16} color="white" />Deactivate
                   </button>
                   <button
                     className="btn-primary"
                     disabled={!allSelected && selectedIds.length === 0}
-                    onClick={() => handleBulkAction('delete')} style={{ background: "red" }}
+                    onClick={() => handleBulkAction('delete')} style={{ background: "red",width:"100%", justifyContent:"center" }}
                   >
                     <RiDeleteBinFill size={16} color="white" /> Delete
                   </button>
@@ -2299,59 +2152,7 @@ const USER_IMPORT_TEMPLATE = {
             Add User
           </button>
         </div>
-        {/* {selectionScope !== 'none' && derivedSelectedCount > 0 && (
-          <div className="users-selection-banner" style={{ margin: '12px 0px', justifyContent: 'center' }}>
-            {selectionScope === 'page' ? (
-              <>
-                <span>
-                  All {currentPageUserIds.length} {currentPageUserIds.length === 1 ? 'user' : 'users'} on this page are selected.
-                </span>
-                {totalCount > currentPageUserIds.length && (
-                  <button
-                    type="button"
-                    className="selection-action action-primary"
-                    onClick={handleSelectAllPages}
-                    disabled={selectAllLoading}
-                  >
-                    {selectAllLoading ? 'Selecting all users…' : `Select all ${totalCount} users`}
-                  </button>
-                )}
-                <button type="button" className="selection-action action-link" onClick={clearSelection}>
-                  Clear selection
-                </button>
-              </>
-            ) : selectionScope === 'all' ? (
-              <>
-                <span>
-                  All {derivedSelectedCount} {derivedSelectedCount === 1 ? 'user' : 'users'} are selected across all pages.
-                </span>
-                <button type="button" className="selection-action action-link" onClick={clearSelection}>
-                  Clear selection
-                </button>
-              </>
-            ) : (
-              <>
-                <span>
-                  {derivedSelectedCount} {derivedSelectedCount === 1 ? 'user' : 'users'} selected.
-                </span>
-                {totalCount > derivedSelectedCount && (
-                  <button
-                    type="button"
-                    className="selection-action action-primary"
-                    onClick={handleSelectAllPages}
-                    disabled={selectAllLoading}
-                  >
-                    {selectAllLoading ? 'Selecting all users…' : `Select all ${totalCount} users`}
-                  </button>
-                )}
-                <button type="button" className="selection-action action-link" onClick={clearSelection}>
-                  Clear selection
-                </button>
-              </>
-            )}
-          </div>
-        )} */}
-
+       
         <SelectionBanner
           selectionScope={selectionScope}
           selectedCount={derivedSelectedCount}
@@ -2621,6 +2422,23 @@ const USER_IMPORT_TEMPLATE = {
 
                   </div>
 
+                  <div className="addOrg-form-grid">
+                    <div className="addOrg-form-group">
+                      <label className="addOrg-form-label">Status</label>
+                      <select
+                        name="status"
+                        className="addOrg-form-select"
+                        value={formData.status}
+                        onChange={handleFormChange}
+                        disabled={!editMode}
+                      >
+                        <option value="">Select Role</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    </div>
+                  </div>
+
                   {/* <div className="addOrg-form-grid">
                   <div className="addOrg-form-group">
                     <label className="addOrg-form-label">Department</label>
@@ -2710,6 +2528,13 @@ const USER_IMPORT_TEMPLATE = {
             clearSelection();
           }}
           columns={userFailedColumns}
+        />
+        <DeactivateModal
+          open={showDeactivateModal}
+          count={deactivateTargetUUIDs.length}
+          variant="user"
+          onCancel={() => setShowDeactivateModal(false)}
+          onConfirm={handleConfirmDeactivate}
         />
         <ExportModal
           isOpen={showExportModal}

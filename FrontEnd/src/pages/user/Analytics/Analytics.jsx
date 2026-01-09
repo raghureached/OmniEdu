@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-    PieChart,
-    Pie,
-    Cell,
     BarChart,
     Bar,
     XAxis,
@@ -11,6 +8,9 @@ import {
     Tooltip,
     ResponsiveContainer
 } from 'recharts';
+import { PieChart as MUIPieChart, pieArcClasses, pieClasses } from '@mui/x-charts/PieChart';
+import { rainbowSurgePalette } from '@mui/x-charts/colorPalettes';
+import { useTheme } from '@mui/material/styles';
 import {
     BookOpen,
     Clock,
@@ -47,10 +47,12 @@ const COLORS = {
 };
 
 
-const CHART_COLORS = ['#011F5B', '#1C88C7', '#10b981', '#f59e0b'];
+const CHART_COLORS = ['#011F5B', '#1C88C7', '#10b981', '#f59e0b','#f5550bff'];
 
 const LearnerAnalytics = () => {
     const [isLoading, setIsLoading] = useState(true);
+    const theme = useTheme();
+    const palette = rainbowSurgePalette(theme.palette.mode);
     const [timeRange, setTimeRange] = useState('7D');
     const [showModal, setShowModal] = useState(false);
     const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
@@ -81,11 +83,7 @@ const LearnerAnalytics = () => {
         badges: 0,
         credits: 0
     });
-    const [assessmentScores, setAssessmentScores] = useState({
-        assessmentScores: [],
-        avgScore: 0,
-        classAverage: 0
-    });
+    
     const [weeklyActivity, setWeeklyActivity] = useState([]);
     const navigate = useNavigate();
 
@@ -96,6 +94,7 @@ const LearnerAnalytics = () => {
                 // Prepare date range parameters
                 const dateParams = timeRange === 'custom' 
                     ? { 
+                        dateRange: 'custom',
                         startDate: customDateRange.startDate,
                         endDate: customDateRange.endDate
                     }
@@ -111,9 +110,7 @@ const LearnerAnalytics = () => {
                 const [
                     statsResponse,
                     moduleResponse,
-                    
                     rewardsResponse,
-                    assessmentResponse,
                     weeklyResponse
                 ] = await Promise.all([
                     api.get('/api/user/analytics/getStats', {
@@ -123,9 +120,6 @@ const LearnerAnalytics = () => {
                         params: dateParams
                     }),
                     api.get('/api/user/analytics/getUserRewards'),
-                    api.get('/api/user/analytics/getAssessmentPerformance', {
-                        params: dateParams
-                    }),
                     api.get('/api/user/analytics/getWeeklyActivity', {
                         params: dateParams
                     })
@@ -135,8 +129,13 @@ const LearnerAnalytics = () => {
                 setStats(statsResponse.data.data);
                 setModuleAnalytics(moduleResponse.data.data);
                 setRewards(rewardsResponse.data.data);
-                setAssessmentScores(assessmentResponse.data.data);
-                setWeeklyActivity(weeklyResponse.data.data);
+
+                // Safely map weekly activity data to expected shape
+                const wa = Array.isArray(weeklyResponse?.data?.data) ? weeklyResponse.data.data : [];
+                setWeeklyActivity(wa.map(d => ({
+                    day: d.day ?? d.label ?? '',
+                    hours: Number(d.hours) || 0,
+                })));
 
             } catch (error) {
                 console.error('Error fetching analytics:', error);
@@ -147,12 +146,7 @@ const LearnerAnalytics = () => {
 
         fetchAllAnalytics();
     }, [timeRange, customDateRange.startDate, customDateRange.endDate]);
-    const scores = (Array.isArray(assessmentScores?.assessmentScores) ? assessmentScores?.assessmentScores : []).map(item => ({
-        ...item,
-        shortName:
-            item.name.length > 25 ? item.name.substring(0, 25) + "..." : item.name,
-    }));
-
+    
     const MetricCard = ({ icon: Icon, label, value, subtitle, trend, color, delay = 0 }) => (
         <div
             className="metric-card-enhanced"
@@ -465,56 +459,11 @@ const LearnerAnalytics = () => {
             </div>
             </div>
 
-            {/* <div className="metrics-grid-enhanced">
-                <MetricCard
-                    icon={Target}
-                    label="Completion Rate"
-                    value={`${Number(stats.completionRate) || 0}%`}
-                    subtitle={`${Number(moduleAnalytics.completedCourses) || 0} of ${Number(moduleAnalytics.totalCourses) || 0} courses (${timeRange === '7D' ? 'last 7 days' : timeRange === '1M' ? 'last month' : 'last 3 months'})`}
-                    trend={12}
-                    color="color-primary"
-                    delay={0}
-                />
-                <MetricCard
-                    icon={Clock}
-                    label="Time Spent Learning"
-                    value={`${Number(stats.timeSpent) || 0}h`}
-                    subtitle={`(${timeRange === '7D' ? 'last 7 days' : timeRange === '1M' ? 'last month' : 'last 3 months'})`}
-                    trend={8}
-                    color="color-secondary"
-                    delay={100}
-                />
-                <MetricCard
-                    icon={Award}
-                    label="Average Score"
-                    value={`${Number(stats.avgScore) || 0}%`}
-                    subtitle={`Class avg: ${Number(assessmentScores.classAverage) || 0}% (${timeRange === '7D' ? 'last 7 days' : timeRange === '1M' ? 'last month' : 'last 3 months'})`}
-                    trend={5}
-                    color="color-tertiary"
-                    delay={200}
-                />
-                <MetricCard
-                    icon={Trophy}
-                    label="Leaderboard Rank"
-                    value={`${stats.leaderboardPosition === 0 ? "N/A" : stats.leaderboardPosition}`}
-                    subtitle={`out of ${Number(stats.totalParticipants) || 0} learners (all-time)`}
-                    color="color-neutral"
-                    delay={300}
-                />
-                <MetricCard
-                    icon={Plus}
-                    label="New Courses"
-                    value={`${stats.newCourses}`}
-                    subtitle={`${stats.newCourses} new assignments (${timeRange === '7D' ? 'last 7 days' : timeRange === '1M' ? 'last month' : 'last 3 months'})`}
-                    color="color-neutral"
-                    delay={300}
-                />
-            </div> */}
-
+            
             <AnalyticsPop
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
-                data={moduleAnalytics}
+                data={moduleAnalytics.contentTypeBreakdown}
                 loading={isLoading}
             />
             <div className="charts-grid">
@@ -534,63 +483,103 @@ const LearnerAnalytics = () => {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', marginTop: '20px' }}>
-                        <ResponsiveContainer width="50%" height={280}>
-                            <PieChart>
-                                <Pie
-                                    data={moduleAnalytics.courseCompletion}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={90}
-                                    outerRadius={130}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {moduleAnalytics.courseCompletion.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        <div style={{ width: '50%', height: 280 }}>
+                            <MUIPieChart
+                                height={280}
+                                series={(() => {
+                                    const breakdown = moduleAnalytics?.contentTypeBreakdown || [];
+                                    const innerData = breakdown.map((d, i) => ({
+                                        // omit label to avoid any default arc text
+                                        id: d.name,
+                                        value: Number(d.value) || 0,
+                                        color: CHART_COLORS[i % CHART_COLORS.length],
+                                    }));
+                                    return [
+                                        {
+                                            innerRadius: 60,
+                                            outerRadius: 110,
+                                            data: innerData,
+                                            // disable highlight so no labels/overlays appear
+                                            highlightScope: { fade: 'none', highlight: 'none' },
+                                        },
+                                    ];
+                                })()}
+                                slotProps={{ legend: { hidden: true } }}
+                                sx={{
+                                    [`.${pieClasses.series} .${pieArcClasses.root}`]: {
+                                        strokeWidth: 1,
+                                    },
+                                }}
+                            />
+                        </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/completed')}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr',gap:"10px" }}>
+                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/learning-hub',{
+                                state:{
+                                    contentType: moduleAnalytics.contentTypeBreakdown[0].name
+                                }
+                            })}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                                     <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: CHART_COLORS[0] }} />
-                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Completed</span>
+                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>{moduleAnalytics.contentTypeBreakdown[0].name}</span>
                                 </div>
                                 <div style={{ fontSize: '28px', fontWeight: 700, color: '#111827' }}>
-                                    {Number(moduleAnalytics.completedCourses) || 0} courses
+                                    {Number(moduleAnalytics.contentTypeBreakdown[0].value) || 0} courses
                                 </div>
                             </div>
 
-                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/inProgress')}>
+                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/learning-hub',{
+                                state:{
+                                    contentType: moduleAnalytics.contentTypeBreakdown[1].name
+                                }
+                            })}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                                     <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: CHART_COLORS[1] }} />
-                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>In Progress</span>
+                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>{moduleAnalytics.contentTypeBreakdown[1].name}</span>
                                 </div>
                                 <div style={{ fontSize: '28px', fontWeight: 700, color: '#111827' }}>
-                                    {moduleAnalytics.inProgressCourses} courses
+                                    {Number(moduleAnalytics.contentTypeBreakdown[1].value) || 0} courses
                                 </div>
                             </div>
 
-                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/assigned')}>
+                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/learning-hub',{
+                                state:{
+                                    contentType: moduleAnalytics.contentTypeBreakdown[2].name
+                                }
+                            })}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                                     <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: CHART_COLORS[2] }} />
-                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Assigned</span>
+                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>{moduleAnalytics.contentTypeBreakdown[2].name}</span>
                                 </div>
                                 <div style={{ fontSize: '28px', fontWeight: 700, color: '#111827' }}>
-                                    {moduleAnalytics.assignedCourses} courses
+                                    {Number(moduleAnalytics.contentTypeBreakdown[2].value) || 0} courses
                                 </div>
                             </div>
 
-                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/overdue')}>
+                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/learning-hub',{
+                                state:{
+                                    contentType: moduleAnalytics.contentTypeBreakdown[3].name
+                                }
+                            })}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                                     <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: CHART_COLORS[3] }} />
-                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Overdue</span>
+                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>{moduleAnalytics.contentTypeBreakdown[3].name}</span>
                                 </div>
                                 <div style={{ fontSize: '28px', fontWeight: 700, color: '#111827' }}>
-                                    {moduleAnalytics.overdueCourses} courses
+                                    {Number(moduleAnalytics.contentTypeBreakdown[3].value) || 0} courses
+                                </div>
+                            </div>
+                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/learning-hub',{
+                                state:{
+                                    contentType: moduleAnalytics.contentTypeBreakdown[4].name
+                                }
+                            })}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                                    <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: CHART_COLORS[4] }} />
+                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>{moduleAnalytics.contentTypeBreakdown[4].name}</span>
+                                </div>
+                                <div style={{ fontSize: '28px', fontWeight: 700, color: '#111827' }}>
+                                    {Number(moduleAnalytics.contentTypeBreakdown[4].value) || 0} courses
                                 </div>
                             </div>
                         </div>
@@ -598,9 +587,7 @@ const LearnerAnalytics = () => {
                 </div>
             </div>
 
-            {/* Charts Row 2: Weekly Progress & Assessment Performance */}
             <div className="charts-grid">
-                {/* Time Spent Learning */}
                 <div className="chart-panel">
                     <div className="panel-header-enhanced">
                         <div>
@@ -611,7 +598,6 @@ const LearnerAnalytics = () => {
                                         'Weekly hours for last 12 weeks'}
                             </p>
                         </div>
-                        {/* <Activity size={20} className="panel-icon" /> */}
                     </div>
 
                     <div className="chart-container">

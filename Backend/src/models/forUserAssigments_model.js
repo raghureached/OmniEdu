@@ -31,7 +31,7 @@ const assignmentSchema = new mongoose.Schema(
       default: [],
       ref: "User"
     },
-    name: { type: String, required: false, trim: true },
+    name: { type: String, required: true, trim: true },
     assign_on: { type: Date, default: Date.now },
     due_date: { type: Date, required: false },
     assignTime: { type: String, default: null },

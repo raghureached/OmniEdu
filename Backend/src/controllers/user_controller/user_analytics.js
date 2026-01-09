@@ -147,27 +147,49 @@ const courseAnalytics = async (req, res) => {
     ])
       .lean()
     const totalCourses = totalAssignments.length;
-    const completedCourses = totalAssignments.filter((assignment) => assignment.status === "completed").length;
-    const inProgressCourses = totalAssignments.filter((assignment) => assignment.status === "in_progress").length;
-    const assignedCourses = totalAssignments.filter((assignment) => assignment.status === "assigned").length;
-    const overdueCourses = totalAssignments.filter((assignment) => (assignment.status === "assigned" || assignment.status === "in_progress" ) && assignment.due_date < Date.now()).length;
-    const courseCompletion = [
-      { name: 'Completed', value: completedCourses },
-      { name: 'In Progress', value: inProgressCourses },
-      { name: 'Assigned', value: assignedCourses },
-      { name: 'Overdue', value: overdueCourses || 0 }
+    const isLP = (ct) => (ct || "").toLowerCase().replace(' ', '') === "learningpath";
+    const assignedCourses = totalAssignments.filter((a) => a.status === "assigned").length;
+    const overdueCourses = totalAssignments.filter((a) => a.status === "overdue").length;
+    const completedCourses = totalAssignments.filter((a) => a.status === "completed").length;
+    const inProgressCourses = totalAssignments.filter((a) => a.status === "in_progress").length;
+
+    // Counts by type
+    const modulesCount = totalAssignments.filter((a) => a.contentType === "Module").length;
+    const assessmentsCount = totalAssignments.filter((a) => a.contentType === "Assessment").length;
+    const surveysCount = totalAssignments.filter((a) => a.contentType === "Survey").length;
+    const learningPathsCount = totalAssignments.filter((a) => isLP(a.contentType)).length;
+    const documentsCount = totalAssignments.filter((a) => a.contentType === "Document").length;
+
+    // Status breakdown per type
+    const modulesCompleted = totalAssignments.filter((a) => a.contentType === "Module" && a.status === "completed").length;
+    const modulesInProgress = totalAssignments.filter((a) => a.contentType === "Module" && a.status === "in_progress").length;
+    const assessmentsCompleted = totalAssignments.filter((a) => a.contentType === "Assessment" && a.status === "completed").length;
+    const assessmentsInProgress = totalAssignments.filter((a) => a.contentType === "Assessment" && a.status === "in_progress").length;
+    const surveysCompleted = totalAssignments.filter((a) => a.contentType === "Survey" && a.status === "completed").length;
+    const surveysInProgress = totalAssignments.filter((a) => a.contentType === "Survey" && a.status === "in_progress").length;
+    const learningPathsCompleted = totalAssignments.filter((a) => isLP(a.contentType) && a.status === "completed").length;
+    const learningPathsInProgress = totalAssignments.filter((a) => isLP(a.contentType) && a.status === "in_progress").length;
+    const documentsCompleted = totalAssignments.filter((a) => a.contentType === "Document" && a.status === "completed").length;
+    const documentsInProgress = totalAssignments.filter((a) => a.contentType === "Document" && a.status === "in_progress").length;
+
+    const contentTypeBreakdown = [
+      { name: 'Modules', value: modulesCount, completed: modulesCompleted, inProgress: modulesInProgress },
+      { name: 'Assessments', value: assessmentsCount, completed: assessmentsCompleted, inProgress: assessmentsInProgress },
+      { name: 'Surveys', value: surveysCount, completed: surveysCompleted, inProgress: surveysInProgress },
+      { name: 'Learning Paths', value: learningPathsCount, completed: learningPathsCompleted, inProgress: learningPathsInProgress },
+      { name: 'Documents', value: documentsCount, completed: documentsCompleted, inProgress: documentsInProgress }
     ]
     return res.status(200).json({
       isSuccess: true,
       message: "Analytics Fetched Successfully",
       data: {
-        courseCompletion,
-        completedCourses,
+        contentTypeBreakdown,
         totalCourses,
-        inProgressCourses,
+        totalAssignments,
         assignedCourses,
         overdueCourses,
-        totalAssignments
+        completedCourses,
+        inProgressCourses,
       }
     })
 
@@ -619,7 +641,8 @@ const getWeeklyActivity = async (req, res) => {
           );
           
           activityData.push({
-            day: dayLabels[i],
+            date: d.toLocaleDateString("en-US"),
+            day: dayLabels[i] + " " + "(" + d.toLocaleDateString("en-US") + ")",
             hours: record ? Number(record.hours.toFixed(2)) : 0
           });
         }
@@ -639,7 +662,8 @@ const getWeeklyActivity = async (req, res) => {
           const totalHours = weekLogs.reduce((sum, log) => sum + log.hours, 0);
           
           activityData.push({
-            day: dayLabels[i] || `Week ${i + 1}`,
+            date: `${weekStart.toLocaleDateString("en-US")} - ${weekEnd.toLocaleDateString("en-US")}`,
+            day: dayLabels[i] + " " + "(" + `${weekStart.toLocaleDateString("en-US")} - ${weekEnd.toLocaleDateString("en-US")}` + ")",
             hours: Number(totalHours.toFixed(2))
           });
         }
@@ -655,7 +679,8 @@ const getWeeklyActivity = async (req, res) => {
         );
         
         activityData.push({
-          day: dayLabels[i],
+          date: d.toLocaleDateString("en-US"),
+          day: dayLabels[i] +" "+ "(" + d.toLocaleDateString("en-US") + ")",
           hours: record ? Number(record.hours.toFixed(2)) : 0
         });
       }
@@ -675,7 +700,8 @@ const getWeeklyActivity = async (req, res) => {
         const totalHours = weekLogs.reduce((sum, log) => sum + log.hours, 0);
         
         activityData.push({
-          day: dayLabels[i] || `Week ${i + 1}`,
+          date: `${weekStart.toLocaleDateString("en-US")} - ${weekEnd.toLocaleDateString("en-US")}`,
+          day: dayLabels[i] + " " + "(" + `${weekStart.toLocaleDateString("en-US")} - ${weekEnd.toLocaleDateString("en-US")}` + ")",
           hours: Number(totalHours.toFixed(2))
         });
       }

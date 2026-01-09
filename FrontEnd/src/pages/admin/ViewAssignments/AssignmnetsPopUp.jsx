@@ -1,38 +1,29 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, BookOpen, FileText, Video, ClipboardCheck, Clock, User,Users, Calendar, TrendingUp, Download } from 'lucide-react';
-import './AnalyticsPop.css';
+import './AssignmentsPopUp.css';
+import api from '../../../services/api';
+import { notifyError, notifySuccess } from '../../../utils/notification';
+import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
 
-const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false, analyticsType = 'module' }) => {
+const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false, analyticsType = 'module', onRefresh, assignmentId,title }) => {
     const [tableData, setTableData] = useState([]);
-
-    // Helper: detect if an item belongs to an inactive user by probing common fields
-    const isUserInactive = (item) => {
-        try {
-            const candidates = [
-                item?.userStatus,
-                item?.user_status,
-                item?.user?.status,
-                item?.user?.status?.name,
-                item?.user?.status?.label,
-                item?.userStatusLabel,
-            ]
-                .filter(Boolean)
-                .map(v => (typeof v === 'string' ? v.toLowerCase() : v));
-            if (candidates.some(v => v === 'inactive')) return true;
-            // boolean style flags
-            if (item?.userActive === false) return true;
-            if (item?.user?.isActive === false) return true;
-        } catch {}
-        return false;
-    };
+    const [removingId, setRemovingId] = useState(null);
+    const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(10);
+    const [total, setTotal] = useState(0);
+    const [internalLoading, setInternalLoading] = useState(false);
+    const { confirm } = useConfirm();
 
     useEffect(() => {
+        if (assignmentId && isOpen) {
+            // When assignmentId is provided, prefer fetching from backend with pagination
+            loadPage(1);
+            return;
+        }
         if (data) {
             // Handle assessment analytics data
             if (data.assessmentInfo && data.detailedAttempts) {
-                const transformedData = data.detailedAttempts
-                    .filter(item => !isUserInactive(item))
-                    .map(item => {
+                const transformedData = data.detailedAttempts.map(item => {
                     // Handle start date
                     let startedOn = 'Not Started';
                     if (item.startedAt) {
@@ -64,9 +55,7 @@ const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false, an
             }
             // Handle survey analytics data
             else if (data.surveyInfo && data.detailedResponses) {
-                const transformedData = data.detailedResponses
-                    .filter(item => !isUserInactive(item))
-                    .map(item => {
+                const transformedData = data.detailedResponses.map(item => {
                     // Handle start date
                     let startedOn = 'Not Started';
                     if (item.startedAt) {
@@ -98,9 +87,7 @@ const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false, an
             }
             // Handle learning path analytics data
             else if (data.learningPathInfo && data.detailedAssignments) {
-                const transformedData = data.detailedAssignments
-                    .filter(item => !isUserInactive(item))
-                    .map(item => {
+                const transformedData = data.detailedAssignments.map(item => {
                     // Handle start date
                     let startedOn = 'Not Started';
                     if (item.startedAt) {
@@ -133,19 +120,17 @@ const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false, an
             // Handle user analytics data (original logic)
             else if (data.totalAssignments) {
                 // Transform the data to match the table structure
-                const transformedData = data.totalAssignments
-                    .filter(item => !isUserInactive(item))
-                    .map(item => {
+                const transformedData = data.totalAssignments.map(item => {
                     // Handle start date edge cases
                     let startedOn = 'Not Started';
-                    if (item.started_at) {
-                        startedOn = new Date(item.started_at).toLocaleDateString();
+                    if (item.started_at || item.startedOn) {
+                        startedOn = new Date(item.started_at || item.startedOn).toLocaleDateString();
                     } else if (item.status === 'in_progress' || item.status === 'completed') {
                         // If course is in progress or completed but no explicit start date, use assignment date or created date
-                        if (item.assignment_id?.assign_on) {
-                            startedOn = new Date(item.assignment_id.assign_on).toLocaleDateString();
-                        } else if (item.created_at) {
-                            startedOn = new Date(item.created_at).toLocaleDateString();
+                        if (item.assignment_id?.assign_on || item.assignedOn) {
+                            startedOn = new Date(item.assignment_id?.assign_on || item.assignedOn).toLocaleDateString();
+                        } else if (item.created_at || item.createdAt) {
+                            startedOn = new Date(item.created_at || item.createdAt).toLocaleDateString();
                         } else if (item.assignment_id?.contentId?.created_at) {
                             startedOn = new Date(item.assignment_id.contentId.created_at).toLocaleDateString();
                         }
@@ -153,12 +138,12 @@ const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false, an
 
                     // Handle completion date edge cases
                     let completedOn = 'Not Completed';
-                    if (item.completed_at) {
-                        completedOn = new Date(item.completed_at).toLocaleDateString();
+                    if (item.completed_at || item.completedOn) {
+                        completedOn = new Date(item.completed_at || item.completedOn).toLocaleDateString();
                     } else if (item.status === 'completed') {
                         // If course is marked as completed but no explicit completion date, use last updated date
-                        if (item.updated_at) {
-                            completedOn = new Date(item.updated_at).toLocaleDateString();
+                        if (item.updated_at || item.updatedAt) {
+                            completedOn = new Date(item.updated_at || item.updatedAt).toLocaleDateString();
                         } else if (item.assignment_id?.contentId?.updated_at) {
                             completedOn = new Date(item.assignment_id.contentId.updated_at).toLocaleDateString();
                         } else {
@@ -168,65 +153,102 @@ const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false, an
                     }
 
                     // Determine score based on content type
-                    const contentType = item.assignment_id?.contentType || 'course';
+                    const contentType = item.assignment_id?.contentType || item.contentType || 'course';
                     const score = (contentType.toLowerCase() === 'assessment') ? (item.score || 0) : '-';
                     
                     // Map content type for display
                     const displayContentType = contentType.toLowerCase() === 'course' ? 'Module' : contentType;
 
                     return {
+                        progressId: item.progressId,
                         userName: item.userName,
                         email: item.email,
                         contentType: displayContentType,
-                        resourceName: item.assignment_id?.contentId?.title || 'Unknown Resource',
-                        assignedOn: item.assignment_id?.assign_on ? new Date(item.assignment_id.assign_on).toLocaleDateString() : 'N/A',
+                        resourceName: item.resourceName || item.assignment_id?.contentId?.title || 'Unknown Resource',
+                        assignedOn: item.assignedOn ? new Date(item.assignedOn).toLocaleDateString() : (item.assignment_id?.assign_on ? new Date(item.assignment_id.assign_on).toLocaleDateString() : 'N/A'),
                         startedOn: startedOn,
                         completedOn: completedOn,
                         score: score,
                         status: item.status || 'not-started',
-                        assignedBy: item.assignment_id?.created_by?.name || 'System',
-                         actualDuration: item.actualDuration,
+                        assignedBy: item.assignedBy || item.assignment_id?.created_by?.name || 'System',
+                        actualDuration: item.actualDuration,
                         timeSpent: item.timeSpent,
-                       
-
                     };
                 });
                 setTableData(transformedData);
             }
         }
-    }, [data]);
-    console.log(tableData)
-    // Pagination + sorting (page size 10)
-    const [page, setPage] = useState(1);
-    const pageSize = 10;
-    const [sortDir, setSortDir] = useState('desc'); // sort by Assigned On
-    useEffect(() => {
-        setPage(1);
-    }, [isOpen, tableData.length]);
-    useEffect(() => {
-        // reset to first page on sort change
-        setPage(1);
-    }, [sortDir]);
-    const totalPages = Math.max(1, Math.ceil(tableData.length / pageSize));
-    const sortedRows = useMemo(() => {
-        const getTs = (v) => {
-            if (!v) return 0;
-            const d = new Date(v);
-            const t = d.getTime();
-            return Number.isNaN(t) ? 0 : t;
-        };
-        const copy = [...tableData];
-        copy.sort((a, b) => {
-            const av = getTs(a.assignedOn);
-            const bv = getTs(b.assignedOn);
-            return sortDir === 'asc' ? av - bv : bv - av;
+    }, [data, assignmentId, isOpen]);
+
+    const mapBackendItems = (items) => {
+        return (items || []).map((p) => {
+            const user = p.user_id || {};
+            const assign = p.assignment_id || {};
+            const contentTitle = assign?.contentId?.title || assign?.contentId?.name || 'Unknown Resource';
+            const assignedBy = assign?.created_by?.name || 'System';
+            const contentType = (assign?.contentType || p.contentType || 'course').toLowerCase();
+            const displayContentType = contentType === 'course' ? 'Module' : contentType;
+            return {
+                progressId: p._id,
+                userName: user.name || [user.first_name, user.last_name].filter(Boolean).join(' ') || 'User',
+                email: user.email || '',
+                contentType: displayContentType,
+                resourceName: contentTitle,
+                assignedOn: assign?.assign_on ? new Date(assign.assign_on).toLocaleDateString() : 'N/A',
+                startedOn: p.started_at ? new Date(p.started_at).toLocaleDateString() : 'Not Started',
+                completedOn: p.completed_at ? new Date(p.completed_at).toLocaleDateString() : 'Not Completed',
+                score: p.score || '-',
+                status: p.status || 'not-started',
+                assignedBy: assignedBy,
+            };
         });
-        return copy;
-    }, [tableData, sortDir]);
-    const currentRows = useMemo(() => {
-        const start = (page - 1) * pageSize;
-        return sortedRows.slice(start, start + pageSize);
-    }, [sortedRows, page]);
+    };
+
+    const loadPage = async (targetPage) => {
+        if (!assignmentId) return;
+        try {
+            setInternalLoading(true);
+            const res = await api.get(`/api/admin/assignments/${assignmentId}/progress`, { params: { page: targetPage, limit } });
+            const payload = res?.data?.data || { items: [], total: 0, page: targetPage, limit };
+            setTableData(mapBackendItems(payload.items));
+            setTotal(payload.total || 0);
+            setPage(payload.page || targetPage);
+        } catch (e) {
+            notifyError('Failed to load participants');
+            setTableData([]);
+            setTotal(0);
+        } finally {
+            setInternalLoading(false);
+        }
+    };
+
+    const handleRemove = async (progressId) => {
+        if (!progressId) return;
+        const ok = await confirm({
+            title: 'Remove Participant',
+            message: 'Are you sure you want to remove this participant from the assignment?',
+            confirmText: 'Remove',
+            cancelText: 'Cancel',
+            type: 'danger',
+        })
+        if (!ok) return;
+        try {
+            setRemovingId(progressId);
+            await api.delete(`/api/admin/assignments/progress/${progressId}`);
+            notifySuccess('Participant removed');
+            if (assignmentId) {
+                // Refresh current page from backend
+                await loadPage(page);
+            } else if (typeof onRefresh === 'function') {
+                await onRefresh();
+            }
+        } catch (e) {
+            notifyError('Failed to remove participant');
+        } finally {
+            setRemovingId(null);
+        }
+    };
+
     const getContentTypeIcon = (type) => {
         switch (type?.toLowerCase()) {
             case 'course':
@@ -340,37 +362,28 @@ const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false, an
                 <div className="analytics-modal-header">
                     <div>
                         <h2 className="analytics-modal-title">
-                            {analyticsType === 'learningPath' ? 'Learning Path Analytics' 
-                             : analyticsType === 'survey' ? 'Survey Analytics' 
-                             : analyticsType === 'assessment' ? 'Assessment Analytics' 
-                             : analyticsType === 'user' ? 'Detailed Learning Analytics' 
-                             : analyticsType === 'module' ? 'Module Analytics' 
-                             : data?.learningPathInfo ? 'Learning Path Analytics' 
-                             : data?.surveyInfo ? 'Survey Analytics' 
-                             : data?.assessmentInfo ? 'Assessment Analytics' 
-                             : data?.totalAssignments ? 'Module Analytics' 
-                             : 'Analytics'}
+                            title
                         </h2>
                         <p className="analytics-modal-subtitle">
                             {analyticsType === 'learningPath' 
-                                ? `Analytics for ${data?.learningPathInfo?.title || 'Learning Path'}`
+                                ? `Assignments for ${data?.learningPathInfo?.title || 'Learning Path'}`
                                 : analyticsType === 'survey' 
-                                ? `Analytics for ${data?.surveyInfo?.title || 'Survey'}`
+                                ? `Assignments for ${data?.surveyInfo?.title || 'Survey'}`
                                 : analyticsType === 'assessment' 
-                                ? `Analytics for ${data?.assessmentInfo?.title || 'Assessment'}`
+                                ? `Assignments for ${data?.assessmentInfo?.title || 'Assessment'}`
                                 : analyticsType === 'user'
                                 ? 'Comprehensive view of your learning progress and performance'
                                 : analyticsType === 'module'
-                                ? `Analytics for ${data?.moduleInfo?.title || (data?.totalAssignments?.[0]?.assignment_id?.contentId?.title) || 'Module'}`
+                                ? `Assignments for ${data?.moduleInfo?.title || (data?.totalAssignments?.[0]?.assignment_id?.contentId?.title) || 'Module'}`
                                 : data?.learningPathInfo 
-                                ? `Analytics for ${data.learningPathInfo.title}` 
+                                ? `Assignments for ${data.learningPathInfo.title}` 
                                 : data?.surveyInfo 
-                                ? `Analytics for ${data.surveyInfo.title}` 
+                                ? `Assignments for ${data.surveyInfo.title}` 
                                 : data?.assessmentInfo 
-                                ? `Analytics for ${data.assessmentInfo.title}` 
+                                ? `Assignments for ${data.assessmentInfo.title}` 
                                 : data?.totalAssignments
-                                ? `Analytics for ${data.moduleInfo?.title || (data.totalAssignments[0]?.assignment_id?.contentId?.title) || 'Module'}`
-                                : 'Analytics overview'
+                                ? `Assignments for ${data.moduleInfo?.title || (data.totalAssignments[0]?.assignment_id?.contentId?.title) || 'Module'}`
+                                : 'Assignments overview'
                             }
                         </p>
                     </div>
@@ -391,10 +404,10 @@ const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false, an
 
                 {/* Modal Body */}
                 <div className="analytics-modal-body">
-                    {loading ? (
+                    {(loading || internalLoading) ? (
                         <div className="analytics-loading">
                             <div className="analytics-loading-spinner"></div>
-                            <span>Loading analytics data...</span>
+                            <span>Loading assignments data...</span>
                         </div>
                     ) : tableData.length === 0 ? (
                         <div className="analytics-empty-state">
@@ -444,20 +457,18 @@ const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false, an
                                         {!hideUserName && <th>User Name</th>}
                                         <th>Type of Content</th>
                                         <th>Name of Resource</th>
-                                        <th style={{ cursor: 'pointer' }} onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}>
-                                            Assigned On {sortDir === 'asc' ? '▲' : '▼'}
-                                        </th>
+                                        <th>Assigned On</th>
                                         <th>Started On</th>
                                         <th>Completed On</th>
-                                        <th>Score</th>
+                                        {/* <th>Score</th> */}
                                         <th>Status</th>
                                         <th>Assigned By</th>
-                                        {/* <th>Actual Duration</th>
-                                        <th>Time Spent</th> */}
+                                        <th>Actions</th>
+                                        
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {currentRows.map((item, index) => (
+                                    {tableData.map((item, index) => (
                                         <tr key={index}>
                                             {!hideUserName && (
                                                 <td>
@@ -500,11 +511,11 @@ const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false, an
                                                     {item.completedOn}
                                                 </div>
                                             </td>
-                                            <td>
+                                            {/* <td>
                                                 <span className={`score-cell ${getScoreColor(item.score)}`}>
                                                     {item.score === '-' ? '0' : item.score}%
                                                 </span>
-                                            </td>
+                                            </td> */}
                                             <td>
                                                 <span className={`analytics-status-badge ${getStatusBadge(item.status)}`}>
                                                     {item.status.replace('-', ' ')}
@@ -515,6 +526,16 @@ const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false, an
                                                     <User size={12} />
                                                     {item.assignedBy}
                                                 </div>
+                                            </td>
+                                            <td>
+                                                <button
+                                                    className="analytics-export-btn"
+                                                    style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)', color: '#ef4444' }}
+                                                    disabled={loading || removingId === item.progressId}
+                                                    onClick={() => handleRemove(item.progressId)}
+                                                >
+                                                    {removingId === item.progressId ? 'Removing...' : 'Remove'}
+                                                </button>
                                             </td>
                                               {/* <td>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -534,30 +555,22 @@ const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false, an
                                     ))}
                                 </tbody>
                             </table>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 12 ,marginBottom: 12}}>
-                                {/* <div style={{ color: '#6b7280', fontSize: 12 }}>
-                                    {tableData.length > 0 && (
-                                        <span>
-                                            Showing {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, tableData.length)} of {tableData.length}
-                                        </span>
-                                    )}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 8px' }}>
+                                <div>
+                                    Showing {(total === 0) ? 0 : ((page - 1) * limit + 1)} - {Math.min(page * limit, total)} of {total}
                                 </div>
-                                 */}
-                                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                <div style={{ display: 'flex', gap: '8px' }}>
                                     <button
-                                        className="nav-analytics-export-btn"
-                                        onClick={() => setPage(p => Math.max(1, p - 1))}
-                                        disabled={page <= 1}
-                                        style={{ padding: '6px 10px' }}
+                                        className="analytics-export-btn"
+                                        disabled={page <= 1 || internalLoading}
+                                        onClick={() => loadPage(Math.max(1, page - 1))}
                                     >
                                         Prev
                                     </button>
-                                    <span style={{ fontSize: 14, color: 'black' }}>Page {page} of {totalPages}</span>
                                     <button
-                                        className="nav-analytics-export-btn"
-                                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                                        disabled={page >= totalPages}
-                                        style={{ padding: '6px 10px' }}
+                                        className="analytics-export-btn"
+                                        disabled={page * limit >= total || internalLoading}
+                                        onClick={() => loadPage(page + 1)}
                                     >
                                         Next
                                     </button>

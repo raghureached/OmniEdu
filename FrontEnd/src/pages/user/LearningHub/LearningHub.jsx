@@ -12,9 +12,20 @@ import { useNavigate } from 'react-router-dom';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import { Search, Filter, Share } from 'lucide-react';
 import { GoX } from 'react-icons/go';
+import { useLocation } from 'react-router-dom';
 
 const LearningHub = () => {
   const dispatch = useDispatch();
+  const location = useLocation();
+  const incomingType = location.state?.contentType;
+  const typeMap = {
+    Modules: 'Module',
+    Assessments: 'Assessment',
+    Surveys: 'Survey',
+    'Learning Paths': 'Learning Path',
+    Documents: 'Document',
+  };
+  const contentType = typeMap[incomingType] || "";
   const [stats, setStats] = useState({ enrolled: 0, completed: 0, in_progress: 0, expired: 0 });
   const [inProgressModules, setInProgressModules] = useState([]);
   const [recommendedModules, setRecommendedModules] = useState([])
@@ -28,8 +39,8 @@ const LearningHub = () => {
 
   // Added states for search/filter/export UI
   const [searchTerm, setSearchTerm] = useState("");
-  const [filters, setFilters] = useState({ search: "", type: "", category: "" });
-  const [tempFilters, setTempFilters] = useState({ search: "", type: "", category: "" });
+  const [filters, setFilters] = useState({ search: "", type: contentType, category: "" });
+  const [tempFilters, setTempFilters] = useState({ search: "", type: contentType, category: "" });
   const [showFilters, setShowFilters] = useState(false);
   const [showBulkAction, setShowBulkAction] = useState(false);
   const [derivedSelectedCount, setDerivedSelectedCount] = useState(0);
@@ -61,14 +72,21 @@ const LearningHub = () => {
 
   const normalizeType = (t) => {
     if (!t) return "";
-    if (t.toLowerCase() === "learningpath") return "Learning Path";
+    const s = t.toString().trim().toLowerCase().replace(/\s+/g, "");
+    if (s === "learningpath") return "Learning Path";
+    if (s === "course" || s === "module") return "Module";
+    if (s === "assessment" || s === "quiz") return "Assessment";
+    if (s === "survey") return "Survey";
+    if (s === "document" || s === "doc") return "Document";
+    if (s === "scorm") return "SCORM";
     return t;
   };
 
   const matchesFilters = (item) => {
     const content = getContentFromItem(item);
     if (!content) return false;
-    const type = normalizeType(item?.contentType || "");
+    const rawType = item?.contentType || item?.assignment_id?.contentType || item?.enrollment_id?.contentType || "";
+    const type = normalizeType(rawType);
     const category = content?.category || "";
     const haystack = `${content?.title || ""} ${content?.description || ""} ${(content?.tags || []).join(" ")}`.toLowerCase();
 
@@ -105,7 +123,7 @@ const LearningHub = () => {
     setDerivedSelectedCount(visibleCount);
   }, [workspace, assigned, inProgressModules, completed, filters, searchTerm]);
 
-  const filteredAssignments = assignments.filter((assignment) => assignment.status === "assigned");
+  // const filteredAssignments = assignments.filter((assignment) => assignment.status === "assigned");
   useEffect(() => {
     // Fetch stats from API
     const fetchStats = async () => {
@@ -314,9 +332,23 @@ const LearningHub = () => {
               renderSkeleton(2)
             ) : (
               filteredWorkspace.length > 0 ?
-                filteredWorkspace.slice(0, 4).map(item => (
-                  item?.assignment_id?.contentId && <CourseCard key={item.id} assign_id={item.assignment_id._id} data={item.assignment_id.contentId} status={item.status} progressPct={item.progress_pct} contentType={item.contentType} />
-                ))
+                filteredWorkspace.slice(0, 4).map(item => {
+                  const content = item?.assignment_id?.contentId || item?.enrollment_id?.contentId;
+                  if (!content) return null;
+                  const assignId = item?.assignment_id?._id || item?.enrollment_id?._id;
+                  const rawType = item?.contentType || item?.assignment_id?.contentType || item?.enrollment_id?.contentType || "";
+                  const normType = normalizeType(rawType);
+                  return (
+                    <CourseCard
+                      key={item._id}
+                      assign_id={assignId}
+                      data={content}
+                      status={item.status}
+                      progressPct={item.progress_pct}
+                      contentType={normType}
+                    />
+                  );
+                })
                 : "You have no Assigned workspace."
             )}
           </div>
@@ -332,9 +364,23 @@ const LearningHub = () => {
               renderSkeleton(2)
             ) : (
               filteredAssigned.length > 0 ?
-                filteredAssigned.slice(0, 4).map(item => (
-                  item?.assignment_id?.contentId && <CourseCard key={item.id} assign_id={item.assignment_id._id} data={item.assignment_id.contentId} status={item.status} progressPct={item.progress_pct} contentType={item.contentType} />
-                ))
+                filteredAssigned.slice(0, 4).map(item => {
+                  const content = item?.assignment_id?.contentId || item?.enrollment_id?.contentId;
+                  if (!content) return null;
+                  const assignId = item?.assignment_id?._id || item?.enrollment_id?._id;
+                  const rawType = item?.contentType || item?.assignment_id?.contentType || item?.enrollment_id?.contentType || "";
+                  const normType = normalizeType(rawType);
+                  return (
+                    <CourseCard
+                      key={item._id}
+                      assign_id={assignId}
+                      data={content}
+                      status={item.status}
+                      progressPct={item.progress_pct}
+                      contentType={normType}
+                    />
+                  );
+                })
                 : "You have no Assigned trainings."
             )}
           </div>
@@ -351,9 +397,23 @@ const LearningHub = () => {
               renderSkeleton(2)
             ) : (
               filteredInProgress.length > 0 ?
-                filteredInProgress?.map(m => (
-                  m?.assignment_id?.contentId && <CourseCard key={m.id} assign_id={m.assignment_id._id} data={m?.assignment_id?.contentId || m?.enrollment_id?.contentId} status="in_progress" contentType={m?.contentType} progressPct={m?.progress_pct} />
-                ))
+                filteredInProgress.map(m => {
+                  const content = m?.assignment_id?.contentId || m?.enrollment_id?.contentId;
+                  if (!content) return null;
+                  const assignId = m?.assignment_id?._id || m?.enrollment_id?._id;
+                  const rawType = m?.contentType || m?.assignment_id?.contentType || m?.enrollment_id?.contentType || "";
+                  const normType = normalizeType(rawType);
+                  return (
+                    <CourseCard
+                      key={m._id}
+                      assign_id={assignId}
+                      data={content}
+                      status="in_progress"
+                      contentType={normType}
+                      progressPct={m?.progress_pct}
+                    />
+                  );
+                })
                 : "You have no In Progress trainings."
             )}
           </div>
@@ -369,9 +429,21 @@ const LearningHub = () => {
               renderSkeleton(4)
             ) : (
               filteredCompleted.length > 0 ?
-                filteredCompleted?.slice(0, 4).map(module => (
-                  <CourseCard key={module.id} data={module.assignment_id.contentId || module.enrollment_id.contentId} contentType={module.contentType} progressPct={100} status="completed" />
-                ))
+                filteredCompleted?.slice(0, 4).map(module => {
+                  const content = module?.assignment_id?.contentId || module?.enrollment_id?.contentId;
+                  if (!content) return null;
+                  const rawType = module?.contentType || module?.assignment_id?.contentType || module?.enrollment_id?.contentType || "";
+                  const normType = normalizeType(rawType);
+                  return (
+                    <CourseCard
+                      key={module._id}
+                      data={content}
+                      contentType={normType}
+                      progressPct={100}
+                      status="completed"
+                    />
+                  );
+                })
                 : "You have no Completed trainings."
             )}
           </div>

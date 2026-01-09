@@ -74,6 +74,7 @@ const addUser = async (req, res) => {
       email,
       password,
       global_role_id: role,
+      status: 'active',
       department_id,
       organization_id: req.user.organization_id
     }], { session });

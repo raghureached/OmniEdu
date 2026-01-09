@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef,useMemo,useCallback } from 'react';
-import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, Filter, ChevronDown } from 'lucide-react';
+import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, Filter, ChevronDown, BarChart3, Share } from 'lucide-react';
 import { RiDeleteBinFill } from 'react-icons/ri';
 import { GoX } from 'react-icons/go';
 import './GlobalAssessments.css'
@@ -12,6 +12,9 @@ import { useNotification } from '../../../components/common/Notification/Notific
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog.jsx';
 import { categories } from '../../../utils/constants.js';
 import SelectionBanner from '../../../components/Banner/SelectionBanner.jsx';
+import GlobalAdminAnalyticsPop from '../../../components/AnalyticsPopup/GlobalAdminAnalyticsPop.jsx';
+import ExportModal from '../../../components/common/ExportModal/ExportModal';
+import { exportAssessmentsWithSelection } from '../../../utils/assessmentExport';
 const GlobalAssessments = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,6 +61,10 @@ const GlobalAssessments = () => {
   const {confirm} = useConfirm();
   const [showFilters, setShowFilters] = useState(false);
   const [showBulkAction, setShowBulkAction] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [filters, setFilters] = useState({
     status: '',
     search: '',
@@ -96,6 +103,23 @@ const GlobalAssessments = () => {
         console.error('Error fetching groups:', error);
       }
     };
+
+  const handleAnalyticsClick = async (assessment) => {
+    try {
+      const id = assessment?.uuid || assessment?._id || assessment?.id;
+      if (!id) return;
+      setAnalyticsLoading(true);
+      setShowAnalytics(true);
+      const res = await api.get(`/api/globalAdmin/analytics/content/${id}/organizations`);
+      setAnalyticsData(res.data);
+    } catch (error) {
+      console.error('Error fetching assessment analytics:', error);
+      showNotification({ type: 'error', message: 'Failed to load analytics data' });
+      setShowAnalytics(false);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
     fetchGroups(); // fetch teams/subteams
   }, []);
 
@@ -104,7 +128,7 @@ const GlobalAssessments = () => {
     setFormData({
       title: '',
       description: '',
-      status: 'Saved',
+      status: 'Draft',
       duration: '',            // NEW
       tags: [],                // NEW
       team: '',
@@ -486,6 +510,36 @@ const GlobalAssessments = () => {
   };
   const handleBulkDelete = bulkDelete;
 
+  const handleExport = () => {
+    setShowExportModal(true);
+  };
+
+  const handleExportConfirm = (exportScope) => {
+    try {
+      if (exportScope === 'selected') {
+        exportAssessmentsWithSelection(assessments, selectedIds, excludedIds, allSelected, groups, []);
+        showNotification({
+          type: "success",
+          message: `${derivedSelectedCount} assessments exported successfully`,
+        });
+        clearSelection();
+      } else if (exportScope === 'all') {
+        exportAssessmentsWithSelection(assessments, [], [], false, groups, []);
+        showNotification({
+          type: "success",
+          message: `${assessments.length} assessments exported successfully`,
+        });
+        clearSelection();
+      }
+    } catch (e) {
+      console.error('Export assessments failed', e);
+      showNotification({
+        type: "error",
+        message: 'Failed to export assessments',
+      });
+    }
+  };
+
   const handleEditAssessment = async (assessment) => {
     // Always fetch the latest populated assessment so questions are available
     const id = assessment?.uuid || assessment?._id || assessment?.id;
@@ -502,7 +556,7 @@ const GlobalAssessments = () => {
       setFormData({
         title: full.title || '',
         description: full.description || '',
-        status: full.status || 'Saved',
+        status: full.status || 'Draft',
         duration: full.duration || '',
         tags: full.tags || [],
         team: full.team || '',
@@ -577,7 +631,7 @@ const GlobalAssessments = () => {
       setFormData({
         title: assessment.title || '',
         description: assessment.description || '',
-        status: assessment.status || 'Saved',
+        status: assessment.status || 'Draft',
         duration: assessment.duration || '',
         tags: assessment.tags || [],
         team: assessment.team || '',
@@ -653,7 +707,7 @@ const GlobalAssessments = () => {
       unlimited_attempts: Boolean(formData.unlimited_attempts),
       percentage_to_pass: formData.percentage_to_pass,
       display_answers: formData.display_answers,
-      status: statusOverride ?? (formData.status || 'Saved'),
+      status: statusOverride ?? (formData.status || 'Draft'),
       created_by: authUser?._id || authUser?.uuid || authUser?.id,
       // Newly added fields
       credits: Number.isFinite(formData.credits) ? formData.credits : 0,
@@ -971,6 +1025,23 @@ const GlobalAssessments = () => {
     }
   };
 
+  const handleAnalyticsClick = async (assessment) => {
+    try {
+      const id = assessment?.uuid || assessment?._id || assessment?.id;
+      if (!id) return;
+      setAnalyticsLoading(true);
+      setShowAnalytics(true);
+      const res = await api.get(`/api/globalAdmin/analytics/content/${id}/organizations`);
+      setAnalyticsData(res.data);
+    } catch (error) {
+      console.error('Error fetching assessment analytics:', error);
+      showNotification({ type: 'error', message: 'Failed to load analytics data' });
+      setShowAnalytics(false);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
   if (loading) {
     return <LoadingScreen text="Loading Assessments..." />
   }
@@ -1079,6 +1150,18 @@ const GlobalAssessments = () => {
             <Filter size={16} />
             Filter
           </button>
+          <button
+            className="control-btn"
+            onClick={handleExport}
+            title={derivedSelectedCount > 0 ? "Export selected assessments to CSV" : "Select assessments to export"}
+            disabled={derivedSelectedCount === 0}
+            style={{ 
+              opacity: derivedSelectedCount === 0 ? 0.5 : 1,
+              cursor: derivedSelectedCount === 0 ? 'not-allowed' : 'pointer'
+            }}
+          >
+            Export<Share size={16} color="#6b7280" /> {derivedSelectedCount > 0 && `(${derivedSelectedCount})`}
+          </button>
           {/* <button className="control-btn" onClick={() => setShowBulkAction((prev) => !prev)}> */}
           <button
             ref={bulkButtonRef}
@@ -1118,7 +1201,6 @@ const GlobalAssessments = () => {
               onChange={handleFilterChange}
             >
               <option value="">All</option>
-              <option value="Saved">Saved</option>
               <option value="Draft">Draft</option>
               <option value="Published">Published</option>
             </select>
@@ -1425,8 +1507,8 @@ const GlobalAssessments = () => {
                   <th>Assessment Details</th>
                   <th>Questions</th>
                   <th>Status</th>
-                  <th>Date Created</th>
-                  <th>Actions</th>
+                  <th>Date Published</th>
+                  <th style={{ textAlign: 'center' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1515,6 +1597,15 @@ const GlobalAssessments = () => {
                           >
                             <Edit3 size={14} />
                           </button>
+                          {assessment.status !== 'Draft' && (
+                            <button
+                              className="assess-action-btn analytics"
+                              onClick={() => handleAnalyticsClick(assessment)}
+                              title="View Analytics"
+                            >
+                              <BarChart3 size={14} />
+                            </button>
+                          )}
                           <button
                             className="assess-action-btn delete"
                             onClick={() => handleDeleteAssessment(assessment.uuid)}
@@ -1602,6 +1693,20 @@ const GlobalAssessments = () => {
           setQuestions={setQuestions}
         />
       )}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onConfirm={handleExportConfirm}
+        selectedCount={derivedSelectedCount}
+        totalCount={pagination?.total || assessments.length || 0}
+        exportType="assessments"
+      />
+      <GlobalAdminAnalyticsPop
+        isOpen={showAnalytics}
+        onClose={() => setShowAnalytics(false)}
+        data={analyticsData}
+        loading={analyticsLoading}
+      />
     </div>
   );
 }

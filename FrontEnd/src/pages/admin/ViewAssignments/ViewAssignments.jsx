@@ -5,6 +5,8 @@ import { Calendar, ChevronDown, FileText, Search, Trash2 } from 'lucide-react';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
 import { notifyError, notifySuccess } from '../../../utils/notification';
 import './ViewAssignments.css';
+import AssignmnetsPopUp from './AssignmnetsPopUp';
+import api from '../../../services/api';
 
 const ViewAssignments = () => {
   const dispatch = useDispatch();
@@ -20,17 +22,56 @@ const ViewAssignments = () => {
   const { confirm } = useConfirm();
   const [showDetails, setShowDetails] = useState(false);
   const [activeId, setActiveId] = useState(null);
-
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsData, setDetailsData] = useState(null);
+    const[title,setTitle] = useState("")
   useEffect(() => {
     dispatch(adminfetchAssignments());
   }, [dispatch]);
 
-  const openDetails = useCallback((id) => {
+  const fetchDetails = useCallback(async (id) => {
+    setDetailsLoading(true);
+    try {
+      const res = await api.get(`/api/admin/assignments/${id}/progress`, { params: { page: 1, limit: 50 } });
+      const payload = res?.data?.data || { items: [], total: 0, page: 1, limit: 50 };
+      const totalAssignments = (payload.items || []).map((p) => {
+        const user = p.user_id || {};
+        const assign = p.assignment_id || {};
+        const contentTitle = assign?.contentId?.title || assign?.contentId?.name || 'Unknown Resource';
+        const assignedBy = assign?.created_by?.name || 'System';
+        return {
+          progressId: p._id,
+          userName: user.name || [user.first_name, user.last_name].filter(Boolean).join(' ') || 'User',
+          email: user.email || '',
+          assignment_id: assign,
+          contentType: (assign?.contentType || p.contentType || 'course').toLowerCase(),
+          resourceName: contentTitle,
+          assignedOn: assign?.assign_on || p.createdAt,
+          startedOn: p.started_at,
+          completedOn: p.completed_at,
+          score: p.score || 0,
+          status: p.status || 'not-started',
+          assignedBy: assignedBy,
+          updated_at: p.updatedAt,
+        };
+      });
+      setDetailsData({ totalAssignments });
+    } catch (e) {
+      notifyError('Failed to load assignment details');
+      setDetailsData({ totalAssignments: [] });
+    } finally {
+      setDetailsLoading(false);
+    }
+  }, []);
+
+  const openDetails = useCallback(async (id,name) => {
     if (!id) return;
     setActiveId(id);
     setShowDetails(true);
+    setTitle(name)
+    await fetchDetails(id);
     dispatch(admingetAssignment(id));
-  }, [dispatch]);
+  }, [dispatch, fetchDetails]);
 
   const closeDetails = useCallback(() => {
     setShowDetails(false);
@@ -59,6 +100,8 @@ const ViewAssignments = () => {
 
   // Normalize assignment fields from API
   const normalize = (a) => ({
+    name:a.name,
+    participants: a.assigned_users?.length || a.bulkEmails?.length || a.groups?.length || 0,
     id: a?.uuid || a?._id || a?.id,
     contentName: a?.contentName || a?.title || a?.content?.title || 'Untitled',
     contentType: a?.assign_type || a?.contentType || a?.type || 'Content',
@@ -93,6 +136,7 @@ const ViewAssignments = () => {
   const indexOfLast = currentPage * itemsPerPage;
   const indexOfFirst = indexOfLast - itemsPerPage;
   const currentRows = filtered.slice(indexOfFirst, indexOfLast);
+//   console.log(currentRows)
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
 
   useEffect(() => {
@@ -100,31 +144,6 @@ const ViewAssignments = () => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
-  const handleDelete = useCallback(
-    async (assignmentId) => {
-      const ok = await confirm({
-        title: 'Unassign content?',
-        note: 'This will remove the assignment from targeted users. Progress records might also be removed.',
-        confirmText: 'Unassign',
-        cancelText: 'Cancel',
-        type: 'danger',
-        showCheckbox: true,
-        checkboxLabel: 'I understand this action cannot be undone.',
-      });
-      if (!ok) return;
-
-      const res = await dispatch(admindeleteAssignment(assignmentId));
-      if (admindeleteAssignment.fulfilled.match(res)) {
-        notifySuccess('Assignment deleted successfully');
-      } else {
-        notifyError('Failed to delete assignment', {
-          title: 'Delete failed',
-          message: res?.payload?.message,
-        });
-      }
-    },
-    [dispatch, confirm]
-  );
 
   return (
     <div className="view-assign-container">
@@ -153,19 +172,19 @@ const ViewAssignments = () => {
           <Search size={16} className="view-assign-searchicon" />
           <input
             className="view-assign-input"
-            placeholder="Search by content or assignee"
+            placeholder="Search by Assignment Name"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div className="view-assign-actions">
-          <button
+          {/* <button
             ref={filterButtonRef}
             className="control-btn"
             onClick={() => setShowFilters((p) => !p)}
           >
             Filters <ChevronDown size={14} />
-          </button>
+          </button> */}
           {showFilters && (
             <div ref={filterPanelRef} className="view-assign-filterpanel">
               <div className="view-assign-filtergroup">
@@ -212,12 +231,10 @@ const ViewAssignments = () => {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Content</th>
-                <th>Type</th>
+                <th>Name</th>
                 <th>Assigned On</th>
                 <th>Due Date</th>
-                <th>Status</th>
-                <th style={{ textAlign: 'center' }}>Actions</th>
+                <th>Participants</th>
               </tr>
             </thead>
             <tbody>
@@ -232,40 +249,20 @@ const ViewAssignments = () => {
                       <div className="view-assign-cell">
                         <button
                           className="view-assign-titlecell"
-                          onClick={() => openDetails(a.id)}
+                          onClick={() => openDetails(a.id,a.name)}
                           title="View assignment details"
                         >
-                          {a.contentName}
+                          {a.name}
                         </button>
                       </div>
                     </td>
-                    <td>{a.contentType}</td>
                     <td>
                       <div className="view-assign-date"><Calendar size={14} />
                         <span>{a.assignOn ? new Date(a.assignOn).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}</span>
                       </div>
                     </td>
                     <td>{a.dueDate ? new Date(a.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}</td>
-                    <td>
-                      <span className={`view-assign-badge ${
-                            a.status === 'Completed' ? 'completed' :
-                            a.status === 'Removed' ? 'overdue' :
-                            a.status === 'In Progress' ? 'inprogress' : 'assigned'
-                      }`}>
-                        {a.status}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="view-assign-actionsrow">
-                        <button
-                          className="global-action-btn delete"
-                          title="Delete assignment"
-                          onClick={() => handleDelete(a.id)}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
+                    <td>{a.participants}</td>
                   </tr>
                 ))
               )}
@@ -275,52 +272,17 @@ const ViewAssignments = () => {
       )}
 
       {showDetails && (
-        <div className="view-assign-modal" role="dialog" aria-modal="true" onClick={closeDetails}>
-          <div className="view-assign-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="view-assign-modal-header">
-              <h3>Assignment Details</h3>
-              <button className="view-assign-modal-close" onClick={closeDetails}>×</button>
-            </div>
-            {selectedLoading ? (
-              <div className="view-assign-modal-body">Loading...</div>
-            ) : !selected ? (
-              <div className="view-assign-modal-body">No details found.</div>
-            ) : (
-              <div className="view-assign-modal-body">
-                <div className="view-assign-detail-row"><span className="label">Content:</span><span>{selected?.contentName || '—'}</span></div>
-                <div className="view-assign-detail-row"><span className="label">Type:</span><span>{selected?.contentType || '—'}</span></div>
-                <div className="view-assign-detail-row"><span className="label">Assigned On:</span><span>{selected?.assign_on ? new Date(selected.assign_on).toLocaleString() : '—'}</span></div>
-                <div className="view-assign-detail-row"><span className="label">Due Date:</span><span>{selected?.due_date ? new Date(selected.due_date).toLocaleString() : '—'}</span></div>
-                <div className="view-assign-detail-row"><span className="label">Method:</span><span>{Array.isArray(selected?.assigned_users) && selected.assigned_users.length > 0 ? 'Individual' : (Array.isArray(selected?.groups) && selected.groups.length > 0 ? 'Groups' : '—')}</span></div>
-
-                {Array.isArray(selected?.assigned_users) && selected.assigned_users.length > 0 && (
-                  <div className="view-assign-detail-list">
-                    <div className="label">Assigned Users ({selected.assigned_users.length}):</div>
-                    <ul>
-                      {selected.assigned_users.map((user) => (
-                        <li key={user._id}>{user.name}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {Array.isArray(selected?.groups) && selected.groups.length > 0 && (
-                  <div className="view-assign-detail-list">
-                    <div className="label">Teams ({selected.groups.length}):</div>
-                    <ul>
-                      {selected.groups.map((g) => (
-                        <li key={g._id}>{g.name}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-            <div className="view-assign-modal-footer">
-              <button className="btn-secondary" onClick={closeDetails}>Close</button>
-            </div>
-          </div>
-        </div>
+        <AssignmnetsPopUp
+            title={title}
+          isOpen={showDetails}
+          onClose={closeDetails}
+          data={detailsData}
+          loading={detailsLoading}
+          hideUserName={false}
+          analyticsType={'module'}
+          assignmentId={activeId}
+          onRefresh={() => activeId && fetchDetails(activeId)}
+        />
       )}
 
       {filtered.length > 0 && (

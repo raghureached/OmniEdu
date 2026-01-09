@@ -461,14 +461,75 @@ const getCourseDistribution = async (req, res) => {
 
 const calculateUsageTrend = async (req, res) => {
     try {
-        const { timeRange, userStatus } = req.query;
+        const { timeRange, team, subteam } = req.query;
         const usageTrend = [];
         const organizationId = req.user.organization_id;
         
-        // Determine number of weeks based on timeRange
+        // For 7-day filter, return daily data
+        if (timeRange === '7d') {
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const UserProfile = require('../../models/userProfiles_model');
+            
+            // Get filtered user IDs once if team/subteam filters are applied
+            let filteredUserIds = null;
+            if (team && team !== 'all') {
+                const userProfileQuery = UserProfile.find({
+                    'teams.team_id': team,
+                    ...(subteam && subteam !== 'all' ? { 'teams.sub_team_id': subteam } : {})
+                }).distinct('user_id');
+                filteredUserIds = await userProfileQuery;
+            }
+            
+            for (let day = 6; day >= 0; day--) {
+                const dayStart = new Date();
+                dayStart.setDate(dayStart.getDate() - day);
+                dayStart.setHours(0, 0, 0, 0);
+
+                const dayEnd = new Date(dayStart);
+                dayEnd.setHours(23, 59, 59, 999);
+
+                // Format date as month abbreviation + day (e.g., jan9)
+                const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+                const formattedDate = `${monthNames[dayStart.getMonth()]}${dayStart.getDate()}`;
+
+                // Build base query filter
+                let baseFilter = { organization_id: organizationId };
+                
+                // Add team/subteam filters by using filtered user IDs
+                if (filteredUserIds) {
+                    baseFilter._id = { $in: filteredUserIds };
+                }
+
+                // Calculate DAU for this day
+                const dau = await User.countDocuments({
+                    ...baseFilter,
+                    last_login: { $gte: dayStart, $lte: dayEnd }
+                });
+
+                // Calculate MAU for this day (users active in last 30 days)
+                const mauStartDate = new Date(dayEnd.getTime() - 30 * 24 * 60 * 60 * 1000);
+                const mau = await User.countDocuments({
+                    ...baseFilter,
+                    last_login: { $gte: mauStartDate, $lte: dayEnd }
+                });
+
+                usageTrend.push({
+                    date: dayNames[dayStart.getDay()],
+                    formattedDate: formattedDate,
+                    dau: dau,
+                    mau: mau
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                data: usageTrend
+            });
+        }
+        
+        // For other time ranges, keep the existing weekly logic
         let weeksToShow = 4; // default
-        if (timeRange === '7d') weeksToShow = 1;
-        else if (timeRange === '30d') weeksToShow = 4;
+        if (timeRange === '30d') weeksToShow = 4;
         else if (timeRange === '90d') weeksToShow = 12;
         else if (timeRange === 'mtd') {
             // For month to date, calculate weeks from first day of month
@@ -487,27 +548,16 @@ const calculateUsageTrend = async (req, res) => {
         
         // Build base query filter
         let baseFilter = { organization_id: organizationId };
+        const UserProfile = require('../../models/userProfiles_model');
         
-        // Add user status filter
-        if (userStatus && userStatus !== 'all') {
-            const now = new Date();
-            switch (userStatus) {
-                case 'active':
-                    baseFilter.last_login = { $gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) };
-                    break;
-                case 'inactive':
-                    baseFilter.last_login = { $lt: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) };
-                    break;
-                case 'new':
-                    baseFilter.createdAt = { $gte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) };
-                    break;
-                case 'at-risk':
-                    baseFilter.last_login = { 
-                        $gte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
-                        $lt: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-                    };
-                    break;
-            }
+        // Get filtered user IDs once if team/subteam filters are applied
+        let filteredUserIds = null;
+        if (team && team !== 'all') {
+            const userProfileQuery = UserProfile.find({
+                'teams.team_id': team,
+                ...(subteam && subteam !== 'all' ? { 'teams.sub_team_id': subteam } : {})
+            }).distinct('user_id');
+            filteredUserIds = await userProfileQuery;
         }
         
         for (let week = weeksToShow - 1; week >= 0; week--) {
@@ -518,6 +568,12 @@ const calculateUsageTrend = async (req, res) => {
             const weekEnd = new Date(weekStart);
             weekEnd.setDate(weekEnd.getDate() + 6); // End of week
             weekEnd.setHours(23, 59, 59, 999);
+
+            // Build filter for this week
+            let weekFilter = { ...baseFilter };
+            if (filteredUserIds) {
+                weekFilter._id = { $in: filteredUserIds };
+            }
 
             // Calculate DAU for this week (average daily active users)
             const weekDAUPromises = [];
@@ -530,7 +586,7 @@ const calculateUsageTrend = async (req, res) => {
                 dayEnd.setHours(23, 59, 59, 999);
 
                 const dayDAU = User.countDocuments({
-                    ...baseFilter,
+                    ...weekFilter,
                     last_login: { $gte: dayStart, $lte: dayEnd }
                 });
                 weekDAUPromises.push(dayDAU);
@@ -543,19 +599,19 @@ const calculateUsageTrend = async (req, res) => {
             const mauDate = new Date(weekEnd);
             const mauStartDate = new Date(mauDate.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-            let mauFilter = { ...baseFilter };
-            if (userStatus && userStatus !== 'all' && userStatus !== 'inactive') {
-                // For active users, we need to check their login within the MAU period
-                mauFilter.last_login = { $gte: mauStartDate, $lte: mauDate };
-            } else if (userStatus === 'inactive') {
-                // For inactive users, count those who were inactive during MAU period
-                delete mauFilter.last_login;
-            }
+            const weekMAU = await User.countDocuments({
+                ...weekFilter,
+                last_login: { $gte: mauStartDate, $lte: mauDate }
+            });
 
-            const weekMAU = await User.countDocuments(mauFilter);
+            // Format date range for the week
+            const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+            const weekStartFormatted = `${monthNames[weekStart.getMonth()]}${weekStart.getDate()}`;
+            const weekEndFormatted = `${monthNames[weekEnd.getMonth()]}${weekEnd.getDate()}`;
 
             usageTrend.push({
                 date: `Week ${weeksToShow - week}`,
+                formattedDate: `${weekStartFormatted} - ${weekEndFormatted}`,
                 dau: avgDAU,
                 mau: weekMAU
             });
@@ -854,6 +910,7 @@ const getAdoption = async (req, res) => {
 const getTeams = async (req, res) => {
     try {
         const teams = await Team.find({ organization_id: req.user.organization_id })
+            .populate('subTeams')
             .select('_id name')
             .sort({ name: 1 });
 
@@ -2166,8 +2223,8 @@ const getLearningPathAnalytics = async (req, res) => {
 
 const getCoursePerformanceInsights = async (req, res) => {
     try {
-        const { content, timeRange } = req.query;
-        console.log('Course Performance Insights called with:', { content, timeRange, orgId: req.user.organization_id });
+        const { content, timeRange, team, subteam } = req.query;
+        console.log('Course Performance Insights called with:', { content, timeRange, team, subteam, orgId: req.user.organization_id });
         
         let progressQuery = { organization_id: req.user.organization_id };
         
@@ -2330,18 +2387,24 @@ const getCoursePerformanceInsights = async (req, res) => {
 
         progress.forEach(entry => {
             let contentId, name, status, score = 0;
+            let entryTeam = null;
+            let entrySubteam = null;
             
             if (content === "assessments") {
                 contentId = entry.assessment_id?._id?.toString();
                 name = entry.assessment_id?.title;
                 status = entry.result ? "completed" : "in-progress";
                 score = entry.score || 0;
+                entryTeam = entry.assessment_id?.team?.toString?.() || null;
+                entrySubteam = entry.assessment_id?.subteam?.toString?.() || null;
             } else if (content === "surveys") {
                 // For surveys, use the survey data directly
                 contentId = entry.surveyId?._id?.toString() || entry.survey_assignment_id?.toString();
                 name = entry.surveyId?.title || `Survey ${contentId?.slice(-8) || 'Unknown'}`;
                 status = entry.submitted_at ? "completed" : "assigned";
                 score = 0; // Surveys don't have scores
+                entryTeam = entry.surveyId?.team?.toString?.() || null;
+                entrySubteam = entry.surveyId?.subteam?.toString?.() || null;
             } else {
                 // modules and learningpaths
                 if (content === "learningpaths") {
@@ -2349,16 +2412,24 @@ const getCoursePerformanceInsights = async (req, res) => {
                     name = entry.contentId?.title || 'Unknown Learning Path';
                     status = entry.status || "assigned";
                     score = entry.score || 0;
+                    entryTeam = entry.contentId?.team?.toString?.() || null;
+                    entrySubteam = entry.contentId?.subteam?.toString?.() || null;
                 } else {
                     // modules
                     contentId = entry.assignment_id?.contentId?._id?.toString();
                     name = entry.assignment_id?.contentName;
                     status = entry.status;
                     score = entry.score || 0;
+                    entryTeam = entry.assignment_id?.contentId?.team?.toString?.() || null;
+                    entrySubteam = entry.assignment_id?.contentId?.subteam?.toString?.() || null;
                 }
             }
 
             if (!contentId) return;
+
+            // Apply team/subteam filters if provided (and not 'all')
+            if (team && team !== 'all' && entryTeam && entryTeam !== String(team)) return;
+            if (subteam && subteam !== 'all' && entrySubteam && entrySubteam !== String(subteam)) return;
 
             if (!grouped[contentId]) {
                 grouped[contentId] = {

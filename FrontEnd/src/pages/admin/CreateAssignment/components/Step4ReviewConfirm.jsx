@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { GoX } from 'react-icons/go';
 
 const Step4ReviewConfirm = ({
+  name,
+  setName,
   selectedItem,
   selectedContentType,
   userMode,
@@ -74,6 +76,10 @@ const Step4ReviewConfirm = ({
 
         <div className="confirmation-details">
           <div className="confirmation-section">
+            <h4>Assignment Name</h4>
+              <input type="text" name='name' onChange={(e) => setName(e.target.value)} value={name}/>
+          </div>  
+          <div className="confirmation-section">
             <h4>📚 Content to Assign</h4>
             <ul>
               <li><strong>{selectedItem?.title}</strong> ({selectedContentType})</li>
@@ -133,7 +139,7 @@ const Step4ReviewConfirm = ({
             <button className="btn-secondary" onClick={onSaveDraft} type="button">
               Save as Draft
             </button>
-            <button className="btn-primary" onClick={handleConfirmClick} type="button">
+            <button className="btn-primary" onClick={handleConfirmClick} disabled={userCount === 0 || name.trim() === ''} type="button">
               Confirm & Assign
             </button>
           </div>
@@ -213,7 +219,7 @@ const Step4ReviewConfirm = ({
               <button className="btn btn-back" onClick={() => setShowModal(false)} type="button">
                 Cancel
               </button>
-              <button className="btn btn-primary" onClick={handleFinalConfirm} type="button">
+              <button className="btn btn-primary" onClick={handleFinalConfirm} disabled={userCount === 0 || name === ''} type="button">
                 ✓ Confirm Assignment
               </button>
             </div>

@@ -13,7 +13,7 @@ const { getGlobalAdminMessages } = require("../controllers/admin.controller/admi
 const { getActivities } = require("../controllers/admin.controller/admin_activity");
 const { addUserId } = require("../middleware/dummyAuth");
 const { getProfile } = require("../controllers/admin.controller/admin_profile");
-const { createAssignment, getAssignments, editAssignment, deleteAssignment, getAssignment } = require("../controllers/admin.controller/admin_Assignment");
+const { createAssignment, getAssignments, editAssignment, deleteAssignment, getAssignment, getAssignmentProgress, deleteAssignmentProgress } = require("../controllers/admin.controller/admin_Assignment");
 const {
   createAssessment,
   editAssessment,
@@ -140,6 +140,9 @@ router.route('/getAssignments').get(getAssignments)
 router.route('/getAssignment/:id').get(getAssignment)
 router.route('/editAssignment/:id').put(editAssignment)
 router.route('/deleteAssignment/:id').delete(deleteAssignment)
+// Assignment progress (user-level records)
+router.route('/assignments/:id/progress').get(getAssignmentProgress)
+router.route('/assignments/progress/:progressId').delete(deleteAssignmentProgress)
 
 /////Activity Log /////
 // router.route('/getActivities').get(getActivities)

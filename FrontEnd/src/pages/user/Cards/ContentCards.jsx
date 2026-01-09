@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import './ContentCards.css';
-import { data, useNavigate } from 'react-router-dom';
+import {  useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
-import { useNotification } from '../../../components/common/Notification/NotificationProvider';
-import { notifySuccess } from '../../../utils/notification';
 import { useDispatch } from 'react-redux';
 import { fetchUserAssignments } from '../../../store/slices/userAssignmentSlice';
-import ModulePopUp from '../ModuleView/ModulePopUp';
+
 export const CourseCard = ({
   data,
   assign_id,
@@ -16,7 +14,9 @@ export const CourseCard = ({
   setShowModulePopUp,
   setPayload,
   setData
+
 }) => {
+  console.log(data,contentType)
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -28,7 +28,7 @@ export const CourseCard = ({
     "completed": "Review",
     "expired": "Expired",
     "not_enrolled": "View",
-    "":"View"
+    "": "View"
   };
   const contentIcons = {
     "Module": "",
@@ -36,8 +36,8 @@ export const CourseCard = ({
     "Survey": "",
     "Learning Path": "",
     "Learningpath": "",
-    "Document":"",
-    "SCORM":""
+    "Document": "",
+    "SCORM": ""
   }
   const getIcon = (contentType) => {
     return contentIcons[contentType] + contentType;
@@ -98,16 +98,18 @@ export const CourseCard = ({
 
     if (status === "not_enrolled" && isGlobal) {
       const type = contentType?.toLowerCase()?.replace(/\s+/g, '');
-    if (!type) return;
+      console.log(type)
+      if (!type) return;
 
-    const isGlobal = data.who === "Global";
-    // setLoading(true);
+      const isGlobal = data.who === "Global";
+      // setLoading(true);
       const payload = {
         type: type,
         who: data.who,
         model: data.model,
         name: data.name,
       };
+      // console.log(payload)
       setData(data);
       setPayload(payload);
       setShowModulePopUp(true);

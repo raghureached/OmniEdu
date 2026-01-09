@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import './DeactivateModal.css';
 
-const DeactivateModal = ({ open, count, onCancel, onConfirm }) => {
+const DeactivateModal = ({ open, count, onCancel, onConfirm, variant = 'team' }) => {
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
@@ -18,6 +18,21 @@ const DeactivateModal = ({ open, count, onCancel, onConfirm }) => {
   }, [open, onCancel]);
 
   if (!open) return null;
+
+  const isUser = String(variant).toLowerCase() === 'user';
+  const title = isUser
+    ? `Deactivate ${count === 1 ? 'User' : 'Users'}`
+    : `Deactivate ${count === 1 ? 'Team' : 'Teams'}`;
+  const description = isUser
+    ? (count === 1
+        ? 'Are you sure you want to deactivate this user? The user will lose access to the platform but historical records will be retained.'
+        : `Are you sure you want to deactivate ${count} users? They will lose access to the platform but historical records will be retained.`)
+    : (count === 1
+        ? 'Are you sure you want to deactivate this team? This will remove all assigned users from this team and its subteams.'
+        : `Are you sure you want to deactivate ${count} teams? This will remove all assigned users from these teams and their subteams.`);
+  const confirmLabel = isUser
+    ? `Deactivate ${count > 1 ? `${count} Users` : 'User'}`
+    : `Deactivate ${count > 1 ? `${count} Teams` : 'Team'}`;
 
   return (
     <div 
@@ -38,20 +53,14 @@ const DeactivateModal = ({ open, count, onCancel, onConfirm }) => {
         >
           <X size={20} />
         </button>
-
+       <div style={{display:"flex",alignItems:"center",justifyContent:"center"}}>
         <div className="modal-icon">
           <AlertTriangle size={24} />
         </div>
+       </div>
+        <h2 id="modal-title" className="modal-title">{title}</h2>
 
-        <h2 id="modal-title" className="modal-title">
-          Deactivate {count === 1 ? 'Team' : 'Teams'}
-        </h2>
-
-        <p className="modal-text">
-          {count === 1
-            ? "Are you sure you want to deactivate this team? This will remove all assigned users from this team and its subteams."
-            : `Are you sure you want to deactivate ${count} teams? This will remove all assigned users from these teams and their subteams.`}
-        </p>
+        <p className="modal-text">{description}</p>
 
         <div className="modal-warning">
           <span className="warning-badge">⚠️</span>
@@ -60,18 +69,18 @@ const DeactivateModal = ({ open, count, onCancel, onConfirm }) => {
 
         <div className="modal-actions">
           <button 
-            className="btn btn-secondary" 
+            className="btn-secondary" 
             onClick={onCancel}
             type="button"
           >
             Cancel
           </button>
           <button 
-            className="btn btn-danger" 
+            className="btn-primary" style={{background:"red"}}
             onClick={onConfirm}
             type="button"
           >
-            Deactivate {count > 1 ? `${count} Teams` : 'Team'}
+            {confirmLabel}
           </button>
         </div>
       </div>

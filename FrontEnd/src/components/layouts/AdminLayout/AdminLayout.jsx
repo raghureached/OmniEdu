@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../../store/slices/authSlice';
 import { fetchNotifications, markNotificationAsRead } from '../../../store/slices/notificationSlice';
 import './AdminLayout.css';
-import { Menu, Home, User2, UserCheck, Shield, BookOpen, CircleUserRound, NotepadText, NotebookPen, LibraryBig, BookOpenCheck, MessageCircleCode, Award, BookCopy, Clock, HelpCircle, LogOut, Bell, X, ChartColumnIncreasing,Laptop, PenBox, Package } from 'lucide-react';
+import { Menu, Home, User2, UserCheck, Shield, BookOpen, CircleUserRound, NotepadText, NotebookPen, LibraryBig, BookOpenCheck, MessageCircleCode, Award, BookCopy, Clock, HelpCircle, LogOut, Bell, X, ChartColumnIncreasing,Laptop, PenBox, Package, Notebook } from 'lucide-react';
 import { fetchPermissions } from '../../../store/slices/roleSlice';
 import { GoGear, GoPeople } from 'react-icons/go';
 
@@ -326,6 +326,17 @@ const AdminLayout = () => {
               <NotebookPen size={20} />
               {!sidebarCollapsed && (
                 <span className="admin_sidebar_names">Create Assignment</span>
+              )}
+            </Link>
+            <Link
+              to="/admin/view-assignments"
+              className={
+                isActive("/admin/view-assignments") ? "admin_link_active" : ""
+              }
+            >
+              <Notebook size={20} />
+              {!sidebarCollapsed && (
+                <span className="admin_sidebar_names">View / Manage Assignments</span>
               )}
             </Link>
           </li>

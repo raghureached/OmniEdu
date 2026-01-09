@@ -1,5 +1,5 @@
 /* Modal Overlay */
-.analytics-modal-overlay {
+.assignments-modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -12,7 +12,6 @@
     justify-content: center;
     z-index: 1000;
     animation: fadeIn 0.3s ease-out;
-   
 }
 
 @keyframes fadeIn {
@@ -25,7 +24,7 @@
 }
 
 /* Modal Container */
-.analytics-modal {
+.assignments-modal {
     background: white;
     border-radius: 24px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
@@ -50,7 +49,7 @@
 }
 
 /* Modal Header */
-.analytics-modal-header {
+.assignments-modal-header {
     padding: 24px 32px;
     border-bottom: 1px solid #e5e7eb;
     display: flex;
@@ -60,19 +59,19 @@
     color: white;
 }
 
-.analytics-modal-title {
+.assignments-modal-title {
     font-size: 24px;
     font-weight: 700;
     margin: 0;
 }
 
-.analytics-modal-subtitle {
+.assignments-modal-subtitle {
     font-size: 14px;
     opacity: 0.9;
     margin: 4px 0 0 0;
 }
 
-.analytics-modal-close {
+.assignments-modal-close {
     background: rgba(255, 255, 255, 0.2);
     border: none;
     border-radius: 12px;
@@ -87,12 +86,12 @@
     transition: all 0.2s;
 }
 
-.analytics-modal-close:hover {
+.assignments-modal-close:hover {
     background: rgba(255, 255, 255, 0.3);
     transform: scale(1.05);
 }
 
-.analytics-export-btn {
+.assignments-export-btn {
     background: rgba(255, 255, 255, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 12px;
@@ -107,96 +106,68 @@
     transition: all 0.2s;
 }
 
-.analytics-export-btn:hover:not(:disabled) {
+.assignments-export-btn:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.3);
     transform: scale(1.02);
     border-color: rgba(255, 255, 255, 0.5);
 }
 
-.analytics-export-btn:disabled {
+.assignments-export-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     background: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.2);
 }
 
-.nav-analytics-export-btn {
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgb(77 77 77 / 20%);
-    border-radius: 12px;
-    padding: 9px 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    color: black;
-    font-size: 14px;
-    font-weight: 600;
-    transition: all 0.2s;
-}
-
-.nav-analytics-export-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.02);
-    border-color: rgb(77 77 77 / 20%);
-}
-
-.nav-analytics-export-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgb(77 77 77 / 20%);
-}
-
 /* Modal Body */
-.analytics-modal-body {
+.assignments-modal-body {
     padding: 32px;
     overflow-y: auto;
     flex: 1;
 }
 
 /* Table Container */
-.analytics-table-container {
+.assignments-table-container {
     background: white;
     border-radius: 16px;
-    overflow: scroll;
+    overflow: hidden;
     border: 1px solid #e5e7eb;
-    overflow-x: scroll; /* Add horizontal scroll */
+    overflow-x: auto; /* Add horizontal scroll */
 }
 
 /* Table Styles */
-.analytics-table {
-    width: 100%;
+.assignments-table {
+    width: 130%;
     min-width: 800px; /* Minimum width to prevent table from being too compressed */
     border-collapse: collapse;
     font-size: 14px;
 }
 
 /* Custom Scrollbar Styling */
-.analytics-table-container::-webkit-scrollbar {
+.assignments-table-container::-webkit-scrollbar {
     height: 8px;
 }
 
-.analytics-table-container::-webkit-scrollbar-track {
+.assignments-table-container::-webkit-scrollbar-track {
     background: #f1f1f1;
     border-radius: 4px;
 }
 
-.analytics-table-container::-webkit-scrollbar-thumb {
+.assignments-table-container::-webkit-scrollbar-thumb {
     background: #c1c1c1;
     border-radius: 4px;
 }
 
-.analytics-table-container::-webkit-scrollbar-thumb:hover {
+.assignments-table-container::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
 }
 
-.analytics-table thead {
+.assignments-table thead {
     background: linear-gradient(135deg, #011F5B, #1C88C7);
     color: white;
 }
 
-.analytics-table th {
+.assignments-table th {
     padding: 16px;
     text-align: left;
     font-weight: 600;
@@ -206,16 +177,16 @@
     border-bottom: 2px solid rgba(255, 255, 255, 0.1);
 }
 
-.analytics-table tbody tr {
+.assignments-table tbody tr {
     border-bottom: 1px solid #f3f4f6;
     transition: all 0.2s;
 }
 
-.analytics-table tbody tr:hover {
+.assignments-table tbody tr:hover {
     background: rgba(1, 31, 91, 0.02);
 }
 
-.analytics-table td {
+.assignments-table td {
     padding: 16px;
     vertical-align: middle;
     color: #374151;
@@ -302,7 +273,7 @@
     color: #6b7280;
 }
 
-.analytics-status-badge {
+.assignments-status-badge {
     padding: 6px 14px;
     border-radius: 20px;
     font-size: 12px;
@@ -311,22 +282,22 @@
     display: inline-block;
 }
 
-.analytics-status-completed {
+.assignments-status-completed {
     background: rgba(16, 185, 129, 0.1);
     color: #10b981;
 }
 
-.analytics-status-in-progress {
+.assignments-status-in-progress {
     background: rgba(245, 158, 11, 0.1);
     color: #f59e0b;
 }
 
-.analytics-status-not-started {
+.assignments-status-not-started {
     background: rgba(107, 114, 128, 0.1);
     color: #6b7280;
 }
 
-.analytics-status-overdue {
+.assignments-status-overdue {
     background: rgba(239, 68, 68, 0.1);
     color: #ef4444;
 }
@@ -342,33 +313,33 @@
 }
 
 /* Empty State */
-.analytics-empty-state {
+.assignments-empty-state {
     text-align: center;
     padding: 60px 20px;
     color: #6b7280;
 }
 
-.analytics-empty-icon {
+.assignments-empty-icon {
     font-size: 48px;
     margin-bottom: 16px;
     opacity: 0.5;
 }
 
-.analytics-empty-title {
+.assignments-empty-title {
     font-size: 18px;
     font-weight: 600;
     margin-bottom: 8px;
     color: #374151;
 }
 
-.analytics-empty-description {
+.assignments-empty-description {
     font-size: 14px;
     max-width: 400px;
     margin: 0 auto;
 }
 
 /* Loading State */
-.analytics-loading {
+.assignments-loading {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -376,7 +347,7 @@
     gap: 16px;
 }
 
-.analytics-loading-spinner {
+.assignments-loading-spinner {
     width: 32px;
     height: 32px;
     border: 3px solid rgba(1, 31, 91, 0.2);
@@ -393,26 +364,26 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .analytics-modal {
+    .assignments-modal {
         width: 95vw;
         max-height: 90vh;
         margin: 20px;
     }
 
-    .analytics-modal-header {
+    .assignments-modal-header {
         padding: 20px;
     }
 
-    .analytics-modal-body {
+    .assignments-modal-body {
         padding: 20px;
     }
 
-    .analytics-table {
+    .assignments-table {
         font-size: 12px;
     }
 
-    .analytics-table th,
-    .analytics-table td {
+    .assignments-table th,
+    .assignments-table td {
         padding: 12px 8px;
     }
 
@@ -420,22 +391,22 @@
         max-width: 120px;
     }
 
-    .analytics-modal-title {
+    .assignments-modal-title {
         font-size: 20px;
     }
 }
 
 @media (max-width: 480px) {
-    .analytics-modal-header {
+    .assignments-modal-header {
         padding: 16px;
     }
 
-    .analytics-modal-body {
+    .assignments-modal-body {
         padding: 16px;
     }
 
-    .analytics-table th,
-    .analytics-table td {
+    .assignments-table th,
+    .assignments-table td {
         padding: 8px 4px;
         font-size: 11px;
     }
@@ -452,20 +423,20 @@
 }
 
 /* Scrollbar Styling */
-.analytics-modal-body::-webkit-scrollbar {
+.assignments-modal-body::-webkit-scrollbar {
     width: 8px;
 }
 
-.analytics-modal-body::-webkit-scrollbar-track {
+.assignments-modal-body::-webkit-scrollbar-track {
     background: #f3f4f6;
     border-radius: 4px;
 }
 
-.analytics-modal-body::-webkit-scrollbar-thumb {
+.assignments-modal-body::-webkit-scrollbar-thumb {
     background: linear-gradient(135deg, #011F5B, #1C88C7);
     border-radius: 4px;
 }
 
-.analytics-modal-body::-webkit-scrollbar-thumb:hover {
+.assignments-modal-body::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(135deg, #1C88C7, #011F5B);
 }

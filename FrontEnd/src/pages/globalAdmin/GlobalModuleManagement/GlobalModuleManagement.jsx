@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchContent, deleteContent, createContent, updateContent, bulkDeleteContent } from '../../../store/slices/contentSlice';
 import "./GlobalModuleManagement.css"
 import { useNavigate } from 'react-router-dom';
-import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X, Filter, BarChart3, File } from 'lucide-react';
+import { Calendar, ChevronDown, Edit3, FileText, Search, Trash2, Users, X, Filter, BarChart3, File, Download, Share } from 'lucide-react';
 import LoadingScreen from '../../../components/common/Loading/Loading'
 import { RiDeleteBinFill } from "react-icons/ri";
 import GlobalModuleModal from './GlobalModuleModal';
@@ -15,6 +15,9 @@ import { categories } from '../../../utils/constants.js';
 import api from '../../../services/api.js';
 import { notifyError } from '../../../utils/notification.js';
 import AnalyticsPop from '../../../components/AnalyticsPopup/AnalyticsPop.jsx';
+import GlobalAdminAnalyticsPop from '../../../components/AnalyticsPopup/GlobalAdminAnalyticsPop.jsx';
+import { exportModulesWithSelection } from '../../../utils/moduleExport';
+import ExportModal from '../../../components/common/ExportModal/ExportModal';
 
 
 const GlobalModuleManagement = () => {
@@ -64,9 +67,34 @@ const GlobalModuleManagement = () => {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [analyticsData, setAnalyticsData] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [teams, setTeams] = useState([]);
+  const [subteams, setSubteams] = useState([]);
   const navigate = useNavigate()
   useEffect(() => {
     dispatch(fetchContent());
+    
+    // Fetch teams and subteams for export
+    const fetchTeamsAndSubteams = async () => {
+      try {
+        const res = await api.get('/api/globalAdmin/getGroups');
+        const teamsData = res.data.data || [];
+        setTeams(teamsData);
+        
+        // Extract subteams from teams
+        const allSubteams = teamsData.reduce((acc, team) => {
+          if (team.subTeams && Array.isArray(team.subTeams)) {
+            acc.push(...team.subTeams);
+          }
+          return acc;
+        }, []);
+        setSubteams(allSubteams);
+      } catch (error) {
+        console.error('Error fetching teams:', error);
+      }
+    };
+    
+    fetchTeamsAndSubteams();
   }, [dispatch]);
 
   const handleDeleteContent = async (contentId) => {
@@ -369,6 +397,92 @@ const GlobalModuleManagement = () => {
   const handleViewSubmissions = (contentId) => {
     navigate(`/global-admin/viewSubmissions/${contentId}`);
   }
+
+  const handleAnalyticsClick = async (contentId) => {
+    try {
+      setAnalyticsLoading(true);
+      setShowAnalytics(true);
+      console.log('Fetching analytics for content ID:', contentId);
+      
+      // Fetch analytics data for the specific content
+      const response = await api.get(`/api/globalAdmin/analytics/content/${contentId}/organizations`);
+      console.log('Analytics response:', response.data);
+      setAnalyticsData(response.data);
+      
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      showNotification({
+        type: "error",
+        message: 'Failed to load analytics data',
+      });
+      setShowAnalytics(false);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  const handleExport = () => {
+    setShowExportModal(true);
+  };
+
+  const handleExportConfirm = (exportScope) => {
+    try {
+      if (exportScope === 'selected') {
+        // Export based on selection criteria and filters
+        exportModulesWithSelection(
+          items, 
+          selectedIds, 
+          excludedIds, 
+          allSelected, 
+          teams, 
+          subteams, 
+          filters
+        );
+        
+        // Show appropriate success message
+        if (allSelected) {
+          const exportCount = totalItems - excludedIds.length;
+          showNotification({
+            type: "success",
+            message: `${exportCount} modules exported successfully`,
+          });
+        } else if (selectedIds.length > 0) {
+          showNotification({
+            type: "success",
+            message: `${selectedIds.length} selected modules exported successfully`,
+          });
+        } else {
+          showNotification({
+            type: "success",
+            message: 'Filtered modules exported successfully',
+          });
+        }
+        clearSelection();
+      } else if (exportScope === 'all') {
+        // Export all modules
+        exportModulesWithSelection(
+          items, 
+          [], // No selected IDs
+          [], // No excluded IDs  
+          false, // Not all selected
+          teams, 
+          subteams, 
+          { status: '', category: '', search: '' } // No filters
+        );
+        showNotification({
+          type: "success",
+          message: `${items.length} modules exported successfully`,
+        });
+        clearSelection();
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      showNotification({
+        type: "error",
+        message: 'Failed to export modules',
+      });
+    }
+  };
   const handleBulkDelete = async (ids) => {
     if (ids.length === 0) {
       alert("Please select at least one module to delete.")
@@ -522,6 +636,18 @@ const GlobalModuleManagement = () => {
               <Filter size={16} />
               Filter
             </button>
+            <button
+              className="control-btn"
+              onClick={handleExport}
+              title={derivedSelectedCount > 0 ? "Export selected modules to CSV" : "Select modules to export"}
+              disabled={derivedSelectedCount === 0}
+              style={{ 
+                opacity: derivedSelectedCount === 0 ? 0.5 : 1,
+                cursor: derivedSelectedCount === 0 ? 'not-allowed' : 'pointer'
+              }}
+            >
+              Export<Share size={16} color="#6b7280" /> {derivedSelectedCount > 0 && `(${derivedSelectedCount})`}
+            </button>
             {showFilters && (
               <div ref={filterPanelRef} className="globalmodule-filter-panel">
                 <span
@@ -538,7 +664,6 @@ const GlobalModuleManagement = () => {
                     onChange={handleFilterChange}
                   >
                     <option value="">All</option>
-                    <option value="Saved">Saved</option>
                     <option value="Draft">Draft</option>
                     <option value="Published">Published</option>
 
@@ -749,8 +874,8 @@ const GlobalModuleManagement = () => {
               <th>Credits</th>
               <th>Status</th>
 
-              <th>Date Created</th>
-              <th>Actions</th>
+              <th>Date Published</th>
+              <th style={{ textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -780,8 +905,8 @@ const GlobalModuleManagement = () => {
                 </td>
                 <td>{content.credits}</td>
                 <td>
-                  <span className={` ${content.status === 'Published' ? 'published' : content.status === 'Draft' ? 'draft' : 'saved'} assess-status-badge`}>
-                    {content.status === 'Published' ? `${content.status}` : content.status === 'Draft' ? 'Draft' : 'Saved'}
+                  <span className={` ${content.status === 'Published' ? 'published' : content.status === 'Draft' ? 'draft' : 'draft'} assess-status-badge`}>
+                    {content.status === 'Published' ? `${content.status}` : content.status === 'Draft' ? 'draft' : 'draft'}
                   </span>
                 </td>
 
@@ -804,12 +929,22 @@ const GlobalModuleManagement = () => {
                     >
                       <File size={16} />
                     </button>
+                   
 
                     <button className="global-action-btn edit" onClick={() => {
                       handleEditClick(content)
                     }}>
                       <Edit3 size={16} />
                     </button>
+                     {content.status !== 'Draft' && (
+                      <button
+                        className="global-action-btn analytics"
+                        onClick={() => handleAnalyticsClick(content.uuid)}
+                        title="View Analytics"
+                      >
+                        <BarChart3 size={16} />
+                      </button>
+                    )}
                     <button
                       className="global-action-btn delete"
                       onClick={() => handleDeleteContent(content.uuid)}
@@ -862,7 +997,18 @@ const GlobalModuleManagement = () => {
           </tbody>
         </table>
       </div>
-      <AnalyticsPop
+      {showExportModal && (
+        <ExportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          onConfirm={handleExportConfirm}
+          selectedCount={derivedSelectedCount}
+          totalCount={totalItems}
+          hasMembers={false}
+          exportType="modules"
+        />
+      )}
+      <GlobalAdminAnalyticsPop
         isOpen={showAnalytics}
         onClose={() => setShowAnalytics(false)}
         data={analyticsData}

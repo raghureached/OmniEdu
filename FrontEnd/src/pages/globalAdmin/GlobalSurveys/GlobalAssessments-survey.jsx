@@ -1,5 +1,5 @@
 import React, { useEffect, useState,useRef,useMemo, useCallback } from 'react';
-import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, ChevronDown, Filter } from 'lucide-react';
+import { Search, Plus, Edit3, Trash2, FileText, Calendar, Users, ChevronDown, Filter, Share, BarChart3 } from 'lucide-react';
 import { GoX } from 'react-icons/go';
 import { RiDeleteBinFill } from 'react-icons/ri';
 import './GlobalAssessments-survey.css'
@@ -23,6 +23,9 @@ import api from '../../../services/api';
 import { notifyError, notifySuccess } from '../../../utils/notification';
 import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
 import SelectionBanner from '../../../components/Banner/SelectionBanner';
+import GlobalAdminAnalyticsPop from '../../../components/AnalyticsPopup/GlobalAdminAnalyticsPop.jsx';
+import ExportModal from '../../../components/common/ExportModal/ExportModal';
+import { exportSurveysWithSelection } from '../../../utils/surveyExport';
 const GlobalSurveys = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,6 +36,10 @@ const GlobalSurveys = () => {
   const [selectedIds, setSelectedIds] = useState([]);
   const [groups,setGroups] = useState([])
   const [showBulkAction, setShowBulkAction] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
     const [filters, setFilters] = useState({
       status: ''
@@ -56,6 +63,23 @@ const GlobalSurveys = () => {
           });
         }
       };
+
+  const handleAnalyticsClick = async (survey) => {
+    try {
+      const id = survey?.uuid || survey?._id || survey?.id;
+      if (!id) return;
+      setAnalyticsLoading(true);
+      setShowAnalytics(true);
+      const res = await api.get(`/api/globalAdmin/analytics/content/${id}/organizations`);
+      setAnalyticsData(res.data);
+    } catch (e) {
+      console.error('Error fetching survey analytics:', e);
+      notifyError('Failed to load analytics data');
+      setShowAnalytics(false);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
     
       const updateBulkPanelPosition = () => {
         const rect = bulkButtonRef.current?.getBoundingClientRect();
@@ -195,7 +219,7 @@ const GlobalSurveys = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    status: 'Saved',
+    status: 'Draft',
     duration: '',            // NEW
     tags: [],                // NEW
     team: '',  
@@ -254,7 +278,7 @@ const GlobalSurveys = () => {
     setFormData({
       title: '',
       description: '',
-      status: 'Saved',
+      status: 'Draft',
       // duration: '',            // NEW
       tags: [],                // NEW
       team: '',                // NEW
@@ -427,6 +451,27 @@ const toggleSelectOne = (id, checked) => {
   };
   // Alias handleBulkDelete to bulkDelete for backward compatibility
   const handleBulkDelete = bulkDelete;
+
+  const handleExport = () => {
+    setShowExportModal(true);
+  };
+
+  const handleExportConfirm = (exportScope) => {
+    try {
+      if (exportScope === 'selected') {
+        exportSurveysWithSelection(assessments, selectedIds, excludedIds, allSelected, groups, []);
+        notifySuccess(`${derivedSelectedCount} surveys exported successfully`);
+        clearSelection();
+      } else if (exportScope === 'all') {
+        exportSurveysWithSelection(assessments, [], [], false, groups, []);
+        notifySuccess(`${assessments.length} surveys exported successfully`);
+        clearSelection();
+      }
+    } catch (e) {
+      console.error('Export surveys failed', e);
+      notifyError('Failed to export surveys');
+    }
+  };
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setTempFilters(prev => ({
@@ -463,7 +508,7 @@ const toggleSelectOne = (id, checked) => {
       setFormData({
         title: full.title || '',
         description: full.description || '',
-        status: full.status || 'Saved',
+        status: full.status || 'Draft',
         // duration: full.duration || '',
         tags: full.tags || [],
         team: full.team || '',
@@ -530,7 +575,7 @@ const toggleSelectOne = (id, checked) => {
       setFormData({
         title: assessment.title || '',
         description: assessment.description || '',
-        status: assessment.status || 'Saved',
+        status: assessment.status || 'Draft',
         duration: assessment.duration || '',
         tags: assessment.tags || [],
         team: assessment.team || '',
@@ -612,7 +657,7 @@ const toggleSelectOne = (id, checked) => {
     const payload = {
       title: surveyTitle,
       description: surveyDescription,
-      status: statusOverride ?? (formData.status || 'Saved'),
+      status: statusOverride ?? (formData.status || 'Draft'),
       // duration: formData.duration,
       tags: Array.isArray(formData.tags) ? formData.tags : [],
       team: formData.team,
@@ -1010,11 +1055,18 @@ const toggleSelectOne = (id, checked) => {
                   <Filter size={16} />
                   Filter
                 </button>
-      
-                {/* <button className="control-btn">
-                        <Share size={16} />
-                        Share
-                      </button> */}
+                <button
+                  className="control-btn"
+                  onClick={handleExport}
+                  title={derivedSelectedCount > 0 ? "Export selected surveys to CSV" : "Open export options"}
+                  disabled={(assessments?.length || 0) === 0}
+                  style={{
+                    opacity: (assessments?.length || 0) === 0 ? 0.5 : 1,
+                    cursor: (assessments?.length || 0) === 0 ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  Export <Share size={16} color="#6b7280" /> {derivedSelectedCount > 0 && `(${derivedSelectedCount})`}
+                </button>
                 <button
                   ref={bulkButtonRef}
                   className="control-btn"
@@ -1058,7 +1110,7 @@ const toggleSelectOne = (id, checked) => {
                     onChange={handleFilterChange}
                   >
                     <option value="">All</option>
-                    <option value="Saved">Saved</option>
+                  
                     <option value="Draft">Draft</option>
                     <option value="Published">Published</option>
                   </select>
@@ -1324,8 +1376,8 @@ const toggleSelectOne = (id, checked) => {
                   <th>Survey Details</th>
                   <th>Questions</th>
                   <th>Status</th>
-                  <th>Date Created</th>
-                  <th>Actions</th>
+                  <th>Date Published</th>
+                  <th style={{ textAlign: 'center' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1389,6 +1441,15 @@ const toggleSelectOne = (id, checked) => {
                         >
                           <Edit3 size={14} />
                         </button>
+                        {String(assessment.status || '').toLowerCase() !== 'draft' && (
+                          <button
+                            className="assess-action-btn analytics"
+                            onClick={() => handleAnalyticsClick(assessment)}
+                            title="View Analytics"
+                          >
+                            <BarChart3 size={14} />
+                          </button>
+                        )}
                       <button 
                           className="assess-action-btn delete" 
                           onClick={() => handleDeleteAssessment(assessment.uuid)}
@@ -1466,6 +1527,20 @@ const toggleSelectOne = (id, checked) => {
         groups={groups}
        
       />}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onConfirm={handleExportConfirm}
+        selectedCount={derivedSelectedCount}
+        totalCount={pagination?.total || assessments.length || 0}
+        exportType="surveys"
+      />
+      <GlobalAdminAnalyticsPop
+        isOpen={showAnalytics}
+        onClose={() => setShowAnalytics(false)}
+        data={analyticsData}
+        loading={analyticsLoading}
+      />
     </div>
   );
 };

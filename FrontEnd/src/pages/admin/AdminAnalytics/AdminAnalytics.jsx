@@ -55,6 +55,34 @@ const COLORS = {
 
 const CHART_COLORS = ['#011F5B', '#1C88C7', '#10b981', '#f59e0b', '#8b5cf6'];
 
+// Custom tick component for XAxis to display day name and date in flex column
+const CustomXAxisTick = ({ x, y, payload }) => {
+  const value = payload.value;
+  // Access formattedDate from the full data object (payload.payload)
+  const formattedDate = payload.payload?.formattedDate || '';
+  
+  // Debug log to check payload structure
+  console.log('CustomXAxisTick payload:', payload);
+  
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <foreignObject x={-25} y={0} width={50} height={50}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          fontSize: '12px',
+          color: '#000',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontWeight: 600 }}>{value}</div>
+          <div style={{ fontSize: '10px', color: '#6b7280' }}>{formattedDate}</div>
+        </div>
+      </foreignObject>
+    </g>
+  );
+};
+
 const AdminAnalyticsDashboard = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
@@ -117,23 +145,22 @@ const AdminAnalyticsDashboard = () => {
     });
   };
 
-  // Handle user status filter changes with loading state
-  const handleUserStatusChange = (newUserStatus) => {
+  // Handle team/subteam filter changes with loading state
+  const handleTeamFilterChange = (newTeam, newSubteam) => {
     setIsDateRangeLoading(true);
-    // Reset only the data that depends on user status
+    // Reset only the data that depends on team/subteam filters
     setInitialDataLoaded(prev => ({
       ...prev,
       usageTrend: false,
       userData: false
     }));
     setIsLoading(true); // Set loading to true during filter changes
-    setUserFilters(prev => ({ ...prev, userStatus: newUserStatus }));
-    
-    // Fetch only the data that depends on user status
+    setUserFilters(prev => ({ ...prev, team: newTeam, subteam: newSubteam }));
+
+    // Fetch only the data that depends on team/subteam filters
     Promise.all([
-      fetchUsageTrendWithFilters({ ...userFilters, userStatus: newUserStatus }),
+      fetchUsageTrendWithFilters({ ...userFilters, team: newTeam, subteam: newSubteam }),
       fetchUserData(userFilters.timeRange),
-      // Handle at-risk learners based on user status
       fetchAtRiskLearners(userFilters.timeRange === '7d' ? 7 : userFilters.timeRange === '30d' ? 30 : 90)
     ]).finally(() => {
       setIsDateRangeLoading(false);
@@ -261,8 +288,10 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   });
   
   const [coursePerformanceFilters, setCoursePerformanceFilters] = useState({
-    content:"module",
-    timeRange: '7d'
+    content: "modules",
+    timeRange: '7d',
+    team: 'all',
+    subteam: 'all'
   });
   
   const [courseAdoptionFilters, setCourseAdoptionFilters] = useState({
@@ -279,7 +308,8 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   const [showAtRiskFilters, setShowAtRiskFilters] = useState(false);
   const [userFilters, setUserFilters] = useState({
     timeRange: '7d',
-    userStatus: 'all'
+    team: 'all',
+    subteam: 'all'
   });
   
   // Separate state for At-Risk Learners filters
@@ -457,12 +487,14 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
     try {
       const params = new URLSearchParams();
       if (filters.timeRange && filters.timeRange !== '30d') params.append('timeRange', filters.timeRange);
-      if (filters.userStatus && filters.userStatus !== 'all') params.append('userStatus', filters.userStatus);
+      if (filters.team && filters.team !== 'all') params.append('team', filters.team);
+      if (filters.subteam && filters.subteam !== 'all') params.append('subteam', filters.subteam);
       if (filters.startDate) params.append('startDate', filters.startDate.toISOString());
       if (filters.endDate) params.append('endDate', filters.endDate.toISOString());
 
       const url = params.toString() ? `/api/admin/analytics/getUsageTrend?${params}` : '/api/admin/analytics/getUsageTrend';
       const response = await api.get(url);
+      console.log('Usage trend data from backend:', response.data.data);
       setUsageTrend(response.data.data);
     } catch (error) {
       console.error('Error fetching usage trend with filters:', error);
@@ -634,6 +666,8 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
       if (filters.timeRange) params.append('timeRange', filters.timeRange);
       if (filters.startDate) params.append('startDate', filters.startDate.toISOString());
       if (filters.endDate) params.append('endDate', filters.endDate.toISOString());
+      if (filters.team && filters.team !== 'all') params.append('team', filters.team);
+      if (filters.subteam && filters.subteam !== 'all') params.append('subteam', filters.subteam);
 
       const url = params.toString() ? `/api/admin/analytics/getCoursePerformanceInsights?${params}` : '/api/admin/analytics/getCoursePerformanceInsights';
       const response = await api.get(url);
@@ -1545,7 +1579,14 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                 <ResponsiveContainer width="100%" height={320}>
                   <BarChart data={usageTrend}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                    <XAxis dataKey="date" stroke="#000000" style={{ fontSize: 12 }} />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="#000000" 
+                      style={{ fontSize: 12 }}
+                      tick={<CustomXAxisTick />}
+                      height={60}
+                      dy={10}
+                    />
                     <YAxis stroke="#000000" style={{ fontSize: 12 }} />
                     <Tooltip
                       contentStyle={{
@@ -1617,20 +1658,46 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                     </select>
                   </div> */}
 
-                  {/* User Status Filter */}
+                  {/* Team Filter */}
                   <div className="filter-group-enhanced">
-                    <label>User Status</label>
+                    <label>Team</label>
                     <select
-                      value={userFilters.userStatus}
-                      onChange={(e) => setUserFilters(prev => ({ ...prev, userStatus: e.target.value }))}
+                      value={userFilters.team}
+                      onChange={(e) => {
+                        setUserFilters(prev => ({ ...prev, team: e.target.value, subteam: 'all' }));
+                      }}
                       className="filter-select-enhanced"
                       style={{ minWidth: 'auto', width: '100%' }}
                     >
-                      <option value="all">All Users</option>
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                      <option value="new">New Users</option>
-                      <option value="at-risk">At Risk</option>
+                      <option value="all">All Teams</option>
+                      {teams.map(team => (
+                        <option key={team._id || team.id || team.uuid} value={team._id || team.id || team.uuid}>
+                          {team.name || team.teamName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Subteam Filter */}
+                  <div className="filter-group-enhanced">
+                    <label>Subteam</label>
+                    <select
+                      value={userFilters.subteam}
+                      onChange={(e) => setUserFilters(prev => ({ ...prev, subteam: e.target.value }))}
+                      className="filter-select-enhanced"
+                      style={{ minWidth: 'auto', width: '100%' }}
+                      disabled={userFilters.team === 'all'}
+                    >
+                      <option value="all">All Subteams</option>
+                      {(() => {
+                        const selectedTeamObj = teams.find(t => (t._id || t.id || t.uuid) === userFilters.team);
+                        const subteams = selectedTeamObj?.subTeams || [];
+                        return subteams.map(st => (
+                          <option key={st._id || st.id || st.uuid} value={st._id || st.id || st.uuid}>
+                            {st.name || st.subTeamName}
+                          </option>
+                        ));
+                      })()}
                     </select>
                   </div>
 
@@ -1706,7 +1773,8 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                   <button
                     onClick={() => {
                       handleTimeRangeChange('30d'); // Use the proper handler
-                      handleUserStatusChange('all'); // Use the proper handler
+                      setUserFilters(prev => ({ ...prev, team: 'all', subteam: 'all' }));
+                      fetchUsageTrendWithFilters({ ...userFilters, team: 'all', subteam: 'all' });
                       // setShowUserFilters(false); // Close filter panel
                     }}
                     style={{
@@ -2960,11 +3028,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
             <div className="panel-header-enhanced">
               <div>
                 <h3 className="panel-title">
-                {coursePerformanceFilters.content === 'modules' ? 'Module Performance Insights' :
-                 coursePerformanceFilters.content === 'assessments' ? 'Assessment Performance Insights' :
-                 coursePerformanceFilters.content === 'surveys' ? 'Survey Performance Insights' :
-                 coursePerformanceFilters.content === 'learningpaths' ? 'Learning Path Performance Insights' :
-                 'Course Performance Insights'}
+               Course Performance Insights
               </h3>
               <p className="panel-description">
                 {coursePerformanceFilters.content === 'modules' ? 'Top performing modules and adoption metrics' :
@@ -3024,7 +3088,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginTop: '20px' }}>
               {/* Top Performing Courses */}
-              <div style={{ background: '#f9fafb', padding: '20px', borderRadius: '16px',minHeight: "369px"}}>
+              <div style={{ background: '#f9fafb', padding: '20px', borderRadius: '16px',minHeight: "432px"}}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                   <TrendingUp size={18} style={{ color: COLORS.success }} />
                   <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#111827' }}>
@@ -3096,7 +3160,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                   ) : (
                     <div style={{ 
                       textAlign: 'center', 
-                      padding: '125px 20px', 
+                      padding: '150px 20px', 
                       color: '#6b7280',
                       fontSize: '14px'
 
@@ -3192,7 +3256,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                   ) : (
                     <div style={{ 
                       textAlign: 'center', 
-                      padding: '125px 20px', 
+                      padding: '150px 20px', 
                       color: '#6b7280',
                       fontSize: '14px'
                     }}>
@@ -3293,6 +3357,41 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
 
                   </div>
 
+                  {/* Team Filter */}
+                  <div className="filter-group-enhanced">
+                    <label>Team</label>
+                    <select
+                      value={coursePerformanceFilters.team}
+                      onChange={(e) => setCoursePerformanceFilters(prev => ({ ...prev, team: e.target.value, subteam: 'all' }))}
+                      className="filter-select-enhanced"
+                      style={{ minWidth: 'auto', width: '100%' }}
+                    >
+                      <option value="all">All Teams</option>
+                      {teams?.map(team => (
+                        <option key={team._id} value={team._id}>{team.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Sub-Team Filter */}
+                  <div className="filter-group-enhanced">
+                    <label>Sub-Team</label>
+                    <select
+                      value={coursePerformanceFilters.subteam}
+                      onChange={(e) => setCoursePerformanceFilters(prev => ({ ...prev, subteam: e.target.value }))}
+                      className="filter-select-enhanced"
+                      style={{ minWidth: 'auto', width: '100%' }}
+                      disabled={coursePerformanceFilters.team === 'all'}
+                    >
+                      <option value="all">All Sub-Teams</option>
+                      {subteams
+                        ?.filter(st => String(st.team_id?._id || st.team_id) === String(coursePerformanceFilters.team))
+                        .map(st => (
+                          <option key={st._id} value={st._id}>{st.name}</option>
+                        ))}
+                    </select>
+                  </div>
+
                   {/* Quick Stats in Filters */}
                   <div style={{
                     marginTop: '12px',
@@ -3305,12 +3404,12 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                       QUICK STATS
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      {/* <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '13px', color: '#374151' }}>Total Courses</span>
                         <span style={{ fontSize: '14px', fontWeight: 700, color: COLORS.primary }}>
                           {formatNumber(coursePerformanceData.length)}
                         </span>
-                      </div>
+                      </div> */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '13px', color: '#374151' }}>Total Enrollments</span>
                         <span style={{ fontSize: '14px', fontWeight: 700, color: COLORS.accent }}>
@@ -3323,13 +3422,13 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                           {formatNumber(coursePerformanceData.reduce((sum, c) => sum + (c.completed || 0), 0))}
                         </span>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      {/* <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '13px', color: '#374151' }}>In Progress</span>
                         <span style={{ fontSize: '14px', fontWeight: 700, color: COLORS.warning }}>
                           {formatNumber(coursePerformanceData.reduce((sum, c) => sum + (c.inProgress || 0), 0))}
                         </span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      </div> */}
+                      {/* <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '13px', color: '#374151' }}>Average Score</span>
                         <span style={{ fontSize: '14px', fontWeight: 700, color: COLORS.primary }}>
                           {coursePerformanceData.length > 0 && coursePerformanceData.some(c => c.avgScore > 0)
@@ -3337,8 +3436,8 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                             : 'N/A'
                           }
                         </span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      </div> */}
+                      {/* <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '13px', color: '#374151' }}>Avg Completion</span>
                         <span style={{ fontSize: '14px', fontWeight: 700, color: COLORS.success }}>
                           {coursePerformanceData.length > 0
@@ -3346,7 +3445,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                             : '0%'
                           }
                         </span>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
 

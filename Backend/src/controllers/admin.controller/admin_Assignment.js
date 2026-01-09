@@ -1,4 +1,5 @@
 const ForUserAssignment = require("../../models/forUserAssigments_model");
+const mongoose = require('mongoose');
 const Team = require("../../models/teams_model");
 const UserProfile = require("../../models/userProfiles_model");
 const UserContentProgress = require("../../models/userContentProgress_model");
@@ -20,6 +21,7 @@ const createAssignment = async (req, res) => {
 
   try {
     const {
+      name,
       assignDate,
       dueDate,
       notifyUsers,
@@ -106,9 +108,9 @@ const createAssignment = async (req, res) => {
     const dueDateObj = dueDate ? new Date(dueDate) : null;
     const assignTimeStr = (assignDateObj && !isNaN(assignDateObj)) ? assignDateObj.toISOString().split('T')[1] : null;
     const dueTimeStr = (dueDateObj && !isNaN(dueDateObj)) ? dueDateObj.toISOString().split('T')[1] : null;
-
     if (isIndividual) {
       assignment = await ForUserAssignment.create([{
+        name:name,
         organization_id: req.user.organization_id,
         assign_type: content_type,
         assign_on: assignDateObj || Date.now(),
@@ -136,6 +138,7 @@ const createAssignment = async (req, res) => {
     } else {
 
       assignment = await ForUserAssignment.create([{
+        name:name,
         organization_id: req.user.organization_id,
         assign_type: content_type,
         assign_on: assignDateObj || Date.now(),
@@ -525,8 +528,7 @@ const getAssignments = async (req, res) => {
 const getAssignment = async (req, res) => {
   try {
     const { id } = req.params
-    const assignment = await ForUserAssignment.findOne({ uuid: id }).populate("contentId assigned_users groups")
-
+    const assignment = await ForUserAssignment.findOne({ uuid: id })
     return res.status(200).json({
       isSuccess: true,
       message: "Assignment fetched successfully",
@@ -540,10 +542,92 @@ const getAssignment = async (req, res) => {
     })
   }
 }
+
+// Fetch paginated user-level progress for a given assignment (by uuid)
+const getAssignmentProgress = async (req, res) => {
+  try {
+    const { id } = req.params; // assignment uuid
+    const page = Math.max(parseInt(req.query.page || '1', 10), 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit || '20', 10), 1), 100);
+
+    let assignment = null;
+    if (mongoose.isValidObjectId(id)) {
+      assignment = await ForUserAssignment.findOne({ $or: [{ uuid: id }, { _id: id }] }).lean();
+    } else {
+      assignment = await ForUserAssignment.findOne({ uuid: id }).lean();
+    }
+    if (!assignment) {
+      return res.status(404).json({ isSuccess: false, message: 'Assignment not found' });
+    }
+
+    const filter = { assignment_id: assignment._id };
+    const total = await UserContentProgress.countDocuments(filter);
+    const items = await UserContentProgress.find(filter)
+      .populate('user_id', 'name first_name last_name email')
+      .populate({
+        path: 'assignment_id',
+        select: 'contentId contentType assign_type created_by assign_on due_date',
+        populate: [
+          { path: 'created_by', select: 'name' },
+          { path: 'contentId', select: 'title name' }, // refPath will resolve dynamically
+        ],
+      })
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
+
+    return res.status(200).json({
+      isSuccess: true,
+      message: 'Assignment progress fetched successfully',
+      data: { items, total, page, limit },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      isSuccess: false,
+      message: 'Failed to fetch assignment progress',
+      error: error.message,
+    });
+  }
+};
+
+// Delete a single user-level progress record from an assignment
+const deleteAssignmentProgress = async (req, res) => {
+  try {
+    const { progressId } = req.params;
+    const prog = await UserContentProgress.findByIdAndDelete(progressId);
+    if (!prog) {
+      return res.status(404).json({ isSuccess: false, message: 'Progress record not found' });
+    }
+
+    // If no more progress records remain for the assignment, mark assignment as Removed
+    if (prog.assignment_id) {
+      const remaining = await UserContentProgress.countDocuments({ assignment_id: prog.assignment_id });
+      if (remaining === 0) {
+        await ForUserAssignment.findByIdAndUpdate(prog.assignment_id, { status: 'Removed' });
+      }
+    }
+
+    return res.status(200).json({
+      isSuccess: true,
+      message: 'Progress record deleted successfully',
+      data: { _id: prog._id },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      isSuccess: false,
+      message: 'Failed to delete progress record',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createAssignment,
   editAssignment,
   deleteAssignment,
   getAssignments,
-  getAssignment
+  getAssignment,
+  getAssignmentProgress,
+  deleteAssignmentProgress,
 };

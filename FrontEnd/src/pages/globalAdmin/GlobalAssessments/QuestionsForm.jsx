@@ -1646,6 +1646,9 @@ const QuestionsForm = ({
                                     <ChevronLeft size={16} />Previous
                                 </button>}
                                 <div style={{ display: 'flex', gap: 12 }}>
+                                     <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>
+                                            Cancel
+                                        </button>
                                     <button
                                         type="button"
                                         className="btn-secondary"
@@ -1656,7 +1659,7 @@ const QuestionsForm = ({
                                         <Eye size={16} />
                                         <span>Preview Assessment</span>
                                     </button>
-                                    <button
+                                    {/* <button
                                         type="button"
                                         className="btn-secondary"
                                         onClick={() => {
@@ -1676,7 +1679,7 @@ const QuestionsForm = ({
                                     >
                                         <FileText size={16} />
                                         <span>Save as Draft</span>
-                                    </button>
+                                    </button> */}
                                     <button
                                         type="button"
                                         className="btn-primary"
@@ -1685,11 +1688,11 @@ const QuestionsForm = ({
                                                 if (step !== 1) setStep(1);
                                                 return;
                                             }
-                                            // Create/Update explicitly as Saved
+                                            // Create/Update explicitly as Draft
                                             if (currentAssessment) {
-                                                handleUpdateAssessment('Saved');
+                                                handleUpdateAssessment('Draft');
                                             } else {
-                                                handleSaveAssessment(undefined, 'Saved');
+                                                handleSaveAssessment(undefined, 'Draft');
                                             }
                                         }}
                                         disabled={!canProceedToNext()}

@@ -4,6 +4,10 @@ const Organization = require('../../models/organization_model');
 const Leaderboard = require('../../models/leaderboard.model');
 const adminTicket = require('../../models/adminTicket');
 const userTickets = require('../../models/userTickets');
+const GlobalAssignment = require('../../models/global_Assignment');
+const GlobalModule = require('../../models/globalModule_model');
+const GlobalAssessment = require('../../models/globalAssessments_model');
+const GlobalSurvey = require('../../models/global_surveys_model');
 
 /* ===========================
    DATE RANGE UTILS (SINGLE SOURCE)
@@ -398,3 +402,64 @@ module.exports = {
   getOrganizationAnalytics,
   getUsersData
 };
+
+/**
+ * Get list of organizations this content has been assigned to.
+ * Response shape:
+ * { success: true, data: [{ organizationName, contentType, resourceName, assignedOn, assignedBy }] }
+ */
+async function getContentOrganizationAnalytics(req, res) {
+  try {
+    const { contentId } = req.params; // UUID of content (module/assessment/survey)
+
+    // Resolve content by UUID across types
+    let contentDoc = await GlobalModule.findOne({ uuid: contentId }).lean();
+    let contentType = 'Module';
+    let assignmentField = 'ModuleId';
+
+    if (!contentDoc) {
+      contentDoc = await GlobalAssessment.findOne({ uuid: contentId }).lean();
+      if (contentDoc) {
+        contentType = 'Assessment';
+        assignmentField = 'assessmentId';
+      }
+    }
+    if (!contentDoc) {
+      contentDoc = await GlobalSurvey.findOne({ uuid: contentId }).lean();
+      if (contentDoc) {
+        contentType = 'Survey';
+        assignmentField = 'surveyId';
+      }
+    }
+
+    if (!contentDoc) {
+      return res.status(404).json({ success: false, message: 'Content not found' });
+    }
+
+    // Fetch assignments for this content across organizations
+    const query = {};
+    query[assignmentField] = contentDoc._id;
+
+    const assignments = await GlobalAssignment.find(query)
+      .populate('orgId', 'name status')
+      .lean();
+
+    // Only include organizations that are Active
+    const rows = (assignments || [])
+      .filter(a => a.orgId && a.orgId.status === 'Active')
+      .map(a => ({
+      organizationName: a.orgId?.name || 'Unknown',
+      contentType,
+      resourceName: contentDoc.title || contentDoc.name || 'Unknown',
+      assignedOn: a.assignDate || a.createdAt,
+      assignedBy: 'Global Admin'
+    }));
+
+    return res.json({ success: true, data: rows, info: { contentType, title: contentDoc.title || contentDoc.name || '' } });
+  } catch (err) {
+    console.error('Error fetching content organization analytics:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+}
+
+module.exports.getContentOrganizationAnalytics = getContentOrganizationAnalytics;

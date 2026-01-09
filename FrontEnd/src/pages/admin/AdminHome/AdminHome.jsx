@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { BookOpen, Users, Award, TrendingUp, ClipboardCheck, ListChecks, GraduationCap, PencilLine, ClipboardList, MessageSquare, Activity, HelpCircle, Megaphone, Clock, UserCheck, Calendar } from 'lucide-react';
 import './AdminHome.css';
 import { fetchMessagesForAdmin } from '../../../store/slices/globalMessageSlice';
-import { getContentCountsAll } from '../../../utils/contentCountsService'
+import { getContentCounts } from '../../../utils/contentCountsService'
 import api from '../../../services/api';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line
@@ -73,7 +73,7 @@ const AdminHome = () => {
     const fetchCounts = async () => {
       try {
         setCountsLoading(true);
-        const response = await getContentCountsAll();
+        const response = await getContentCounts();
         console.log('Content counts response:', response);
         console.log('Response type:', typeof response);
         console.log('Response keys:', response ? Object.keys(response) : 'null');
@@ -103,7 +103,7 @@ const AdminHome = () => {
         
         // Fetch real user analytics data from backend
         const response = await api.get('/api/admin/analytics/getUserData', {
-          params: { timeRange: 'all' } // No time range filter for Admin Home
+          params: { timeRange: '7d' }
         });
         
         if (response.data && response.data.data) {

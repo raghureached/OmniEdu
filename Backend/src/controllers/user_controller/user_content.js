@@ -223,7 +223,7 @@ const getInProgress = async (req, res) => {
       .populate([
         {
           path: "assignment_id",
-          select: "uuid name title description assign_type contentId assign_on due_date created_by",
+          select: "uuid name title description assign_type contentId assign_on due_date created_by contentType",
           populate: [
             {
               path: "contentId",
@@ -235,7 +235,7 @@ const getInProgress = async (req, res) => {
         },
         {
           path: "enrollment_id",
-          select: "uuid name assign_type contentId assign_on",
+          select: "uuid name assign_type contentId assign_on contentType",
           populate: [
             {
               path: "contentId",
@@ -305,74 +305,6 @@ const enrolledbyUser = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
-
-// const getCatalog = async (req, res) => {
-//   try {
-//     let catalog = [];
-//     const [modules, assessments, surveys, userProgress] =
-//       await Promise.all([
-//         GlobalModule.find({status:"Published"})
-//           .select("title description duration tags thumbnail credits stars badges uuid category")
-//           .lean(),
-
-//         GlobalAssessments.find({status:"Published"})
-//           .select("title description duration tags thumbnail credits stars badges uuid category")
-//           .lean(),
-
-//         Surveys.find({status:"Published"})
-//           .select("title description duration tags thumbnail credits stars badges uuid category")
-//           .lean(),
-
-//         UserContentProgress.find({ user_id: req.user._id })
-//           .select("contentId")
-//           .lean(),
-//       ])
-
-//     const userProgressIds = new Set(
-//       userProgress.map((p) => p.contentId.toString())
-//     );
-
-
-//     modules.forEach((m) => {
-
-//       m.type = "Module";
-//       m.model = "GlobalModule"
-//       m.who = "Global"
-//       if (userProgressIds.has(m._id.toString())) {
-
-//         m.inProgress = true;
-//       };
-//     });
-
-//     assessments.forEach((a) => {
-//       a.type = "Assessment";
-//       a.model = "GlobalAssessments"
-//       a.who = "Global"
-//       if (userProgressIds.has(a._id.toString())) {
-
-//         a.inProgress = true;
-//       }
-
-//     });
-
-//     surveys.forEach((s) => {
-//       s.type = "Survey";
-//       s.model = "GlobalSurvey";
-//       s.who = "Global"
-//       if (userProgressIds.has(s._id.toString())) {
-
-//         s.inProgress = true;
-//       }
-//     });
-
-//     catalog = [...modules, ...assessments, ...surveys];
-
-//     return res.status(200).json(catalog);
-//   } catch (error) {
-//     console.log(error);
-//     return res.status(500).json({ message: error.message });
-//   }
-// };
 
 const getCompleted = async (req, res) => {
   try {
@@ -501,10 +433,12 @@ const getRecomended = async (req, res) => {
 
 const getAssigned = async (req, res) => {
   try {
-    const userId = req.user._id;
     const assigned = await UserContentProgress.find({
       user_id: req.user._id,
-      status: "assigned",
+      $or: [
+        { status: "assigned" },
+        { status: "enrolled" },
+      ],
     })
       .populate([
         {

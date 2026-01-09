@@ -1,4 +1,4 @@
-import { ChevronDown, Import, Search, Share, Filter } from 'lucide-react';
+import { ChevronDown, Import, Search, Share, Filter,CirclePause } from 'lucide-react';
 import { GoX } from 'react-icons/go';
 import { RiDeleteBinFill } from 'react-icons/ri';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
@@ -310,14 +310,14 @@ const GroupsFilter = ({
       {showBulkAction && (
         <div
           ref={bulkPanelRef}
-          className="bulk-action-panel"
+          className="user-bulk-action-panel"
           style={{ position: 'absolute', top: bulkPanelStyle.top, left: bulkPanelStyle.left, padding: "15px" }}
         >
           <div className="bulk-action-header">
-            <label className="bulk-action-title">Items Selected: {selectedGroups.length}</label>
+            <label className="bulk-action-title" style={{marginBottom:"10px"}}>Items Selected: {selectedGroups.length}</label>
           </div>
 
-          <div className="bulk-action-actions" style={{ display: 'flex', gap: 8, flexDirection: 'row', alignItems: 'center' }}>
+          <div className="bulk-action-actions" style={{ display: 'flex', gap: 10, flexDirection: 'column', alignItems: 'center' }}>
             {/* <button
               className="btn-primary"
               disabled={selectedGroups.length === 0}
@@ -329,14 +329,14 @@ const GroupsFilter = ({
               className="btn-primary"
               //  disabled={group.status === "Inactive"}
               disabled={selectedGroups.length === 0 || groups.status === "Inactive"}
-              onClick={handleBulkDeactivate} style={{ backgroundColor: '#9e9e9e' }}
+              onClick={handleBulkDeactivate} style={{ background: '#6b7280',width:"100%",justifyContent:"center" }}
             >
-              Deactivate
+               <CirclePause size={16} color="white" />Deactivate
             </button>
 
             <button
               className="btn-primary"
-              style={{ background: "red" }}
+              style={{ background: "red",width:"100%",justifyContent:"center" }}
               disabled={selectedGroups.length === 0}
               onClick={handleBulkDelete}
             >

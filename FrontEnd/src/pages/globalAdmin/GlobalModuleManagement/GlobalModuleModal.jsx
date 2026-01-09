@@ -347,7 +347,7 @@ const GlobalModuleModal = ({
                     isCreatingDraftRef.current = false;
                 }
 
-                setDraftStatus("saved");
+                setDraftStatus("Draft");
                 setTimeout(() => setDraftStatus("idle"), 2000);
             } catch (error) {
                 console.error("Auto-save error:", error);
@@ -1068,11 +1068,12 @@ const GlobalModuleModal = ({
                         </button>
 
                         <div className="module-overlay__action-buttons" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                            {currentStep === totalSteps && <button className='btn-secondary' onClick={() => setPreview(true)} disabled={!canProceed()} ><EyeIcon size={16} />Preview</button>}
-
-                            <button className="btn-secondary" onClick={() => setShowModal(false)} aria-label="Cancel " disabled={uploading}>
+                              <button className="btn-secondary" onClick={() => setShowModal(false)} aria-label="Cancel " disabled={uploading}>
                                 Cancel
                             </button>
+                            {currentStep === totalSteps && <button className='btn-secondary' onClick={() => setPreview(true)} disabled={!canProceed()} ><EyeIcon size={16} />Preview Module</button>}
+
+                          
 
                             {currentStep < totalSteps ? (
                                 <button
@@ -1094,7 +1095,15 @@ const GlobalModuleModal = ({
                                     disabled={uploading || !canProceed()}
                                     aria-label="Create Module"
                                 >
-                                    {uploading ? (<CustomLoader2 size={16} color="#5570f1" strokeWidth={3} />) : showEditModal ? 'Update Module' : 'Create Module'}
+                                    {/* {uploading ? (<CustomLoader2 size={16} color="#5570f1" strokeWidth={3} />) : ( <GoBook size={16} /> <span>{showEditModal ? 'Update Module' : 'Create Module'}</span>)} */}
+                                    {uploading ? (
+  <CustomLoader2 size={16} color="#5570f1" strokeWidth={3} />
+) : (
+  <>
+    <GoBook size={16} />
+    <span>{showEditModal ? 'Update Module' : 'Create Module'}</span>
+  </>
+)}
                                 </button>
                             )}
                         </div>

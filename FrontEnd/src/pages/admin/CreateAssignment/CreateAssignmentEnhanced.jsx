@@ -83,6 +83,8 @@ const CreateAssignmentEnhanced = () => {
   const [elementSchedules, setElementSchedules] = useState([]);
   const [enforceOrder, setEnforceOrder] = useState(false);
   const [creating,setCreating] = useState(false);
+
+  const [name, setName] = useState('');
   // Get content items based on selected type
   const getContentItems = () => {
     switch (selectedContentType) {
@@ -191,6 +193,7 @@ const CreateAssignmentEnhanced = () => {
             }))
         : [];
       const payload = {
+        name, 
         contentType: selectedContentType,
         contentId: selectedItem._id,
         contentName: selectedItem.title,
@@ -384,6 +387,8 @@ const CreateAssignmentEnhanced = () => {
 
           {currentStep === 4 && (
             <Step4ReviewConfirm
+              name={name}
+              setName={setName}
               selectedItem={selectedItem}
               selectedContentType={selectedContentType}
               userMode={userMode}

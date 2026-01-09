@@ -17,20 +17,16 @@ import LearningHub from './pages/user/LearningHub/LearningHub';
 import Catalog from './pages/user/Catalog/Catalog';
 import ActivityHistory from './pages/user/ActivityHistory/ActivityHistory';
 import HelpCenter from './pages/user/HelpCenter/HelpCenter';
-
-import Mandatory from './pages/user/Mandatory/Mandatory';
-
 // Admin Pages 
 import AdminHome from './pages/admin/AdminHome/AdminHome';
 import UsersManagement from './pages/admin/UsersManagement/UsersManagement';
 import GroupsManagement from './pages/admin/GroupsManagement/GroupsManagement';
 import LearningPaths from './pages/admin/LearningPaths/LearningPaths';
 import AdminProfile from './pages/admin/AdminProfile/AdminProfile';
-import ManageAssignment from './pages/admin/ManageAssignment/ManageAssignment';
 import AdminHelpCenter from './pages/admin/AdminHelpCenter/AdminHelpCenter';
 import AdminMessageBoard from './pages/admin/AdminMessageBoard/AdminMessageBoard';
 import AdminActivityLog from './pages/admin/AdminActivityLog/AdminActivityLog';
-import AdminPortalActivity from './pages/admin/AdminPortalActivity/AdminPortalActivity';
+
 import AdminAssessments from './pages/admin/AdminAssessments/AdminAssessments';
 import ModuleManagement from './pages/admin/ContentModules/ModuleManagement';
 import AdminSurveys from './pages/admin/AdminSurveys/AdminSurvey';
@@ -141,7 +137,6 @@ function App() {
           <Route path="assigned" element={permissions.includes("Assigned Training") ? <Assigned  /> : <NotAllowed />} />
           <Route path="inProgress" element={<InProgress />} />
           <Route path="completed" element={<Completed />} />
-          <Route path="mandatory" element={<Mandatory />} />
           <Route path="change-password" element={<ChangePassword />} />
           <Route path="scorm/player" element={<Player />} />
           <Route path='support' element={permissions.includes("Support Button Access") ? <UserTicketsTable /> : <NotAllowed />} />
@@ -159,10 +154,9 @@ function App() {
           <Route path="manage-surveys" element={<AdminSurveys />} />
           <Route path="create-assignment" element={<CreateAssignmentEnhanced />} />
           <Route path='view-assignments' element={<ViewAssignments />} />
-          <Route path="manage-assignments" element={<ManageAssignment />} />
+
           <Route path="help-center" element={permissions.includes("Help Center Access") ? <AdminHelpCenter /> : <NotAllowed />} />
           <Route path="message-board" element={<AdminMessageBoard />} />
-          <Route path="portal-library" element={<AdminPortalActivity />} />
           <Route path="profile" element={permissions.includes("Profile Access") ? <AdminProfile /> : <NotAllowed />} />
           <Route path="activity-log" element={permissions.includes("Activity History Access") ? <AdminActivityLog /> : <NotAllowed />} />
           <Route path="change-password" element={<ChangePassword />} />
