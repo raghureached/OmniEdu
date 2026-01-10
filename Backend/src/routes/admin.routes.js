@@ -34,6 +34,7 @@ const { createAdminTicket, getAdminTickets, updateAdminTicketStatus, updateAdmin
 const { getPermissions } = require("../controllers/permissions.controller");
 const {addDocument,editDocument,deleteDocument,previewDocument,searchDocuments, getDocuments, documentbulkDelete, getDocumentById} = require("../controllers/admin.controller/admin_Document");
 const { gradeSubmission, getSubmissions } = require("../controllers/admin.controller/admin_Submissions");
+const { getOrgRoles } = require("../controllers/admin.controller/admin_Role");
 
 
 const router = require("express").Router();
@@ -134,8 +135,8 @@ router.route('/deleteAssignment/:id').delete(deleteAssignment)
 router.route('/assignments/:id/progress').get(getAssignmentProgress)
 router.route('/assignments/progress/:progressId').delete(deleteAssignmentProgress)
 
-/////Activity Log /////
-// router.route('/getActivities').get(getActivities)
+//////Roles/////
+router.route('/getOrgRoles').get(getOrgRoles)
 
 //////Profile//////
 router.route('/getProfile').get(getProfile)

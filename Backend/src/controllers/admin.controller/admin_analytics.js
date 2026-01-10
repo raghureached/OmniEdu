@@ -468,7 +468,7 @@ const calculateUsageTrend = async (req, res) => {
         // For 7-day filter, return daily data
         if (timeRange === '7d') {
             const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            const UserProfile = require('../../models/userProfiles_model');
+            const UserProfile = require('../../models/User/userProfiles_model');
             
             // Get filtered user IDs once if team/subteam filters are applied
             let filteredUserIds = null;
