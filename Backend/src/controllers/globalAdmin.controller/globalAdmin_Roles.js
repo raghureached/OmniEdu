@@ -1,12 +1,10 @@
 // role.controller.js
-const Role = require("../../models/globalRoles_model");
-const permissions_model = require("../../models/permissions_model");
-const Permission = require("../../models/permissions_model");
+const Role = require("../../models/globalAdmin/Roles/globalRoles_model");
+const Permission = require("../../models/globalAdmin/Roles/permissions_model");
 const { z } = require("zod");
-const Section = require("../../models/sections_model");
-const OrganizationRole = require("../../models/organizationRoles_model");
+const Section = require("../../models/globalAdmin/Roles/sections_model");
 const { logActivity } = require("../../utils/activityLogger");
-const Organization = require("../../models/organization_model");
+const Organization = require("../../models/globalAdmin/Organization/organization_model");
 
 // ✅ Validation
 

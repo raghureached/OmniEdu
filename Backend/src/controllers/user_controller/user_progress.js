@@ -1,4 +1,4 @@
-const UserProgress = require("../../models/userProgress");
+const UserProgress = require("../../models/User/userProgress");
 
 const updateProgress = async (req, res) => {
   try {

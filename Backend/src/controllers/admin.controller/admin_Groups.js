@@ -137,69 +137,11 @@ if (subTeam.status === "Inactive") {
 };
 
 
-const Team = require("../../models/teams_model");
-const SubTeam = require("../../models/subTeams_model");
-const User = require("../../models/users_model");
-const UserProfile = require("../../models/userProfiles_model");
+const Team = require("../../models/Admin/GroupsOrTeams/teams_model");
+const SubTeam = require("../../models/Admin/GroupsOrTeams/subTeams_model");
+const User = require("../../models/User/users_model");
+const UserProfile = require("../../models/User/userProfiles_model");
 
-// const addGroup = async (req, res) => {
-//     try {
-//         const { teamName, subTeamName, status } = req.body;
-//         if (!teamName || !subTeamName || !status) {
-//             return res.status(400).json({
-//                 isSuccess: false,
-//                 message: "All fields are required"
-//             })
-//         }
-//         const teamNameExists = await Team.findOne({ name: teamName });
-//         const subTeamNameExists = await SubTeam.findOne({ name: subTeamName });
-//         if(teamNameExists && subTeamNameExists){
-//             return res.status(400).json({
-//                 isSuccess: false,
-//                 message: "Team name and subteam name already exists"
-//             })
-//           }
-//         if (teamNameExists) {
-//             const subTeam = await SubTeam.create({
-//                 name: subTeamName,
-//                 team_id: teamNameExists._id,
-//                 ///Change when authentication is added
-//                 organization_id: req.user.organization_id,
-//                 created_by: req.user._id
-//             })
-//             return res.status(201).json({
-//                 isSuccess: true,
-//                 message: "Subteam added successfully",
-//                 data: { subTeam }
-//             })
-//         }
-//           const team = await Team.create({
-//             name: teamName,
-//             status: status.toLowerCase()==="active" ? "Active" : "Inactive",
-//             organization_id: req.user.organization_id,
-//             created_by: req.user._id
-//         })
-//         const subTeam = await SubTeam.create({
-//             name: subTeamName,
-//             team_id: team._id,
-//             ///Change when authentication is added
-//             organization_id: req.user.organization_id,
-//             created_by: req.user._id
-//         })
-//         return res.status(201).json({
-//             isSuccess: true,
-//             message: "Group added successfully",
-//             data: { team, subTeam }
-//         })
-
-//     } catch (error) {
-//         return res.status(500).json({
-//             isSuccess: false,
-//             message: "Failed to add group",
-//             error: error.message
-//         })
-//     }
-// }
 const addGroup = async (req, res) => {
   try {
     const { teamName, subTeamName, status } = req.body;

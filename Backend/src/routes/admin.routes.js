@@ -1,17 +1,13 @@
 //const {createAssessment, uploadAssessmentCSV, getQuestions, getAssessmentById, getAssessments, editAssessment, deleteAssessment, editQuestion, deleteQuestion, searchAssessment, getQuestionsRandom } = require("../controllers/admin.controller/admin_Assessment");
 const {addUser,editUser,deleteUser,getUsers,getUserbyId, bulkDeleteUsers, bulkEditUsers, exportUsers,} = require("../controllers/admin.controller/admin_User");
 const {addModule,editModule,deleteModule,previewModule,searchModules, getModules, bulkDelete, getModuleById} = require("../controllers/admin.controller/admin_Module");
-const { addOrgRole, editOrgRole, deleteOrgRole, getOrgRoles } = require("../controllers/admin.controller/admin_Role");
-const {upload,uploadContent, uploadAssessment, uploadQuestionFile } = require("../middleware/multer_middleware");
+const {upload,uploadContent, uploadQuestionFile } = require("../middleware/multer_middleware");
 const { uploadToCloudinary, uploadMultipleToCloudinary } = require("../utils/uploadOnCloud");
-const Department = require("../models/departments_model");
 const { addGroup, getGroups, editGroup, deleteGroup, deleteGroups, deactivateGroups } = require("../controllers/admin.controller/admin_Groups");
 const { addLearningPath, getLearningPaths, getContentsOfLearningPath, editLearningPath, deleteLearningPath, getLearningPathById } = require("../controllers/admin.controller/admin_LearningPath");
 //const { createSurvey, deleteSurvey, getSurveys, editSurvey } = require("../controllers/admin.controller/admin_Surveys");
 const { setMessage, editMessage, deleteMessage, getMessage } = require("../controllers/admin.controller/admin_message");
 const { getGlobalAdminMessages } = require("../controllers/admin.controller/admin_globalMessage");
-const { getActivities } = require("../controllers/admin.controller/admin_activity");
-const { addUserId } = require("../middleware/dummyAuth");
 const { getProfile } = require("../controllers/admin.controller/admin_profile");
 const { createAssignment, getAssignments, editAssignment, deleteAssignment, getAssignment, getAssignmentProgress, deleteAssignmentProgress } = require("../controllers/admin.controller/admin_Assignment");
 const {
@@ -51,12 +47,6 @@ router.route('/getUser/:id').get(getUserbyId)
 router.route('/bulkDeleteUsers').delete(bulkDeleteUsers)
 router.route('/bulkEditUsers').put(bulkEditUsers)
 router.route('/exportUsers').get(exportUsers)
-
-/////ROLES////////
-router.route('/addOrgRole').post(addOrgRole)
-router.route('/editOrgRole/:id').put(editOrgRole)
-router.route('/deleteOrgRole/:id').delete(deleteOrgRole)
-router.route('/getOrgRoles').get(getOrgRoles)
 
 //////Assessment////////
 

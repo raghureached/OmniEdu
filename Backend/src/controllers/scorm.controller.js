@@ -6,8 +6,8 @@ const fs = require("fs");
 const ScormModule = require("../models/scorm/scormModule");
 const { parseManifest } = require("../utils/scormParser");
 const mongoose = require("mongoose");
-const ForUserAssignment = require("../models/forUserAssigments_model");
-const UserContentProgress = require("../models/userContentProgress_model");
+const ForUserAssignment = require("../models/Admin/forUserAssigments_model");
+const UserContentProgress = require("../models/User/userContentProgress_model");
 
 // Helper function to handle file operations
 const handleFileUpload = async (file, extractPath) => {

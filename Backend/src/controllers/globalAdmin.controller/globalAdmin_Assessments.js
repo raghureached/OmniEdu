@@ -1,5 +1,5 @@
-const GlobalAssessment = require("../../models/globalAssessments_model")
-const GlobalQuestion = require("../../models/globalQuestions_model")
+const GlobalAssessment = require("../../models/globalAdmin/Assessments/globalAssessments_model")
+const GlobalQuestion = require("../../models/globalAdmin/Assessments/globalQuestions_model")
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -317,8 +317,6 @@ const createAssessment = async (req, res) => {
 
 
 const csv = require("csv-parser");
-const GlobalAssesmentSection = require("../../models/globalAssesment_section_model");
-const GlobalAssessments = require("../../models/globalAssessments_model");
 
 
 const uploadAssessmentCSV = async (req, res) => {

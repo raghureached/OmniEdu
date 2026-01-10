@@ -1,5 +1,5 @@
-const UserTicket = require("../../models/userTickets");
-const AdminTicket = require("../../models/adminTicket");
+const UserTicket = require("../../models/User/userTickets");
+const AdminTicket = require("../../models/Admin/Tickets/adminTicket");
 const { logActivity } = require("../../utils/activityLogger");
 
 // User Tickets APIs for Global Admin

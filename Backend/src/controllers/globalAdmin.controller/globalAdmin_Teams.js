@@ -1,4 +1,4 @@
-const Team = require("../../models/teams_model");
+const Team = require("../../models/Admin/GroupsOrTeams/teams_model");
 
 const getGroups = async (req, res) => {
     try {

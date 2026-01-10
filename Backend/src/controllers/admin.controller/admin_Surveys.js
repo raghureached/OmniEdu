@@ -1,16 +1,16 @@
-const OrganizationSurveyResponses = require("../../models/organizationSurveyResponses_model");
-const OrganizationSurveys = require("../../models/organizationSurveys_model");
-const OrganizationSurveyQuestion = require("../../models/organizationSurveysQuestions_model");
+const OrganizationSurveyResponses = require("../../models/Admin/Surveys/organizationSurveyResponses_model");
+const OrganizationSurveys = require("../../models/Admin/Surveys/organizationSurveys_model");
+const OrganizationSurveyQuestion = require("../../models/Admin/Surveys/organizationSurveysQuestions_model");
 const { v4: uuidv4 } = require("uuid");
 const GlobalSurveyFeedback = require("../../models/global_surveys_feedback");
-const OrganizationSurveySection = require("../../models/organizationSurveySection_model");
-const LearningPath = require("../../models/learningPath_model");
+const OrganizationSurveySection = require("../../models/Admin/Surveys/organizationSurveySection_model");
+const LearningPath = require("../../models/Admin/LearningPaths/learningPath_model");
 const { logActivity } = require("../../utils/activityLogger");
 
 /// aligned with new question and survey models, with adapter for `elements`
 const mongoose = require("mongoose");
-const ForUserAssignment = require("../../models/forUserAssigments_model");
-const UserContentProgress = require("../../models/userContentProgress_model");
+const ForUserAssignment = require("../../models/Admin/forUserAssigments_model");
+const UserContentProgress = require("../../models/User/userContentProgress_model");
 
 const createSurvey = async (req, res) => {
   let session;

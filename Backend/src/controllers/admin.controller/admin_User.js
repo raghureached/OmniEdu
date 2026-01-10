@@ -1,12 +1,11 @@
 const mongoose = require("mongoose");
 const createCsvWriter = require('csv-writer').createObjectCsvStringifier;
-const UserProfile = require("../../models/userProfiles_model");
-const OrganizationRole = require("../../models/organizationRoles_model");
-const Team = require("../../models/teams_model");
-const SubTeam = require("../../models/subTeams_model");
+const UserProfile = require("../../models/User/userProfiles_model");
+const Team = require("../../models/Admin/GroupsOrTeams/teams_model");
+const SubTeam = require("../../models/Admin/GroupsOrTeams/subTeams_model");
 const Designation = require("../../models/desginations_model");
-const User = require("../../models/users_model");
-const Organization = require("../../models/organization_model");
+const User = require("../../models/User/users_model");
+const Organization = require("../../models/globalAdmin/Organization/organization_model");
 const { logActivity } = require("../../utils/activityLogger");
 // --- Validation helpers ---
 async function ensureActiveTeam(teamId) {
@@ -588,7 +587,7 @@ const getUserbyId = async (req, res) => {
       designation,
       team,
       subTeam,
-      organizationRole,
+      
     ] = await Promise.all([
       UserProfile.findOne({ user_id: user.uuid }).lean(),
       null, // placeholder for designation
@@ -608,12 +607,10 @@ const getUserbyId = async (req, res) => {
       designationDoc,
       teamDoc,
       subTeamDoc,
-      organizationRoleDoc,
     ] = await Promise.all([
       Designation.findById(profile.designation_id).lean(),
       Team.findById(profile.team_id).lean(),
       SubTeam.findById(profile.sub_team_id).lean(),
-      OrganizationRole.findById(profile.organization_roles_id).lean(),
     ]);
 
     if (!designationDoc) {
@@ -634,12 +631,6 @@ const getUserbyId = async (req, res) => {
         message: "Sub team not found",
       });
     }
-    if (!organizationRoleDoc) {
-      return res.status(404).json({
-        isSuccess: false,
-        message: "Organization role not found",
-      });
-    }
 
     // Compose the final user data object
     const result = {
@@ -648,7 +639,6 @@ const getUserbyId = async (req, res) => {
       designation: designationDoc,
       team: teamDoc,
       sub_team: subTeamDoc,
-      organization_role: organizationRoleDoc,
     };
     return res.status(200).json({
       isSuccess: true,

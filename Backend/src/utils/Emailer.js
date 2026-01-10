@@ -1,5 +1,5 @@
 import Mailjet from "node-mailjet";
-import User from "./../models/users_model.js"
+import User from "./../models/User/users_model.js"
 const mailjet = new Mailjet({
   apiKey: process.env.MAILJET_API_KEY,
   apiSecret: process.env.MAILJET_SECRET_KEY,

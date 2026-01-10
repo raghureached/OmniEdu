@@ -362,7 +362,7 @@ const AnalyticsPop = ({ isOpen, onClose, data, loading, hideUserName = false, an
                 <div className="analytics-modal-header">
                     <div>
                         <h2 className="analytics-modal-title">
-                            title
+                            {title}
                         </h2>
                         <p className="analytics-modal-subtitle">
                             {analyticsType === 'learningPath' 

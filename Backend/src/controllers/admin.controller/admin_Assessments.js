@@ -1,14 +1,14 @@
-const OrganizationAssessments = require("../../models/organizationAssessments_model")
-const OrganizationAssessmentQuestion = require("../../models/organizationAssessmentQuestions_model")
+const OrganizationAssessments = require("../../models/Admin/Assessments/organizationAssessments_model")
+const OrganizationAssessmentQuestion = require("../../models/Admin/Assessments/organizationAssessmentQuestions_model")
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const mongoose = require("mongoose");
 const csv = require("csv-parser");
 const { logActivity } = require("../../utils/activityLogger");
-const ForUserAssignment = require("../../models/forUserAssigments_model");
-const UserContentProgress = require("../../models/userContentProgress_model");
-const LearningPath = require("../../models/learningPath_model");
+const ForUserAssignment = require("../../models/Admin/forUserAssigments_model");
+const UserContentProgress = require("../../models/User/userContentProgress_model");
+const LearningPath = require("../../models/Admin/LearningPaths/learningPath_model");
 
 const UPLOADS_DIR = path.join(__dirname, '../../../uploads');
 if (!fs.existsSync(UPLOADS_DIR)) {

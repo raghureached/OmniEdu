@@ -1,13 +1,12 @@
-const User = require('../../models/users_model');
-const UserProfile = require('../../models/userProfiles_model');
-const Organization = require('../../models/organization_model');
+const User = require('../../models/User/users_model');
+const Organization = require('../../models/globalAdmin/Organization/organization_model');
 const Leaderboard = require('../../models/leaderboard.model');
-const adminTicket = require('../../models/adminTicket');
-const userTickets = require('../../models/userTickets');
-const GlobalAssignment = require('../../models/global_Assignment');
-const GlobalModule = require('../../models/globalModule_model');
-const GlobalAssessment = require('../../models/globalAssessments_model');
-const GlobalSurvey = require('../../models/global_surveys_model');
+const adminTicket = require('../../models/Admin/Tickets/adminTicket');
+const userTickets = require('../../models/User/userTickets');
+const GlobalAssignment = require('../../models/globalAdmin/Assignments/global_Assignment');
+const GlobalModule = require('../../models/globalAdmin/Module/globalModule_model');
+const GlobalAssessment = require('../../models/globalAdmin/Assessments/globalAssessments_model');
+const GlobalSurvey = require('../../models/globalAdmin/Surveys/global_surveys_model');
 
 /* ===========================
    DATE RANGE UTILS (SINGLE SOURCE)

@@ -1,15 +1,15 @@
 
-const Surveys = require("../../models/global_surveys_model");
-const GlobalAssessments = require("../../models/globalAssessments_model");
-const GlobalModule = require("../../models/globalModule_model");
+const Surveys = require("../../models/globalAdmin/Surveys/global_surveys_model");
+const GlobalAssessments = require("../../models/globalAdmin/Assessments/globalAssessments_model");
+const GlobalModule = require("../../models/globalAdmin/Module/globalModule_model");
 const Leaderboard = require("../../models/leaderboard.model");
-const LearningPath = require("../../models/learningPath_model");
-const Module = require("../../models/moduleOrganization_model");
-const OrganizationAssessments = require("../../models/organizationAssessments_model");
-const OrganizationSurveys = require("../../models/organizationSurveys_model");
-const UserContentProgress = require("../../models/userContentProgress_model");
-const UserProfile = require("../../models/userProfiles_model");
-const User = require("../../models/users_model");
+const LearningPath = require("../../models/Admin/LearningPaths/learningPath_model");
+const Module = require("../../models/Admin/Module/moduleOrganization_model");
+const OrganizationAssessments = require("../../models/Admin/Assessments/organizationAssessments_model");
+const OrganizationSurveys = require("../../models/Admin/Surveys/organizationSurveys_model");
+const UserContentProgress = require("../../models/User/userContentProgress_model");
+const UserProfile = require("../../models/User/userProfiles_model");
+const User = require("../../models/User/users_model");
 
 const getModule = async (req, res) => {
   try {

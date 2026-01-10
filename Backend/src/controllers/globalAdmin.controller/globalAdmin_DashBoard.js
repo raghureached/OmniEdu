@@ -1,6 +1,6 @@
 const { Types } = require('mongoose');
-const User = require("../../models/users_model");
-const Organization = require("../../models/organization_model");
+const User = require("../../models/User/users_model");
+const Organization = require("../../models/globalAdmin/Organization/organization_model");
 
 const getUserDistribution = async (req, res) => {
     try {

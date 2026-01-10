@@ -1,5 +1,5 @@
 const { default: mongoose } = require("mongoose");
-const GlobalModule = require("../../models/globalModule_model");
+const GlobalModule = require("../../models/globalAdmin/Module/globalModule_model");
 const { logActivity } = require("../../utils/activityLogger");
 
 const addContent = async (req, res) => {

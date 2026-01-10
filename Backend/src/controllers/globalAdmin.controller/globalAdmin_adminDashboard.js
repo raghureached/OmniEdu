@@ -1,5 +1,5 @@
-const Organization = require("../../models/organization_model");
-const AdminDashboardConfig = require("../../models/adminDashboardConfig_model");
+const Organization = require("../../models/globalAdmin/Organization/organization_model");
+const AdminDashboardConfig = require("../../models/globalAdmin/adminDashboardConfig_model");
 
 const updateAdminDashboardConfig = async(req,res)=>{
     try {

@@ -1,4 +1,4 @@
-const UserTicket = require("../../models/userTickets");
+const UserTicket = require("../../models/User/userTickets");
 const { logActivity } = require("../../utils/activityLogger");
 const mongoose = require("mongoose");
 

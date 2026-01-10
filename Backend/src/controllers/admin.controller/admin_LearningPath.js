@@ -1,6 +1,6 @@
-const ForUserAssignment = require("../../models/forUserAssigments_model");
-const LearningPath = require("../../models/learningPath_model");
-const UserContentProgress = require("../../models/userContentProgress_model");
+const ForUserAssignment = require("../../models/Admin/forUserAssigments_model");
+const LearningPath = require("../../models/Admin/LearningPaths/learningPath_model");
+const UserContentProgress = require("../../models/User/userContentProgress_model");
 
 const addLearningPath = async (req, res) => {
   try {

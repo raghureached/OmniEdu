@@ -1,4 +1,4 @@
-const UserContentProgress = require("../../models/userContentProgress_model")
+const UserContentProgress = require("../../models/User/userContentProgress_model")
 
 const getUserActivity = async(req,res)=>{
   try {

@@ -1,4 +1,4 @@
-const Role = require("../models/globalRoles_model");
+const Role = require("../models/globalAdmin/Roles/globalRoles_model");
 
 const getPermissions = async (req, res) => {
     try {

@@ -1,4 +1,4 @@
-const OrganizationAssessmentsAttemps = require("../../models/organizationAssessmentsAttemps_model")
+const OrganizationAssessmentsAttemps = require("../../models/Admin/Assessments/organizationAssessmentsAttemps_model")
 
 const updateAssessmentAttempt = async(req,res)=>{
     try {

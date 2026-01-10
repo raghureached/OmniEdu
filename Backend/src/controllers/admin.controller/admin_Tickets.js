@@ -1,4 +1,4 @@
-const AdminTicket = require("../../models/adminTicket");
+const AdminTicket = require("../../models/Admin/Tickets/adminTicket");
 const mongoose = require("mongoose");
 const { logActivity } = require("../../utils/activityLogger");
 /**

@@ -1,10 +1,10 @@
-const Module = require("../../models/moduleOrganization_model");
-const UserContentProgress = require("../../models/userContentProgress_model");
-const User = require("../../models/users_model");
-const Team = require("../../models/teams_model");
-const SubTeam = require("../../models/subTeams_model");
-const Organization = require("../../models/organization_model");
-const ForUserAssignment = require("../../models/forUserAssigments_model");
+const Module = require("../../models/Admin/Module/moduleOrganization_model");
+const UserContentProgress = require("../../models/User/userContentProgress_model");
+const User = require("../../models/User/users_model");
+const Team = require("../../models/Admin/GroupsOrTeams/teams_model");
+const SubTeam = require("../../models/Admin/GroupsOrTeams/subTeams_model");
+const Organization = require("../../models/globalAdmin/Organization/organization_model");
+const ForUserAssignment = require("../../models/Admin/forUserAssigments_model");
 const mongoose = require("mongoose");
 
 // Get organization creation date
@@ -42,11 +42,11 @@ const getOrganizationCreationDate = async (req, res) => {
         });
     }
 };
-const OrganizationAssessmentsAttemps = require("../../models/organizationAssessmentsAttemps_model");
-const OrganizationAssessments = require("../../models/organizationAssessments_model");
-const OrganizationSurveys = require("../../models/organizationSurveys_model");
-const OrganizationSurveyResponses = require("../../models/organizationSurveyResponses_model");
-const LearningPath = require("../../models/learningPath_model");
+const OrganizationAssessmentsAttemps = require("../../models/Admin/Assessments/organizationAssessmentsAttemps_model");
+const OrganizationAssessments = require("../../models/Admin/Assessments/organizationAssessments_model");
+const OrganizationSurveys = require("../../models/Admin/Surveys/organizationSurveys_model");
+const OrganizationSurveyResponses = require("../../models/Admin/Surveys/organizationSurveyResponses_model");
+const LearningPath = require("../../models/Admin/LearningPaths/learningPath_model");
 
 // Get content counts for dashboard (no time filtering)
 const getContentCountsAll = async (req, res) => {
@@ -405,7 +405,7 @@ const getCourseDistribution = async (req, res) => {
             const teamIds = [...new Set(filtered.map(m => m.team).filter(Boolean))];
             
             // Fetch team names
-            const Team = require('../../models/teams_model');
+            const Team = require('../../models/Admin/GroupsOrTeams/teams_model');
             const teams = await Team.find({ _id: { $in: teamIds } }).select('name');
             const teamNames = teams.map(t => t.name);
             
@@ -432,7 +432,7 @@ const getCourseDistribution = async (req, res) => {
             const teamIds = [...new Set(filtered.map(m => m.team).filter(Boolean))];
             
             // Fetch team names
-            const Team = require('../../models/teams_model');
+            const Team = require('../../models/Admin/GroupsOrTeams/teams_model');
             const teams = await Team.find({ _id: { $in: teamIds } }).select('name');
             const teamNames = teams.map(t => t.name);
 

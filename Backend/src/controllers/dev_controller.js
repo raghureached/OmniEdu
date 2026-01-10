@@ -1,7 +1,7 @@
-const AdminDashboardConfig = require("../models/adminDashboardConfig_model");
+const AdminDashboardConfig = require("../models/globalAdmin/adminDashboardConfig_model");
 const GlobalAdmin = require("../models/globalAdmin_model");
-const Plan = require("../models/plans_model");
-const userDashBoardConfig = require("../models/userDashBoardConfig_model");
+const Plan = require("../models/globalAdmin/plans_model");
+const userDashBoardConfig = require("../models/globalAdmin/userDashBoardConfig_model");
 
 const addGlobalAdmin = async(req,res)=>{
     try {

@@ -1,5 +1,5 @@
 const ForAdminMessage = require("../../models/messageforAdmin");
-const Organization = require("../../models/organization_model");
+const Organization = require("../../models/globalAdmin/Organization/organization_model");
 const mongoose = require("mongoose");
 
 // Fetch Global Admin -> Admin messages for the current admin's organization

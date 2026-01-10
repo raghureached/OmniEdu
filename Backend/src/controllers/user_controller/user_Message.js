@@ -1,7 +1,5 @@
 const ForUserMessage = require("../../models/messageForUser");
-const UserProfile = require("../../models/userProfiles_model");
-const User = require("../../models/users_model");
-const logUserActivity = require("./user_activity");
+
 
 const getMessage = async (req, res) => {
   try {

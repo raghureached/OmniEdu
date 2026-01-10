@@ -1,5 +1,5 @@
 const cron = require("node-cron");
-const Organization = require("../models/organization_model");
+const Organization = require("../models/globalAdmin/Organization/organization_model");
 function startSubscriptionUpdater() {
 
   cron.schedule("0 12 * * *", async () => {

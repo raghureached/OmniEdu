@@ -1,4 +1,4 @@
-const OrganizationDocument = require("../../models/documentOrganization_model");
+const OrganizationDocument = require("../../models/Admin/Document/documentOrganization_model");
 
 
 const addDocument = async (req, res) => {

@@ -1,6 +1,6 @@
 const Notification = require("../../models/Notification_model")
-const UserContentProgress = require("../../models/userContentProgress_model")
-const UserProfile = require("../../models/userProfiles_model")
+const UserContentProgress = require("../../models/User/userContentProgress_model")
+const UserProfile = require("../../models/User/userProfiles_model")
 
 
 

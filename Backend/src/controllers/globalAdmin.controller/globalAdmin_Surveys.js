@@ -1,10 +1,9 @@
 const SurveyResponses = require("../../models/global_surveyResponses_model");
-const Surveys = require("../../models/global_surveys_model");
-const GlobalSurveyQuestion = require("../../models/global_surveys_Questions_model");
+const Surveys = require("../../models/globalAdmin/Surveys/global_surveys_model");
+const GlobalSurveyQuestion = require("../../models/globalAdmin/Surveys/global_surveys_Questions_model");
 const { v4: uuidv4 } = require("uuid");
 const { logActivity } = require("../../utils/activityLogger");
-const GlobalSurveyFeedback = require("../../models/global_surveys_feedback");
-const GlobalSurveySection = require("../../models/globalSurvey_Section_model");
+const GlobalSurveySection = require("../../models/globalAdmin/Surveys/globalSurvey_Section_model");
 
 
 /// aligned with new question and survey models, with adapter for `elements`

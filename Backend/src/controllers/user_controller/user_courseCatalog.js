@@ -1,8 +1,8 @@
-const GlobalAssingnment = require("../../models/global_Assignment");
-const GlobalModule = require("../../models/globalModule_model");
-const GlobalAssessments = require("../../models/globalAssessments_model");
-const Surveys = require("../../models/global_surveys_model");
-const UserContentProgress = require("../../models/userContentProgress_model");
+const GlobalAssingnment = require("../../models/globalAdmin/Assignments/global_Assignment");
+const GlobalModule = require("../../models/globalAdmin/Module/globalModule_model");
+const GlobalAssessments = require("../../models/globalAdmin/Assessments/globalAssessments_model");
+const Surveys = require("../../models/globalAdmin/Surveys/global_surveys_model");
+const UserContentProgress = require("../../models/User/userContentProgress_model");
 
 const getCatalog = async (req, res) => {
   try {

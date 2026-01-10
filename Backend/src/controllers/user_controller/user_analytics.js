@@ -1,14 +1,10 @@
-
-const adminTicket = require("../../models/adminTicket");
-const ForUserAssignment = require("../../models/forUserAssigments_model");
 const Leaderboard = require("../../models/leaderboard.model");
-const OrganizationAssessmentsAttemps = require("../../models/organizationAssessmentsAttemps_model");
-const UserContentProgress = require("../../models/userContentProgress_model");
-const UserProfile = require("../../models/userProfiles_model");
-const User = require("../../models/users_model");
-const userTickets = require("../../models/userTickets");
-const WeeklyActivity = require("../../models/userWeekly_activity_model");
-const weeklyProgress = require("../../models/userWeekly_activity_model");
+const OrganizationAssessmentsAttemps = require("../../models/Admin/Assessments/organizationAssessmentsAttemps_model");
+const UserContentProgress = require("../../models/User/userContentProgress_model");
+const UserProfile = require("../../models/User/userProfiles_model");
+const User = require("../../models/User/users_model");
+const WeeklyActivity = require("../../models/User/userWeekly_activity_model");
+const weeklyProgress = require("../../models/User/userWeekly_activity_model");
 
 // Helper function to get date range filter
 const getDateRangeFilter = (dateRange, startDate, endDate) => {

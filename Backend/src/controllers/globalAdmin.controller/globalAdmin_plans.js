@@ -1,4 +1,4 @@
-const Plan = require("../../models/plans_model");
+const Plan = require("../../models/globalAdmin/plans_model");
 const getPlans = async(req,res)=>{
     try {
         const plans = await Plan.find();

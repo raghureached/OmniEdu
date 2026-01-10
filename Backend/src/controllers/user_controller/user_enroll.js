@@ -1,5 +1,5 @@
-const UserContentProgress = require("../../models/userContentProgress_model");
-const Enrollments = require("../../models/userEnrolled_model");
+const UserContentProgress = require("../../models/User/userContentProgress_model");
+const Enrollments = require("../../models/User/userEnrolled_model");
 
 const enroll = async (req, res) => {
     try {

@@ -1,5 +1,5 @@
-const ForUserAssignment = require("../../models/forUserAssigments_model");
-const UserContentProgress = require("../../models/userContentProgress_model");
+const ForUserAssignment = require("../../models/Admin/forUserAssigments_model");
+const UserContentProgress = require("../../models/User/userContentProgress_model");
 
 const getUserAssignments = async (req, res) => {
   try {

@@ -1,7 +1,7 @@
 const { required } = require("joi");
 const ForAdminMessage = require("../../models/messageforAdmin");
 const {z} =require("zod");
-const User = require("../../models/users_model.js");
+const User = require("../../models/User/users_model.js");
 // const Notification = require("../../models/notification_model.js");
 const { logActivity } = require("../../utils/activityLogger");
 const ForUserMessage = require("../../models/messageForUser.js");

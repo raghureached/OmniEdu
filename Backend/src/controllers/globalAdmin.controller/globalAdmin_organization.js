@@ -1,12 +1,10 @@
-const Organization = require("../../models/organization_model");
-const Plan = require("../../models/plans_model");
+const Organization = require("../../models/globalAdmin/Organization/organization_model");
+const Plan = require("../../models/globalAdmin/plans_model");
 const { z } = require("zod");
 const { logActivity } = require("../../utils/activityLogger");
-const Role = require("../../models/globalRoles_model");
-const OrganizationRole = require("../../models/organizationRoles_model");
+const Role = require("../../models/globalAdmin/Roles/globalRoles_model");
 const mongoose = require("mongoose");
-const User = require("../../models/users_model");
-const UserProfile = require("../../models/userProfiles_model");
+const User = require("../../models/User/users_model");
 const { sendMail } = require("../../utils/Emailer");
 
 const STATUS_ENUM = ["Active", "Inactive", "Suspended"];
