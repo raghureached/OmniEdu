@@ -340,6 +340,8 @@
   border-radius: 10px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
+  position: relative; /* neutral stacking context so navbar dropdowns can overlay */
+  z-index: 0;
 }
 
 .activity-table {
@@ -361,7 +363,7 @@
   color: #374151;
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 1; /* keep above rows but below global overlays like navbar dropdowns */
 }
 
 .activity-table tr:hover {

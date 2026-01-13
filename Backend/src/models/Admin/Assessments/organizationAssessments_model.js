@@ -89,6 +89,8 @@ const OrgAssessmentsSchema = new mongoose.Schema({
 
   version: { type: Number, default: 1 },
 }, { timestamps: true, versionKey: "version" });
+OrgAssessmentsSchema.index({ organization_id: 1, uuid: 1 }, { unique: true });
+
 
 const OrganizationAssessments = mongoose.model("OrganizationAssessments", OrgAssessmentsSchema);
 module.exports = OrganizationAssessments;

@@ -147,8 +147,7 @@ const Assigned = () => {
         {currentItems.length > 0 ? (
           <div className="assigned-grid">
             {currentItems.map(item => (
-              
-              item?.assignment_id?.contentId && <CourseCard key={item.id} assign_id={item.assignment_id._id} data={item.assignment_id.contentId} status={item.status} progressPct={item.progress_pct} contentType={item.contentType}/>
+              (item?.assignment_id?.contentId || item?.enrollment_id?.contentId) && <CourseCard key={item.id} assign_id={item?.assignment_id?._id || item?.enrollment_id?._id} data={item?.assignment_id?.contentId || item?.enrollment_id?.contentId} status={item.status} progressPct={item.progress_pct} contentType={item.contentType}/>
             ))}
           </div>
         ) : (

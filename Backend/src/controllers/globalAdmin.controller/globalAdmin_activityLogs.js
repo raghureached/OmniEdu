@@ -1,5 +1,5 @@
 const ActivityLog = require("../../models/activityLog_model");
-const GlobalAdmin = require("../../models/globalAdmin_model");
+const GlobalAdmin = require("../../models/globalAdmin/globalAdmin_model");
 const mongoose = require("mongoose");
 
 const getActivityLogs = async (req, res) => {

@@ -120,6 +120,8 @@ const moduleSchema = new mongoose.Schema(
       timestamps: true,
     }
   );
+moduleSchema.index({ org_id: 1, status: 1, category: 1 });
+moduleSchema.index({ uuid: 1 }, { unique: true });
 
 const Module = mongoose.model("OrganizationModule", moduleSchema);
 

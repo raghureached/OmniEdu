@@ -136,7 +136,8 @@ const getAnalyticsData = async (req, res) => {
           _id: org._id,
           name: org.name,
           users: activeUsers,
-          activeUsersPercentage: Number(activeUsersPercentage)
+          activeUsersPercentage: Number(activeUsersPercentage),
+          totalUsers: totalOrgUsers
         };
       })
     );
@@ -188,17 +189,11 @@ const getOrganizationAnalytics = async (req, res) => {
       return res.status(404).json({ error: 'Organization not found' });
     }
 
-    /* ===========================
-       TOTAL USERS
-    ============================ */
 
     const totalUsers = await User.countDocuments({
       organization_id: organizationId
     });
 
-    /* ===========================
-       DAU (LAST 24 HOURS)
-    ============================ */
 
     const dau = await User.countDocuments({
       organization_id: organizationId,
@@ -218,10 +213,6 @@ const getOrganizationAnalytics = async (req, res) => {
         ? (((dau - previousDAU) / previousDAU) * 100).toFixed(1)
         : 0;
 
-    /* ===========================
-       MAU (RANGE-BASED)
-    ============================ */
-
     const mau = range
       ? await User.countDocuments({
           organization_id: organizationId,
@@ -240,10 +231,6 @@ const getOrganizationAnalytics = async (req, res) => {
       previousMAU > 0
         ? (((mau - previousMAU) / previousMAU) * 100).toFixed(1)
         : 0;
-
-    /* ===========================
-       STICKINESS
-    ============================ */
 
     const stickiness =
       mau > 0 ? ((dau / mau) * 100).toFixed(1) : 0;
@@ -344,7 +331,8 @@ const getOrganizationAnalytics = async (req, res) => {
           name: organization.name,
           users: mau,
           totalHours,
-          activeUsersPercentage: Number(activeUsersPercentage)
+          activeUsersPercentage: Number(activeUsersPercentage),
+          totalUsers
         }
       ],
       ticketsData,

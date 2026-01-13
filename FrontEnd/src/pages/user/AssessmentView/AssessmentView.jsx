@@ -20,6 +20,8 @@ const AssessmentView = ({ id }) => {
     const [feedbackComment, setFeedbackComment] = useState('');
     const [isAssessmentActive, setIsAssessmentActive] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [showTags, setShowTags] = useState(false);
+    const [showDesc, setShowDesc] = useState(false);
     // console.log(assignId)
     useEffect(() => {
         if(inProgress === "true" || inProgress){
@@ -193,7 +195,37 @@ const AssessmentView = ({ id }) => {
                                         <div className="user-mod-small-row">
                                             <div className="user-mod-card">
                                                 <h3>Overview</h3>
-                                                <p>{description.slice(0, 250)}{description.length > 250 ? '...' : ''}</p>
+                                                <p style={{ color: "#0f1724", fontWeight: 400 }}>
+                                                    {!showDesc ? (
+                                                        <>
+                                                            {description.length > 250 ? (
+                                                                <>
+                                                                    {description.slice(0, 250)}
+                                                                    <span
+                                                                        onClick={() => setShowDesc(true)}
+                                                                        style={{ color: '#5570f1', cursor: 'pointer', marginLeft: 4 }}
+                                                                        title="Show more"
+                                                                    >
+                                                                        ...
+                                                                    </span>
+                                                                </>
+                                                            ) : (
+                                                                description
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            {description}
+                                                            <span
+                                                                onClick={() => setShowDesc(false)}
+                                                                style={{ color: '#5570f1', cursor: 'pointer', marginLeft: 8 }}
+                                                                title="Show less"
+                                                            >
+                                                                Show less
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                </p>
                                             </div>
 
 
@@ -219,14 +251,21 @@ const AssessmentView = ({ id }) => {
                                                 <h3>Tags</h3>
                                                 <div className="user-mod-tags-wrap">
                                                     {tags.length ? (
-                                                        tags.slice(0, 3).map((t, idx) => (
+                                                        (showTags ? tags : tags.slice(0, 3)).map((t, idx) => (
                                                             <div key={idx} className="user-mod-tag">{t}</div>
                                                         ))
                                                     ) : (
                                                         <div className="user-mod-tag">No tags</div>
                                                     )}
                                                     {tags.length > 3 && (
-                                                        <div className="user-mod-tag">+{tags.length - 3} more</div>
+                                                        <span
+                                                            className="user-mod-tag"
+                                                            onClick={() => setShowTags(!showTags)}
+                                                            style={{ cursor: 'pointer' }}
+                                                            title={showTags ? 'Show less' : 'Show more'}
+                                                        >
+                                                            {showTags ? 'Show less' : `+${tags.length - 3} more`}
+                                                        </span>
                                                     )}
                                                 </div>
                                             </div>

@@ -1,5 +1,5 @@
 const { options } = require("../config/constants");
-const GlobalAdmin = require("../models/globalAdmin_model");
+const GlobalAdmin = require("../models/globalAdmin/globalAdmin_model");
 const GlobalRoles = require("../models/globalAdmin/Roles/globalRoles_model");
 const UserProfile = require("../models/User/userProfiles_model");
 const User = require("../models/User/users_model");

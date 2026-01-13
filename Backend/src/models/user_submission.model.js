@@ -15,7 +15,7 @@ const submissionSchema = new mongoose.Schema({
     refPath:{
         type: String,
         required:true,
-        enum:["Module","GlobalModule"]
+        enum:["OrganizationModule","GlobalModule"]
     },
     submissionDate:{
         type: Date,

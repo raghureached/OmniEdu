@@ -34,6 +34,11 @@ const userContentProgressSchema = new mongoose.Schema(
 );
 
 userContentProgressSchema.index({ assignment_id: 1, user_id: 1 }, { unique: true });
+userContentProgressSchema.index({ user_id: 1, status: 1, updatedAt: -1 });
+userContentProgressSchema.index({ user_id: 1, updatedAt: -1 });
+userContentProgressSchema.index({ assignment_id: 1 });
+userContentProgressSchema.index({ enrollment_id: 1 });
+userContentProgressSchema.index({ contentId: 1 });
 
 const UserContentProgress = mongoose.model("UserContentProgress", userContentProgressSchema);
 

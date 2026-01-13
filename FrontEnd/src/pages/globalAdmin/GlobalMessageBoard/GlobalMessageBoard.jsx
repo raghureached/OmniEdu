@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import CustomLoader from "../../../components/common/Loading/CustomLoader";
 import { useNotification } from "../../../components/common/Notification/NotificationProvider";
 import CustomSelect from "../../../components/dropdown/DropDown";
+import { useConfirm } from "../../../components/ConfirmDialogue/ConfirmDialog";
 
 const GlobalMessageBoard = () => {
   const [newMessage, setNewMessage] = useState("");
@@ -14,6 +15,7 @@ const GlobalMessageBoard = () => {
   const [sendUsers,setSendUsers] = useState(false);
   const dispatch = useDispatch();
   const {showNotification} = useNotification();
+  const {confirm} = useConfirm();
 
   const { currentMessages, loading,posting, error } = useSelector(
     (state) => state.globalMessage
@@ -57,8 +59,16 @@ const GlobalMessageBoard = () => {
 }}
 
 
-  const handleDeleteMessage = (id) => {
+  const handleDeleteMessage = async(id) => {
     // console.log(id)
+    const confirmed = await confirm({
+      title: "Delete Message",
+      message: "Are you sure you want to delete this message?",
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      type: "danger",
+    })
+    if(!confirmed) return;
     dispatch(deleteMessage(id));
     showNotification({
     type: "success",

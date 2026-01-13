@@ -62,7 +62,7 @@ export const CourseCard = ({
       return;
     }
 
-    if (status === "enrolled" && isGlobal) {
+    if (status === "enrolled" ) {
       setLoading(true);
       await api.post(`/api/user/updateStatus/${assign_id}/in_progress`);
       await dispatch(fetchUserAssignments());

@@ -1,10 +1,10 @@
 const { getAssignment } = require("../controllers/admin.controller/admin_Assignment")
 const { getUserAssignments, getSchedule } = require("../controllers/user_controller/user_assignments")
-const { getModule, getAssessment, getSurvey, getLearningPath, markComplete, markCompleteLP, getInProgress, updateStatus, enrolledbyUser, getRecomended, getCompleted, getAssigned, getEnrolledModule, getEnrolledAssessment, getCompletedinLP, getLeaderboard, getLeaderboardinTeam, getWorkspace } = require("../controllers/user_controller/user_content")
+const { getModule, getAssessment, getSurvey, getLearningPath, markComplete, markCompleteLP, getInProgress, updateStatus, enrolledbyUser, getRecomended, getCompleted, getAssigned, getEnrolledModule, getEnrolledAssessment, getCompletedinLP, getLeaderboard, getLeaderboardinTeam, getWorkspace, submitSurvey } = require("../controllers/user_controller/user_content")
 const { getMessage } = require("../controllers/user_controller/user_Message")
-const { getProfile } = require("../controllers/user_controller/user_profile")
+const { getProfile, updateProfile, getDepartments } = require("../controllers/user_controller/user_profile")
 const { updateProgress, getUserProgress, getUserProgressById } = require("../controllers/user_controller/user_progress")
-const { getContentStats, getUserRewards, getNotification } = require("../controllers/user_controller/user_stats")
+const { getContentStats, getUserRewards, getNotification, markNotificationAsRead } = require("../controllers/user_controller/user_stats")
 const { 
   getAnalytics,
   updateLearningActivity,
@@ -30,6 +30,8 @@ const router = require("express").Router()
 
 
 router.route("/userProfile").get(getProfile)
+router.route("/updateProfile").post(updateProfile)
+router.route("/departments").get(getDepartments)
 
 /////////Assignments////////
 router.route("/getUserAssignments").get(getUserAssignments)
@@ -40,6 +42,9 @@ router.route("/getAssignment/:id").get(getAssignment)
 router.route("/updateProgress").post(updateProgress)
 router.route("/getUserProgress").get(getUserProgress)
 router.route("/getUserProgress/:id").get(getUserProgressById)
+
+//////// Notifications ////////
+router.route("/markNotificationAsRead/:notificationId").patch(markNotificationAsRead)
 
 ////////Message//////////
 router.route("/getMessages").get(getMessage)
@@ -72,6 +77,7 @@ router.route("/getLeaderboardinTeam").get(getLeaderboardinTeam)
 router.route("/updateAssessmentAttempt").post(updateAssessmentAttempt)
 router.route("/updateWeeklyProgress").post(updateLearningActivity)
 router.route("/getWorkspace").get(getWorkspace)
+router.route("/submitSurvey").post(submitSurvey)
 
 
 /////////STATS?/////////////

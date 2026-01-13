@@ -7,7 +7,8 @@ const SurveyPreview = ({
     onClose,
     formData,
     formElements,
-    feedback,embedded
+    feedback,embedded,
+    updateDB = false
 }) => {
     const [sectionPreviewIndex, setSectionPreviewIndex] = useState(0);
     const [previewResponses, setPreviewResponses] = useState({});
@@ -519,13 +520,15 @@ const isSurveyComplete = () => {
                 assessmentData={{
                     questions: formElements.filter(el => el.type === 'question'),
                     title: formData.title,
-                    feedback: feedback
+                    feedback: feedback,
+                    _id: formData._id
                 }}
                 answers={Object.entries(previewResponses)
                     .filter(([key]) => key !== '__feedbackText')
                     .map(([key, value]) => value)
                 }
                 timeSpent={elapsedTime}
+                updateDB={updateDB}
             />
         </div>
     );

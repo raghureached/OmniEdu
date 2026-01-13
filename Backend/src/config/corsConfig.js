@@ -17,9 +17,9 @@ const allowedOrigins = ['http://localhost:3000', 'https://omniedu-fe587.web.app'
 
 const corsMiddleware = cors({
   origin: allowedOrigins, // allowed origins or using "*" for all sites || whitelisted sites
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE","PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true, // if you use cookies or tokens
+  credentials: true, 
 });
 
 module.exports = corsMiddleware;

@@ -18,6 +18,11 @@
             default: Date.now
         }
     })
+    weeklyProgressSchema.index(
+  { userId: 1, date: 1 },
+  { unique: true }
+);
+
 
     const WeeklyActivity = mongoose.model("WeeklyActivity",weeklyProgressSchema)
     module.exports = WeeklyActivity 

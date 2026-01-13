@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import './SubmissionPopup.css';
 import { ThumbsUp, ThumbsDown, Send } from 'lucide-react';
 import api from '../../services/api';
+import { useNotification } from '../common/Notification/NotificationProvider';
+
 
 const SubmissionPopup = ({ isOpen, onClose, assessmentData, answers, timeSpent, currentAttempt, onRetake, previewMode = false, updateDB = true }) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -9,6 +11,7 @@ const SubmissionPopup = ({ isOpen, onClose, assessmentData, answers, timeSpent, 
   const [feedbackComment, setFeedbackComment] = useState('');
   const [scoreData, setScoreData] = useState({ passPercentage: 0, earnedPoints: 0, totalPoints: 0 });
   const [isCalculating, setIsCalculating] = useState(false);
+  const {notifySuccess} = useNotification()
 
   const calculateAndSetScore = async () => {
     setIsCalculating(true);
@@ -56,7 +59,7 @@ const SubmissionPopup = ({ isOpen, onClose, assessmentData, answers, timeSpent, 
         try {
           const res = await api.post(`/api/user/markComplete/${assessmentData._id}`, rewards);
           if (res.status === 201 || res.status === 200) {
-            alert("Assesment Marked Complete")
+            notifySuccess("Assesment Marked Complete")
           }
         } catch (error) {
           console.log(error)
@@ -73,7 +76,7 @@ const SubmissionPopup = ({ isOpen, onClose, assessmentData, answers, timeSpent, 
             result: passPercentage >= assessmentData.percentage_to_pass ? "pass" : "fail"
           });
           if (res.status === 201 || res.status === 200) {
-            alert("Assesment Updated")
+            notifySuccess("Assesment Updated")
           }
         } catch (error) {
           console.log(error)

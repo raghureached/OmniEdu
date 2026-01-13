@@ -32,6 +32,9 @@ const organizationAssessmentsAttempsSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+organizationAssessmentsAttempsSchema.index({ user_id: 1, createdAt: -1 });
+organizationAssessmentsAttempsSchema.index({ assessment_id: 1, createdAt: -1 });
+
 
 const OrganizationAssessmentsAttemps = mongoose.model("OrganizationAssessmentsAttemps", organizationAssessmentsAttempsSchema);
 module.exports = OrganizationAssessmentsAttemps;

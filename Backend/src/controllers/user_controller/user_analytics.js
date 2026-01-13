@@ -44,7 +44,7 @@ const getDateRangeFilter = (dateRange, startDate, endDate) => {
 
 const getStats = async (req, res) => {
   try {
-    const { dateRange = 'all', startDate, endDate } = req.query;
+    const { dateRange = '7d', startDate, endDate } = req.query;
     const dateFilter = getDateRangeFilter(dateRange, startDate, endDate);
 
     // For avgScore - Filter assessment attempts by date
@@ -79,7 +79,7 @@ const getStats = async (req, res) => {
     const completedCourses = totalAssignments.filter(a => a.status === "completed").length;
     const completionRate = totalCourses > 0 ?
       ((completedCourses / totalCourses) * 100).toFixed(2) : 0;
-    const newCourses = totalAssignments.filter(a => a.status === "assigned").length;
+    const newCourses = totalAssignments.filter(a => a.status === "assigned" || a.status === "enrolled").length;
 
     return res.status(200).json({
       isSuccess: true,
@@ -142,38 +142,46 @@ const courseAnalytics = async (req, res) => {
       },
     ])
       .lean()
+
     const totalCourses = totalAssignments.length;
-    const isLP = (ct) => (ct || "").toLowerCase().replace(' ', '') === "learningpath";
-    const assignedCourses = totalAssignments.filter((a) => a.status === "assigned").length;
+    const normalizeType = (ct) => String(ct || '').toLowerCase().replace(/\s+/g, '');
+    const getType = (a) => normalizeType(a?.contentType || a?.assignment_id?.contentType || a?.enrollment_id?.contentType);
+    const isLP = (ct) => normalizeType(ct) === "learningpath";
+    const assignedCourses = totalAssignments.filter((a) => a.status === "assigned" || a.status === "enrolled").length;
     const overdueCourses = totalAssignments.filter((a) => a.status === "overdue").length;
     const completedCourses = totalAssignments.filter((a) => a.status === "completed").length;
     const inProgressCourses = totalAssignments.filter((a) => a.status === "in_progress").length;
 
-    // Counts by type
-    const modulesCount = totalAssignments.filter((a) => a.contentType === "Module").length;
-    const assessmentsCount = totalAssignments.filter((a) => a.contentType === "Assessment").length;
-    const surveysCount = totalAssignments.filter((a) => a.contentType === "Survey").length;
-    const learningPathsCount = totalAssignments.filter((a) => isLP(a.contentType)).length;
-    const documentsCount = totalAssignments.filter((a) => a.contentType === "Document").length;
+    // Counts by type (normalized)
+    const modulesCount = totalAssignments.filter((a) => getType(a) === "module").length;
+    const assessmentsCount = totalAssignments.filter((a) => getType(a) === "assessment").length;
+    const surveysCount = totalAssignments.filter((a) => getType(a) === "survey").length;
+    const learningPathsCount = totalAssignments.filter((a) => getType(a) === "learningpath").length;
+    const documentsCount = totalAssignments.filter((a) => getType(a) === "document").length;
 
     // Status breakdown per type
-    const modulesCompleted = totalAssignments.filter((a) => a.contentType === "Module" && a.status === "completed").length;
-    const modulesInProgress = totalAssignments.filter((a) => a.contentType === "Module" && a.status === "in_progress").length;
-    const assessmentsCompleted = totalAssignments.filter((a) => a.contentType === "Assessment" && a.status === "completed").length;
-    const assessmentsInProgress = totalAssignments.filter((a) => a.contentType === "Assessment" && a.status === "in_progress").length;
-    const surveysCompleted = totalAssignments.filter((a) => a.contentType === "Survey" && a.status === "completed").length;
-    const surveysInProgress = totalAssignments.filter((a) => a.contentType === "Survey" && a.status === "in_progress").length;
-    const learningPathsCompleted = totalAssignments.filter((a) => isLP(a.contentType) && a.status === "completed").length;
-    const learningPathsInProgress = totalAssignments.filter((a) => isLP(a.contentType) && a.status === "in_progress").length;
-    const documentsCompleted = totalAssignments.filter((a) => a.contentType === "Document" && a.status === "completed").length;
-    const documentsInProgress = totalAssignments.filter((a) => a.contentType === "Document" && a.status === "in_progress").length;
+    const modulesCompleted = totalAssignments.filter((a) => getType(a) === "module" && a.status === "completed").length;
+    const modulesInProgress = totalAssignments.filter((a) => getType(a) === "module" && a.status === "in_progress").length;
+    const modulesExpired = totalAssignments.filter((a) => getType(a) === "module" && a.status === "expired").length;
+    const assessmentsCompleted = totalAssignments.filter((a) => getType(a) === "assessment" && a.status === "completed").length;
+    const assessmentsInProgress = totalAssignments.filter((a) => getType(a) === "assessment" && a.status === "in_progress").length;
+    const assessmentsExpired = totalAssignments.filter((a) => getType(a) === "assessment" && a.status === "expired").length;
+    const surveysCompleted = totalAssignments.filter((a) => getType(a) === "survey" && a.status === "completed").length;
+    const surveysInProgress = totalAssignments.filter((a) => getType(a) === "survey" && a.status === "in_progress").length;
+    const surveysExpired = totalAssignments.filter((a) => getType(a) === "survey" && a.status === "expired").length;
+    const learningPathsCompleted = totalAssignments.filter((a) => getType(a) === "learningpath" && a.status === "completed").length;
+    const learningPathsInProgress = totalAssignments.filter((a) => getType(a) === "learningpath" && a.status === "in_progress").length;
+    const learningPathsExpired = totalAssignments.filter((a) => getType(a) === "learningpath" && a.status === "expired").length;
+    const documentsCompleted = totalAssignments.filter((a) => getType(a) === "document" && a.status === "completed").length;
+    const documentsInProgress = totalAssignments.filter((a) => getType(a) === "document" && a.status === "in_progress").length;
+    const documentsExpired = totalAssignments.filter((a) => getType(a) === "document" && a.status === "expired").length;
 
     const contentTypeBreakdown = [
-      { name: 'Modules', value: modulesCount, completed: modulesCompleted, inProgress: modulesInProgress },
-      { name: 'Assessments', value: assessmentsCount, completed: assessmentsCompleted, inProgress: assessmentsInProgress },
-      { name: 'Surveys', value: surveysCount, completed: surveysCompleted, inProgress: surveysInProgress },
-      { name: 'Learning Paths', value: learningPathsCount, completed: learningPathsCompleted, inProgress: learningPathsInProgress },
-      { name: 'Documents', value: documentsCount, completed: documentsCompleted, inProgress: documentsInProgress }
+      { name: 'Modules', value: modulesCount, completed: modulesCompleted, inProgress: modulesInProgress,notStarted: modulesCount - (modulesCompleted + modulesInProgress + modulesExpired) },
+      { name: 'Assessments', value: assessmentsCount, completed: assessmentsCompleted, inProgress: assessmentsInProgress,notStarted: assessmentsCount - (assessmentsCompleted + assessmentsInProgress + assessmentsExpired) },
+      { name: 'Surveys', value: surveysCount, completed: surveysCompleted, inProgress: surveysInProgress,notStarted: surveysCount - (surveysCompleted + surveysInProgress + surveysExpired) },
+      { name: 'Learning Paths', value: learningPathsCount, completed: learningPathsCompleted, inProgress: learningPathsInProgress,notStarted: learningPathsCount - (learningPathsCompleted + learningPathsInProgress + learningPathsExpired) },
+      { name: 'Documents', value: documentsCount, completed: documentsCompleted, inProgress: documentsInProgress,notStarted: documentsCount - (documentsCompleted + documentsInProgress + documentsExpired) }
     ]
     return res.status(200).json({
       isSuccess: true,

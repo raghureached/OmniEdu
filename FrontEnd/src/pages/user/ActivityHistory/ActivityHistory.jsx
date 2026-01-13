@@ -66,88 +66,14 @@ const ActivityHistory = () => {
   useEffect(() => {
     const fetchActivityLogs = async () => {
       const res = await api.get('/api/user/getActivity')
-      console.log(res)
+      // console.log(res)
       if (res.status === 200) {
         setActivities(res.data.data)
       }
     }
     fetchActivityLogs()
   }, []);
-  // // Mock data for activity history with all required fields
-  // const activities = [
-  //   { 
-  //     id: 1, 
-  //     type: 'course', 
-  //     name: 'Introduction to React', 
-  //     assignedOn: '2023-11-01', 
-  //     startedOn: '2023-11-05', 
-  //     completedOn: '2023-11-15', 
-  //     status: 'Completed', 
-  //     progress: 100, 
-  //     score: 95, 
-  //     credits: 10, 
-  //     stars: 4, 
-  //     badges: ['React Master', 'Quick Learner'],
-  //   },
-  //   { 
-  //     id: 2, 
-  //     type: 'assessment', 
-  //     name: 'JavaScript Fundamentals Quiz', 
-  //     assignedOn: '2023-11-05', 
-  //     startedOn: '2023-11-10', 
-  //     completedOn: '2023-11-10', 
-  //     status: 'Completed', 
-  //     progress: 100, 
-  //     score: 85, 
-  //     credits: 5, 
-  //     stars: 3, 
-  //     badges: ['JS Enthusiast'],
-  //   },
-  //   { 
-  //     id: 3, 
-  //     type: 'course', 
-  //     name: 'Advanced JavaScript Concepts', 
-  //     assignedOn: '2023-11-01', 
-  //     startedOn: '2023-11-05', 
-  //     completedOn: null, 
-  //     status: 'In Progress', 
-  //     progress: 30, 
-  //     score: null, 
-  //     credits: 0, 
-  //     stars: 0, 
-  //     badges: [],
-  //   },
-  //   { 
-  //     id: 4, 
-  //     type: 'certificate', 
-  //     name: 'Web Development Fundamentals', 
-  //     assignedOn: '2023-10-01', 
-  //     startedOn: '2023-10-05', 
-  //     completedOn: '2023-10-20', 
-  //     status: 'Completed', 
-  //     progress: 100, 
-  //     score: 92, 
-  //     credits: 20, 
-  //     stars: 5, 
-  //     badges: ['Web Dev Pro', 'Top Performer'],
-  //   },
-  //   { 
-  //     id: 5, 
-  //     type: 'course', 
-  //     name: 'CSS Grid Mastery', 
-  //     assignedOn: '2023-10-01', 
-  //     startedOn: '2023-10-10', 
-  //     completedOn: '2023-10-15', 
-  //     status: 'Completed', 
-  //     progress: 100, 
-  //     score: 92, 
-  //     credits: 8, 
-  //     stars: 4, 
-  //     badges: ['CSS Expert'],
-  //   },
-  // ];
-
-  // Activity types for filter
+  
   const activityTypes = [
     { value: 'all', label: 'All Activities' },
     { value: 'course', label: 'Courses' },
@@ -313,106 +239,9 @@ const ActivityHistory = () => {
     <div className="activity-history-container">
       <div className="activity-history-header">
         <p>Track your learning journey and achievements</p>
-        {/* {(statusFilter !== 'all' || typeFilter !== 'all' || timeFilter !== 'all') && (
-          <div className="active-filters-container">
-            {statusFilter !== 'all' && (
-              <div className="active-filter-badge">
-                Status: <strong>{statusFilter}</strong>
-                <button 
-                  className="clear-filter-btn" 
-                  onClick={() => setStatusFilter('all')}
-                  title="Clear status filter"
-                >
-                  ×
-                </button>
-              </div>
-            )}
-            {typeFilter !== 'all' && (
-              <div className="active-filter-badge">
-                Type: <strong>{typeFilter}</strong>
-                <button 
-                  className="clear-filter-btn" 
-                  onClick={() => setTypeFilter('all')}
-                  title="Clear type filter"
-                >
-                  ×
-                </button>
-              </div>
-            )}
-            {timeFilter !== 'all' && (
-              <div className="active-filter-badge">
-                Time: <strong>{timeFilter}</strong>
-                <button 
-                  className="clear-filter-btn" 
-                  onClick={() => {
-                    setTimeFilter('all');
-                    setShowCustomDateFilter(false);
-                    setStartDate('');
-                    setEndDate('');
-                  }}
-                  title="Clear time filter"
-                >
-                  ×
-                </button>
-              </div>
-            )}
-           
-          </div>
-        )} */}
+       
       </div>
 
-        {/* <div className="activity-filter-section">
-        <div className="activity-filter-row">
-          <div className="activity-filter-dropdown">
-            <label>Activity Type:</label>
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              {activityTypes.map(type => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="activity-filter-dropdown">
-            <label>Time Period:</label>
-            <select
-              value={timeFilter}
-              onChange={handleTimeFilterChange}
-            >
-              {timePeriods.map(period => (
-                <option key={period.value} value={period.value}>
-                  {period.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          {showCustomDateFilter && (
-            <div className="activity-custom-date-filter">
-              <div className="activity-date-input-group">
-                <label>From:</label>
-                <input 
-                  type="date" 
-                  value={startDate} 
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-              <div className="activity-date-input-group">
-                <label>To:</label>
-                <input 
-                  type="date" 
-                  value={endDate} 
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </div> */}
       <div className="act-log-controls">
         <div className="act-log-roles-search-bar">
           <Search size={16} color="#6b7280" className="act-log-search-icon" />
@@ -426,7 +255,7 @@ const ActivityHistory = () => {
         </div>
 
         <div className="act-log-controls-right">
-          <button className="act-log-control-btn" onClick={() => setFilterPanelOpen(true)}>
+          <button className="btn-secondary" onClick={() => setFilterPanelOpen(true)}>
             <Filter size={16} />
             Filter
           </button>
@@ -438,7 +267,7 @@ const ActivityHistory = () => {
         <div className="act-log-filter-panel">
           <div className="act-log-filter-header">
             <h3>Filters</h3>
-            <button className="act-log-btn-secondary" onClick={() => setFilterPanelOpen(false)}>
+            <button className="addOrg-close-btn" onClick={() => setFilterPanelOpen(false)}>
               <X size={16} />
             </button>
           </div>
@@ -518,19 +347,53 @@ const ActivityHistory = () => {
             )}
 
             <div className="act-log-filter-actions">
-              <button 
-                className="act-log-btn-secondary" 
-                onClick={() => {
-                  setTypeFilter('all');
-                  setStatusFilter('all');
-                  setTimeFilter('all');
-                  setStartDate('');
-                  setEndDate('');
-                  setShowCustomDateFilter(false);
-                }}
-              >
-                Clear All
-              </button>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', width: '100%' }}>
+                <button 
+                  className="btn-secondary" 
+                  onClick={() => {
+                    // Reset local filters
+                    setTypeFilter('all');
+                    setStatusFilter('all');
+                    setTimeFilter('all');
+                    setStartDate('');
+                    setEndDate('');
+                    setShowCustomDateFilter(false);
+                    // Clear URL params
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('type');
+                    url.searchParams.delete('status');
+                    url.searchParams.delete('time');
+                    url.searchParams.delete('startDate');
+                    url.searchParams.delete('endDate');
+                    window.history.replaceState({}, '', url.pathname);
+                    // Close panel
+                    setFilterPanelOpen(false);
+                  }}
+                >
+                  Clear
+                </button>
+                <button 
+                  className="btn-primary" 
+                  onClick={() => {
+                    const url = new URL(window.location.href);
+                    // Set params only when non-default
+                    if (typeFilter && typeFilter !== 'all') url.searchParams.set('type', typeFilter);
+                    else url.searchParams.delete('type');
+                    if (statusFilter && statusFilter !== 'all') url.searchParams.set('status', statusFilter);
+                    else url.searchParams.delete('status');
+                    if (timeFilter && timeFilter !== 'all') url.searchParams.set('time', timeFilter);
+                    else url.searchParams.delete('time');
+                    if (timeFilter === 'custom' && startDate) url.searchParams.set('startDate', startDate);
+                    else url.searchParams.delete('startDate');
+                    if (timeFilter === 'custom' && endDate) url.searchParams.set('endDate', endDate);
+                    else url.searchParams.delete('endDate');
+                    window.history.replaceState({}, '', `${url.pathname}${url.search}`);
+                    setFilterPanelOpen(false);
+                  }}
+                >
+                  Apply
+                </button>
+              </div>
             </div>
           </div>
         </div>

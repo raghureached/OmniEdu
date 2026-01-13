@@ -32,13 +32,14 @@ const LearningPathView = () => {
         const fetchLearningPath = async () => {
             const response = await api.get(`/api/user/getLearningPath/${learningPathId}`);
             setPropCourseData(response.data);
+            // console.log(response)
 
         };
 
         const fetchAssignment = async () => {
             const response = await api.get(`/api/user/getAssignmentSchedule/${assignId}`);
             setScheduleData(response.data);
-
+            // console.log(response)
         };
         fetchLearningPath();
         fetchAssignment();
@@ -70,9 +71,9 @@ const LearningPathView = () => {
     }
     const handleSectionClick = async (section, evt) => {
         if (section.locked) {
-            // Just ignore click if locked
             return;
         }
+        
 
         setActiveLesson(section);
         setLoadError(null);
@@ -88,29 +89,43 @@ const LearningPathView = () => {
     const sections = React.useMemo(() => {
         if (!sourceData || !Array.isArray(sourceData.lessons)) return [];
         const ordered = [...sourceData.lessons].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-        return ordered.map((l, idx) => {
+        const enforceOrder = !!sourceData.enforceOrder;
+        const now = new Date();
+        // First map to include computed fields
+        const prelim = ordered.map((l, idx) => {
             const type = (l.type || '').toLowerCase();
             const itemTitle = l.title || (typeof l.id === 'object' && l.id?.title) || `Item ${idx + 1}`;
-
-            // elementId that schedule uses – adjust if your lesson structure is different
-            const elementId = l.id?._id || l.id;   // IMPORTANT: this must match schedule.elementId
-            const assignOn = elementId ? scheduleMap.get(String(elementId)) : null;
-            const now = new Date();
-            const locked = assignOn && assignOn > now;
-
+            const elementId = l.id?._id || l.id;
+            const elementIdStr = elementId ? String(elementId) : '';
+            const assignOn = elementId ? scheduleMap.get(elementIdStr) : null;
+            const timeLocked = !!(assignOn && assignOn > now);
+            const isCompleted = Array.isArray(completedSet) && completedSet.includes(elementIdStr);
             return {
                 id: idx + 1,
                 title: itemTitle,
                 type: type === 'assessment' ? 'Assessment' : type === 'survey' ? 'Survey' : 'Module',
-                completed: false,
+                completed: isCompleted,
                 data: null,
                 uuid: l.uuid,
                 ref: l.id ?? null,
-                locked,
+                locked: timeLocked, // may be overridden by enforceOrder below
                 assignOn,
+                elementIdStr,
             };
         });
-    }, [sourceData, scheduleMap]);
+        // Apply enforceOrder: lock a lesson if any previous lesson is not completed
+        if (enforceOrder) {
+            let allPrevCompleted = true;
+            for (let i = 0; i < prelim.length; i++) {
+                const prevRuleLocked = !allPrevCompleted;
+                prelim[i].locked = prelim[i].locked || prevRuleLocked;
+                // update allPrevCompleted for next iteration
+                allPrevCompleted = allPrevCompleted && prelim[i].completed;
+            }
+        }
+        // Strip helper field
+        return prelim.map(({ elementIdStr, ...rest }) => rest);
+    }, [sourceData, scheduleMap, completedSet]);
     // console.log(sections)
 
     const courseData = React.useMemo(() => {
@@ -129,6 +144,7 @@ const LearningPathView = () => {
     }, [sourceData, sections]);
 
     const activeSection = courseData.sections[0];
+    // console.log(activeSection)
     React.useEffect(() => {
         (async () => {
             if (!activeSection || contentData) return;
@@ -224,12 +240,12 @@ const LearningPathView = () => {
                 }}>
 
                     {courseData.sections.map((section, idx) => {
-                        // console.log(section)
                         const isLocked = section.locked;
-                        const hoverText =
-                            isLocked && section.assignOn
+                        const hoverText = isLocked
+                            ? (section.assignOn
                                 ? `Available after ${section.assignOn.toLocaleString()}`
-                                : '';
+                                : 'Complete previous lesson to unlock')
+                            : '';
 
                         return (
                             <div key={section.id} style={{ marginBottom: '12px' }}>
@@ -270,9 +286,9 @@ const LearningPathView = () => {
                                                 justifyContent: 'space-between',
                                             }}
                                         >
-                                            {section.title} {isLocked && section.assignOn && (
-                                                <span style={{ fontSize: '11px', color: 'black' }}>
-                                                    <Lock size={16} />
+                                            {section.title} {isLocked && (
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                                    <Lock size={16} color="#b91c1c" />
                                                 </span>
                                             )}
                                         </div>
@@ -298,12 +314,12 @@ const LearningPathView = () => {
                                             >
                                                 {section.type}
                                             </span>
-                                            {section.locked && section.assignOn && (
+                                            {section.locked && (
                                                 <span style={{ fontSize: '11px', color: '#b91c1c' }}>
-                                                    Available after {section.assignOn.toLocaleString()}
+                                                    {hoverText}
                                                 </span>
                                             )}
-                                            {completedSet.includes(section.ref) && (
+                                            {section.completed && (
                                                 <CheckCircle size={14} color="#10b981" />
                                             )}
                                         </div>

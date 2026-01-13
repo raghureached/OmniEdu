@@ -25,15 +25,7 @@ const userProfileSchema = new mongoose.Schema(
         _id: false,
       },
     ],
-    custom_group_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "CustomGroup",
-      default: null,
-    },
-    department_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref:"Department"
-    },
+    
     employee_id: {
       type: String,
     },
@@ -60,6 +52,8 @@ const userProfileSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+userProfileSchema.index({ user_id: 1 }, { unique: true });
+
 
 const UserProfile = mongoose.model("UserProfile", userProfileSchema);
 

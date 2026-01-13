@@ -1,5 +1,5 @@
 
-const GlobalAdmin = require("../../models/globalAdmin_model");
+const GlobalAdmin = require("../../models/globalAdmin/globalAdmin_model");
 
 const getGlobalProfile = async (req, res) => {
     try {

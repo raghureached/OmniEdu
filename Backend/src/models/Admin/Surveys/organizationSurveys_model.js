@@ -46,6 +46,8 @@ const surveySchema = new mongoose.Schema({
     default: null,
   },
 }, { timestamps: true, versionKey: "version" });
+surveySchema.index({ organization_id: 1, uuid: 1 }, { unique: true });
+
 
 const OrganizationSurveys = mongoose.model("OrganizationSurvey", surveySchema);
 

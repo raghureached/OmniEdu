@@ -34,8 +34,8 @@ export const fetchNotifications = createAsyncThunk(
   'notifications/fetchNotifications',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get("api/user/getNotification")
-      console.log(response.data)
+      const response = await api.get("/api/user/getNotification")
+      // console.log(response.data)
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || 'Failed to fetch notifications');
@@ -48,8 +48,8 @@ export const markNotificationAsRead = createAsyncThunk(
   'notifications/markAsRead',
   async (notificationId, { rejectWithValue }) => {
     try {
-      const response = await api.patch(`/user/markNotificationAsRead/${notificationId}`);
-      return response.data;
+      const response = await api.patch(`/api/user/markNotificationAsRead/${notificationId}`);
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || 'Failed to mark notification as read');
     }
@@ -86,11 +86,9 @@ const notificationSlice = createSlice({
         state.error = action.payload || 'Failed to fetch notifications';
       })
       .addCase(markNotificationAsRead.fulfilled, (state, action) => {
-        const notification = state.items.find(item => item.id === action.payload);
-        if (notification && !notification.read) {
-          notification.read = true;
-          state.unreadCount = Math.max(0, state.unreadCount - 1);
-        }
+        const removedId = action.payload?._id || action.payload;
+        state.items = state.items.filter(item => item._id !== removedId);
+        state.unreadCount = state.items.filter(n => !n.read).length;
       });
   },
 });

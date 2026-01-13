@@ -47,7 +47,7 @@ const COLORS = {
 };
 
 
-const CHART_COLORS = ['#011F5B', '#1C88C7', '#10b981', '#f59e0b','#f5550bff'];
+const CHART_COLORS = ['#011F5B', '#1C88C7', '#10b981', '#f59e0b', '#f5550bff'];
 
 const LearnerAnalytics = () => {
     const [isLoading, setIsLoading] = useState(true);
@@ -83,7 +83,7 @@ const LearnerAnalytics = () => {
         badges: 0,
         credits: 0
     });
-    
+
     const [weeklyActivity, setWeeklyActivity] = useState([]);
     const navigate = useNavigate();
 
@@ -92,8 +92,8 @@ const LearnerAnalytics = () => {
             setIsLoading(true);
             try {
                 // Prepare date range parameters
-                const dateParams = timeRange === 'custom' 
-                    ? { 
+                const dateParams = timeRange === 'custom'
+                    ? {
                         dateRange: 'custom',
                         startDate: customDateRange.startDate,
                         endDate: customDateRange.endDate
@@ -146,7 +146,7 @@ const LearnerAnalytics = () => {
 
         fetchAllAnalytics();
     }, [timeRange, customDateRange.startDate, customDateRange.endDate]);
-    
+
     const MetricCard = ({ icon: Icon, label, value, subtitle, trend, color, delay = 0 }) => (
         <div
             className="metric-card-enhanced"
@@ -257,7 +257,7 @@ const LearnerAnalytics = () => {
                     </button>
                     <button
                         className={`view-toggle-button ${timeRange === '1M' ? 'active' : ''}`}
-                        onClick={() => { 
+                        onClick={() => {
                             setTimeRange('1M');
                             setShowCustomDatePicker(false);
                         }}
@@ -267,7 +267,7 @@ const LearnerAnalytics = () => {
                     </button>
                     <button
                         className={`view-toggle-button ${timeRange === '3M' ? 'active' : ''}`}
-                        onClick={() => { 
+                        onClick={() => {
                             setTimeRange('3M');
                             setShowCustomDatePicker(false);
                         }}
@@ -326,152 +326,152 @@ const LearnerAnalytics = () => {
                 )}
             </div>
             <div className='summary-grid'>
-            <div className="learning-dashboard-card learning-training-summary">
-                <h4 className="learning-card-title">Training Summary</h4>
-                <div className="learning-training-stats">
-                    <div className="learning-stat-item" onClick={() => navigate('/user/completed')}>
-                        <div className="learning-stat-icon completed">
-                            <FaCheckCircle />
+                <div className="learning-dashboard-card learning-training-summary">
+                    <h4 className="learning-card-title">Training Summary</h4>
+                    <div className="learning-training-stats">
+                        <div className="learning-stat-item" onClick={() => navigate('/user/completed')}>
+                            <div className="learning-stat-icon completed">
+                                <FaCheckCircle />
+                            </div>
+                            <div className="learning-stat-info">
+                                <span className="learning-stat-label">Completed</span>
+                                <span className="learning-stat-value">{moduleAnalytics.completedCourses}</span>
+                            </div>
                         </div>
-                        <div className="learning-stat-info">
-                            <span className="learning-stat-label">Completed</span>
-                            <span className="learning-stat-value">{moduleAnalytics.completedCourses}</span>
-                        </div>
-                    </div>
 
-                    <div className="learning-stat-item" onClick={() => navigate('/user/inProgress')}>
-                        <div className="learning-stat-icon in-progress">
-                            <FaHourglassHalf />
+                        <div className="learning-stat-item" onClick={() => navigate('/user/inProgress')}>
+                            <div className="learning-stat-icon in-progress">
+                                <FaHourglassHalf />
+                            </div>
+                            <div className="learning-stat-info">
+                                <span className="learning-stat-label">In Progress</span>
+                                <span className="learning-stat-value">{moduleAnalytics.inProgressCourses}</span>
+                            </div>
                         </div>
-                        <div className="learning-stat-info">
-                            <span className="learning-stat-label">In Progress</span>
-                            <span className="learning-stat-value">{moduleAnalytics.inProgressCourses}</span>
+                        <div className="learning-stat-item" >
+                            <div className="learning-stat-icon completion-rate">
+                                <FaChartLine />
+                            </div>
+                            <div className="learning-stat-info">
+                                <span className="learning-stat-label">Completion Rate</span>
+                                <span className="learning-stat-value">{stats.completionRate}</span>
+                            </div>
                         </div>
-                    </div>
-                    <div className="learning-stat-item" onClick={() => navigate('/user/completionRate')}>
-                        <div className="learning-stat-icon completion-rate">
-                            <FaChartLine />
-                        </div>
-                        <div className="learning-stat-info">
-                            <span className="learning-stat-label">Completion Rate</span>
-                            <span className="learning-stat-value">{stats.completionRate}</span>
-                        </div>
-                    </div>
 
-                    <div className="learning-stat-item" onClick={() => navigate('/user/assigned')}>
-                        <div className="learning-stat-icon not-started">
-                            <FaPlayCircle />
+                        <div className="learning-stat-item" onClick={() => navigate('/user/assigned')}>
+                            <div className="learning-stat-icon not-started">
+                                <FaPlayCircle />
+                            </div>
+                            <div className="learning-stat-info">
+                                <span className="learning-stat-label">Not Started</span>
+                                <span className="learning-stat-value">{moduleAnalytics.assignedCourses || 0}</span>
+                            </div>
                         </div>
-                        <div className="learning-stat-info">
-                            <span className="learning-stat-label">Not Started</span>
-                            <span className="learning-stat-value">{moduleAnalytics.assignedCourses || 0}</span>
-                        </div>
-                    </div>
 
-                    <div className="learning-stat-item" onClick={() => navigate('/user/assigned')}>
-                        <div className="learning-stat-icon overdue">
-                            <FaExclamationTriangle />
+                        <div className="learning-stat-item" onClick={() => navigate('/user/assigned')}>
+                            <div className="learning-stat-icon overdue">
+                                <FaExclamationTriangle />
+                            </div>
+                            <div className="learning-stat-info">
+                                <span className="learning-stat-label">Overdue</span>
+                                <span className="learning-stat-value">{moduleAnalytics.overdueCourses}</span>
+                            </div>
                         </div>
-                        <div className="learning-stat-info">
-                            <span className="learning-stat-label">Overdue</span>
-                            <span className="learning-stat-value">{moduleAnalytics.overdueCourses}</span>
-                        </div>
-                    </div>
 
-                    <div className="learning-stat-item">
-                        <div className="learning-stat-icon time-spent-total">
-                            <FaClock />
-                        </div>
-                        <div className="learning-stat-info">
-                            <span className="learning-stat-label">Time Spent</span>
-                            <span className="learning-stat-value">{stats.timeSpent}</span>
+                        <div className="learning-stat-item">
+                            <div className="learning-stat-icon time-spent-total">
+                                <FaClock />
+                            </div>
+                            <div className="learning-stat-info">
+                                <span className="learning-stat-label">Time Spent</span>
+                                <span className="learning-stat-value">{stats.timeSpent}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div className="learning-dashboard-card">
-                <h4 className="learning-card-title">Achievements & Leaderboard <span> <LuCalendarOff size={16} /> </span></h4>
-                
-                <div className="learning-achievements-container">
-                    <div style={{ display: "flex", gap: "10px", flexDirection: "column" }}>
-                        <div className="learning-achievement-item">
-                            <div className="learning-achievement-icon creditss">
-                                <FaMedal />
+                <div className="learning-dashboard-card">
+                    <h4 className="learning-card-title">Achievements & Leaderboard <span> <LuCalendarOff size={16} /> </span></h4>
+
+                    <div className="learning-achievements-container">
+                        <div style={{ display: "flex", gap: "10px", flexDirection: "column" }}>
+                            <div className="learning-achievement-item">
+                                <div className="learning-achievement-icon creditss">
+                                    <FaMedal />
+                                </div>
+                                <div className="learning-achievement-info">
+                                    <span className="learning-achievement-label">Credits</span>
+                                    <span className="learning-achievement-value">{rewards.credits}</span>
+                                </div>
                             </div>
-                            <div className="learning-achievement-info">
-                                <span className="learning-achievement-label">Credits</span>
-                                <span className="learning-achievement-value">{rewards.credits}</span>
+
+                            <div className="learning-achievement-item">
+                                <div className="learning-achievement-icon stars">
+                                    <FaStar />
+                                </div>
+                                <div className="learning-achievement-info">
+                                    <span className="learning-achievement-label">Stars</span>
+                                    <span className="learning-achievement-value">{rewards.stars}</span>
+                                </div>
+                            </div>
+
+                            <div className="learning-achievement-item">
+                                <div className="learning-achievement-icon badgesss">
+                                    <FaAward />
+                                </div>
+                                <div className="learning-achievement-info">
+                                    <span className="learning-achievement-label">Badges</span>
+                                    <span className="learning-achievement-value">{rewards.badges}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="learning-leaderboard-container">
+                            <div className="learning-leaderboard-item">
+                                <div className="learning-leaderboard-position">
+                                    <div className="learning-position-badge">
+                                        <FaMedal className="learning-medal-icon" />
+                                        <span className="learning-position-number">#{stats.teamPosition || 0}</span>
+                                    </div>
+                                    <div className="learning-position-info">
+                                        <span className="learning-position-label">Team Rank</span>
+                                        <span className="learning-position-total">of {stats.teamTotalParticipants || 0}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="learning-leaderboard-item">
+                                <div className="learning-leaderboard-position">
+                                    <div className="learning-position-badge">
+                                        <FaAward className="learning-medal-icon" />
+                                        <span className="learning-position-number">#{stats.leaderboardPosition || 0}</span>
+                                    </div>
+                                    <div className="learning-position-info">
+                                        <span className="learning-position-label">Organization Rank</span>
+                                        <span className="learning-position-total">of {stats.totalParticipants}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="learning-achievement-item">
-                            <div className="learning-achievement-icon stars">
-                                <FaStar />
-                            </div>
-                            <div className="learning-achievement-info">
-                                <span className="learning-achievement-label">Stars</span>
-                                <span className="learning-achievement-value">{rewards.stars}</span>
-                            </div>
-                        </div>
-
-                        <div className="learning-achievement-item">
-                            <div className="learning-achievement-icon badgesss">
-                                <FaAward />
-                            </div>
-                            <div className="learning-achievement-info">
-                                <span className="learning-achievement-label">Badges</span>
-                                <span className="learning-achievement-value">{rewards.badges}</span>
-                            </div>
-                        </div>
                     </div>
-                    <div className="learning-leaderboard-container">
-                        <div className="learning-leaderboard-item">
-                            <div className="learning-leaderboard-position">
-                                <div className="learning-position-badge">
-                                    <FaMedal className="learning-medal-icon" />
-                                    <span className="learning-position-number">#{stats.teamPosition || 0}</span>
-                                </div>
-                                <div className="learning-position-info">
-                                    <span className="learning-position-label">Team Rank</span>
-                                    <span className="learning-position-total">of {stats.teamTotalParticipants || 0}</span>
-                                </div>
-                            </div>
-                        </div>
+                    <p className="learning-motivational-text">Keep climbing the leaderboard!</p>
 
-                        <div className="learning-leaderboard-item">
-                            <div className="learning-leaderboard-position">
-                                <div className="learning-position-badge">
-                                    <FaAward className="learning-medal-icon" />
-                                    <span className="learning-position-number">#{stats.leaderboardPosition || 0}</span>
-                                </div>
-                                <div className="learning-position-info">
-                                    <span className="learning-position-label">Organization Rank</span>
-                                    <span className="learning-position-total">of {stats.totalParticipants}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                 </div>
-                <p className="learning-motivational-text">Keep climbing the leaderboard!</p>
-
-
-            </div>
             </div>
 
-            
+
             <AnalyticsPop
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
-                data={moduleAnalytics.contentTypeBreakdown}
+                data={moduleAnalytics}
                 loading={isLoading}
             />
             <div className="charts-grid">
                 <div className="chart-panel">
                     <div className="panel-header-enhanced">
-                        
+
                         <div>
-                            
+
                             <h3 className="panel-title">Course Completion Status</h3>
                             <p className="panel-description">Your learning progress overview</p>
                         </div>
@@ -513,73 +513,83 @@ const LearnerAnalytics = () => {
                             />
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr',gap:"10px" }}>
-                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/learning-hub',{
-                                state:{
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: "10px" }}>
+                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/learning-hub', {
+                                state: {
                                     contentType: moduleAnalytics.contentTypeBreakdown[0].name
                                 }
                             })}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                                     <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: CHART_COLORS[0] }} />
-                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>{moduleAnalytics.contentTypeBreakdown[0].name}</span>
+                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>{Number(moduleAnalytics.contentTypeBreakdown[0].value) || 0}  {moduleAnalytics.contentTypeBreakdown[0].name}</span>
                                 </div>
-                                <div style={{ fontSize: '28px', fontWeight: 700, color: '#111827' }}>
-                                    {Number(moduleAnalytics.contentTypeBreakdown[0].value) || 0} courses
+                                <div style={{ fontSize: '12px', fontWeight: 500, color: '#374151', textTransform: "uppercase" }}>
+                                    <p>{Number(moduleAnalytics.contentTypeBreakdown[0].notStarted) || 0} Not Started</p>
+                                    <p>{Number(moduleAnalytics.contentTypeBreakdown[0].inProgress) || 0} In Progress</p>
+                                    <p>{Number(moduleAnalytics.contentTypeBreakdown[0].completed) || 0} Completed</p>
                                 </div>
                             </div>
 
-                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/learning-hub',{
-                                state:{
+                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/learning-hub', {
+                                state: {
                                     contentType: moduleAnalytics.contentTypeBreakdown[1].name
                                 }
                             })}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                                     <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: CHART_COLORS[1] }} />
-                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>{moduleAnalytics.contentTypeBreakdown[1].name}</span>
+                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>{Number(moduleAnalytics.contentTypeBreakdown[1].value) || 0}  {moduleAnalytics.contentTypeBreakdown[1].name}</span>
                                 </div>
-                                <div style={{ fontSize: '28px', fontWeight: 700, color: '#111827' }}>
-                                    {Number(moduleAnalytics.contentTypeBreakdown[1].value) || 0} courses
+                                <div style={{ fontSize: '12px', fontWeight: 500, color: '#374151', textTransform: "uppercase" }}>
+                                    <p>{Number(moduleAnalytics.contentTypeBreakdown[1].notStarted) || 0} Not Started</p>
+                                    <p>{Number(moduleAnalytics.contentTypeBreakdown[1].inProgress) || 0} In Progress</p>
+                                    <p>{Number(moduleAnalytics.contentTypeBreakdown[1].completed) || 0} Completed</p>
                                 </div>
                             </div>
 
-                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/learning-hub',{
-                                state:{
+                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/learning-hub', {
+                                state: {
                                     contentType: moduleAnalytics.contentTypeBreakdown[2].name
                                 }
                             })}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                                     <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: CHART_COLORS[2] }} />
-                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>{moduleAnalytics.contentTypeBreakdown[2].name}</span>
+                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>{Number(moduleAnalytics.contentTypeBreakdown[2].value) || 0}  {moduleAnalytics.contentTypeBreakdown[2].name}</span>
                                 </div>
-                                <div style={{ fontSize: '28px', fontWeight: 700, color: '#111827' }}>
-                                    {Number(moduleAnalytics.contentTypeBreakdown[2].value) || 0} courses
+                                <div style={{ fontSize: '12px', fontWeight: 500, color: '#374151', textTransform: "uppercase" }}>
+                                    <p>{Number(moduleAnalytics.contentTypeBreakdown[2].notStarted) || 0} Not Started</p>
+                                    <p>{Number(moduleAnalytics.contentTypeBreakdown[2].inProgress) || 0} In Progress</p>
+                                    <p>{Number(moduleAnalytics.contentTypeBreakdown[2].completed) || 0} Completed</p>
                                 </div>
                             </div>
 
-                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/learning-hub',{
-                                state:{
+                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/learning-hub', {
+                                state: {
                                     contentType: moduleAnalytics.contentTypeBreakdown[3].name
                                 }
                             })}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                                     <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: CHART_COLORS[3] }} />
-                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>{moduleAnalytics.contentTypeBreakdown[3].name}</span>
+                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>{Number(moduleAnalytics.contentTypeBreakdown[3].value) || 0}  {moduleAnalytics.contentTypeBreakdown[3].name}</span>
                                 </div>
-                                <div style={{ fontSize: '28px', fontWeight: 700, color: '#111827' }}>
-                                    {Number(moduleAnalytics.contentTypeBreakdown[3].value) || 0} courses
+                                <div style={{ fontSize: '12px', fontWeight: 500, color: '#374151', textTransform: "uppercase" }}>
+                                    <p>{Number(moduleAnalytics.contentTypeBreakdown[3].notStarted) || 0} Not Started</p>
+                                    <p>{Number(moduleAnalytics.contentTypeBreakdown[3].inProgress) || 0} In Progress</p>
+                                    <p>{Number(moduleAnalytics.contentTypeBreakdown[3].completed) || 0} Completed</p>
                                 </div>
                             </div>
-                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/learning-hub',{
-                                state:{
+                            <div className="health-metric" style={{ background: 'transparent', padding: '16px 16px', cursor: 'pointer' }} onClick={() => navigate('/user/learning-hub', {
+                                state: {
                                     contentType: moduleAnalytics.contentTypeBreakdown[4].name
                                 }
                             })}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                                     <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: CHART_COLORS[4] }} />
-                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>{moduleAnalytics.contentTypeBreakdown[4].name}</span>
+                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>{Number(moduleAnalytics.contentTypeBreakdown[4].value) || 0}  {moduleAnalytics.contentTypeBreakdown[4].name}</span>
                                 </div>
-                                <div style={{ fontSize: '28px', fontWeight: 700, color: '#111827' }}>
-                                    {Number(moduleAnalytics.contentTypeBreakdown[4].value) || 0} courses
+                                <div style={{ fontSize: '12px', fontWeight: 500, color: '#374151', textTransform: "uppercase" }}>
+                                    <p>{Number(moduleAnalytics.contentTypeBreakdown[4].notStarted) || 0} Not Started</p>
+                                    <p>{Number(moduleAnalytics.contentTypeBreakdown[4].inProgress) || 0} In Progress</p>
+                                    <p>{Number(moduleAnalytics.contentTypeBreakdown[4].completed) || 0} Completed</p>
                                 </div>
                             </div>
                         </div>

@@ -10,6 +10,7 @@ import LoadingScreen from '../../../components/common/Loading/Loading';
 import { notifyError, notifySuccess } from '../../../utils/notification';
 
 const ModuleView = ({ id, lpId }) => {
+    // console.log(id)
     const navigate = useNavigate();
     const [data, setData] = useState(null);
     const [activeTab, setActiveTab] = useState('preview');
@@ -21,6 +22,8 @@ const ModuleView = ({ id, lpId }) => {
     const [feedbackReaction, setFeedbackReaction] = useState(null);
     const [feedbackComment, setFeedbackComment] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showTags, setShowTags] = useState(false);
+    const [showDesc, setShowDesc] = useState(false)
     const { moduleId, inProgress, assignId } = useParams();
     const [assignment, setAssignment] = useState(null);
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -273,8 +276,8 @@ const ModuleView = ({ id, lpId }) => {
     }
 
     const handleComplete = async () => {
-        if(data.submissionEnabled){
-            if(!submission){
+        if (data.submissionEnabled) {
+            if (!submission) {
                 alert("Please submit a file before marking the module complete");
                 return;
             }
@@ -421,7 +424,39 @@ const ModuleView = ({ id, lpId }) => {
 
                                             <div className="user-mod-card">
                                                 <h3>Overview</h3>
-                                                <p style={{ color: "#0f1724", fontWeight: "400" }}>{description.slice(0, 250)}...</p>
+                                                <p style={{ color: "#0f1724", fontWeight: "400" }}>
+                                                    {!showDesc ? (
+                                                        <>
+                                                            {description.length > 250 ? (
+                                                                <>
+                                                                    {description.slice(0, 250)}
+                                                                    <span
+                                                                        onClick={() => setShowDesc(true)}
+                                                                        style={{ color: "#5570f1", cursor: "pointer", marginLeft: 4 }}
+                                                                        title="Show more"
+                                                                    >
+                                                                        ...
+                                                                    </span>
+                                                                </>
+                                                            ) : (
+                                                                description
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            {description}
+                                                            <span
+                                                                onClick={() => setShowDesc(false)}
+                                                                style={{ color: "#5570f1", cursor: "pointer", marginLeft: 8 }}
+                                                                title="Show less"
+                                                            >
+                                                                Show less
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                </p>
+
+
                                             </div>
                                         </div>
                                     </div>
@@ -441,15 +476,22 @@ const ModuleView = ({ id, lpId }) => {
                                                 <h3>Tags</h3>
                                                 <div className="user-mod-tags-wrap">
                                                     {tags.length ? (
-
-                                                        tags.slice(0, 3).map((t, idx) => (
+                                                        (showTags ? tags : tags.slice(0, 3)).map((t, idx) => (
                                                             <div key={idx} className="user-mod-tag">{t}</div>
                                                         ))
                                                     ) : (
-                                                        <div className="user-mod-tag">No tags</div>
+                                                        <div className="user-mod-tag" style={{ color: '#64748b', fontStyle: 'italic' }}>No tags</div>
                                                     )}
+
                                                     {tags.length > 3 && (
-                                                        <span className="user-mod-tag">+{tags.length - 3} more</span>
+                                                        <span
+                                                            className="user-mod-tag"
+                                                            onClick={() => setShowTags(!showTags)}
+                                                            style={{ cursor: 'pointer' }}
+                                                            title={showTags ? 'Show less' : 'Show more'}
+                                                        >
+                                                            {showTags ? 'Show less' : `+${tags.length - 3} more`}
+                                                        </span>
                                                     )}
                                                 </div>
                                             </div>

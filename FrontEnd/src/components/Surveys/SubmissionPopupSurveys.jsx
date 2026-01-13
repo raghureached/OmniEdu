@@ -1,22 +1,42 @@
 import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
 import './SubmissionPopupSurveys.css';
 
-const SubmissionPopupSurveys = ({ isOpen, onClose, assessmentData, answers, timeSpent }) => {
+const SubmissionPopupSurveys = ({ isOpen, onClose, assessmentData, answers, timeSpent, updateDB = true, feedback }) => {
   const [isLoading, setIsLoading] = useState(true);
-
+  const [submitted, setSubmitted] = useState(false);
+  // console.log(assessmentData)
   useEffect(() => {
+    let timer;
+    const submit = async () => {
+      try {
+        if (updateDB && !submitted) {
+          await api.post('/api/user/submitSurvey', {
+            surveyId: assessmentData?._id,
+            surveyAssignmentId: assessmentData?.assignment_id || undefined,
+            answers,
+            timeSpent,
+            feedback,
+          });
+          setSubmitted(true);
+        }
+      } catch (e) {
+        // swallow error for UX; optionally add toast
+      } finally {
+        timer = setTimeout(() => setIsLoading(false), 1500);
+      }
+    };
     if (isOpen) {
-      // Simulate loading for 1 second (you can adjust this or replace with actual submission logic)
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-      }, 2000);
-      
-      return () => clearTimeout(timer);
-    } else {
-      // Reset loading state when popup is closed
       setIsLoading(true);
+      submit();
+    } else {
+      setIsLoading(true);
+      setSubmitted(false);
     }
-  }, [isOpen]);
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isOpen, updateDB, assessmentData?._id]);
 
   if (!isOpen) return null;
 
@@ -99,12 +119,7 @@ const SubmissionPopupSurveys = ({ isOpen, onClose, assessmentData, answers, time
             <div className="stat-item">
               <div className="stat-label">Questions Completed</div>
               <div className="stat-value">{answeredQuestions} of {totalQuestions}</div>
-              {/* <div className="stat-bar">
-                <div
-                  className="stat-progress"
-                  style={{ width: `${completionRate}%` }}
-                ></div>
-              </div> */}
+             
             </div>
            
               <div className="stat-item">
@@ -120,14 +135,6 @@ const SubmissionPopupSurveys = ({ isOpen, onClose, assessmentData, answers, time
               )}
             
           </div>
-
-          {/* Assessment Info */}
-          {/* <div className="submission-popup-info">
-            <h3>{assessmentData?.title || 'Assessment'}</h3>
-            {assessmentData?.description && (
-              <p>{assessmentData.description}</p>
-            )}
-          </div> */}
 
           {/* Actions */}
           <div className="submission-popup-actions">

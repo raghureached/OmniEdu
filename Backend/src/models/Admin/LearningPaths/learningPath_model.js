@@ -44,6 +44,9 @@ const LearningPathSchema = new mongoose.Schema(
     },
     { timestamps: true }
   );
+  LearningPathSchema.index({ "lessons.id": 1 });
+LearningPathSchema.index({ "lessons.uuid": 1 });
+LearningPathSchema.index({ organization_id: 1, status: 1 });
   
   const LearningPath = mongoose.model("LearningPath", LearningPathSchema);
   module.exports = LearningPath;

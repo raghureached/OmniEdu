@@ -356,7 +356,7 @@ const LearningHub = () => {
         </section>
         <section className="learning-learning-section">
           <div className="learning-section-header">
-            <h3>Assigned</h3>
+            <h3>Assigned / Enrolled</h3>
             {assigned.length > 0 && <span className="learning-view-all" onClick={() => navigate("/user/assigned")}>View All</span>}
           </div>
 

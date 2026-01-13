@@ -73,6 +73,9 @@ const assignmentSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+assignmentSchema.index({ assign_type: 1, contentId: 1 });
+assignmentSchema.index({ organization_id: 1, assign_on: -1 });
+assignmentSchema.index({ created_by: 1, assign_on: -1 });
 
 const ForUserAssignment = mongoose.model("ForUserAssignment", assignmentSchema);
 

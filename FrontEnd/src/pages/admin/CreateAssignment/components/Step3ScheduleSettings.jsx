@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import CustomSelect from '../../../../components/dropdown/DropDown';
 
-const Step3ScheduleSettings = ({ 
+const Step3ScheduleSettings = ({
   assignDate,
   setAssignDate,
   dueDate,
@@ -42,14 +42,11 @@ const Step3ScheduleSettings = ({
       selectedItem && Array.isArray(selectedItem.lessons)
     ) {
       if (!elementSchedules || elementSchedules.length === 0) {
-        const init = selectedItem.lessons.map(lesson => {
-          const lessonId = lesson.id || lesson._id;
-          return {
-            elementId: lessonId,
-            assign_on: '',
-            due_date: ''
-          };
-        });
+        const init = selectedItem.lessons.map(lesson => ({
+          elementId: String(lesson._id),
+          assign_on: assignDate || "",
+          due_date: dueDate || ""
+        }));
         setElementSchedules(init);
       }
     }
@@ -65,14 +62,27 @@ const Step3ScheduleSettings = ({
   }, [selectedContentType, selectedItem]);
 
   const updateElementSchedule = (elementId, field, value) => {
+    const idStr = String(elementId);
     setElementSchedules(prev => {
-      const exists = prev.find(e => e.elementId === elementId);
-      if (exists) {
-        return prev.map(e => e.elementId === elementId ? { ...e, [field]: value } : e);
+      const index = prev.findIndex(e => String(e.elementId) === idStr);
+
+      if (index !== -1) {
+        const copy = [...prev];
+        copy[index] = { ...copy[index], [field]: value };
+        return copy;
       }
-      return [...prev, { elementId, assign_on: '', due_date: '', [field]: value }];
+
+      return [
+        ...prev,
+        {
+          elementId: idStr,
+          assign_on: field === "assign_on" ? value : assignDate,
+          due_date: field === "due_date" ? value : dueDate
+        }
+      ];
     });
   };
+
 
   const getReminderHelpText = () => {
     if (dueDate) {
@@ -95,11 +105,11 @@ const Step3ScheduleSettings = ({
       '6m': 'Every 6 months after completion',
       '1y': 'Every 1 year after completion',
     };
-    
+
     if (recurringInterval === 'custom' && customIntervalValue) {
       return `Every ${customIntervalValue} ${customIntervalUnit} after completion`;
     }
-    
+
     return intervalMap[recurringInterval] || '';
   };
 
@@ -110,8 +120,8 @@ const Step3ScheduleSettings = ({
       <div className="schedule-grid">
         <div className="datetime-group">
           <label>Assign Date & Time</label>
-          <input 
-            type="datetime-local" 
+          <input
+            type="datetime-local"
             value={assignDate}
             onChange={(e) => setAssignDate(e.target.value)}
           />
@@ -119,8 +129,8 @@ const Step3ScheduleSettings = ({
         </div>
         <div className="datetime-group">
           <label>Due Date & Time</label>
-          <input 
-            type="datetime-local" 
+          <input
+            type="datetime-local"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
           />
@@ -138,8 +148,8 @@ const Step3ScheduleSettings = ({
             <div className="help-text">Users will receive an email when content is assigned</div>
           </div>
           <label className="toggle-switch">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked={sendEmail}
               onChange={(e) => setSendEmail(e.target.checked)}
             />
@@ -156,8 +166,8 @@ const Step3ScheduleSettings = ({
             <div className="help-text">{getReminderHelpText()}</div>
           </div>
           <label className="toggle-switch">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked={enableReminder}
               onChange={(e) => setEnableReminder(e.target.checked)}
             />
@@ -183,8 +193,8 @@ const Step3ScheduleSettings = ({
             <div className="help-text">Reset completion status and scores for selected users</div>
           </div>
           <label className="toggle-switch">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked={resetProgress}
               onChange={(e) => setResetProgress(e.target.checked)}
             />
@@ -198,9 +208,9 @@ const Step3ScheduleSettings = ({
               <div className="warning-box-icon">⚠️</div>
               <div className="warning-box-content">
                 <strong>Progress Reset Warning</strong>
-                <p>Selected users may have already started or completed this content. 
-                Progress will be reset to 0% (completion status, scores, certificates). 
-                Assignment history will be maintained in records.</p>
+                <p>Selected users may have already started or completed this content.
+                  Progress will be reset to 0% (completion status, scores, certificates).
+                  Assignment history will be maintained in records.</p>
               </div>
             </div>
           </div>
@@ -215,8 +225,8 @@ const Step3ScheduleSettings = ({
             <div className="help-text">Automatically reassign after user completion</div>
           </div>
           <label className="toggle-switch">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked={enableRecurring}
               onChange={(e) => setEnableRecurring(e.target.checked)}
             />
@@ -249,9 +259,9 @@ const Step3ScheduleSettings = ({
               <div className="custom-interval visible">
                 <label>Custom Recurrence</label>
                 <div className="custom-interval-input">
-                  <input 
-                    type="number" 
-                    min="1" 
+                  <input
+                    type="number"
+                    min="1"
                     placeholder="Number"
                     value={customIntervalValue}
                     onChange={(e) => setCustomIntervalValue(e.target.value)}
@@ -274,10 +284,10 @@ const Step3ScheduleSettings = ({
 
             <div className="info-box" style={{ marginTop: '15px' }}>
               <strong>ℹ️ Recurring Assignment Behavior</strong>
-              <p>• Progress will be automatically reset with each recurrence<br/>
-              • Email notifications will be sent with each new assignment<br/>
-              • Recurring continues indefinitely until user or content is deactivated<br/>
-              • Due date intervals will be maintained for each cycle</p>
+              <p>• Progress will be automatically reset with each recurrence<br />
+                • Email notifications will be sent with each new assignment<br />
+                • Recurring continues indefinitely until user or content is deactivated<br />
+                • Due date intervals will be maintained for each cycle</p>
             </div>
           </div>
         )}
@@ -299,10 +309,23 @@ const Step3ScheduleSettings = ({
                     if (!enabled) {
                       setElementSchedules([]);
                     } else if (
-                      selectedItem && Array.isArray(selectedItem.lessons) && (!elementSchedules || elementSchedules.length === 0)
+                      selectedItem && Array.isArray(selectedItem.lessons)
                     ) {
-                      const init = selectedItem.lessons.map(lesson => ({ elementId: lesson._id, assign_on: '', due_date: '' }));
-                      setElementSchedules(init);
+                      if (!elementSchedules || elementSchedules.length === 0) {
+                        const init = selectedItem.lessons.map(lesson => ({
+                          elementId: String(lesson._id),
+                          assign_on: assignDate || '',
+                          due_date: dueDate || ''
+                        }));
+                        setElementSchedules(init);
+                      } else {
+                        // Backfill any blank fields with top-level defaults
+                        setElementSchedules(prev => prev.map(es => ({
+                          ...es,
+                          assign_on: (es.assign_on && es.assign_on.toString().trim()) ? es.assign_on : (assignDate || ''),
+                          due_date: (es.due_date && es.due_date.toString().trim()) ? es.due_date : (dueDate || ''),
+                        })));
+                      }
                     }
                   }}
                 />
@@ -343,8 +366,8 @@ const Step3ScheduleSettings = ({
                 {usePerElementScheduling && Array.isArray(selectedItem?.lessons) && selectedItem.lessons.length > 0 ? (
                   <div style={{ display: 'grid', gap: 12 }}>
                     {selectedItem.lessons.map((lesson, idx) => {
-                      const lessonId = lesson.id || lesson._id;
-                      const sched = elementSchedules.find(e => e.elementId === lessonId) || {};
+                      const lessonId = String(lesson._id);
+                      const sched = elementSchedules.find(e => String(e.elementId) === lessonId) || {};
                       return (
                         <div key={lessonId} className="datetime-group">
                           <div style={{ fontWeight: 600, marginBottom: 8 }}>{idx + 1}. {lesson.title}</div>
@@ -353,17 +376,18 @@ const Step3ScheduleSettings = ({
                               <label>Assign Date & Time</label>
                               <input
                                 type="datetime-local"
-                                value={sched.assign_on || assignDate}
+                                value={sched.assign_on || ""}
                                 onChange={(e) => updateElementSchedule(lessonId, 'assign_on', e.target.value)}
                               />
+
                             </div>
                             <div>
                               <label>Due Date & Time</label>
                               <input
                                 type="datetime-local"
-                                value={sched.due_date || dueDate}
+                                value={sched.due_date || ""}
                                 onChange={(e) => updateElementSchedule(lessonId, 'due_date', e.target.value)}
-                                />
+                              />
                             </div>
                           </div>
                         </div>
@@ -382,12 +406,12 @@ const Step3ScheduleSettings = ({
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end',gap: '10px',marginTop: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
         <button className="btn-secondary" onClick={onBack} type="button">
-          <ChevronLeft size={16}/> Previous
+          <ChevronLeft size={16} /> Previous
         </button>
         <button className="btn-primary" onClick={onNext} type="button">
-          Next: Review & Assign <ChevronRight size={16}/>
+          Next: Review & Assign <ChevronRight size={16} />
         </button>
       </div>
     </div>

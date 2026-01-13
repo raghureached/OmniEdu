@@ -1,5 +1,5 @@
 const AdminDashboardConfig = require("../models/globalAdmin/adminDashboardConfig_model");
-const GlobalAdmin = require("../models/globalAdmin_model");
+const GlobalAdmin = require("../models/globalAdmin/globalAdmin_model");
 const Plan = require("../models/globalAdmin/plans_model");
 const userDashBoardConfig = require("../models/globalAdmin/userDashBoardConfig_model");
 

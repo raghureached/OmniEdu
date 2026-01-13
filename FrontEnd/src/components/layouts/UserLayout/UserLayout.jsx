@@ -99,7 +99,9 @@ const UserLayout = () => {
   };
 
   const handleNotificationClick = (notificationId) => {
+    console.log(notificationId)
     dispatch(markNotificationAsRead(notificationId));
+    navigate('/user/assigned')
   };
 
   const navigateToProfile = () => {
@@ -331,7 +333,7 @@ const UserLayout = () => {
                         <div
                           key={notification.id}
                           className={`user_notification_item ${notification.read ? 'user_notification_read' : ''}`}
-                          onClick={() => handleNotificationClick(notification.id)}
+                          onClick={() => handleNotificationClick(notification._id)}
                         >
                           <div className="user_notification_content">
                             <h5>{notification.title}</h5>

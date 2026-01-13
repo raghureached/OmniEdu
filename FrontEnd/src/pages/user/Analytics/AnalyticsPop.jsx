@@ -7,69 +7,88 @@ const AnalyticsPop = ({ isOpen, onClose,data,loading }) => {
     // console.log(data)
 
     useEffect(() => {
-        if (data && data.totalAssignments) {
-            // Transform the data to match the table structure
-            const transformedData = data.totalAssignments.map(item => {
-                // Handle start date edge cases
+        const items = Array.isArray(data?.totalAssignments)
+            ? data.totalAssignments
+            : (Array.isArray(data?.data?.totalAssignments) ? data.data.totalAssignments : []);
+        if (items.length > 0) {
+            const normalizeType = (t) => {
+                if (!t) return '';
+                const s = String(t).trim().toLowerCase().replace(/\s+/g, '');
+                if (s === 'learningpath') return 'Learning Path';
+                if (s === 'course' || s === 'module') return 'Module';
+                if (s === 'assessment' || s === 'quiz') return 'Assessment';
+                if (s === 'survey') return 'Survey';
+                if (s === 'document' || s === 'doc') return 'Document';
+                if (s === 'scorm') return 'SCORM';
+                return t;
+            };
+
+            const toDate = (d) => {
+                try { return d ? new Date(d).toLocaleDateString() : null; } catch { return null; }
+            };
+
+            const transformedData = items.map(item => {
+                const assn = item.assignment_id;
+                const enroll = item.enrollment_id;
+                const content = assn?.contentId || enroll?.contentId || {};
+
+                // Assigned/enrolled on
+                const assignedOn = toDate(assn?.assign_on) || toDate(enroll?.assign_on) || 'N/A';
+
+                // Started on
                 let startedOn = 'Not Started';
-                if (item.started_at) {
-                    startedOn = new Date(item.started_at).toLocaleDateString();
-                } else if (item.status === 'in_progress' || item.status === 'completed') {
-                    // If course is in progress or completed but no explicit start date, use assignment date or created date
-                    if (item.assignment_id?.assign_on) {
-                        startedOn = new Date(item.assignment_id.assign_on).toLocaleDateString();
-                    } else if (item.created_at) {
-                        startedOn = new Date(item.created_at).toLocaleDateString();
-                    } else if (item.assignment_id?.contentId?.created_at) {
-                        startedOn = new Date(item.assignment_id.contentId.created_at).toLocaleDateString();
-                    }
+                const startedCandidate = item.started_at || assn?.assign_on || enroll?.assign_on || item.created_at || content?.created_at || content?.createdAt;
+                if (item.status === 'in_progress' || item.status === 'completed') {
+                    startedOn = toDate(item.started_at) || toDate(assn?.assign_on) || toDate(enroll?.assign_on) || toDate(item.created_at) || toDate(content?.created_at) || 'Not Started';
+                } else {
+                    startedOn = toDate(item.started_at) || 'Not Started';
                 }
 
-                // Handle completion date edge cases
+                // Completed on
                 let completedOn = 'Not Completed';
                 if (item.completed_at) {
-                    completedOn = new Date(item.completed_at).toLocaleDateString();
+                    completedOn = toDate(item.completed_at) || 'Not Completed';
                 } else if (item.status === 'completed') {
-                    // If course is marked as completed but no explicit completion date, use last updated date
-                    if (item.updated_at) {
-                        completedOn = new Date(item.updated_at).toLocaleDateString();
-                    } else if (item.assignment_id?.contentId?.updated_at) {
-                        completedOn = new Date(item.assignment_id.contentId.updated_at).toLocaleDateString();
-                    } else {
-                        // Fallback: use current date if course is completed but no date found
-                        completedOn = new Date().toLocaleDateString();
-                    }
+                    completedOn = toDate(item.updated_at) || toDate(content?.updated_at) || toDate(content?.updatedAt) || toDate(new Date());
                 }
 
-                // Determine score based on content type
-                const contentType = item.assignment_id?.contentType || 'course';
-                const score = (contentType.toLowerCase() === 'assessment') ? (item.score || 0) : '-';
+                // Type and score
+                const rawType = item.contentType || assn?.contentType || enroll?.contentType || content?.type || '';
+                const contentType = normalizeType(rawType) || 'Module';
+                const score = contentType === 'Assessment' ? (item.score ?? '-') : '-';
 
                 return {
-                    contentType: contentType,
-                    resourceName: item.assignment_id?.contentId?.title || 'Unknown Resource',
-                    assignedOn: item.assignment_id?.assign_on ? new Date(item.assignment_id.assign_on).toLocaleDateString() : 'N/A',
-                    startedOn: startedOn,
-                    completedOn: completedOn,
-                    score: score,
+                    contentType,
+                    resourceName: content?.title || 'Unknown Resource',
+                    assignedOn,
+                    startedOn,
+                    completedOn,
+                    score,
                     status: item.status || 'not-started',
-                    assignedBy: item.assignment_id?.created_by?.name || 'System',
-
+                    assignedBy: assn?.created_by?.name || 'System',
                 };
             });
             setTableData(transformedData);
+        } else {
+            setTableData([]);
         }
     }, [data]);
     console.log(tableData)
     const getContentTypeIcon = (type) => {
-        switch (type?.toLowerCase()) {
+        const t = String(type || '').toLowerCase().replace(/\s+/g, '');
+        switch (t) {
+            case 'module':
             case 'course':
                 return <BookOpen size={16} />;
             case 'assessment':
                 return <ClipboardCheck size={16} />;
-            case 'assignment':
+            case 'survey':
                 return <FileText size={16} />;
-            case 'video':
+            case 'learningpath':
+                return <TrendingUp size={16} />;
+            case 'document':
+                return <FileText size={16} />;
+            case 'scorm':
                 return <Video size={16} />;
             default:
                 return <BookOpen size={16} />;
@@ -87,20 +106,27 @@ const AnalyticsPop = ({ isOpen, onClose,data,loading }) => {
         const statusMap = {
             'completed': 'status-completed',
             'in_progress': 'status-in-progress',
+            'assigned': 'status-not-started',
+            'enrolled': 'status-not-started',
             'not-started': 'status-not-started',
+            'expired': 'status-overdue',
             'overdue': 'status-overdue'
         };
         return statusMap[status] || 'status-not-started';
     };
 
     const getContentTypeBadge = (type) => {
+        const t = String(type || '').toLowerCase().replace(/\s+/g, '');
         const typeMap = {
+            'module': 'type-course',
             'course': 'type-course',
             'assessment': 'type-assessment',
-            'assignment': 'type-assignment',
-            'video': 'type-video'
+            'survey': 'type-assignment',
+            'learningpath': 'type-assignment',
+            'document': 'type-assignment',
+            'scorm': 'type-video'
         };
-        return typeMap[type?.toLowerCase()] || 'type-course';
+        return typeMap[t] || 'type-course';
     };
 
     const exportToCSV = () => {
@@ -125,8 +151,8 @@ const AnalyticsPop = ({ isOpen, onClose,data,loading }) => {
             item.assignedOn,
             item.startedOn,
             item.completedOn,
-            `${item.score}%`,
-            item.status.replace('-', ' '),
+            item.score === '-' ? '-' : `${item.score}%`,
+            String(item.status || '').replace('-', ' '),
             item.assignedBy,
         ]);
 
@@ -207,8 +233,7 @@ const AnalyticsPop = ({ isOpen, onClose,data,loading }) => {
                                         <th>Completed On</th>
                                         <th>Score(%)</th>
                                         <th>Status</th>
-                                        {/* <th>Assigned By</th> */}
-                                        {/* <th>Time Spent</th> */}
+                                        
                                     </tr>
                                 </thead>
                                 <tbody>

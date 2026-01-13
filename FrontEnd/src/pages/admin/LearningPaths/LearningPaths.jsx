@@ -33,7 +33,7 @@ const LearningPaths = () => {
   const filterPanelRef = useRef(null);
   const bulkPanelRef = useRef(null);
   const [showBulkAction, setShowBulkAction] = useState(false);
-  const confirm = useConfirm();
+  const {confirm} = useConfirm();
   const [tempFilters, setTempFilters] = useState({
     status: '',
     category: ''

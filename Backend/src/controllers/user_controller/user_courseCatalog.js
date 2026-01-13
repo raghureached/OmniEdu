@@ -67,7 +67,9 @@ const getCatalog = async (req, res) => {
     ]);
 
     const userProgressIds = new Set(
-      userProgress.map((p) => p.contentId.toString())
+      (Array.isArray(userProgress) ? userProgress : [])
+        .filter((p) => p && p.contentId)
+        .map((p) => p.contentId.toString())
     );
 
     // 5) decorate with type/model/who and inProgress

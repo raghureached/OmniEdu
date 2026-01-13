@@ -660,6 +660,7 @@ const AnalyticsViewNew = () => {
                     <th>Organization</th>
                     <th>Users</th>
                     <th>active users(%)</th>
+                    <th>Total Users</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -673,7 +674,7 @@ const AnalyticsViewNew = () => {
                       <td className="org-name">{org.name}</td>
                       <td>{formatNumber(org.users)}</td>
                       <td>{formatNumber(org.activeUsersPercentage)}</td>
-
+                      <td>{formatNumber(org.totalUsers)}</td>
                     </tr>
                   ))}
                 </tbody>

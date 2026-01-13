@@ -12,6 +12,8 @@ const SurveyView = ({ id }) => {
     const [activeTab, setActiveTab] = useState('preview');
     const [feedbackReaction, setFeedbackReaction] = useState(null); // 'like' | 'dislike' | null
     const [feedbackComment, setFeedbackComment] = useState('');
+    const [showTags, setShowTags] = useState(false);
+    const [showDesc, setShowDesc] = useState(false);
     // Initialize from incoming data
     useEffect(() => {
         const fetchData = async () => {
@@ -131,11 +133,21 @@ const SurveyView = ({ id }) => {
                                                 <h3>Tags</h3>
                                                 <div className="user-mod-tags-wrap">
                                                     {tags.length > 0 ? (
-                                                        tags.map((t, idx) => (
+                                                        (showTags ? tags : tags.slice(0, 3)).map((t, idx) => (
                                                             <div key={idx} className="user-mod-tag">{t}</div>
                                                         ))
                                                     ) : (
                                                         <div className="user-mod-tag" style={{ color: '#64748b', fontStyle: 'italic' }}>No tags</div>
+                                                    )}
+                                                    {tags.length > 3 && (
+                                                        <span
+                                                            className="user-mod-tag"
+                                                            onClick={() => setShowTags(!showTags)}
+                                                            style={{ cursor: 'pointer' }}
+                                                            title={showTags ? 'Show less' : 'Show more'}
+                                                        >
+                                                            {showTags ? 'Show less' : `+${tags.length - 3} more`}
+                                                        </span>
                                                     )}
                                                 </div>
                                             </div>
@@ -154,8 +166,37 @@ const SurveyView = ({ id }) => {
                                         <div className="user-mod-details">
                                             <div className="user-mod-card">
                                                 <h3>Overview</h3>
-                                                <p style={{ color: "#0f1724", fontWeight: "400" }}>{description.slice(0, 100)}<span style={{ color: "#0f1724", fontWeight: "400" }}>...</span></p>
-                                                
+                                                <p style={{ color: "#0f1724", fontWeight: 400 }}>
+                                                    {!showDesc ? (
+                                                        <>
+                                                            {description.length > 160 ? (
+                                                                <>
+                                                                    {description.slice(0, 160)}
+                                                                    <span
+                                                                        onClick={() => setShowDesc(true)}
+                                                                        style={{ color: '#5570f1', cursor: 'pointer', marginLeft: 4 }}
+                                                                        title="Show more"
+                                                                    >
+                                                                        ...
+                                                                    </span>
+                                                                </>
+                                                            ) : (
+                                                                description
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            {description}
+                                                            <span
+                                                                onClick={() => setShowDesc(false)}
+                                                                style={{ color: '#5570f1', cursor: 'pointer', marginLeft: 8 }}
+                                                                title="Show less"
+                                                            >
+                                                                Show less
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                </p>
                                             </div>
 
                                                 {/* <div className="user-mod-card">
@@ -187,11 +228,13 @@ const SurveyView = ({ id }) => {
                                     onClose={() => setActiveTab('preview')}
                                     formData={{
                                         title: data.title || 'Untitled Survey',
-                                        description: data.description || ''
+                                        description: data.description || '',
+                                        _id: data._id
                                     }}
                                     formElements={data.formElements || []}
                                     groups={data.groups || []}
                                     feedback={data.feedback || {}}
+                                    updateDB={true}
                                 />
                             </div>
                         )}

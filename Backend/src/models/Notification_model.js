@@ -9,7 +9,7 @@ const notificationSchema = new mongoose.Schema({
     ref: "User",
   },
   from: {
-    type: String,          // fix type
+    type: String,
   },
   expiresin: {
     type: Date,

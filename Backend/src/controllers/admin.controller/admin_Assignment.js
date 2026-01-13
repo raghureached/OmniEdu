@@ -38,7 +38,8 @@ const createAssignment = async (req, res) => {
       recurringInterval,
       customIntervalValue,
       customIntervalUnit,
-      enforceOrder
+      enforceOrder,
+      elementSchedules
     } = req.body;
 
     if (!contentId) {
@@ -48,6 +49,7 @@ const createAssignment = async (req, res) => {
         message: "Missing required fields",
       });
     }
+
     // map frontend contentType to model refPath
     const normalizedType = (contentType || "").trim();
     const content_type =
@@ -72,31 +74,50 @@ const createAssignment = async (req, res) => {
 
     // Determine effective enforceOrder: rely solely on LP setting
     const enforceOrderEffective = !!(lp && lp.enforceOrder === true);
-    elementSchedules = lp?.lessons.map(lesson => ({
-      elementId: lesson.id.toString(),
-      assign_on: lesson.assign_on || null,
-      due_date: lesson.due_date || null,
-    }));
+    const lessonsArr = Array.isArray(lp?.lessons) ? lp.lessons : [];
+
+    // Normalize elementSchedules coming from request (advanced scheduling)
+    const reqElementSchedules = Array.isArray(elementSchedules)
+      ? elementSchedules
+          .filter(es => es && es.elementId)
+          .map(es => {
+            const elId = es.elementId?._id || es.elementId;
+            return {
+              elementId: String(elId),
+              assign_on: es.assign_on ? new Date(es.assign_on) : null,
+              due_date: es.due_date ? new Date(es.due_date) : null,
+            };
+          })
+      : [];
+
+    // Default schedules from LP lessons (when no advanced schedules provided)
+    const defaultLessonSchedules = lessonsArr
+      .filter(lesson => lesson && (lesson.id || lesson._id || lesson.uuid))
+      .map(lesson => ({
+        elementId: String(lesson.id || lesson._id || lesson.uuid),
+        assign_on: lesson.assign_on ? new Date(lesson.assign_on) : null,
+        due_date: lesson.due_date ? new Date(lesson.due_date) : null,
+      }));
 
     // Use element schedules exactly as provided; just coerce provided dates to Date objects
     // If no element schedules provided, fetch them from the content
-    let elementSchedulesEffective = Array.isArray(elementSchedules)
-      ? elementSchedules.map(e => ({
-        elementId: e.elementId,
-        assign_on: e.assign_on ? new Date(e.assign_on) : null,
-        due_date: e.due_date ? new Date(e.due_date) : null,
-      }))
-      : [];
+    // Prefer request-provided schedules if any; otherwise use LP-derived
+    let elementSchedulesEffective = reqElementSchedules.length > 0
+      ? reqElementSchedules
+      : defaultLessonSchedules;
 
     // If elementSchedules is empty, try to fetch elements from the content
     if (elementSchedulesEffective.length === 0) {
       if (content_type === "LearningPath" && lp) {
         // Get lessons from learning path
-        elementSchedulesEffective = lp.lessons.map(lesson => ({
-          elementId: lesson.id.toString(),
-          assign_on: lesson.assign_on || null,
-          due_date: lesson.due_date || null,
-        }))
+        const lessonsArr2 = Array.isArray(lp.lessons) ? lp.lessons : [];
+        elementSchedulesEffective = lessonsArr2
+          .filter(lesson => lesson && (lesson.id || lesson._id || lesson.uuid))
+          .map(lesson => ({
+            elementId: String(lesson.id || lesson._id || lesson.uuid),
+            assign_on: lesson.assign_on ? new Date(lesson.assign_on) : null,
+            due_date: lesson.due_date ? new Date(lesson.due_date) : null,
+          }));
       } 
     }
 

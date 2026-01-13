@@ -79,7 +79,7 @@ api.interceptors.response.use(
     if (status >= 500) {
       notifyError('Server error! Please try again later.');
     } else if (status === 404) {
-      notifyWarning('Requested resource not found.');
+      // notifyWarning('Requested resource not found.');
     } else if (!status) {
       notifyError('Network error! Please check your internet connection.');
     } 

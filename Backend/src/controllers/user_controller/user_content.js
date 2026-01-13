@@ -10,6 +10,8 @@ const OrganizationSurveys = require("../../models/Admin/Surveys/organizationSurv
 const UserContentProgress = require("../../models/User/userContentProgress_model");
 const UserProfile = require("../../models/User/userProfiles_model");
 const User = require("../../models/User/users_model");
+const UserRewards = require("../../models/User/user_rewards_model");
+const OrganizationSurveyResponses = require("../../models/Admin/Surveys/organizationSurveyResponses_model");
 
 const getModule = async (req, res) => {
   try {
@@ -48,6 +50,51 @@ const getAssessment = async (req, res) => {
   } catch (error) {
     // console.log(error)
     return res.status(500).json({ message: error.message });
+  }
+}
+
+// Submit survey responses (top-level controller)
+const submitSurvey = async (req, res) => {
+  try {
+    const { surveyId, answers, surveyAssignmentId, timeSpent, feedback } = req.body;
+    if (!surveyId || !Array.isArray(answers)) {
+      return res.status(400).json({ success: false, message: "surveyId and answers are required" });
+    }
+    console.log(surveyId)
+    const doc = await OrganizationSurveyResponses.create({
+      survey_assignment_id: surveyAssignmentId || String(surveyId),
+      user_id: String(req.user._id),
+      responses: {
+        answers,
+        timeSpent: typeof timeSpent === 'number' ? timeSpent : undefined,
+        feedback: feedback && typeof feedback === 'object' ? feedback : undefined,
+      },
+    });
+
+    try {
+      await UserContentProgress.findOneAndUpdate(
+        {
+          user_id: req.user._id,
+          $or: [
+            { contentId: surveyId },
+            surveyAssignmentId ? { assignment_id: surveyAssignmentId } : null,
+          ].filter(Boolean)
+        },
+        {
+          status: "completed",
+          progress_pct: 100,
+          completed_at: Date.now(),
+          contentId: surveyId,
+        },
+        { new: true, upsert: true }
+      );
+    } catch (e) {
+      // non-fatal: submission succeeded even if progress update fails
+    }
+
+    return res.status(201).json({ success: true, message: "Survey submitted", data: doc });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Failed to submit survey", error: error.message });
   }
 }
 
@@ -100,7 +147,8 @@ const getLearningPath = async (req, res) => {
 }
 const markCompleteLP = async (req, res) => {
   try {
-    const { lpId, id, pct } = req.params;
+    const { lpId, id } = req.params;
+    const pct = typeof req.body?.pct !== 'undefined' ? Number(req.body.pct) : undefined;
     const userId = req.user._id;
 
 
@@ -110,15 +158,19 @@ const markCompleteLP = async (req, res) => {
         contentId: lpId,
       },
       {
-        progress_pct: pct
-      }
+        ...(typeof pct === 'number' && !isNaN(pct) ? { progress_pct: pct } : {}),
+      },
+      { new: true, upsert: true }
     )
 
     const update = await UserContentProgress.findOneAndUpdate(
       {
         user_id: userId,
         contentId: lpId,
-        'elements.elementId': id
+        $or: [
+          { 'elements.elementId': id },
+          { 'elements.elementId': String(id) },
+        ]
       },
       {
         $set: {
@@ -168,6 +220,7 @@ const markComplete = async (req, res) => {
     const { stars, badges, credits,duration } = req.body;
     const current = await UserContentProgress.findOne({user_id:userId,contentId:id});
     if(current.status === "completed") return res.status(201).json({message:"Content is aldready completed by User."});
+
     const update = await UserContentProgress.findOneAndUpdate(
       { user_id: userId, contentId: id },
       {
@@ -188,6 +241,7 @@ const markComplete = async (req, res) => {
       },
       { new: true }
     );
+    
     // Get user's team for leaderboard
     const userProfile = await UserProfile.findOne({ user_id: userId });
     const teamId = userProfile.teams.length > 0 ? userProfile.teams[0].team_id : null;
@@ -574,7 +628,8 @@ module.exports = {
   getCompletedinLP,
   getLeaderboard,
   getLeaderboardinTeam,
-  getWorkspace
+  getWorkspace,
+  submitSurvey
 }
 
 
