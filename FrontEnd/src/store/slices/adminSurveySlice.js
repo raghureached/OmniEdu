@@ -6,9 +6,16 @@ import api from "../../services/api";
 // Thunks
 export const fetchSurveys = createAsyncThunk(
   "surveys/fetchSurveys",
-  async ({ page = 1, limit = 50 } = {}, { rejectWithValue }) => {
+  async ({ page = 1, limit = 50, team, subteam } = {}, { rejectWithValue }) => {
     try {
-      const response = await api.get("/api/admin/getSurveys", { params: { page, limit } });
+      const params = { page, limit };
+      if (team && team !== '' && team !== 'all') {
+        params.team = team;
+      }
+      if (subteam && subteam !== '' && subteam !== 'all') {
+        params.subteam = subteam;
+      }
+      const response = await api.get("/api/admin/getSurveys", { params });
       // backend returns { success, message, data: surveys, pagination }
      
       return { list: response.data.data, pagination: response.data.pagination };

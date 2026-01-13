@@ -20,7 +20,7 @@ const AssessmentView = ({ id }) => {
     const [feedbackComment, setFeedbackComment] = useState('');
     const [isAssessmentActive, setIsAssessmentActive] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [showTags, setShowTags] = useState(false);
+        const [showTags, setShowTags] = useState(false);
     const [showDesc, setShowDesc] = useState(false);
     // console.log(assignId)
     useEffect(() => {

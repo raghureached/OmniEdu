@@ -118,7 +118,8 @@ function buildCsvRows(assessments, teamsList = [], subteamsList = []) {
       a.title || '',
       a.description || '',
       Array.isArray(a.tags) ? a.tags.join('|') : (a.tags || ''),
-      a.thumbnail || a.thumbnailUrl || a.image || '',
+      // a.thumbnail || a.thumbnailUrl || a.image || '',
+      '',
       a.Level || a.level || '',
       questionsCount,
       // Duration can be number or string; preserve value

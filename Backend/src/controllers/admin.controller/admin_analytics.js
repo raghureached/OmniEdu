@@ -11,7 +11,7 @@ const mongoose = require("mongoose");
 const getOrganizationCreationDate = async (req, res) => {
     try {
         const organizationId = req.user?.organization_id;
-        
+
         if (!organizationId) {
             return res.status(400).json({
                 success: false,
@@ -20,7 +20,7 @@ const getOrganizationCreationDate = async (req, res) => {
         }
 
         const organization = await Organization.findById(organizationId).select('createdAt');
-        
+
         if (!organization) {
             return res.status(404).json({
                 success: false,
@@ -52,7 +52,7 @@ const LearningPath = require("../../models/Admin/LearningPaths/learningPath_mode
 const getContentCountsAll = async (req, res) => {
     try {
         const organizationId = req.user?.organization_id;
-        
+
         if (!organizationId) {
             return res.status(400).json({
                 success: false,
@@ -109,8 +109,8 @@ const getContentCountsAll = async (req, res) => {
 const getContentCounts = async (req, res) => {
     try {
         const organizationId = req.user?.organization_id;
-        const { timeRange = '7d' } = req.query; // Default to 7 days
-        
+        const { timeRange = '7d', startDate, endDate } = req.query; // Default to 7 days
+
         if (!organizationId) {
             return res.status(400).json({
                 success: false,
@@ -121,26 +121,48 @@ const getContentCounts = async (req, res) => {
         // Calculate date filter based on time range
         let dateFilter = {};
         if (timeRange !== 'all') {
-            const cutoffDate = new Date();
-            
+            let cutoffDate, startDateFilter, endDateFilter;
+
             switch (timeRange) {
                 case '7d':
+                    cutoffDate = new Date();
                     cutoffDate.setDate(cutoffDate.getDate() - 7);
+                    dateFilter = { createdAt: { $gte: cutoffDate } };
                     break;
                 case '30d':
+                    cutoffDate = new Date();
                     cutoffDate.setDate(cutoffDate.getDate() - 30);
+                    dateFilter = { createdAt: { $gte: cutoffDate } };
                     break;
                 case '90d':
+                    cutoffDate = new Date();
                     cutoffDate.setDate(cutoffDate.getDate() - 90);
+                    dateFilter = { createdAt: { $gte: cutoffDate } };
                     break;
                 case 'mtd':
+                    cutoffDate = new Date();
                     cutoffDate.setDate(cutoffDate.getDate() - (cutoffDate.getDate() - 1));
+                    dateFilter = { createdAt: { $gte: cutoffDate } };
+                    break;
+                case 'custom':
+                    if (startDate && endDate) {
+                        startDateFilter = new Date(startDate);
+                        endDateFilter = new Date(endDate);
+                        // Set end date to end of day
+                        endDateFilter.setHours(23, 59, 59, 999);
+                        dateFilter = { createdAt: { $gte: startDateFilter, $lte: endDateFilter } };
+                    } else {
+                        // Fallback to 7 days if custom dates not provided
+                        cutoffDate = new Date();
+                        cutoffDate.setDate(cutoffDate.getDate() - 7);
+                        dateFilter = { createdAt: { $gte: cutoffDate } };
+                    }
                     break;
                 default:
+                    cutoffDate = new Date();
                     cutoffDate.setDate(cutoffDate.getDate() - 7);
+                    dateFilter = { createdAt: { $gte: cutoffDate } };
             }
-            
-            dateFilter = { createdAt: { $gte: cutoffDate } };
         }
 
         // Get counts for all content types with date filter
@@ -202,16 +224,16 @@ const categories = [
 // Helper function to calculate time spent
 const calculateTimeSpent = (startedAt, completedAt, lastActivityAt) => {
     if (!startedAt) return 'Not Started';
-    
+
     const start = new Date(startedAt);
     const end = completedAt ? new Date(completedAt) : (lastActivityAt ? new Date(lastActivityAt) : new Date());
     const diffMs = end - start;
-    
+
     if (diffMs < 0) return '0 min';
-    
+
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     if (diffHours > 0) {
         return `${diffHours}h ${diffMins}m`;
     } else {
@@ -222,12 +244,12 @@ const calculateTimeSpent = (startedAt, completedAt, lastActivityAt) => {
 // Helper function to calculate course duration
 const calculateCourseDuration = (module) => {
     if (!module) return 'N/A';
-    
+
     // Check if module has duration field
     if (module.duration) {
         return formatDuration(module.duration);
     }
-    
+
     // Calculate duration based on content if available
     if (module.elements && module.elements.length > 0) {
         // Sum up durations of all elements
@@ -239,19 +261,19 @@ const calculateCourseDuration = (module) => {
                 totalMinutes += element.estimatedTime;
             }
         });
-        
+
         if (totalMinutes > 0) {
             return formatDuration(totalMinutes);
         }
     }
-    
+
     // Fallback: estimate based on module type or content
     if (module.contentType === 'course') {
         return '2h 30m'; // Default estimate for courses
     } else if (module.contentType === 'assessment') {
         return '45m'; // Default estimate for assessments
     }
-    
+
     return 'N/A';
 };
 
@@ -262,7 +284,7 @@ const getAssignedBy = async (assignment, user, organizationId) => {
         if (assignment?.created_by && assignment.created_by.toString() === user._id.toString()) {
             return 'Self';
         }
-        
+
         // If the assignment was created by someone in the same organization
         if (assignment?.created_by) {
             const createdBy = await User.findById(assignment.created_by).lean();
@@ -271,14 +293,14 @@ const getAssignedBy = async (assignment, user, organizationId) => {
                 if (!createdBy.organization_id || createdBy.organization_id.toString() !== organizationId.toString()) {
                     return 'Omniedu';
                 }
-                
+
                 // If creator is from same organization, get organization name
-                const Organization = require('../../models/organization_model');
+                const Organization = require('../../models/globalAdmin/Organization/organization_model');
                 const org = await Organization.findById(organizationId).lean();
                 return org?.name || 'Organization Admin';
             }
         }
-        
+
         // Default fallback
         return 'System';
     } catch (error) {
@@ -297,12 +319,12 @@ const calculateScore = async (progress, contentType, contentId) => {
                     user_id: progress.user_id,
                     assessment_id: contentId
                 }).sort({ attemptedAt: -1 }).limit(1);
-                
+
                 if (assessmentAttempts.length > 0) {
                     return Math.round(assessmentAttempts[0].score || 0);
                 }
                 return 0;
-                
+
             case 'course':
             case 'module':
                 // For courses/modules, calculate based on element completion
@@ -313,13 +335,13 @@ const calculateScore = async (progress, contentType, contentId) => {
                 }
                 // Fallback to progress_pct if no elements
                 return Math.round(progress.progress_pct || 0);
-                
+
             case 'video':
             case 'document':
             case 'pdf':
                 // For simple content, use progress percentage
                 return Math.round(progress.progress_pct || 0);
-                
+
             default:
                 // Default to progress percentage
                 return Math.round(progress.progress_pct || 0);
@@ -333,10 +355,10 @@ const calculateScore = async (progress, contentType, contentId) => {
 // Helper function to format duration in minutes to readable format
 const formatDuration = (minutes) => {
     if (!minutes || minutes <= 0) return 'N/A';
-    
+
     const hours = Math.floor(minutes / 60);
     const mins = Math.floor(minutes % 60);
-    
+
     if (hours > 0) {
         return `${hours}h ${mins}m`;
     } else {
@@ -347,28 +369,28 @@ const formatDuration = (minutes) => {
 const getCourseDistribution = async (req, res) => {
     try {
         const { category, team, subteam, timeRange } = req.query;
-        let query = { 
+        let query = {
             org_id: req.user.organization_id,
             status: 'Published' // Only include published modules
         };
-        
+
         // Apply filters
         if (category && category !== 'all') {
             query.category = category;
         }
-        
+
         if (team && team !== 'all') {
             query.team = team;
         }
-        
+
         if (subteam && subteam !== 'all') {
             query.subteam = subteam;
         }
-        
+
         // Apply time range filter if provided
         if (timeRange) {
             let cutoffDate = new Date();
-            
+
             if (timeRange === '7d') {
                 cutoffDate.setDate(cutoffDate.getDate() - 7);
             } else if (timeRange === '30d') {
@@ -390,25 +412,25 @@ const getCourseDistribution = async (req, res) => {
                 // Default to 30 days
                 cutoffDate.setDate(cutoffDate.getDate() - 30);
             }
-            
+
             query.createdAt = { $gte: cutoffDate };
         }
-        
+
         const modules = await Module.find(query);
 
         // If specific category is filtered, return only that category
         if (category && category !== 'all') {
             const filtered = modules.filter(m => m.category === category);
-            
+
             // Get course names and team names for this category
             const courseNames = filtered.map(m => m.title || 'Unnamed Course');
             const teamIds = [...new Set(filtered.map(m => m.team).filter(Boolean))];
-            
+
             // Fetch team names
             const Team = require('../../models/Admin/GroupsOrTeams/teams_model');
             const teams = await Team.find({ _id: { $in: teamIds } }).select('name');
             const teamNames = teams.map(t => t.name);
-            
+
             const courseLibrary = [{
                 category,
                 courses: filtered.length,
@@ -416,7 +438,7 @@ const getCourseDistribution = async (req, res) => {
                 courseNames: courseNames.join('; '),
                 teamNames: teamNames.join('; ')
             }];
-            
+
             return res.status(200).json({
                 success: true,
                 courseLibrary
@@ -426,11 +448,11 @@ const getCourseDistribution = async (req, res) => {
         // Return all categories if no specific filter
         const courseLibrary = await Promise.all(categories.map(async cat => {
             const filtered = modules.filter(m => m.category === cat);
-            
+
             // Get course names and team names for this category
             const courseNames = filtered.map(m => m.title || 'Unnamed Course');
             const teamIds = [...new Set(filtered.map(m => m.team).filter(Boolean))];
-            
+
             // Fetch team names
             const Team = require('../../models/Admin/GroupsOrTeams/teams_model');
             const teams = await Team.find({ _id: { $in: teamIds } }).select('name');
@@ -459,97 +481,14 @@ const getCourseDistribution = async (req, res) => {
     }
 };
 
+
 const calculateUsageTrend = async (req, res) => {
     try {
         const { timeRange, team, subteam } = req.query;
         const usageTrend = [];
         const organizationId = req.user.organization_id;
-        
-        // For 7-day filter, return daily data
-        if (timeRange === '7d') {
-            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            const UserProfile = require('../../models/User/userProfiles_model');
-            
-            // Get filtered user IDs once if team/subteam filters are applied
-            let filteredUserIds = null;
-            if (team && team !== 'all') {
-                const userProfileQuery = UserProfile.find({
-                    'teams.team_id': team,
-                    ...(subteam && subteam !== 'all' ? { 'teams.sub_team_id': subteam } : {})
-                }).distinct('user_id');
-                filteredUserIds = await userProfileQuery;
-            }
-            
-            for (let day = 6; day >= 0; day--) {
-                const dayStart = new Date();
-                dayStart.setDate(dayStart.getDate() - day);
-                dayStart.setHours(0, 0, 0, 0);
+        const UserProfile = require('../../models/User/userProfiles_model');
 
-                const dayEnd = new Date(dayStart);
-                dayEnd.setHours(23, 59, 59, 999);
-
-                // Format date as month abbreviation + day (e.g., jan9)
-                const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-                const formattedDate = `${monthNames[dayStart.getMonth()]}${dayStart.getDate()}`;
-
-                // Build base query filter
-                let baseFilter = { organization_id: organizationId };
-                
-                // Add team/subteam filters by using filtered user IDs
-                if (filteredUserIds) {
-                    baseFilter._id = { $in: filteredUserIds };
-                }
-
-                // Calculate DAU for this day
-                const dau = await User.countDocuments({
-                    ...baseFilter,
-                    last_login: { $gte: dayStart, $lte: dayEnd }
-                });
-
-                // Calculate MAU for this day (users active in last 30 days)
-                const mauStartDate = new Date(dayEnd.getTime() - 30 * 24 * 60 * 60 * 1000);
-                const mau = await User.countDocuments({
-                    ...baseFilter,
-                    last_login: { $gte: mauStartDate, $lte: dayEnd }
-                });
-
-                usageTrend.push({
-                    date: dayNames[dayStart.getDay()],
-                    formattedDate: formattedDate,
-                    dau: dau,
-                    mau: mau
-                });
-            }
-
-            return res.status(200).json({
-                success: true,
-                data: usageTrend
-            });
-        }
-        
-        // For other time ranges, keep the existing weekly logic
-        let weeksToShow = 4; // default
-        if (timeRange === '30d') weeksToShow = 4;
-        else if (timeRange === '90d') weeksToShow = 12;
-        else if (timeRange === 'mtd') {
-            // For month to date, calculate weeks from first day of month
-            const now = new Date();
-            const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-            const daysSinceMonthStart = Math.ceil((now - firstDayOfMonth) / (1000 * 60 * 60 * 24));
-            weeksToShow = Math.max(1, Math.ceil(daysSinceMonthStart / 7));
-        }
-        else if (timeRange === 'custom' && req.query.startDate && req.query.endDate) {
-            // For custom date range, calculate weeks based on the date range
-            const startDate = new Date(req.query.startDate);
-            const endDate = new Date(req.query.endDate);
-            const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-            weeksToShow = Math.max(1, Math.ceil(daysDiff / 7));
-        }
-        
-        // Build base query filter
-        let baseFilter = { organization_id: organizationId };
-        const UserProfile = require('../../models/userProfiles_model');
-        
         // Get filtered user IDs once if team/subteam filters are applied
         let filteredUserIds = null;
         if (team && team !== 'all') {
@@ -559,61 +498,103 @@ const calculateUsageTrend = async (req, res) => {
             }).distinct('user_id');
             filteredUserIds = await userProfileQuery;
         }
-        
-        for (let week = weeksToShow - 1; week >= 0; week--) {
-            const weekStart = new Date();
-            weekStart.setDate(weekStart.getDate() - (week * 7 + 6)); // Go back to start of week
-            weekStart.setHours(0, 0, 0, 0);
 
-            const weekEnd = new Date(weekStart);
-            weekEnd.setDate(weekEnd.getDate() + 6); // End of week
-            weekEnd.setHours(23, 59, 59, 999);
+        // Calculate number of days based on time range
+        let daysToShow = 7; // default
+        let customRangeStart = null;
+        let customRangeEnd = null;
+        let isMonthToDate = false;
 
-            // Build filter for this week
-            let weekFilter = { ...baseFilter };
+        if (timeRange === '7d') {
+            daysToShow = 7;
+        } else if (timeRange === '30d') {
+            daysToShow = 30;
+        } else if (timeRange === '90d') {
+            daysToShow = 90;
+        } else if (timeRange === 'mtd') {
+            const now = new Date();
+            const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            // daysToShow = Math.ceil((now - firstDayOfMonth) / (1000 * 60 * 60 * 24)) + 1;
+            daysToShow =
+                Math.floor((now.setHours(0, 0, 0, 0) - firstDayOfMonth.setHours(0, 0, 0, 0))
+                    / (1000 * 60 * 60 * 24)) + 1;
+
+            customRangeStart = firstDayOfMonth;
+            isMonthToDate = true;
+        } else if (timeRange === 'custom' && req.query.startDate && req.query.endDate) {
+            customRangeStart = new Date(req.query.startDate);
+            customRangeEnd = new Date(req.query.endDate);
+            customRangeEnd.setHours(23, 59, 59, 999);
+            // daysToShow = Math.ceil((customRangeEnd - customRangeStart) / (1000 * 60 * 60 * 24)) + 1;
+            daysToShow =
+                Math.floor(
+                    (customRangeEnd.setHours(0, 0, 0, 0) -
+                        customRangeStart.setHours(0, 0, 0, 0)) /
+                    (1000 * 60 * 60 * 24)
+                ) + 1;
+
+        }
+
+        // Generate daily data for all time ranges
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+
+        for (let day = daysToShow - 1; day >= 0; day--) {
+            let dayStart;
+            if (customRangeStart) {
+                dayStart = new Date(customRangeStart);
+                dayStart.setDate(dayStart.getDate() + (daysToShow - 1 - day));
+            } else if (isMonthToDate) {
+                // For MTD, start from first day of month and go forward
+                dayStart = new Date(firstDayOfMonth);
+                dayStart.setDate(firstDayOfMonth.getDate() + (daysToShow - 1 - day));
+
+                // 🚫 Prevent future dates
+                if (dayStart > new Date()) continue;
+
+            } else {
+                dayStart = new Date();
+                dayStart.setDate(dayStart.getDate() - day);
+            }
+            dayStart.setHours(0, 0, 0, 0);
+            // 🚫 HARD STOP: no future / overflow dates
+            if (
+                (customRangeEnd && dayStart > customRangeEnd) ||
+                dayStart > new Date()
+            ) {
+                continue;
+            }
+            const dayEnd = new Date(dayStart);
+            dayEnd.setHours(23, 59, 59, 999);
+
+            // Format date
+            const formattedDate = `${monthNames[dayStart.getMonth()]}${dayStart.getDate()}`;
+
+            // Build base query filter
+            let baseFilter = { organization_id: organizationId };
+
             if (filteredUserIds) {
-                weekFilter._id = { $in: filteredUserIds };
+                baseFilter._id = { $in: filteredUserIds };
             }
 
-            // Calculate DAU for this week (average daily active users)
-            const weekDAUPromises = [];
-            for (let day = 0; day < 7; day++) {
-                const dayStart = new Date(weekStart);
-                dayStart.setDate(dayStart.getDate() + day);
-                dayStart.setHours(0, 0, 0, 0);
-
-                const dayEnd = new Date(dayStart);
-                dayEnd.setHours(23, 59, 59, 999);
-
-                const dayDAU = User.countDocuments({
-                    ...weekFilter,
-                    last_login: { $gte: dayStart, $lte: dayEnd }
-                });
-                weekDAUPromises.push(dayDAU);
-            }
-
-            const weekDAUCounts = await Promise.all(weekDAUPromises);
-            const avgDAU = Math.round(weekDAUCounts.reduce((sum, count) => sum + count, 0) / 7);
-
-            // Calculate MAU for this week (users active in the last 30 days from week end)
-            const mauDate = new Date(weekEnd);
-            const mauStartDate = new Date(mauDate.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-            const weekMAU = await User.countDocuments({
-                ...weekFilter,
-                last_login: { $gte: mauStartDate, $lte: mauDate }
+            // Calculate DAU for this day
+            const dau = await User.countDocuments({
+                ...baseFilter,
+                last_login: { $gte: dayStart, $lte: dayEnd }
             });
 
-            // Format date range for the week
-            const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-            const weekStartFormatted = `${monthNames[weekStart.getMonth()]}${weekStart.getDate()}`;
-            const weekEndFormatted = `${monthNames[weekEnd.getMonth()]}${weekEnd.getDate()}`;
+            // Calculate MAU for this day (users active in last 30 days)
+            const mauStartDate = new Date(dayEnd.getTime() - 30 * 24 * 60 * 60 * 1000);
+            const mau = await User.countDocuments({
+                ...baseFilter,
+                last_login: { $gte: mauStartDate, $lte: dayEnd }
+            });
 
             usageTrend.push({
-                date: `Week ${weeksToShow - week}`,
-                formattedDate: `${weekStartFormatted} - ${weekEndFormatted}`,
-                dau: avgDAU,
-                mau: weekMAU
+                date: dayNames[dayStart.getDay()],
+                formattedDate: formattedDate,
+                dau: dau,
+                mau: mau
             });
         }
 
@@ -630,7 +611,6 @@ const calculateUsageTrend = async (req, res) => {
         });
     }
 };
-
 const getUsersData = async (req, res) => {
     try {
         const { timeRange = '7d', startDate, endDate } = req.query;
@@ -645,7 +625,7 @@ const getUsersData = async (req, res) => {
             case '7d':
                 dateRangeStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
                 dateRangeEnd = now;
-                mauDateRangeStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                mauDateRangeStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
                 mauDateRangeEnd = now;
                 daysInPeriod = 7;
                 break;
@@ -673,10 +653,12 @@ const getUsersData = async (req, res) => {
             case 'custom':
                 if (startDate && endDate) {
                     dateRangeStart = new Date(startDate);
+                    dateRangeStart.setHours(0, 0, 0, 0);
                     dateRangeEnd = new Date(endDate);
+                    dateRangeEnd.setHours(23, 59, 59, 999);
                     mauDateRangeStart = dateRangeStart;
                     mauDateRangeEnd = dateRangeEnd;
-                    daysInPeriod = Math.ceil((dateRangeEnd - dateRangeStart) / (24 * 60 * 60 * 1000));
+                    daysInPeriod = Math.ceil((dateRangeEnd - dateRangeStart) / (24 * 60 * 60 * 1000)) + 1;
                 } else {
                     // Fallback to 7 days if custom dates not provided
                     dateRangeStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -697,75 +679,57 @@ const getUsersData = async (req, res) => {
         // Total Users (doesn't change with time range)
         const totalUsers = await User.countDocuments({ organization_id: organizationId });
 
-        // Calculate DAU (average daily active users over the period)
-        const dauPromises = [];
-        for (let day = 0; day < daysInPeriod; day++) {
-            const dayStart = new Date(dateRangeStart);
-            dayStart.setDate(dayStart.getDate() + day);
-            dayStart.setHours(0, 0, 0, 0);
+        // Calculate DAU (users active today - always current day regardless of time range)
+        const todayStart = new Date(now);
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date(now);
+        todayEnd.setHours(23, 59, 59, 999);
 
-            const dayEnd = new Date(dayStart);
-            dayEnd.setHours(23, 59, 59, 999);
+        const dau = await User.countDocuments({
+            organization_id: organizationId,
+            last_login: { $gte: todayStart, $lte: todayEnd }
+        });
 
-            const dayDAU = User.countDocuments({
-                organization_id: organizationId,
-                last_login: { $gte: dayStart, $lte: dayEnd }
-            });
-            dauPromises.push(dayDAU);
-        }
-
-        const dauCounts = await Promise.all(dauPromises);
-        const avgDAU = Math.round(dauCounts.reduce((sum, count) => sum + count, 0) / daysInPeriod);
-
-        // Calculate MAU (users active in the MAU period)
+        // Calculate MAU (users active in the entire MAU period)
         const mau = await User.countDocuments({
             organization_id: organizationId,
             last_login: { $gte: mauDateRangeStart, $lte: mauDateRangeEnd }
         });
 
         // Calculate Platform Stickiness
-        const stickinessScore = mau > 0 ? ((avgDAU / mau) * 100).toFixed(1) : 0;
+        const stickinessScore = mau > 0 ? ((dau / mau) * 100).toFixed(1) : 0;
 
-        // Calculate Avg Time on Platform (mock implementation - you may need to adjust based on your actual data structure)
-        // This would typically require session data or time tracking data
-        const avgTimeOnPlatform = "2h 45m"; // Placeholder - implement based on your actual time tracking
+        // Calculate Avg Time on Platform based on user progress data
+        const avgTimeOnPlatform = await calculateAverageTimeOnPlatform(organizationId, dateRangeStart, dateRangeEnd);
 
         // Calculate previous period for change percentages
         const previousPeriodStart = new Date(dateRangeStart.getTime() - (dateRangeEnd - dateRangeStart));
         const previousPeriodEnd = dateRangeStart;
 
-        const previousDAUPromises = [];
-        for (let day = 0; day < daysInPeriod; day++) {
-            const dayStart = new Date(previousPeriodStart);
-            dayStart.setDate(dayStart.getDate() + day);
-            dayStart.setHours(0, 0, 0, 0);
+        // Get DAU for previous period (last day of previous period)
+        const previousDayStart = new Date(previousPeriodEnd);
+        previousDayStart.setHours(0, 0, 0, 0);
+        const previousDayEnd = new Date(previousPeriodEnd);
+        previousDayEnd.setHours(23, 59, 59, 999);
 
-            const dayEnd = new Date(dayStart);
-            dayEnd.setHours(23, 59, 59, 999);
-
-            const dayDAU = User.countDocuments({
-                organization_id: organizationId,
-                last_login: { $gte: dayStart, $lte: dayEnd }
-            });
-            previousDAUPromises.push(dayDAU);
-        }
-
-        const previousDAUCounts = await Promise.all(previousDAUPromises);
-        const previousAvgDAU = Math.round(previousDAUCounts.reduce((sum, count) => sum + count, 0) / daysInPeriod);
+        const previousDAU = await User.countDocuments({
+            organization_id: organizationId,
+            last_login: { $gte: previousDayStart, $lte: previousDayEnd }
+        });
 
         const previousMAU = await User.countDocuments({
             organization_id: organizationId,
             last_login: { $gte: new Date(mauDateRangeStart.getTime() - (mauDateRangeEnd - mauDateRangeStart)), $lt: mauDateRangeStart }
         });
 
-        const dauChange = previousAvgDAU > 0 ? (((avgDAU - previousAvgDAU) / previousAvgDAU) * 100).toFixed(1) : 0;
+        const dauChange = previousDAU > 0 ? (((dau - previousDAU) / previousDAU) * 100).toFixed(1) : 0;
         const mauChange = previousMAU > 0 ? (((mau - previousMAU) / previousMAU) * 100).toFixed(1) : 0;
 
         return res.status(200).json({
             success: true,
             data: {
                 totalUsers,
-                dau: avgDAU,
+                dau,
                 mau,
                 stickinessScore,
                 avgTimeOnPlatform,
@@ -794,33 +758,47 @@ const getAdoption = async (req, res) => {
         const { category, team, subteam, timeRange } = req.query;
         console.log('getAdoption called with params:', { category, team, subteam, timeRange });
         console.log('Organization ID:', req.user.organization_id);
-       
+
         let progressQuery = { organization_id: req.user.organization_id };
-        
+
         // Apply time range filter if provided
         if (timeRange) {
-            let cutoffDate = new Date();
-            
+            let startDate, endDate;
+
             if (timeRange === '7d') {
-                cutoffDate.setDate(cutoffDate.getDate() - 7);
+                startDate = new Date();
+                startDate.setDate(startDate.getDate() - 7);
+                endDate = new Date();
             } else if (timeRange === '30d') {
-                cutoffDate.setDate(cutoffDate.getDate() - 30);
+                startDate = new Date();
+                startDate.setDate(startDate.getDate() - 30);
+                endDate = new Date();
             } else if (timeRange === '90d') {
-                cutoffDate.setDate(cutoffDate.getDate() - 90);
+                startDate = new Date();
+                startDate.setDate(startDate.getDate() - 90);
+                endDate = new Date();
             } else if (timeRange === 'mtd') {
                 // Month to date - from first day of current month
-                cutoffDate = new Date(cutoffDate.getFullYear(), cutoffDate.getMonth(), 1);
-            } else if (timeRange === 'custom' && req.query.startDate) {
-                // Custom date range - use provided start date
-                cutoffDate = new Date(req.query.startDate);
+                startDate = new Date();
+                startDate.setDate(1);
+                startDate.setHours(0, 0, 0, 0);
+                endDate = new Date();
+            } else if (timeRange === 'custom' && req.query.startDate && req.query.endDate) {
+                // Custom date range - use provided start and end dates
+                startDate = new Date(req.query.startDate);
+                startDate.setHours(0, 0, 0, 0);
+                endDate = new Date(req.query.endDate);
+                endDate.setHours(23, 59, 59, 999);
             } else {
                 // Default to 30 days
-                cutoffDate.setDate(cutoffDate.getDate() - 30);
+                startDate = new Date();
+                startDate.setDate(startDate.getDate() - 30);
+                endDate = new Date();
             }
-            
-            progressQuery.createdAt = { $gte: cutoffDate };
+
+            progressQuery.createdAt = { $gte: startDate, $lte: endDate };
         }
-        
+
         const progress = await UserContentProgress
             .find(progressQuery)
             .populate({
@@ -841,10 +819,10 @@ const getAdoption = async (req, res) => {
 
             // Apply category filter if specified
             if (category && category !== 'all' && courseCategory !== category) return;
-            
+
             // Apply team filter if specified (compare ObjectId strings)
             if (team && team !== 'all' && courseTeam !== team) return;
-            
+
             // Apply subteam filter if specified (compare ObjectId strings)
             if (subteam && subteam !== 'all' && courseSubteam !== subteam) return;
 
@@ -930,7 +908,9 @@ const getTeams = async (req, res) => {
 
 const getSubteams = async (req, res) => {
     try {
-        const subteams = await SubTeam.find()
+        const { team } = req.query;
+
+        let query = SubTeam.find()
             .populate({
                 path: 'team_id',
                 match: { organization_id: req.user.organization_id },
@@ -938,6 +918,13 @@ const getSubteams = async (req, res) => {
             })
             .select('_id name team_id')
             .sort({ name: 1 });
+
+        // Filter by team_id if provided
+        if (team && team !== 'all') {
+            query = query.where('team_id', new mongoose.Types.ObjectId(team));
+        }
+
+        const subteams = await query;
 
         // Filter out subteams whose parent team doesn't belong to this organization
         const filteredSubteams = subteams.filter(subteam => subteam.team_id);
@@ -960,38 +947,52 @@ const getEngagementHeatmap = async (req, res) => {
     try {
         const { timeRange } = req.query;
         const organizationId = req.user.organization_id;
-        
+
         console.log('Heatmap request - orgId:', organizationId, 'timeRange:', timeRange);
-        
+
         // Determine date range based on timeRange
-        let startDate = new Date();
+        let startDate, endDate;
         if (timeRange === '7d') {
+            startDate = new Date();
             startDate.setDate(startDate.getDate() - 7);
+            endDate = new Date();
         } else if (timeRange === '30d') {
+            startDate = new Date();
             startDate.setDate(startDate.getDate() - 30);
+            endDate = new Date();
         } else if (timeRange === '90d') {
+            startDate = new Date();
             startDate.setDate(startDate.getDate() - 90);
+            endDate = new Date();
         } else if (timeRange === 'mtd') {
             // Month to date - from first day of current month
-            startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-        } else if (timeRange === 'custom' && req.query.startDate) {
-            // Custom date range - use provided start date
+            startDate = new Date();
+            startDate.setDate(1);
+            startDate.setHours(0, 0, 0, 0);
+            endDate = new Date();
+        } else if (timeRange === 'custom' && req.query.startDate && req.query.endDate) {
+            // Custom date range - use provided start and end dates
             startDate = new Date(req.query.startDate);
+            startDate.setHours(0, 0, 0, 0);
+            endDate = new Date(req.query.endDate);
+            endDate.setHours(23, 59, 59, 999);
         } else {
+            startDate = new Date();
             startDate.setDate(startDate.getDate() - 30); // default to 30 days
+            endDate = new Date();
         }
         startDate.setHours(0, 0, 0, 0);
-        
-        console.log('Heatmap startDate:', startDate);
-        
+
+        console.log('Heatmap startDate:', startDate, 'endDate:', endDate);
+
         // Get user activity data
         let users = await User.find({
             organization_id: organizationId,
             last_login: { $gte: startDate }
         }).select('last_login');
-        
+
         console.log('Found users with recent logins:', users.length);
-        
+
         // If no users with recent logins, get all users with any login data
         if (users.length === 0) {
             console.log('No recent logins found, trying all users with login data...');
@@ -1001,25 +1002,11 @@ const getEngagementHeatmap = async (req, res) => {
             }).select('last_login createdAt');
             console.log('Found all users with any login data:', users.length);
         }
-        
-        // If still no data, use createdAt as fallback for demo purposes
-        if (users.length === 0) {
-            console.log('No login data found, using createdAt as fallback...');
-            users = await User.find({
-                organization_id: organizationId
-            }).select('createdAt last_login');
-            
-            // Mock some login times for demonstration
-            users = users.map(user => ({
-                last_login: user.createdAt || new Date()
-            }));
-            console.log('Using createdAt for', users.length, 'users');
-        }
-        
+
         // Initialize heatmap data structure
         const heatmapData = {};
         const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        
+
         // Initialize all day-hour combinations to 0
         for (let day = 0; day < 7; day++) {
             heatmapData[daysOfWeek[day]] = {};
@@ -1027,20 +1014,20 @@ const getEngagementHeatmap = async (req, res) => {
                 heatmapData[daysOfWeek[day]][hour] = 0;
             }
         }
-        
+
         // Count logins by day of week and hour
         users.forEach(user => {
             if (user.last_login) {
                 const loginDate = new Date(user.last_login);
                 const dayOfWeek = daysOfWeek[loginDate.getDay()];
                 const hour = loginDate.getHours();
-                
+
                 if (heatmapData[dayOfWeek] && heatmapData[dayOfWeek][hour] !== undefined) {
                     heatmapData[dayOfWeek][hour]++;
                 }
             }
         });
-        
+
         // Convert to array format for frontend
         const heatmapArray = [];
         for (let day = 0; day < 7; day++) {
@@ -1053,15 +1040,15 @@ const getEngagementHeatmap = async (req, res) => {
                 });
             }
         }
-        
+
         console.log('Heatmap data sample:', heatmapArray.slice(0, 5));
         console.log('Total heatmap entries:', heatmapArray.length);
-        
+
         return res.status(200).json({
             success: true,
             data: heatmapArray
         });
-        
+
     } catch (error) {
         console.error('Heatmap error:', error);
         return res.status(500).json({
@@ -1074,13 +1061,17 @@ const getEngagementHeatmap = async (req, res) => {
 
 const getAtRiskLearners = async (req, res) => {
     try {
-        const { timeRange, days, riskLevel } = req.query;
+        const { timeRange, days, team, subteam, page = 1, limit = 5, startDate, endDate } = req.query;
         const organizationId = req.user.organization_id;
-        
+        const UserProfile = require('../../models/User/userProfiles_model');
+
         // Calculate date threshold for login activity based on timeRange
         const loginThreshold = new Date();
-        let daysToUse = 30; // default
-        
+        let daysToUse = 7; // default
+        let useCustomRange = false;
+        let customStartDate = null;
+        let customEndDate = null;
+
         if (timeRange === '7d') {
             daysToUse = 7;
         } else if (timeRange === '30d') {
@@ -1091,27 +1082,48 @@ const getAtRiskLearners = async (req, res) => {
             // For month to date, use days from first day of month
             const firstDayOfMonth = new Date(loginThreshold.getFullYear(), loginThreshold.getMonth(), 1);
             daysToUse = Math.ceil((loginThreshold - firstDayOfMonth) / (1000 * 60 * 60 * 24));
-        } else if (timeRange === 'custom' && req.query.startDate) {
-            // For custom date range, calculate days from start date
-            const startDate = new Date(req.query.startDate);
-            daysToUse = Math.ceil((loginThreshold - startDate) / (1000 * 60 * 60 * 24));
+        } else if (timeRange === 'custom' && startDate && endDate) {
+            // For custom date range, use the actual dates
+            useCustomRange = true;
+            customStartDate = new Date(startDate);
+            customEndDate = new Date(endDate);
+            customEndDate.setHours(23, 59, 59, 999); // Include the entire end date
         } else if (days) {
             // Fallback to explicit days parameter if provided
             daysToUse = parseInt(days);
         }
-        
-        loginThreshold.setDate(loginThreshold.getDate() - daysToUse);
-        
-        console.log('At-risk learners - orgId:', organizationId, 'days:', days);
-        console.log('Login threshold:', loginThreshold);
-        
-        // Get all users in the organization
-        const users = await User.find({
+
+        if (!useCustomRange) {
+            loginThreshold.setDate(loginThreshold.getDate() - daysToUse);
+        }
+
+        console.log('At-risk learners - orgId:', organizationId, 'timeRange:', timeRange);
+        if (useCustomRange) {
+            console.log('Custom date range:', customStartDate.toISOString(), 'to', customEndDate.toISOString());
+        } else {
+            console.log('Days:', daysToUse, 'Login threshold:', loginThreshold);
+        }
+
+        // Build base query for users
+        let userQuery = User.find({
             organization_id: organizationId
-        }).select('name email last_login createdAt uuid');
-        
+        });
+
+        // Apply team/subteam filters by joining with UserProfile
+        if (team && team !== 'all') {
+            const filteredUserIds = await UserProfile.find({
+                'teams.team_id': team,
+                ...(subteam && subteam !== 'all' ? { 'teams.sub_team_id': subteam } : {})
+            }).distinct('user_id');
+
+            userQuery = userQuery.where('_id').in(filteredUserIds);
+        }
+
+        // Get users matching the filters
+        const users = await userQuery.select('name email last_login createdAt uuid');
+
         console.log('Total users found:', users.length);
-        
+
         // Get user progress data to calculate completion rates
         const userProgress = await UserContentProgress.find({
             organization_id: organizationId
@@ -1129,12 +1141,12 @@ const getAtRiskLearners = async (req, res) => {
                 select: 'name email'
             }
         ]);
-        
+
         console.log('User progress records:', userProgress.length);
-        
+
         // Calculate metrics for each user
         const userMetrics = {};
-        
+
         // Initialize all users with default metrics
         users.forEach(user => {
             userMetrics[user._id] = {
@@ -1152,18 +1164,18 @@ const getAtRiskLearners = async (req, res) => {
                 riskFactors: []
             };
         });
-        
+
         // Process progress data
         userProgress.forEach(progress => {
             if (progress.user_id && progress.user_id._id) {
                 const userId = progress.user_id._id.toString();
                 if (userMetrics[userId]) {
                     userMetrics[userId].totalAssignments++;
-                    
+
                     if (progress.status === 'completed') {
                         userMetrics[userId].completedAssignments++;
                         userMetrics[userId].completedCount++;
-                        
+
                         if (progress.score && progress.score > 0) {
                             userMetrics[userId].totalScore += progress.score;
                         }
@@ -1171,7 +1183,7 @@ const getAtRiskLearners = async (req, res) => {
                 }
             }
         });
-        
+
         // Calculate completion rates and average scores
         Object.values(userMetrics).forEach(metrics => {
             if (metrics.totalAssignments > 0) {
@@ -1179,67 +1191,101 @@ const getAtRiskLearners = async (req, res) => {
             } else {
                 metrics.completionRate = 0;
             }
-            
+
             if (metrics.completedCount > 0 && metrics.totalScore > 0) {
                 metrics.averageScore = metrics.totalScore / metrics.completedCount;
             } else {
                 metrics.averageScore = 0;
             }
-            
+
             // Identify risk factors
-            if (!metrics.lastLogin || metrics.lastLogin < loginThreshold) {
-                metrics.riskFactors.push('No recent login');
+            let isAtRisk = false;
+
+            if (useCustomRange) {
+                // For custom range, check if user has no login within the range
+                const userCreatedAt = new Date(metrics.createdAt);
+                const userLastLogin = metrics.lastLogin ? new Date(metrics.lastLogin) : null;
+
+                // User is at-risk if they were created within the custom range and have no login in the range
+                if (userCreatedAt >= customStartDate && userCreatedAt <= customEndDate) {
+                    if (!userLastLogin) {
+                        // Never logged in - at-risk
+                        metrics.riskFactors.push('No recent login');
+                        isAtRisk = true;
+                    } else if (userLastLogin < customStartDate) {
+                        // Last login was before the custom range - at-risk
+                        metrics.riskFactors.push('No recent login');
+                        isAtRisk = true;
+                    }
+                }
+            } else {
+                // For predefined ranges, use the login threshold
+                if (!metrics.lastLogin || metrics.lastLogin < loginThreshold) {
+                    metrics.riskFactors.push('No recent login');
+                    isAtRisk = true;
+                }
             }
-            
+
             if (metrics.completionRate < 30) {
                 metrics.riskFactors.push('Low completion rate');
+                isAtRisk = true;
             }
-            
+
             if (metrics.averageScore < 60 && metrics.completedCount > 0) {
                 metrics.riskFactors.push('Low average score');
+                isAtRisk = true;
             }
-            
+
             if (metrics.totalAssignments === 0) {
                 metrics.riskFactors.push('No assignments started');
+                isAtRisk = true;
             }
+
+            // Mark user as at-risk if they have any risk factors
+            metrics.isAtRisk = isAtRisk;
         });
-        
+
         // Filter users with risk factors
         let atRiskLearners = Object.values(userMetrics)
             .filter(user => user.riskFactors.length > 0);
-        
-        // Apply risk level filtering if specified
-        if (riskLevel && riskLevel !== 'all') {
-            atRiskLearners = atRiskLearners.filter(user => {
-                const userRiskLevel = user.riskFactors.length >= 3 ? 'high' : 
-                                   user.riskFactors.length >= 2 ? 'medium' : 'low';
-                return userRiskLevel === riskLevel;
-            });
-        }
-        
-        // Sort by last login (least recent first), then by risk factors (most at-risk first), and limit to top 20
+
+        // Sort by last login (least recent first), then by risk factors (most at-risk first)
         atRiskLearners = atRiskLearners
             .sort((a, b) => {
                 // First sort by last login (least recent first)
                 const aLastLogin = a.lastLogin ? new Date(a.lastLogin) : new Date(0);
                 const bLastLogin = b.lastLogin ? new Date(b.lastLogin) : new Date(0);
-                
+
                 if (aLastLogin.getTime() !== bLastLogin.getTime()) {
                     return aLastLogin.getTime() - bLastLogin.getTime();
                 }
-                
+
                 // If last login dates are the same, sort by risk factors (most at-risk first)
                 return b.riskFactors.length - a.riskFactors.length;
-            })
-            .slice(0, 20);
-        
-        console.log('At-risk learners identified:', atRiskLearners.length);
-        
+            });
+
+        const total = atRiskLearners.length;
+
+        // Apply pagination
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+        const startIndex = (pageNum - 1) * limitNum;
+        const endIndex = startIndex + limitNum;
+
+        const paginatedLearners = atRiskLearners.slice(startIndex, endIndex);
+
+        console.log('At-risk learners identified:', total);
+        console.log('Returning page', pageNum, 'with', paginatedLearners.length, 'records');
+
         return res.status(200).json({
             success: true,
-            data: atRiskLearners
+            data: paginatedLearners,
+            total: total,
+            page: pageNum,
+            limit: limitNum,
+            totalPages: Math.ceil(total / limitNum)
         });
-        
+
     } catch (error) {
         console.error('At-risk learners error:', error);
         return res.status(500).json({
@@ -1258,9 +1304,9 @@ const getContentAnalytics = async (req, res) => {
         console.log('Fetching analytics for content UUID:', contentId, 'in organization:', organizationId);
 
         // First, find the module by UUID to get its ObjectId
-        const module = await Module.findOne({ 
+        const module = await Module.findOne({
             uuid: contentId,
-            org_id: organizationId 
+            org_id: organizationId
         }).lean();
 
         if (!module) {
@@ -1277,8 +1323,8 @@ const getContentAnalytics = async (req, res) => {
             contentId: module._id, // Use ObjectId from the found module
             organization_id: organizationId
         }).populate('assigned_users', 'name email')
-          .populate('created_by', 'name email')
-          .lean();
+            .populate('created_by', 'name email')
+            .lean();
 
         console.log('Found assignments:', assignments.length);
 
@@ -1287,8 +1333,8 @@ const getContentAnalytics = async (req, res) => {
             contentId: module._id, // Use ObjectId from the found module
             organization_id: organizationId
         }).populate('user_id', 'name email')
-          .populate('assignment_id', 'assign_on due_date created_by')
-          .lean();
+            .populate('assignment_id', 'assign_on due_date created_by')
+            .lean();
 
         console.log('Found user progress records:', userProgress.length);
 
@@ -1296,7 +1342,7 @@ const getContentAnalytics = async (req, res) => {
         const totalAssignments = await Promise.all(userProgress.map(async (progress) => {
             const user = progress.user_id;
             const assignment = progress.assignment_id;
-            
+
             // Handle start date edge cases
             let startedOn = null;
             if (progress.started_at) {
@@ -1326,9 +1372,9 @@ const getContentAnalytics = async (req, res) => {
                 email: user?.email || 'unknown@example.com',
                 started_at: startedOn,
                 completed_at: completedOn,
-                status: progress.status === 'assigned' ? 'not-started' : 
-                       progress.status === 'in_progress' ? 'in-progress' : 
-                       progress.status === 'completed' ? 'completed' : 'not-started',
+                status: progress.status === 'assigned' ? 'not-started' :
+                    progress.status === 'in_progress' ? 'in-progress' :
+                        progress.status === 'completed' ? 'completed' : 'not-started',
                 score: score,
                 averageScore: progress.averageScore || 0,
                 timeSpent: calculateTimeSpent(progress.started_at, progress.completed_at, progress.last_activity_at),
@@ -1376,9 +1422,9 @@ const getUserAnalytics = async (req, res) => {
         console.log('Fetching analytics for user:', userId, 'in organization:', organizationId);
 
         // First, find the user by UUID to get their ObjectId
-        const user = await User.findOne({ 
+        const user = await User.findOne({
             uuid: userId,
-            organization_id: organizationId 
+            organization_id: organizationId
         }).lean();
 
         if (!user) {
@@ -1395,8 +1441,8 @@ const getUserAnalytics = async (req, res) => {
             assigned_users: user._id,
             organization_id: organizationId
         }).populate('assigned_users', 'name email')
-          .populate('created_by', 'name email')
-          .lean();
+            .populate('created_by', 'name email')
+            .lean();
 
         console.log('Found assignments:', assignments.length);
 
@@ -1405,7 +1451,7 @@ const getUserAnalytics = async (req, res) => {
             user_id: user._id, // Use ObjectId from the found user
             organization_id: organizationId
         }).populate('assignment_id', 'assign_on due_date created_by contentType')
-          .lean();
+            .lean();
 
         console.log('Found user progress records:', userProgress.length);
 
@@ -1439,7 +1485,7 @@ const getUserAnalytics = async (req, res) => {
             } catch (error) {
                 console.log('Could not fetch content details for contentId:', progress.contentId, 'assign_type:', assignments.find(a => a._id.toString() === progress.assignment_id?._id?.toString())?.assign_type);
             }
-            
+
             return {
                 ...progress,
                 contentId: contentDetails || progress.contentId
@@ -1452,7 +1498,7 @@ const getUserAnalytics = async (req, res) => {
         // Process assignments that might not have progress records
         for (const assignment of assignments) {
             // Find corresponding progress record
-            const progress = userProgressWithContent.find(p => 
+            const progress = userProgressWithContent.find(p =>
                 p.assignment_id?._id?.toString() === assignment._id.toString()
             );
 
@@ -1524,9 +1570,9 @@ const getUserAnalytics = async (req, res) => {
                 email: user?.email || 'unknown@example.com',
                 started_at: startedOn,
                 completed_at: completedOn,
-                status: progress?.status === 'assigned' ? 'not-started' : 
-                       progress?.status === 'in_progress' ? 'in-progress' : 
-                       progress?.status === 'completed' ? 'completed' : 'not-started',
+                status: progress?.status === 'assigned' ? 'not-started' :
+                    progress?.status === 'in_progress' ? 'in-progress' :
+                        progress?.status === 'completed' ? 'completed' : 'not-started',
                 score: score,
                 averageScore: progress?.averageScore || 0,
                 timeSpent: progress ? calculateTimeSpent(progress.started_at, progress.completed_at, progress.last_activity_at) : 'Not Started',
@@ -1551,10 +1597,10 @@ const getUserAnalytics = async (req, res) => {
 
         // Also add any progress records that don't have assignments
         for (const progress of userProgressWithContent) {
-            const hasAssignment = totalAssignments.find(a => 
+            const hasAssignment = totalAssignments.find(a =>
                 a._id === progress.uuid
             );
-            
+
             if (!hasAssignment) {
                 // Handle start date edge cases
                 let startedOn = null;
@@ -1585,9 +1631,9 @@ const getUserAnalytics = async (req, res) => {
                     email: user?.email || 'unknown@example.com',
                     started_at: startedOn,
                     completed_at: completedOn,
-                    status: progress.status === 'assigned' ? 'not-started' : 
-                           progress.status === 'in_progress' ? 'in-progress' : 
-                           progress.status === 'completed' ? 'completed' : 'not-started',
+                    status: progress.status === 'assigned' ? 'not-started' :
+                        progress.status === 'in_progress' ? 'in-progress' :
+                            progress.status === 'completed' ? 'completed' : 'not-started',
                     score: score,
                     averageScore: progress.averageScore || 0,
                     timeSpent: calculateTimeSpent(progress.started_at, progress.completed_at, progress.last_activity_at),
@@ -1633,7 +1679,7 @@ const getUserAnalytics = async (req, res) => {
 const getAssessmentAnalytics = async (req, res) => {
     try {
         const { assessmentId } = req.params;
-        
+
         if (!assessmentId) {
             return res.status(400).json({
                 success: false,
@@ -1646,7 +1692,7 @@ const getAssessmentAnalytics = async (req, res) => {
         // Get assessment info first
         let assessment = null;
         let assessmentObjectId = null;
-        
+
         // Handle both UUID and ObjectId cases
         if (assessmentId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)) {
             assessment = await OrganizationAssessments.findOne({ uuid: assessmentId })
@@ -1670,10 +1716,10 @@ const getAssessmentAnalytics = async (req, res) => {
             assign_type: "OrganizationAssessments",
             contentId: assessmentObjectId
         })
-        .populate('assigned_users', 'name email')
-        .populate('created_by', 'name')
-        .populate('groups', 'name')
-        .sort({ assign_on: -1 });
+            .populate('assigned_users', 'name email')
+            .populate('created_by', 'name')
+            .populate('groups', 'name')
+            .sort({ assign_on: -1 });
 
         console.log('Found assignments:', assignments.length);
 
@@ -1683,9 +1729,9 @@ const getAssessmentAnalytics = async (req, res) => {
             assessmentAttempts = await OrganizationAssessmentsAttemps.find({
                 assessment_id: assessmentObjectId
             })
-            .populate('user_id', 'name email')
-            .populate('assessment_id', 'title description')
-            .sort({ createdAt: -1 });
+                .populate('user_id', 'name email')
+                .populate('assessment_id', 'title description')
+                .sort({ createdAt: -1 });
         }
 
         console.log('Found assessment attempts:', assessmentAttempts.length);
@@ -1708,13 +1754,13 @@ const getAssessmentAnalytics = async (req, res) => {
 
         // Combine assignments and attempts to show all assigned users
         const allAssignments = [];
-        
+
         assignments.forEach(assignment => {
             if (assignment.assigned_users && assignment.assigned_users.length > 0) {
                 assignment.assigned_users.forEach(user => {
                     const userId = user._id.toString();
                     const attempt = attemptsByUser.get(userId);
-                    
+
                     allAssignments.push({
                         userName: user.name || 'Unknown User',
                         email: user.email || 'unknown@example.com',
@@ -1739,16 +1785,16 @@ const getAssessmentAnalytics = async (req, res) => {
         const completedAssignments = allAssignments.filter(a => a.status === 'completed').length;
         const uniqueUsers = [...new Set(allAssignments.map(a => a.userName))];
         const completionRate = totalAssignments > 0 ? (completedAssignments / totalAssignments) * 100 : 0;
-        
+
         // Calculate scores
         const scores = allAssignments
             .filter(a => a.score !== undefined && a.score !== null && a.score > 0)
             .map(a => a.score);
-        
-        const averageScore = scores.length > 0 
-            ? scores.reduce((sum, score) => sum + score, 0) / scores.length 
+
+        const averageScore = scores.length > 0
+            ? scores.reduce((sum, score) => sum + score, 0) / scores.length
             : 0;
-        
+
         const highestScore = scores.length > 0 ? Math.max(...scores) : 0;
         const lowestScore = scores.length > 0 ? Math.min(...scores) : 0;
 
@@ -1829,22 +1875,22 @@ const getAssessmentAnalytics = async (req, res) => {
 
 // Helper function to calculate average time spent
 const calculateAverageTimeSpent = (attempts) => {
-    const validAttempts = attempts.filter(attempt => 
+    const validAttempts = attempts.filter(attempt =>
         attempt.attemptedAt && attempt.updatedAt
     );
-    
+
     if (validAttempts.length === 0) return '0 min';
-    
+
     const totalTimeMs = validAttempts.reduce((total, attempt) => {
         const start = new Date(attempt.attemptedAt);
         const end = new Date(attempt.updatedAt);
         return total + (end - start);
     }, 0);
-    
+
     const avgTimeMs = totalTimeMs / validAttempts.length;
     const avgHours = Math.floor(avgTimeMs / (1000 * 60 * 60));
     const avgMins = Math.floor((avgTimeMs % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     if (avgHours > 0) {
         return `${avgHours}h ${avgMins}m`;
     } else {
@@ -1852,10 +1898,60 @@ const calculateAverageTimeSpent = (attempts) => {
     }
 };
 
+// Helper function to calculate average time on platform
+const calculateAverageTimeOnPlatform = async (organizationId, startDate, endDate) => {
+    try {
+        // Get all user progress records within the date range
+        const progressRecords = await UserContentProgress.find({
+            organization_id: organizationId,
+            createdAt: { $gte: startDate, $lte: endDate },
+            started_at: { $exists: true }
+        });
+
+        if (progressRecords.length === 0) {
+            return '0 min';
+        }
+
+        // Calculate total time spent across all progress records
+        const totalTimeMs = progressRecords.reduce((total, progress) => {
+            const startedAt = progress.started_at || progress.createdAt;
+            const lastActivityAt = progress.last_activity_at || progress.updatedAt || new Date();
+            
+            if (startedAt && lastActivityAt) {
+                const start = new Date(startedAt);
+                const end = new Date(lastActivityAt);
+                const timeSpent = end - start;
+                // Only count if time spent is reasonable (less than 24 hours per session)
+                if (timeSpent > 0 && timeSpent < 24 * 60 * 60 * 1000) {
+                    return total + timeSpent;
+                }
+            }
+            return total;
+        }, 0);
+
+        // Calculate average time per user
+        const uniqueUsers = new Set(progressRecords.map(p => p.user_id?.toString())).size;
+        const avgTimeMs = uniqueUsers > 0 ? totalTimeMs / uniqueUsers : 0;
+
+        // Format the result
+        const avgHours = Math.floor(avgTimeMs / (1000 * 60 * 60));
+        const avgMins = Math.floor((avgTimeMs % (1000 * 60 * 60)) / (1000 * 60));
+
+        if (avgHours > 0) {
+            return `${avgHours}h ${avgMins}m`;
+        } else {
+            return `${avgMins} min`;
+        }
+    } catch (error) {
+        console.error('Error calculating average time on platform:', error);
+        return '0 min';
+    }
+};
+
 const getSurveyAnalytics = async (req, res) => {
     try {
         const { surveyId } = req.params;
-        
+
         if (!surveyId) {
             return res.status(400).json({
                 success: false,
@@ -1868,7 +1964,7 @@ const getSurveyAnalytics = async (req, res) => {
         // Get survey info first
         let survey = null;
         let surveyObjectId = null;
-        
+
         // Handle both UUID and ObjectId cases
         if (surveyId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)) {
             survey = await OrganizationSurveys.findOne({ uuid: surveyId })
@@ -1892,10 +1988,10 @@ const getSurveyAnalytics = async (req, res) => {
             assign_type: "OrganizationSurvey",
             contentId: surveyObjectId
         })
-        .populate('assigned_users', 'name email')
-        .populate('created_by', 'name')
-        .populate('groups', 'name')
-        .sort({ assign_on: -1 });
+            .populate('assigned_users', 'name email')
+            .populate('created_by', 'name')
+            .populate('groups', 'name')
+            .sort({ assign_on: -1 });
 
         console.log('Found assignments:', assignments.length);
 
@@ -1905,8 +2001,8 @@ const getSurveyAnalytics = async (req, res) => {
             surveyResponses = await OrganizationSurveyResponses.find({
                 survey_assignment_id: surveyObjectId.toString()
             })
-            .populate('user_id', 'name email')
-            .sort({ submitted_at: -1 });
+                .populate('user_id', 'name email')
+                .sort({ submitted_at: -1 });
         }
 
         console.log('Found survey responses:', surveyResponses.length);
@@ -1929,13 +2025,13 @@ const getSurveyAnalytics = async (req, res) => {
 
         // Combine assignments and responses to show all assigned users
         const allAssignments = [];
-        
+
         assignments.forEach(assignment => {
             if (assignment.assigned_users && assignment.assigned_users.length > 0) {
                 assignment.assigned_users.forEach(user => {
                     const userId = user._id.toString();
                     const response = responsesByUser.get(userId);
-                    
+
                     allAssignments.push({
                         userName: user.name || 'Unknown User',
                         email: user.email || 'unknown@example.com',
@@ -2041,7 +2137,7 @@ const getSurveyAnalytics = async (req, res) => {
 const getLearningPathAnalytics = async (req, res) => {
     try {
         const { learningPathId } = req.params;
-        
+
         if (!learningPathId) {
             return res.status(400).json({
                 success: false,
@@ -2054,7 +2150,7 @@ const getLearningPathAnalytics = async (req, res) => {
         // Get learning path info first
         let learningPath = null;
         let learningPathObjectId = null;
-        
+
         // Handle both UUID and ObjectId cases
         if (learningPathId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)) {
             learningPath = await LearningPath.findOne({ uuid: learningPathId })
@@ -2080,21 +2176,21 @@ const getLearningPathAnalytics = async (req, res) => {
             assign_type: "LearningPath",
             contentId: learningPathObjectId
         })
-        .populate('assigned_users', 'name email')
-        .populate('created_by', 'name')
-        .populate('groups', 'name')
-        .sort({ assign_on: -1 });
+            .populate('assigned_users', 'name email')
+            .populate('created_by', 'name')
+            .populate('groups', 'name')
+            .sort({ assign_on: -1 });
 
         console.log('Found assignments:', assignments.length);
 
         // Get user progress data for learning path
         const userProgressData = [];
-        
+
         assignments.forEach(assignment => {
             if (assignment.assigned_users && assignment.assigned_users.length > 0) {
                 assignment.assigned_users.forEach(user => {
                     const userId = user._id.toString();
-                    
+
                     // Get progress for each lesson in the learning path
                     const lessonProgress = [];
                     if (learningPath.lessons && learningPath.lessons.length > 0) {
@@ -2112,7 +2208,7 @@ const getLearningPathAnalytics = async (req, res) => {
                             });
                         });
                     }
-                    
+
                     userProgressData.push({
                         userName: user.name || 'Unknown User',
                         email: user.email || 'unknown@example.com',
@@ -2225,13 +2321,13 @@ const getCoursePerformanceInsights = async (req, res) => {
     try {
         const { content, timeRange, team, subteam } = req.query;
         console.log('Course Performance Insights called with:', { content, timeRange, team, subteam, orgId: req.user.organization_id });
-        
+
         let progressQuery = { organization_id: req.user.organization_id };
-        
+
         // Apply time range filter if provided
         if (timeRange) {
             let cutoffDate = new Date();
-            
+
             if (timeRange === '7d') {
                 cutoffDate.setDate(cutoffDate.getDate() - 7);
             } else if (timeRange === '30d') {
@@ -2248,14 +2344,14 @@ const getCoursePerformanceInsights = async (req, res) => {
                 // Default to 30 days
                 cutoffDate.setDate(cutoffDate.getDate() - 30);
             }
-            
+
             progressQuery.createdAt = { $gte: cutoffDate };
         }
-        
+
         let progress = [];
         let contentTypeModel = "OrganizationModule";
         let contentTypeField = "contentId";
-        
+
         // Determine which content type to fetch based on filter
         switch (content) {
             case "assessments":
@@ -2272,13 +2368,13 @@ const getCoursePerformanceInsights = async (req, res) => {
                 contentTypeModel = "OrganizationModule";
                 break;
         }
-        
+
         // Fetch progress data based on content type
         if (content === "assessments") {
             // Get users from organization first, then get their assessment attempts
             const orgUsers = await User.find({ organization_id: req.user.organization_id }).select('_id');
             const userIds = orgUsers.map(u => u._id);
-            
+
             progress = await OrganizationAssessmentsAttemps
                 .find({
                     user_id: { $in: userIds },
@@ -2295,12 +2391,12 @@ const getCoursePerformanceInsights = async (req, res) => {
             // Get users from organization first, then get their survey responses
             const orgUsers = await User.find({ organization_id: req.user.organization_id }).select('_id');
             const userIds = orgUsers.map(u => u._id);
-            
+
             // Get all surveys for this organization
             const allSurveys = await OrganizationSurveys.find({
                 organization_id: req.user.organization_id
             });
-            
+
             // Get survey responses
             const responses = await OrganizationSurveyResponses
                 .find({
@@ -2311,13 +2407,13 @@ const getCoursePerformanceInsights = async (req, res) => {
                     path: "user_id",
                     select: "name email"
                 });
-            
+
             // Create progress entries for all surveys, even if no responses
             progress = allSurveys.map(survey => {
-                const surveyResponses = responses.filter(r => 
+                const surveyResponses = responses.filter(r =>
                     r.survey_assignment_id && r.survey_assignment_id.toString() === survey._id.toString()
                 );
-                
+
                 return {
                     survey_assignment_id: survey._id,
                     surveyId: survey,
@@ -2331,7 +2427,7 @@ const getCoursePerformanceInsights = async (req, res) => {
             const allLearningPaths = await LearningPath.find({
                 organization_id: req.user.organization_id
             });
-            
+
             // Get user progress for learning paths
             const userProgress = await UserContentProgress
                 .find({
@@ -2341,18 +2437,18 @@ const getCoursePerformanceInsights = async (req, res) => {
                 })
                 .populate({
                     path: "assignment_id",
-                    populate: { 
-                        path: "contentId", 
+                    populate: {
+                        path: "contentId",
                         model: "LearningPath"
                     }
                 });
-            
+
             // Create progress entries for all learning paths, even if no progress
             progress = allLearningPaths.map(learningPath => {
-                const pathProgress = userProgress.filter(p => 
+                const pathProgress = userProgress.filter(p =>
                     p.assignment_id?.contentId && p.assignment_id.contentId.toString() === learningPath._id.toString()
                 );
-                
+
                 return {
                     assignment_id: pathProgress.length > 0 ? pathProgress[0].assignment_id : null,
                     contentId: learningPath,
@@ -2376,7 +2472,7 @@ const getCoursePerformanceInsights = async (req, res) => {
         const grouped = {};
 
         console.log(`Found ${progress.length} progress entries for content type: ${content}`);
-        
+
         if (content === "surveys") {
             console.log('Sample survey entry:', progress[0]);
         } else if (content === "learningpaths") {
@@ -2389,7 +2485,7 @@ const getCoursePerformanceInsights = async (req, res) => {
             let contentId, name, status, score = 0;
             let entryTeam = null;
             let entrySubteam = null;
-            
+
             if (content === "assessments") {
                 contentId = entry.assessment_id?._id?.toString();
                 name = entry.assessment_id?.title;
@@ -2466,16 +2562,16 @@ const getCoursePerformanceInsights = async (req, res) => {
 
             const completionRate = ((completed / enrolled) * 100).toFixed(1);
             const avgScore = scores.length > 0 ? (totalScore / scores.length).toFixed(1) : 0;
-            
+
             // Determine performance level based on completion rate, average score, and enrollment
             let performanceLevel = "Needs Attention";
-            
+
             // Top Performing: completionRate ≥ 80% AND avgScore ≥ 70 AND enrolled ≥ 5
             if (completionRate >= 80 && enrolled >= 2) {
                 performanceLevel = "Top Performing";
-            } 
+            }
             // Good Performance: completionRate ≥ 60% AND avgScore ≥ 50 AND enrolled ≥ 3
-            else if (completionRate >= 60  && enrolled >= 1) {
+            else if (completionRate >= 60 && enrolled >= 1) {
                 performanceLevel = "Good Performance";
             }
             // Needs Attention: completionRate < 60% OR avgScore < 50 OR completed = 0

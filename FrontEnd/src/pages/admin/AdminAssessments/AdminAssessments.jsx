@@ -17,6 +17,7 @@ import ExportModal from '../../../components/common/ExportModal/ExportModal';
 import { exportAssessmentsWithSelection } from '../../../utils/assessmentExport';
 import { categories } from '../../../utils/constants';
 import AnalyticsPop from '../../../components/AnalyticsPopup/AnalyticsPop';
+import CustomSelect from '../../../components/dropdown/DropDown';
 
 
 const AdminAssessments = () => {
@@ -319,6 +320,7 @@ const handleExportConfirm = (exportScope) => {
     console.error('Export assessments failed', e);
     notifyError('Failed to export assessments');
   }
+  clearSelection();
 };
   
   // Filter handlers
@@ -1154,32 +1156,31 @@ const handleExportConfirm = (exportScope) => {
           <span style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px", hover: { color: "#6b7280" } }} onClick={() => setShowFilters(false)}><GoX size={20} color="#6b7280" /></span>
           <div className="filter-group">
             <label>Status</label>
-            <select
-              name="status"
+            <CustomSelect
               value={tempFilters?.status || ""}
-              onChange={handleFilterChange}
-            >
-              <option value="">All</option>
-              {/* <option value="Saved">Saved</option> */}
-              <option value="Draft">Draft</option>
-              <option value="Published">Published</option>
-            </select>
+              options={[
+                { value: "", label: "All" },
+                { value: "Draft", label: "Draft" },
+                { value: "Published", label: "Published" }
+              ]}
+              onChange={(value) => setTempFilters(prev => ({ ...prev, status: value }))}
+              placeholder="Select Status"
+              searchable={false}
+            />
           </div>
 
           <div className="filter-group">
             <label>Category</label>
-            <select
-              name="category"
+            <CustomSelect
               value={tempFilters?.category || ""}
-              onChange={handleFilterChange}
-            >
-              <option value="">All</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: "", label: "All" },
+                ...categories.map(cat => ({ value: cat, label: cat }))
+              ]}
+              onChange={(value) => setTempFilters(prev => ({ ...prev, category: value }))}
+              placeholder="Select Category"
+              searchable={false}
+            />
           </div>
 
           <div className="filter-actions">
@@ -1190,6 +1191,7 @@ const handleExportConfirm = (exportScope) => {
               Apply
             </button>
             
+
 
 
           </div>

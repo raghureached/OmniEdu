@@ -18,6 +18,7 @@ import { categories } from '../../../utils/constants';
 import AnalyticsPop from '../../../components/AnalyticsPopup/AnalyticsPop';
 import { exportModulesWithSelection } from '../../../utils/moduleExport';
 import ExportModal from '../../../components/common/ExportModal/ExportModal';
+import CustomSelect from '../../../components/dropdown/DropDown';
 
 
 
@@ -807,68 +808,62 @@ const ModuleManagement = () => {
                 </span>
                 <div className="filter-group">
                   <label>Status</label>
-                  <select
-                    name="status"
+                  <CustomSelect
                     value={tempFilters?.status || ""}
-                    onChange={handleFilterChange}
-                  >
-                    <option value="">All</option>
-                    <option value="Saved">Saved</option>
-                    <option value="Draft">Draft</option>
-                    <option value="Published">Published</option>
-                  </select>
+                    options={[
+                      { value: "", label: "All" },
+                      { value: "Saved", label: "Saved" },
+                      { value: "Draft", label: "Draft" },
+                      { value: "Published", label: "Published" }
+                    ]}
+                    onChange={(value) => setTempFilters(prev => ({ ...prev, status: value }))}
+                    placeholder="Select Status"
+                    searchable={false}
+                  />
                 </div>
                 <div className="filter-group">
                   <label>Category</label>
-                  <select
-                    name="category"
+                  <CustomSelect
                     value={tempFilters?.category || ""}
-                    onChange={handleFilterChange}
-                  >
-                    <option value="">All</option>
-                    {categories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
+                    options={[
+                      { value: "", label: "All" },
+                      ...categories.map(cat => ({ value: cat, label: cat }))
+                    ]}
+                    onChange={(value) => setTempFilters(prev => ({ ...prev, category: value }))}
+                    placeholder="Select Category"
+                    searchable={false}
+                  />
                 </div>
                 <div className="filter-group">
                   <label>Team</label>
-                  <select
-                    name="team"
+                  <CustomSelect
                     value={tempFilters?.team || ""}
-                    onChange={(e) => {
-                      handleFilterChange(e);
-                      // Reset subteam when team changes
-                      setTempFilters(prev => ({ ...prev, subteam: '' }));
+                    options={[
+                      { value: "", label: "All Teams" },
+                      ...teams.map(team => ({ value: team._id, label: team.name }))
+                    ]}
+                    onChange={(value) => {
+                      setTempFilters(prev => ({ ...prev, team: value, subteam: '' }));
                     }}
-                  >
-                    <option value="">All Teams</option>
-                    {teams.map((team) => (
-                      <option key={team._id} value={team._id}>
-                        {team.name}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Select Team"
+                    searchable={false}
+                  />
                 </div>
                 <div className="filter-group">
                   <label>Subteam</label>
-                  <select
-                    name="subteam"
+                  <CustomSelect
                     value={tempFilters?.subteam || ""}
-                    onChange={handleFilterChange}
+                    options={[
+                      { value: "", label: "All Subteams" },
+                      ...subteams
+                        .filter(subteam => !tempFilters?.team || tempFilters?.team === '' || subteam.team_id?._id === tempFilters?.team)
+                        .map(subteam => ({ value: subteam._id, label: subteam.name }))
+                    ]}
+                    onChange={(value) => setTempFilters(prev => ({ ...prev, subteam: value }))}
+                    placeholder="Select Subteam"
+                    searchable={false}
                     disabled={!tempFilters?.team || tempFilters?.team === ''}
-                  >
-                    <option value="">All Subteams</option>
-                    {subteams
-                      .filter(subteam => !tempFilters?.team || tempFilters?.team === '' || subteam.team_id?._id === tempFilters?.team)
-                      .map((subteam) => (
-                        <option key={subteam._id} value={subteam._id}>
-                          {subteam.name}
-                        </option>
-                      ))}
-                  </select>
+                  />
                 </div>
                 <div className="filter-actions">
                 <button className="btn-secondary" onClick={resetFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>

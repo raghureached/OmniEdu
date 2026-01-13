@@ -353,7 +353,6 @@ const TeamPreview = ({
                 type="text"
                 name="subTeamName"
                 placeholder="Enter or select subteam name"
-                list="subTeamSuggestions"
                 value={formData.subTeamName}
                 onChange={handleInputChange}
                 className="addOrg-form-input"

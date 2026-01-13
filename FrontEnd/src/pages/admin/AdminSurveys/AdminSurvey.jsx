@@ -26,6 +26,7 @@ import SelectionBanner from '../../../components/Banner/SelectionBanner';
 import AnalyticsPop from '../../../components/AnalyticsPopup/AnalyticsPop';
 import ExportModal from '../../../components/common/ExportModal/ExportModal';
 import { exportSurveysWithSelection } from '../../../utils/surveyExport';
+import CustomSelect from '../../../components/dropdown/DropDown';
 const AdminSurveys = () => {
   const dispatch = useDispatch()
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,13 +35,18 @@ const AdminSurveys = () => {
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState([]);
   const [groups, setGroups] = useState([]);
+  const [subteams, setSubteams] = useState([]);
   const [showBulkAction, setShowBulkAction] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
-    status: ''
+    status: '',
+    team: '',
+    subteam: ''
   });
   const [tempFilters, setTempFilters] = useState({
-    status: ''
+    status: '',
+    team: '',
+    subteam: ''
   });
   const filterButtonRef = useRef(null);
   const bulkButtonRef = useRef(null);
@@ -194,8 +200,13 @@ const AdminSurveys = () => {
 
   // Fetch list with pagination (surveys)
   useEffect(() => {
-    dispatch(fetchSurveys({ page, limit }))
-  }, [dispatch, page, limit])
+    dispatch(fetchSurveys({ 
+      page, 
+      limit,
+      team: filters.team,
+      subteam: filters.subteam
+    }))
+  }, [dispatch, page, limit, filters.team, filters.subteam])
   useEffect(() => {
     const fetchGroups = async () => {
       try {
@@ -206,7 +217,18 @@ const AdminSurveys = () => {
         console.error('Error fetching groups:', error);
       }
     };
-    fetchGroups(); // fetch teams/subteams
+
+    const fetchSubteams = async () => {
+      try {
+        const response = await api.get('/api/admin/analytics/getSubteams');
+        setSubteams(response.data.subteams);
+      } catch (error) {
+        console.error('Error fetching subteams:', error);
+      }
+    };
+
+    fetchGroups();
+    fetchSubteams();
   }, [dispatch]);
 
   // Filter the assessments based on search term and status filter
@@ -450,7 +472,7 @@ const AdminSurveys = () => {
       clearSelection();
       notifySuccess("Surveys deleted successfully");
       setShowBulkAction(false);
-      dispatch(fetchSurveys({ page, limit }));
+      dispatch(fetchSurveys({ page, limit, team: filters.team, subteam: filters.subteam }));
     } catch (e) {
       console.error('Bulk delete failed', e);
       notifyError("Failed to delete surveys", {
@@ -472,7 +494,8 @@ const AdminSurveys = () => {
   };
 
   const resetFilters = () => {
-    setTempFilters({ status: '' });
+    setTempFilters({ status: '', team: '', subteam: '' });
+    setFilters({ status: '', team: '', subteam: '' });
   };
 
   const handleFilter = () => {
@@ -670,7 +693,7 @@ const AdminSurveys = () => {
         });
       }
       setShowForm(false);
-      dispatch(fetchSurveys({ page, limit }));
+      dispatch(fetchSurveys({ page, limit, team: filters.team, subteam: filters.subteam }));
     } catch (err) {
       console.error('Failed to create assessment:', err?.response?.data || err.message);
       notifyError()
@@ -785,7 +808,7 @@ const AdminSurveys = () => {
         });
       }
       setShowForm(false);
-      dispatch(fetchSurveys({ page, limit }));
+      dispatch(fetchSurveys({ page, limit, team: filters.team, subteam: filters.subteam }));
     } catch (err) {
       console.error('Failed to update assessment:', err?.response?.data || err.message);
     }
@@ -1107,16 +1130,48 @@ const AdminSurveys = () => {
           <span style={{ cursor: "pointer", position: "absolute", right: "10px", top: "10px", hover: { color: "#6b7280" } }} onClick={() => setShowFilters(false)}><GoX size={20} color="#6b7280" /></span>
           <div className="filter-group">
             <label>Status</label>
-            <select
-              name="status"
+            <CustomSelect
               value={tempFilters?.status || ""}
-              onChange={handleFilterChange}
-            >
-              <option value="">All</option>
-              {/* <option value="Saved">Saved</option> */}
-              <option value="Draft">Draft</option>
-              <option value="Published">Published</option>
-            </select>
+              options={[
+                { value: "", label: "All" },
+                { value: "Draft", label: "Draft" },
+                { value: "Published", label: "Published" }
+              ]}
+              onChange={(value) => setTempFilters(prev => ({ ...prev, status: value }))}
+              placeholder="Select Status"
+              searchable={false}
+            />
+          </div>
+          <div className="filter-group">
+            <label>Team</label>
+            <CustomSelect
+              value={tempFilters?.team || ""}
+              options={[
+                { value: "", label: "All Teams" },
+                ...groups.map(group => ({ value: group._id, label: group.name }))
+              ]}
+              onChange={(value) => {
+                setTempFilters(prev => ({ ...prev, team: value, subteam: '' }));
+              }}
+              placeholder="Select Team"
+              searchable={false}
+            />
+          </div>
+          <div className="filter-group">
+            <label>Subteam</label>
+            <CustomSelect
+              value={tempFilters?.subteam || ""}
+              options={[
+                { value: "", label: "All Subteams" },
+                ...subteams
+                  .filter(subteam => !tempFilters?.team || tempFilters?.team === '' || subteam.team_id?._id === tempFilters?.team)
+                  .map(subteam => ({ value: subteam._id, label: subteam.name }))
+              ]}
+              onChange={(value) => setTempFilters(prev => ({ ...prev, subteam: value }))}
+              placeholder="Select Subteam"
+              searchable={false}
+              disabled={!tempFilters?.team || tempFilters?.team === ''}
+            />
           </div>
 
 
@@ -1128,6 +1183,7 @@ const AdminSurveys = () => {
               Apply
             </button>
            
+
 
 
           </div>

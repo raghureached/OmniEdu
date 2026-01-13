@@ -20,28 +20,46 @@ import api from '../../services/api';
 //     }
 //   }
 // );
+// export const fetchUsers = createAsyncThunk(
+//   'users/fetchUsers',
+//   async (filters, { rejectWithValue }) => {
+//     try {
+//       // First, get all users without pagination for sorting
+//       const allUsersResponse = await api.get('/api/admin/getUsers');
+
+//       // Then get paginated users
+//       const paginatedResponse = await api.get('/api/admin/getUsers', { 
+//         params: filters 
+//       });
+
+//       return {
+//         users: paginatedResponse.data.data,
+//         allUsers: allUsersResponse.data.data, // All users for sorting
+//         pagination: paginatedResponse.data.pagination,
+//       };
+//     } catch (error) {
+//       return rejectWithValue(error.response.data);
+//     }
+//   }
+// );
 export const fetchUsers = createAsyncThunk(
   'users/fetchUsers',
   async (filters, { rejectWithValue }) => {
     try {
-      // First, get all users without pagination for sorting
-      const allUsersResponse = await api.get('/api/admin/getUsers');
-
-      // Then get paginated users
-      const paginatedResponse = await api.get('/api/admin/getUsers', { 
-        params: filters 
-      });
+      // Do not send any pagination params; fetch full list
+      const response = await api.get('/api/admin/getUsers');
 
       return {
-        users: paginatedResponse.data.data,
-        allUsers: allUsersResponse.data.data, // All users for sorting
-        pagination: paginatedResponse.data.pagination,
+        users: response.data.data,
+        allUsers: response.data.data,
+        pagination: response.data.pagination,
       };
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error.response?.data || error.message);
     }
   }
 );
+
 export const createUser = createAsyncThunk(
   'users/createUser',
   async (userData, { rejectWithValue }) => {
@@ -232,20 +250,16 @@ const userSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // Fetch Users
-      .addCase(fetchUsers.pending, (state,action) => {
-        // state.loading = true;
-        const isTyping = action.meta?.arg?.search !== undefined;
-  if (isTyping) {
-    // no loader during search
-    return;
-  }
+      .addCase(fetchUsers.pending, (state) => {
+        state.loading = true;
         state.error = null;
       })
       .addCase(fetchUsers.fulfilled, (state, action) => {
         state.loading = false;
         const payload = action.payload || {};
         const users = Array.isArray(payload.users) ? payload.users : [];
-        state.allUsers = action.payload.allUsers; // Save all users for sorting
+        // Save all users for sorting; fallback to users if not explicitly provided
+        state.allUsers = Array.isArray(payload.allUsers) ? payload.allUsers : users;
         const pagination = payload.pagination || {};
         const requestParams = action.meta?.arg || {};
 

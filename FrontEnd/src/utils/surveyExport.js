@@ -99,7 +99,8 @@ function buildCsvRows(surveys, teamsList = [], subteamsList = []) {
       Array.isArray(s.tags) ? s.tags.join('|') : (s.tags || ''),
       numSections,
       numQuestions,
-      s.thumbnail || s.thumbnailUrl || s.image || '',
+      // s.thumbnail || s.thumbnailUrl || s.image || '',
+      '',
       resolveTeamName(s),
       resolveSubteamName(s),
     ];

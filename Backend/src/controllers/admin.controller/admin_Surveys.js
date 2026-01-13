@@ -2,9 +2,7 @@ const OrganizationSurveyResponses = require("../../models/Admin/Surveys/organiza
 const OrganizationSurveys = require("../../models/Admin/Surveys/organizationSurveys_model");
 const OrganizationSurveyQuestion = require("../../models/Admin/Surveys/organizationSurveysQuestions_model");
 const { v4: uuidv4 } = require("uuid");
-const GlobalSurveyFeedback = require("../../models/global_surveys_feedback");
 const OrganizationSurveySection = require("../../models/Admin/Surveys/organizationSurveySection_model");
-const LearningPath = require("../../models/Admin/LearningPaths/learningPath_model");
 const { logActivity } = require("../../utils/activityLogger");
 
 /// aligned with new question and survey models, with adapter for `elements`
@@ -17,7 +15,7 @@ const createSurvey = async (req, res) => {
   let transactionCommitted = false; // Track transaction state
   try {
     const { title, description, sections, tags = [], team, subteam, status, noOfSections, noOfQuestions } = req.body;
-   console.log("log in surveys controller:",req.body)
+  //  console.log("log in surveys controller:",req.body)
     const created_by = req.user?.id || req.body.created_by; // Ensure created_by is passed or derived
     const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
 
@@ -308,22 +306,6 @@ const deleteSurvey = async (req, res) => {
       });
     }
 
-    // Block delete if this survey is part of any Learning Path
-    const referencedLP = await LearningPath.findOne({
-      $or: [
-        { "lessons.id": survey._id },
-        { "lessons.uuid": req.params.id },
-      ],
-    }).select("_id title uuid");
-
-    if (referencedLP) {
-      return res.status(400).json({
-        success: false,
-        message: "This survey is part of a Learning Path. Please remove it from the Learning Path first.",
-        learningPath: { id: referencedLP._id, title: referencedLP.title, uuid: referencedLP.uuid },
-      });
-    }
-
     // --- Step 1: Delete questions under each section ---
     if (Array.isArray(survey.sections) && survey.sections.length > 0) {
       const sectionIds = survey.sections.map((s) => s._id);
@@ -399,13 +381,27 @@ const getSurveys = async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const skip = (page - 1) * limit;
     const organization_id = req.user?.organization_id; // Get organization_id from authenticated user
+    const { team, subteam } = req.query;
 
     if (!organization_id) {
       return res.status(400).json({ success: false, message: "Organization ID is required" });
     }
 
-    // Fetch only surveys from current organization
-    const surveys = await OrganizationSurveys.find({ organization_id })
+    // Build query filter
+    const query = { organization_id };
+
+    // Add team filter if provided
+    if (team && team !== '' && team !== 'all') {
+      query.team = team;
+    }
+
+    // Add subteam filter if provided
+    if (subteam && subteam !== '' && subteam !== 'all') {
+      query.subteam = subteam;
+    }
+
+    // Fetch only surveys from current organization with optional team/subteam filters
+    const surveys = await OrganizationSurveys.find(query)
       .skip(skip)
       .limit(limit)
       .populate({
@@ -418,7 +414,7 @@ const getSurveys = async (req, res) => {
       // .populate("feedback")
       .lean(); // lean() for faster response and smaller payload
 
-    const total = await OrganizationSurveys.countDocuments({ organization_id });
+    const total = await OrganizationSurveys.countDocuments(query);
 
     // Optional: sort sections or questions by order before sending
     const sortedSurveys = surveys.map((survey) => ({

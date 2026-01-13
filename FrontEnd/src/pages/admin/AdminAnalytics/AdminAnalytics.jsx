@@ -55,33 +55,41 @@ const COLORS = {
 
 const CHART_COLORS = ['#011F5B', '#1C88C7', '#10b981', '#f59e0b', '#8b5cf6'];
 
-// Custom tick component for XAxis to display day name and date in flex column
+// Custom tick component for XAxis to display formatted date
 const CustomXAxisTick = ({ x, y, payload }) => {
-  const value = payload.value;
-  // Access formattedDate from the full data object (payload.payload)
-  const formattedDate = payload.payload?.formattedDate || '';
-  
-  // Debug log to check payload structure
-  console.log('CustomXAxisTick payload:', payload);
-  
+  const formattedDate = payload.value; // ✅ THIS IS THE FIX
+
   return (
     <g transform={`translate(${x},${y})`}>
-      <foreignObject x={-25} y={0} width={50} height={50}>
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          fontSize: '12px',
-          color: '#000',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontWeight: 600 }}>{value}</div>
-          <div style={{ fontSize: '10px', color: '#6b7280' }}>{formattedDate}</div>
-        </div>
-      </foreignObject>
+      <text
+        x={0}
+        y={10}
+        dy={16}
+        textAnchor="middle"
+        fill="#6b7280"
+        fontSize={11}
+      >
+        {formattedDate}
+      </text>
     </g>
   );
 };
+
+const getEqualSpacedTicks = (data, maxTicks = 10) => {
+  if (!Array.isArray(data) || data.length === 0) return [];
+
+  if (data.length <= maxTicks) {
+    return data.map(d => d.formattedDate);
+  }
+
+  const step = Math.ceil(data.length / maxTicks);
+
+  return data
+    .filter((_, index) => index % step === 0)
+    .map(d => d.formattedDate);
+};
+
+
 
 const AdminAnalyticsDashboard = () => {
   const navigate = useNavigate();
@@ -107,28 +115,44 @@ const AdminAnalyticsDashboard = () => {
   const handleTimeRangeChange = (newTimeRange) => {
     setIsDateRangeLoading(true);
     // Reset initial data loading state to prevent blinking during time range changes
-    setInitialDataLoaded({
-      organizationDate: true, // Keep this as true since it doesn't change with time range
-      courseLibrary: false,
-      teams: true, // Keep this as true since it doesn't change with time range
-      subteams: true, // Keep this as true since it doesn't change with time range
-      usageTrend: false,
-      courseAdoption: false,
-      courseMetrics: false,
-      userData: false
-    });
+    // setInitialDataLoaded({
+    //   organizationDate: true, // Keep this as true since it doesn't change with time range
+    //   courseLibrary: false,
+    //   teams: true, // Keep this as true since it doesn't change with time range
+    //   subteams: true, // Keep this as true since it doesn't change with time range
+    //   usageTrend: false,
+    //   courseAdoption: false,
+    //   courseMetrics: false,
+    //   userData: false
+    // });
+    
     setIsLoading(true); // Set loading to true during time range changes
     setTimeRange(newTimeRange);
     setUserFilters(prev => ({ ...prev, timeRange: newTimeRange }));
-    
-    // Fetch data conditionally by active view
+    // If switching away from custom, clear any selected custom dates and close the picker
+    if (newTimeRange !== 'custom') {
+      setCustomDateRange({ startDate: null, endDate: null });
+      setShowCustomDatePicker(false);
+    }
+    // Keep atRiskFilters in sync with global timeRange selection
+    setAtRiskFilters(prev => (
+      newTimeRange === 'custom'
+        ? { ...prev, timeRange: 'custom', startDate: customDateRange.startDate, endDate: customDateRange.endDate }
+        : { ...prev, timeRange: newTimeRange, startDate: undefined, endDate: undefined }
+    ));
+
+    // Fetch data conditionally by active view - use ref to get latest state
+    const currentView = activeViewRef.current;
     const userPromises = [
       fetchUsageTrendWithFilters({ ...userFilters, timeRange: newTimeRange }),
       fetchEngagementHeatmap(newTimeRange),
       fetchUserData(newTimeRange),
-      newTimeRange === 'mtd' || newTimeRange === 'custom'
-        ? fetchAtRiskLearners(newTimeRange)
-        : fetchAtRiskLearners(newTimeRange === '7d' ? 7 : newTimeRange === '30d' ? 30 : 90)
+      // Use unified filtered fetch to respect custom dates
+      fetchAtRiskLearnersWithFilters(
+        newTimeRange === 'custom'
+          ? { ...atRiskFilters, timeRange: 'custom', startDate: customDateRange.startDate, endDate: customDateRange.endDate }
+          : { ...atRiskFilters, timeRange: newTimeRange }
+      )
     ];
     const coursePromises = [
       fetchCourseMetrics(newTimeRange),
@@ -138,11 +162,12 @@ const AdminAnalyticsDashboard = () => {
     ];
 
     Promise.all([
-      ...(activeView === 'users' ? userPromises : []),
-      ...(activeView === 'courses' ? coursePromises : [])
+      ...(currentView === 'users' ? userPromises : []),
+      ...(currentView === 'courses' ? coursePromises : [])
     ]).finally(() => {
       setIsDateRangeLoading(false);
     });
+     console.log('handleTimeRangeChange -> newTimeRange:', newTimeRange, 'currentView:', currentView);
   };
 
   // Handle team/subteam filter changes with loading state
@@ -170,7 +195,7 @@ const AdminAnalyticsDashboard = () => {
   // Handle custom date range changes with loading state
   const handleCustomDateRangeApply = () => {
     if (!customDateRange.startDate || !customDateRange.endDate) return;
-    
+
     setIsDateRangeLoading(true);
     // Reset initial data loading state to prevent blinking during time range changes
     setInitialDataLoaded({
@@ -185,17 +210,24 @@ const AdminAnalyticsDashboard = () => {
     });
     setIsLoading(true); // Set loading to true during time range changes
     setTimeRange('custom');
-    setUserFilters(prev => ({ 
-      ...prev, 
+    setUserFilters(prev => ({
+      ...prev,
       timeRange: 'custom',
       startDate: customDateRange.startDate,
       endDate: customDateRange.endDate
     }));
-    
+    // Keep At-Risk filters in sync with custom dates
+    setAtRiskFilters(prev => ({
+      ...prev,
+      timeRange: 'custom',
+      startDate: customDateRange.startDate,
+      endDate: customDateRange.endDate
+    }));
+
     // Fetch data conditionally by active view
     const userPromises = [
-      fetchUsageTrendWithFilters({ 
-        ...userFilters, 
+      fetchUsageTrendWithFilters({
+        ...userFilters,
         timeRange: 'custom',
         startDate: customDateRange.startDate,
         endDate: customDateRange.endDate
@@ -204,28 +236,34 @@ const AdminAnalyticsDashboard = () => {
         startDate: customDateRange.startDate,
         endDate: customDateRange.endDate
       }),
-      fetchUserData('custom'),
+      fetchUserData('custom', {
+        startDate: customDateRange.startDate,
+        endDate: customDateRange.endDate
+      }),
       fetchAtRiskLearners('custom', {
         startDate: customDateRange.startDate,
         endDate: customDateRange.endDate
       })
     ];
     const coursePromises = [
-      fetchCourseMetrics('custom'),
-      fetchCourseAdoptionWithFilters({ 
-        ...courseAdoptionFilters, 
+      fetchCourseMetrics('custom', {
+        startDate: customDateRange.startDate,
+        endDate: customDateRange.endDate
+      }),
+      fetchCourseAdoptionWithFilters({
+        ...courseAdoptionFilters,
         timeRange: 'custom',
         startDate: customDateRange.startDate,
         endDate: customDateRange.endDate
       }),
-      fetchCourseLibraryWithTimeRange({ 
-        ...courseFilters, 
+      fetchCourseLibraryWithTimeRange({
+        ...courseFilters,
         timeRange: 'custom',
         startDate: customDateRange.startDate,
         endDate: customDateRange.endDate
       }),
-      fetchCoursePerformanceInsights({ 
-        ...coursePerformanceFilters, 
+      fetchCoursePerformanceInsights({
+        ...coursePerformanceFilters,
         timeRange: 'custom',
         startDate: customDateRange.startDate,
         endDate: customDateRange.endDate
@@ -249,7 +287,7 @@ const AdminAnalyticsDashboard = () => {
   const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState('all');
   const [courseLibrary, setCourseLibrary] = useState([]);
-const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
+  const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   const [teams, setTeams] = useState([]);
   const [subteams, setSubteams] = useState([]);
   const [userData, setUserData] = useState({});
@@ -258,6 +296,9 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   const [coursePerformanceData, setCoursePerformanceData] = useState([]);
   const [engagementHeatmap, setEngagementHeatmap] = useState([]);
   const [atRiskLearners, setAtRiskLearners] = useState([]);
+  const [atRiskLearnersTotal, setAtRiskLearnersTotal] = useState(0);
+  const [atRiskLearnersPage, setAtRiskLearnersPage] = useState(1);
+  const [atRiskLearnersPerPage] = useState(5);
   const [courseMetrics, setCourseMetrics] = useState({
     modules: 0,
     assessments: 0,
@@ -266,6 +307,13 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   });
   const courseMetricsRequestInFlight = useRef(false);
   const [activeView, setActiveView] = useState('users'); // 'users' or 'courses'
+  const activeViewRef = useRef(activeView);
+
+  // Update ref when activeView changes
+  useEffect(() => {
+    activeViewRef.current = activeView;
+  }, [activeView]);
+
   const [showFilters, setShowFilters] = useState(false);
   const [showUserFilters, setShowUserFilters] = useState(false);
   const [isUsageTrendLoading, setIsUsageTrendLoading] = useState(false);
@@ -279,28 +327,28 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
     subteam: 'all',
     timeRange: '7d'
   });
-  
+
   // Independent filters for each course section
   const [courseLibraryFilters, setCourseLibraryFilters] = useState({
     team: 'all',
     subteam: 'all',
     timeRange: '7d'
   });
-  
+
   const [coursePerformanceFilters, setCoursePerformanceFilters] = useState({
     content: "modules",
     timeRange: '7d',
     team: 'all',
     subteam: 'all'
   });
-  
+
   const [courseAdoptionFilters, setCourseAdoptionFilters] = useState({
     category: 'all',
     team: 'all',
     subteam: 'all',
     timeRange: '7d'
   });
-  
+
   // Filter visibility states for each section
   const [showCourseLibraryFilters, setShowCourseLibraryFilters] = useState(false);
   const [showCoursePerformanceFilters, setShowCoursePerformanceFilters] = useState(false);
@@ -311,13 +359,14 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
     team: 'all',
     subteam: 'all'
   });
-  
+
   // Separate state for At-Risk Learners filters
   const [atRiskFilters, setAtRiskFilters] = useState({
-     timeRange: '7d',
-    riskLevel: 'high'
+    timeRange: '7d',
+    team: 'all',
+    subteam: 'all'
   });
-  
+
   const [showGiftPopup, setShowGiftPopup] = useState(false);
   const [showAnalyticsPopup, setShowAnalyticsPopup] = useState(false);
   const [selectedUserAnalytics, setSelectedUserAnalytics] = useState(null);
@@ -336,7 +385,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
         setInitialDataLoaded(prev => ({ ...prev, organizationDate: true }));
       }
     };
-    // fetchOrganizationCreationDate();
+    fetchOrganizationCreationDate();
 
     const fetchCourseLibrary = async () => {
       try {
@@ -403,18 +452,30 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
         setInitialDataLoaded(prev => ({ ...prev, courseAdoption: true }));
       }
     };
-    // fetchCourseAdoption(courseFilters);
+    fetchCourseAdoption(courseFilters);
 
     // Fetch overall course library data for stats
     // fetchOverallCourseLibrary();
   }, [])
 
+  // Fetch subteams for a specific team (accessible from filters)
+  const fetchSubteamsForTeam = async (teamId) => {
+    try {
+      const response = await api.get(`/api/admin/analytics/getSubteams?team=${teamId}`);
+      setSubteams(response.data.subteams || []);
+    } catch (error) {
+      console.error('Error fetching subteams for team:', error);
+      setSubteams([]);
+    }
+  };
+
   // Fetch dynamic course metrics
-  const fetchCourseMetrics = async (selectedTimeRange = timeRange) => {
+  const fetchCourseMetrics = async (selectedTimeRange = timeRange, customDates = null) => {
+    if (activeViewRef.current !== 'courses') return;
     if (courseMetricsRequestInFlight.current) return;
     courseMetricsRequestInFlight.current = true;
     try {
-      const response = await getContentCounts(selectedTimeRange);
+      const response = await getContentCounts(selectedTimeRange, customDates);
       if (response.success) {
         setCourseMetrics({
           modules: response.data.modules.total,
@@ -425,31 +486,24 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
       }
     } catch (error) {
       console.error('Failed to fetch course metrics:', error);
-      // Fallback to mock data if API fails
-      setCourseMetrics({
-        modules: 45,
-        assessments: 12,
-        surveys: 8,
-        learningPaths: 6,
-      });
     } finally {
       setInitialDataLoaded(prev => ({ ...prev, courseMetrics: true }));
       courseMetricsRequestInFlight.current = false;
     }
   };
 
-  // Fetch course metrics only when in courses view and timeRange changes
-  useEffect(() => {
-    if (activeView === 'courses') {
-      fetchCourseMetrics(timeRange);
-    }
-  }, [activeView, timeRange])
 
   // Fetch dynamic user data
-  const fetchUserData = async (selectedTimeRange = timeRange) => {
+  const fetchUserData = async (selectedTimeRange, customDates = null) => {
+    if (activeViewRef.current !== 'users') return;
+    const range = selectedTimeRange ?? timeRange;
     try {
-      const params = selectedTimeRange ? `?timeRange=${selectedTimeRange}` : '';
-      const response = await api.get(`/api/admin/analytics/getUserData${params}`);
+      const params = new URLSearchParams();
+      if (selectedTimeRange) params.append('timeRange', selectedTimeRange);
+      if (customDates && customDates.startDate) params.append('startDate', customDates.startDate.toISOString());
+      if (customDates && customDates.endDate) params.append('endDate', customDates.endDate.toISOString());
+      const url = params.toString() ? `/api/admin/analytics/getUserData?${params}` : '/api/admin/analytics/getUserData';
+      const response = await api.get(url);
       setUserData(response.data.data);
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -477,16 +531,17 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
         console.warn('Loading fallback triggered - some requests may have failed');
         setIsLoading(false);
       }
-    }, 10000);
+    }, 1000);
 
     return () => clearTimeout(fallbackTimer);
   }, [isLoading]);
 
   const fetchUsageTrendWithFilters = async (filters = {}) => {
+    if (activeViewRef.current !== 'users') return;
     setIsUsageTrendLoading(true);
     try {
       const params = new URLSearchParams();
-      if (filters.timeRange && filters.timeRange !== '30d') params.append('timeRange', filters.timeRange);
+      if (filters.timeRange) params.append('timeRange', filters.timeRange);
       if (filters.team && filters.team !== 'all') params.append('team', filters.team);
       if (filters.subteam && filters.subteam !== 'all') params.append('subteam', filters.subteam);
       if (filters.startDate) params.append('startDate', filters.startDate.toISOString());
@@ -504,6 +559,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   };
 
   const fetchCourseAdoptionWithFilters = async (filters = {}) => {
+    if (activeViewRef.current !== 'courses') return;
     try {
       console.log('fetchCourseAdoptionWithFilters called with filters:', filters);
       const params = new URLSearchParams();
@@ -526,14 +582,15 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   };
 
   const fetchEngagementHeatmap = async (timeRange = '30d', customDates = null) => {
+    if (activeViewRef.current !== 'users') return;
     try {
       let url = '/api/admin/analytics/getEngagementHeatmap';
       const params = new URLSearchParams();
-      
-      if (timeRange !== '30d') {
+
+      if (timeRange) {
         params.append('timeRange', timeRange);
       }
-      
+
       if (customDates) {
         if (customDates.startDate) {
           params.append('startDate', customDates.startDate.toISOString());
@@ -542,11 +599,11 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
           params.append('endDate', customDates.endDate.toISOString());
         }
       }
-      
+
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
-      
+
       const response = await api.get(url);
       console.log('Heatmap response:', response.data);
       setEngagementHeatmap(response.data.data);
@@ -556,17 +613,18 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   };
 
   const fetchAtRiskLearners = async (days = 30, customDates = null) => {
+    if (activeViewRef.current !== 'users') return;
     try {
       let url = '/api/admin/analytics/getAtRiskLearners';
       const params = new URLSearchParams();
-      
+
       // Handle timeRange parameter
       if (typeof days === 'string' && days !== '30') {
         params.append('timeRange', days);
       } else if (days !== 30) {
         params.append('days', days);
       }
-      
+
       // Handle custom dates
       if (customDates) {
         if (customDates.startDate) {
@@ -576,11 +634,11 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
           params.append('endDate', customDates.endDate.toISOString());
         }
       }
-      
+
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
-      
+
       const response = await api.get(url);
       console.log('At-risk learners response:', response.data);
       setAtRiskLearners(response.data.data);
@@ -590,39 +648,62 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   };
 
   // New fetch function for At-Risk Learners with risk level filter
-  const fetchAtRiskLearnersWithFilters = async (filters = {}) => {
+  const fetchAtRiskLearnersWithFilters = async (filters = {}, pageOverride = null) => {
+    if (activeViewRef.current !== 'users') return;
     setIsAtRiskLearnersLoading(true);
     try {
       let url = '/api/admin/analytics/getAtRiskLearners';
       const params = new URLSearchParams();
-      
+
       // Handle timeRange parameter
-      if (filters.timeRange && filters.timeRange !== '30d') {
-        if (filters.timeRange === 'custom' && filters.startDate && filters.endDate) {
-          params.append('startDate', filters.startDate.toISOString());
-          params.append('endDate', filters.endDate.toISOString());
-        } else if (filters.timeRange === 'mtd') {
+      const effectiveTimeRange = filters.timeRange || timeRange; // fall back to global selection
+      if (effectiveTimeRange) {
+        if (effectiveTimeRange === 'custom') {
+          // For custom range, explicitly set timeRange and include both dates
+          params.append('timeRange', 'custom');
+          const start = filters.startDate || customDateRange.startDate;
+          const end = filters.endDate || customDateRange.endDate;
+          if (start) params.append('startDate', start.toISOString());
+          if (end) params.append('endDate', end.toISOString());
+        } else if (effectiveTimeRange === 'mtd') {
           params.append('timeRange', 'mtd');
         } else {
-          const days = filters.timeRange === '7d' ? 7 : filters.timeRange === '90d' ? 90 : 30;
+          // Map common presets to days param
+          const days = effectiveTimeRange === '7d' ? 7 : effectiveTimeRange === '90d' ? 90 : 30;
           params.append('days', days);
         }
       } else {
-        params.append('days', 30); // default to 30 days
+        // Sensible default when no timeRange provided
+        params.append('days', 7);
       }
-      
-      // Handle risk level filter
-      if (filters.riskLevel && filters.riskLevel !== 'all') {
-        params.append('riskLevel', filters.riskLevel);
+
+      // Handle team filter
+      if (filters.team && filters.team !== 'all') {
+        params.append('team', filters.team);
       }
-      
+
+      // Handle subteam filter
+      if (filters.subteam && filters.subteam !== 'all') {
+        params.append('subteam', filters.subteam);
+      }
+
+      // Handle pagination - use override if provided, otherwise use state
+      const pageToUse = pageOverride !== null ? pageOverride : atRiskLearnersPage;
+      params.append('page', pageToUse);
+      params.append('limit', atRiskLearnersPerPage);
+
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
-      
+
       const response = await api.get(url);
       console.log('At-risk learners with filters response:', response.data);
       setAtRiskLearners(response.data.data);
+      setAtRiskLearnersTotal(response.data.total || 0);
+      // Sync current page with the request used
+      if (pageOverride !== null) {
+        setAtRiskLearnersPage(pageOverride);
+      }
     } catch (error) {
       console.error('Error fetching at-risk learners with filters:', error);
     } finally {
@@ -631,6 +712,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   };
 
   const fetchCourseLibraryWithTimeRange = async (filters = {}) => {
+    if (activeViewRef.current !== 'courses') return;
     try {
       const params = new URLSearchParams();
       if (filters.timeRange) params.append('timeRange', filters.timeRange);
@@ -651,6 +733,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   };
 
   const fetchOverallCourseLibrary = async () => {
+    if (activeViewRef.current !== 'courses') return;
     try {
       const response = await api.get('/api/admin/analytics/getCourseDistribution');
       setOverallCourseLibrary(response.data.courseLibrary);
@@ -660,6 +743,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   };
 
   const fetchCoursePerformanceInsights = async (filters = {}) => {
+    if (activeViewRef.current !== 'courses') return;
     try {
       const params = new URLSearchParams();
       if (filters.content) params.append('content', filters.content);
@@ -699,20 +783,38 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   // Export function for Usage Trend data
   const exportUsageTrendData = () => {
     try {
-      const csvContent = [
+      const rangeLabel = timeRange === 'custom' && customDateRange.startDate && customDateRange.endDate
+        ? `${customDateRange.startDate.toISOString().slice(0, 10)}_to_${customDateRange.endDate.toISOString().slice(0, 10)}`
+        : timeRange;
+
+      const selectedTeamObj = teams.find(t => (t._id || t.id || t.uuid) === userFilters.team);
+      const teamName = userFilters.team && userFilters.team !== 'all' ? (selectedTeamObj?.name || selectedTeamObj?.teamName || userFilters.team) : '';
+      let subteamName = '';
+      if (userFilters.subteam && userFilters.subteam !== 'all') {
+        const subteamsOfTeam = selectedTeamObj?.subTeams || [];
+        const st = subteamsOfTeam.find(s => (s._id || s.id || s.uuid) === userFilters.subteam) || subteams.find(s => (s._id || s.id || s.uuid) === userFilters.subteam);
+        subteamName = st?.name || st?.subTeamName || userFilters.subteam;
+      }
+      const sanitize = (s) => String(s).replace(/\s+/g, '_').replace(/[^A-Za-z0-9_\-]/g, '');
+      const teamLabel = teamName ? `-team_${sanitize(teamName)}` : '';
+      const subteamLabel = subteamName ? `-subteam_${sanitize(subteamName)}` : '';
+
+      const rows = [
         ['Date', 'Daily Active Users', 'Monthly Active Users'],
         ...usageTrend.map(item => [
-          item.date || item._id,
-          item.dau || item.dailyActiveUsers || 0,
-          item.mau || item.monthlyActiveUsers || 0
+          item.formattedDate || item.date || item._id || '',
+          item.dau ?? item.dailyActiveUsers ?? 0,
+          item.mau ?? item.monthlyActiveUsers ?? 0
         ])
-      ].map(row => row.join(',')).join('\n');
+      ];
+
+      const csvContent = rows.map(row => row.join(',')).join('\n');
 
       const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `usage-trend-${new Date().toISOString().split('T')[0]}.csv`;
+      link.download = `usage-trend-${rangeLabel}${teamLabel}${subteamLabel}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -723,28 +825,106 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   };
 
   // Export function for At-Risk Learners data
-  const exportAtRiskLearnersData = () => {
+  const exportAtRiskLearnersData = async () => {
     try {
-      const csvContent = [
-        ['Name', 'Email',  'Completion Rate', 'Last Login (days ago)', 'Risk Level', 'Courses Enrolled', 'Courses Completed'],
-        ...atRiskLearners.map(learner => [
-          learner.name || '',
-          learner.email || '',
-        
-          learner.completionRate || 0,
-        
-          learner.lastLogin || getDaysAgo(learner.lastLoginDate) || 0,
-          learner.riskLevel || 'unknown',
-          learner.coursesEnrolled || 0,
-          learner.coursesCompleted || 0
-        ])
-      ].map(row => row.join(',')).join('\n');
+      // Build filters based on current selection
+      const filtersToUse = timeRange === 'custom'
+        ? { ...atRiskFilters, timeRange: 'custom', startDate: customDateRange.startDate, endDate: customDateRange.endDate }
+        : { ...atRiskFilters, timeRange };
+
+      // Build base params similar to fetchAtRiskLearnersWithFilters
+      const baseParams = new URLSearchParams();
+      const effectiveTimeRange = filtersToUse.timeRange || timeRange;
+      if (effectiveTimeRange === 'custom') {
+        baseParams.append('timeRange', 'custom');
+        const start = filtersToUse.startDate || customDateRange.startDate;
+        const end = filtersToUse.endDate || customDateRange.endDate;
+        if (start) baseParams.append('startDate', start.toISOString());
+        if (end) baseParams.append('endDate', end.toISOString());
+      } else if (effectiveTimeRange === 'mtd') {
+        baseParams.append('timeRange', 'mtd');
+      } else {
+        const days = effectiveTimeRange === '7d' ? 7 : effectiveTimeRange === '90d' ? 90 : 30;
+        baseParams.append('days', days);
+      }
+      if (filtersToUse.team && filtersToUse.team !== 'all') baseParams.append('team', filtersToUse.team);
+      if (filtersToUse.subteam && filtersToUse.subteam !== 'all') baseParams.append('subteam', filtersToUse.subteam);
+
+      // Fetch all pages
+      const pageSize = 100; // batch size for export
+      const firstParams = new URLSearchParams(baseParams);
+      firstParams.append('page', 1);
+      firstParams.append('limit', pageSize);
+      const firstUrl = `/api/admin/analytics/getAtRiskLearners?${firstParams.toString()}`;
+      const firstResp = await api.get(firstUrl);
+      const total = firstResp.data.total || (firstResp.data.data?.length || 0);
+      const totalPages = Math.max(1, Math.ceil(total / pageSize));
+      let allLearners = firstResp.data.data || [];
+
+      for (let p = 2; p <= totalPages; p++) {
+        const pParams = new URLSearchParams(baseParams);
+        pParams.append('page', p);
+        pParams.append('limit', pageSize);
+        const url = `/api/admin/analytics/getAtRiskLearners?${pParams.toString()}`;
+        const resp = await api.get(url);
+        if (Array.isArray(resp.data.data)) {
+          allLearners = allLearners.concat(resp.data.data);
+        }
+      }
+
+      const rows = [
+        [
+          'Name',
+          'Email',
+          'Last Login',
+          'Days Since Login',
+          'Completion Rate (%)',
+          'Completed Assignments',
+          'Total Assignments',
+          'Average Score',
+          'Risk Factors'
+        ],
+        ...allLearners.map(learner => {
+          const lastLoginDate = learner.lastLogin ? new Date(learner.lastLogin) : null;
+          const lastLoginStr = lastLoginDate ? lastLoginDate.toISOString() : '';
+          const daysSince = lastLoginDate ? getDaysAgo(lastLoginDate) : '';
+          const risks = Array.isArray(learner.riskFactors) ? learner.riskFactors.join('; ') : '';
+          return [
+            learner.name || '',
+            learner.email || '',
+            lastLoginStr,
+            daysSince,
+            Math.round((learner.completionRate || 0) * 100) / 100,
+            learner.completedAssignments || 0,
+            learner.totalAssignments || 0,
+            Math.round((learner.averageScore || 0) * 100) / 100,
+            risks
+          ];
+        })
+      ];
+
+      const csvContent = rows.map(row => row.join(',')).join('\n');
 
       const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `at-risk-learners-${atRiskFilters.riskLevel}-${new Date().toISOString().split('T')[0]}.csv`;
+      // Build filename with current time range and team/subteam names
+      const rangeLabel = timeRange === 'custom' && customDateRange.startDate && customDateRange.endDate
+        ? `${customDateRange.startDate.toISOString().slice(0, 10)}_to_${customDateRange.endDate.toISOString().slice(0, 10)}`
+        : timeRange;
+      const selectedTeamObj = teams.find(t => (t._id || t.id || t.uuid) === atRiskFilters.team);
+      const teamName = atRiskFilters.team && atRiskFilters.team !== 'all' ? (selectedTeamObj?.name || selectedTeamObj?.teamName || atRiskFilters.team) : '';
+      let subteamName = '';
+      if (atRiskFilters.subteam && atRiskFilters.subteam !== 'all') {
+        const subteamsOfTeam = selectedTeamObj?.subTeams || [];
+        const st = subteamsOfTeam.find(s => (s._id || s.id || s.uuid) === atRiskFilters.subteam) || subteams.find(s => (s._id || s.id || s.uuid) === atRiskFilters.subteam);
+        subteamName = st?.name || st?.subTeamName || atRiskFilters.subteam;
+      }
+      const sanitize = (s) => String(s).replace(/\s+/g, '_').replace(/[^A-Za-z0-9_\-]/g, '');
+      const teamLabel = teamName ? `-team_${sanitize(teamName)}` : '';
+      const subteamLabel = subteamName ? `-subteam_${sanitize(subteamName)}` : '';
+      link.download = `at-risk-learners-${rangeLabel}${teamLabel}${subteamLabel}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -785,7 +965,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   // Export function for Course Adoption data
   const exportCourseAdoptionData = () => {
     try {
-      const csvContent = [
+      const rows = [
         ['Course Name', 'Enrolled Users', 'Completed Users', 'Completion Rate (%)', 'Average Score (%)'],
         ...courseAdoption.map(item => [
           item.name || 'Unknown Course',
@@ -794,13 +974,33 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
           item.rate || 0,
           item.avgScore || 0
         ])
-      ].map(row => row.join(',')).join('\n');
+      ];
+
+      const csvContent = rows.map(row => row.join(',')).join('\n');
 
       const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `course-adoption-${new Date().toISOString().split('T')[0]}.csv`;
+
+      // Build filename context from filters
+      const rangeLabel = courseAdoptionFilters.timeRange === 'custom' && courseAdoptionFilters.startDate && courseAdoptionFilters.endDate
+        ? `${courseAdoptionFilters.startDate.toISOString().slice(0, 10)}_to_${courseAdoptionFilters.endDate.toISOString().slice(0, 10)}`
+        : (courseAdoptionFilters.timeRange || timeRange);
+      const selectedTeamObj = teams.find(t => (t._id || t.id || t.uuid) === courseAdoptionFilters.team);
+      const teamName = courseAdoptionFilters.team && courseAdoptionFilters.team !== 'all' ? (selectedTeamObj?.name || selectedTeamObj?.teamName || courseAdoptionFilters.team) : '';
+      let subteamName = '';
+      if (courseAdoptionFilters.subteam && courseAdoptionFilters.subteam !== 'all') {
+        const subteamsOfTeam = selectedTeamObj?.subTeams || [];
+        const st = subteamsOfTeam.find(s => (s._id || s.id || s.uuid) === courseAdoptionFilters.subteam) || subteams.find(s => (s._id || s.id || s.uuid) === courseAdoptionFilters.subteam);
+        subteamName = st?.name || st?.subTeamName || courseAdoptionFilters.subteam;
+      }
+      const sanitize = (s) => String(s).replace(/\s+/g, '_').replace(/[^A-Za-z0-9_\-]/g, '');
+      const teamLabel = teamName ? `-team_${sanitize(teamName)}` : '';
+      const subteamLabel = subteamName ? `-subteam_${sanitize(subteamName)}` : '';
+      const categoryLabel = courseAdoptionFilters.category && courseAdoptionFilters.category !== 'all' ? `-category_${sanitize(courseAdoptionFilters.category)}` : '';
+
+      link.download = `course-adoption-${rangeLabel}${teamLabel}${subteamLabel}${categoryLabel}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -813,21 +1013,84 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   // Export function for Course Performance data
   const exportCoursePerformanceData = () => {
     try {
-      const csvContent = [
-        ['Course Name', 'Content Type', 'Performance Category', 'Time Range'],
-        ...coursePerformanceData.map(item => [
+      // Build effective time range label from GLOBAL selection (matches what we fetch with)
+      const effectivePerfTimeRange = timeRange;
+      let pRangeLabel = effectivePerfTimeRange;
+      if (effectivePerfTimeRange === 'custom') {
+        const pStart = customDateRange.startDate;
+        const pEnd = customDateRange.endDate;
+        if (pStart && pEnd) {
+          pRangeLabel = `${pStart.toISOString().slice(0, 10)}_to_${pEnd.toISOString().slice(0, 10)}`;
+        }
+      }
+
+      // Helper to infer performance band (mirror backend logic)
+      const performanceBand = (item) => {
+        if (item.performanceLevel || item.performanceCategory) {
+          return item.performanceLevel || item.performanceCategory;
+        }
+        const completionRate = Number(item.completionRate ?? item.rate ?? 0);
+        const avgScore = Number(item.avgScore ?? item.averageScore ?? 0);
+        const enrolled = Number(item.enrolled ?? 0);
+        const completed = Number(item.completed ?? 0);
+        // Top Performing: completionRate ≥ 80% AND enrolled ≥ 2
+        if (completionRate >= 80 && enrolled >= 2) return 'Top Performing';
+        // Good Performance: completionRate ≥ 60% AND enrolled ≥ 1
+        if (completionRate >= 60 && enrolled >= 1) return 'Good Performance';
+        // Needs Attention: completionRate < 60 OR completed = 0
+        if (completionRate < 60 || completed === 0) return 'Needs Attention';
+        // Default
+        return 'Good Performance';
+      };
+
+      // Helper to get sort priority for performance bands
+      const getBandPriority = (band) => {
+        switch (band) {
+          case 'Top Performing': return 1;
+          case 'Good Performance': return 2;
+          case 'Needs Attention': return 3;
+          default: return 4;
+        }
+      };
+
+      // Sort data by performance band priority
+      const sortedData = [...coursePerformanceData].sort((a, b) => {
+        const bandA = performanceBand(a);
+        const bandB = performanceBand(b);
+        return getBandPriority(bandA) - getBandPriority(bandB);
+      });
+
+      const rows = [
+        ['Course Name', 'Content Type', 'Performance Band'],
+        ...sortedData.map(item => [
           item.name || 'Unknown Course',
           coursePerformanceFilters.content || 'modules',
-          'Performance Data',
-          coursePerformanceFilters.timeRange || '30d'
+          performanceBand(item)
         ])
-      ].map(row => row.join(',')).join('\n');
+      ];
+
+      const csvContent = rows.map(row => row.join(',')).join('\n');
 
       const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `course-performance-${coursePerformanceFilters.content}-${new Date().toISOString().split('T')[0]}.csv`;
+
+      // Build filename context from filters
+      const pTeamObj = teams.find(t => (t._id || t.id || t.uuid) === coursePerformanceFilters.team);
+      const pTeamName = coursePerformanceFilters.team && coursePerformanceFilters.team !== 'all' ? (pTeamObj?.name || pTeamObj?.teamName || coursePerformanceFilters.team) : '';
+      let pSubteamName = '';
+      if (coursePerformanceFilters.subteam && coursePerformanceFilters.subteam !== 'all') {
+        const subteamsOfTeam = pTeamObj?.subTeams || [];
+        const st = subteamsOfTeam.find(s => (s._id || s.id || s.uuid) === coursePerformanceFilters.subteam) || subteams.find(s => (s._id || s.id || s.uuid) === coursePerformanceFilters.subteam);
+        pSubteamName = st?.name || st?.subTeamName || coursePerformanceFilters.subteam;
+      }
+      const sanitize = (s) => String(s).replace(/\s+/g, '_').replace(/[^A-Za-z0-9_\-]/g, '');
+      const teamLabel = pTeamName ? `-team_${sanitize(pTeamName)}` : '';
+      const subteamLabel = pSubteamName ? `-subteam_${sanitize(pSubteamName)}` : '';
+      const contentLabel = coursePerformanceFilters.content ? `-${sanitize(coursePerformanceFilters.content)}` : '';
+
+      link.download = `course-performance${contentLabel}-${pRangeLabel}${teamLabel}${subteamLabel}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -849,11 +1112,11 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
 
     // Get the most recent data point for current values
     const mostRecentData = usageTrend[usageTrend.length - 1];
-    
+
     // Calculate current DAU and MAU from the most recent data
     const currentDAU = mostRecentData?.dau || mostRecentData?.dailyActiveUsers || 0;
     const currentMAU = mostRecentData?.mau || mostRecentData?.monthlyActiveUsers || 0;
-    
+
     // Calculate total unique users across all data points
     const uniqueUsers = new Set();
     usageTrend.forEach(item => {
@@ -864,9 +1127,9 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
         uniqueUsers.add(mau); // This is a simplified approach
       }
     });
-    
+
     // Use the maximum MAU as total active users (simplified calculation)
-    const totalActiveUsers = Math.max(...usageTrend.map(item => 
+    const totalActiveUsers = Math.max(...usageTrend.map(item =>
       item?.mau || item?.monthlyActiveUsers || 0
     ), currentMAU);
 
@@ -903,11 +1166,11 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
   // Calculate dynamic completion rate
   const calculateCompletionRate = () => {
     if (courseAdoption.length === 0) return { rate: '0%', completed: 0, enrolled: 0 };
-    
+
     const totalEnrolled = courseAdoption.reduce((acc, c) => acc + (c.enrolled || 0), 0);
     const totalCompleted = courseAdoption.reduce((acc, c) => acc + (c.completed || 0), 0);
     const rate = totalEnrolled > 0 ? Math.round((totalCompleted / totalEnrolled) * 100) : 0;
-    
+
     return {
       rate: `${rate}%`,
       completed: totalCompleted,
@@ -917,209 +1180,88 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
 
   // Helper function to get time range subtitle
   const getTimeRangeSubtitle = (metricType, selectedTimeRange = timeRange) => {
+    if (metricType === 'dau') {
+      return 'today';
+    }
+    
     switch (selectedTimeRange) {
       case '7d':
-        return metricType === 'dau' ? 'Last 7 days (avg)' : 'Last 7 days';
+        return ' last 7 days';
       case 'mtd':
-        return 'Month to date';
+        return ' Month to Date';
       case '30d':
-        return 'Last 30 days';
+        return ' last 30 days';
       case '90d':
-        return 'Last 90 days';
+        return ' last 90 days';
       case 'custom':
-        return 'Custom range';
+        return ' custom range';
       default:
-        return metricType === 'dau' ? 'Last 7 days (avg)' : 'Last 7 days';
+        return 'in last 7 days';
     }
   };
 
   // Fetch data when activeView changes or timeRange changes
+  // useEffect(() => {
+  //   if (activeView === 'users') {
+  //     fetchUsageTrendWithFilters(userFilters);
+  //     fetchEngagementHeatmap(userFilters.timeRange);
+  //     // Handle new time ranges for fetchAtRiskLearners
+  //     if (userFilters.timeRange === 'mtd' || userFilters.timeRange === 'custom') {
+  //       fetchAtRiskLearners(userFilters.timeRange);
+  //     } else {
+  //       const days = userFilters.timeRange === '7d' ? 7 : userFilters.timeRange === '30d' ? 30 : 90;
+  //       fetchAtRiskLearners(days);
+  //     }
+  //   } else if (activeView === 'courses') {
+  //     fetchCourseAdoptionWithFilters({ ...courseAdoptionFilters, timeRange: timeRange });
+  //     fetchCourseLibraryWithTimeRange({ ...courseFilters, timeRange: timeRange });
+  //     fetchCoursePerformanceInsights({ ...coursePerformanceFilters, timeRange: timeRange });
+  //   }
+  // }, [activeView])
+
   useEffect(() => {
-    // Always fetch course metrics when time range changes
-    fetchCourseMetrics(timeRange);
-    // Always fetch user data when time range changes
-    fetchUserData(timeRange);
-    
+    // 🚨 DO NOT fetch on timeRange here
+    // This effect runs ONLY when switching tabs
+
     if (activeView === 'users') {
+      // initial load for users tab
       fetchUsageTrendWithFilters(userFilters);
       fetchEngagementHeatmap(userFilters.timeRange);
-      // Handle new time ranges for fetchAtRiskLearners
+
       if (userFilters.timeRange === 'mtd' || userFilters.timeRange === 'custom') {
-        fetchAtRiskLearners(userFilters.timeRange);
+        // Use the unified filtered fetch so custom range includes dates
+        fetchAtRiskLearnersWithFilters(userFilters.timeRange === 'custom'
+          ? { ...atRiskFilters, timeRange: 'custom', startDate: userFilters.startDate, endDate: userFilters.endDate }
+          : { ...atRiskFilters, timeRange: 'mtd' }
+        );
       } else {
-        const days = userFilters.timeRange === '7d' ? 7 : userFilters.timeRange === '30d' ? 30 : 90;
-        fetchAtRiskLearners(days);
+        const days =
+          userFilters.timeRange === '7d' ? 7 :
+            userFilters.timeRange === '30d' ? 30 : 90;
+        fetchAtRiskLearnersWithFilters({ ...atRiskFilters, timeRange: userFilters.timeRange });
       }
-    } else if (activeView === 'courses') {
-      fetchCourseAdoptionWithFilters({ ...courseAdoptionFilters, timeRange: timeRange });
-      fetchCourseLibraryWithTimeRange({ ...courseFilters, timeRange: timeRange });
-      fetchCoursePerformanceInsights({ ...coursePerformanceFilters, timeRange: timeRange });
+
+      fetchUserData(userFilters.timeRange);
     }
-  }, [activeView, timeRange])
 
-  // Mock data - replace with actual API calls
-  const [data, setData] = useState({
-    // Total Usage Stats
-    dau: 1247,
-    dauChange: 8.5,
-    mau: 3892,
-    mauChange: 12.3,
-    stickiness: 32,
-    totalUsers: 4521,
+    if (activeView === 'courses') {
+      // initial load for courses tab
+      fetchCourseMetrics(timeRange);
 
-    // Course Adoption
-    courseAdoption: [
-      { name: 'React Advanced', enrolled: 450, completed: 306, rate: 68, avgScore: 85 },
-      { name: 'Python Basics', enrolled: 380, completed: 342, rate: 90, avgScore: 92 },
-      { name: 'Cloud Architecture', enrolled: 290, completed: 174, rate: 60, avgScore: 78 },
-      { name: 'Data Science', enrolled: 520, completed: 260, rate: 50, avgScore: 82 },
-      { name: 'DevOps Fundamentals', enrolled: 410, completed: 328, rate: 80, avgScore: 88 },
-    ],
+      fetchCourseAdoptionWithFilters({ ...courseAdoptionFilters, timeRange });
+      fetchCourseLibraryWithTimeRange({ ...courseFilters, timeRange });
+      fetchCoursePerformanceInsights({ ...coursePerformanceFilters, timeRange });
+    }
+  }, [activeView]); // ✅ ONLY activeView
 
-    // Course Library by Category
-    // courseLibrary: [
-    //   { category: 'Engineering', courses: 45, teams: 8 },
-    //   { category: 'Product', courses: 28, teams: 5 },
-    //   { category: 'Design', courses: 22, teams: 4 },
-    //   { category: 'Data Science', courses: 35, teams: 6 },
-    //   { category: 'Sales', courses: 18, teams: 3 },
-    //   { category: 'Marketing', courses: 25, teams: 4 },
-    // ],
+  const totalDays = usageTrend?.length || 0;
 
-    // Engagement Heatmap (hour of day, day of week)
-    engagementHeatmap: [
-      // Monday
-      { day: 'Mon', hour: 9, value: 145 },
-      { day: 'Mon', hour: 10, value: 220 },
-      { day: 'Mon', hour: 11, value: 180 },
-      { day: 'Mon', hour: 14, value: 160 },
-      { day: 'Mon', hour: 15, value: 190 },
-      { day: 'Mon', hour: 16, value: 140 },
-      { day: 'Mon', hour: 20, value: 95 },
-      { day: 'Mon', hour: 21, value: 80 },
-      // Tuesday
-      { day: 'Tue', hour: 9, value: 155 },
-      { day: 'Tue', hour: 10, value: 240 },
-      { day: 'Tue', hour: 11, value: 195 },
-      { day: 'Tue', hour: 14, value: 175 },
-      { day: 'Tue', hour: 15, value: 210 },
-      { day: 'Tue', hour: 16, value: 155 },
-      { day: 'Tue', hour: 20, value: 105 },
-      { day: 'Tue', hour: 21, value: 90 },
-      // Wednesday
-      { day: 'Wed', hour: 9, value: 165 },
-      { day: 'Wed', hour: 10, value: 260 },
-      { day: 'Wed', hour: 11, value: 205 },
-      { day: 'Wed', hour: 14, value: 185 },
-      { day: 'Wed', hour: 15, value: 220 },
-      { day: 'Wed', hour: 16, value: 170 },
-      { day: 'Wed', hour: 20, value: 115 },
-      { day: 'Wed', hour: 21, value: 100 },
-      // Thursday
-      { day: 'Thu', hour: 9, value: 150 },
-      { day: 'Thu', hour: 10, value: 230 },
-      { day: 'Thu', hour: 11, value: 185 },
-      { day: 'Thu', hour: 14, value: 165 },
-      { day: 'Thu', hour: 15, value: 200 },
-      { day: 'Thu', hour: 16, value: 145 },
-      { day: 'Thu', hour: 20, value: 100 },
-      { day: 'Thu', hour: 21, value: 85 },
-      // Friday
-      { day: 'Fri', hour: 9, value: 135 },
-      { day: 'Fri', hour: 10, value: 200 },
-      { day: 'Fri', hour: 11, value: 160 },
-      { day: 'Fri', hour: 14, value: 130 },
-      { day: 'Fri', hour: 15, value: 150 },
-      { day: 'Fri', hour: 16, value: 110 },
-      { day: 'Fri', hour: 20, value: 70 },
-      { day: 'Fri', hour: 21, value: 55 },
-      // Saturday
-      { day: 'Sat', hour: 10, value: 85 },
-      { day: 'Sat', hour: 11, value: 110 },
-      { day: 'Sat', hour: 14, value: 95 },
-      { day: 'Sat', hour: 15, value: 120 },
-      { day: 'Sat', hour: 16, value: 100 },
-      { day: 'Sat', hour: 20, value: 130 },
-      { day: 'Sat', hour: 21, value: 115 },
-      // Sunday
-      { day: 'Sun', hour: 10, value: 75 },
-      { day: 'Sun', hour: 11, value: 100 },
-      { day: 'Sun', hour: 14, value: 85 },
-      { day: 'Sun', hour: 15, value: 110 },
-      { day: 'Sun', hour: 16, value: 90 },
-      { day: 'Sun', hour: 20, value: 140 },
-      { day: 'Sun', hour: 21, value: 125 },
-    ],
+  let xAxisInterval = 0;
 
-    // Peak engagement times
-    peakHours: [
-      { time: '10:00 AM', users: 260, day: 'Wednesday' },
-      { time: '3:00 PM', users: 220, day: 'Wednesday' },
-      { time: '10:00 AM', users: 240, day: 'Tuesday' },
-    ],
+  if (totalDays > 20) {
+    xAxisInterval = Math.ceil(totalDays / 10) - 1;
+  }
 
-    // At-Risk Learners
-    atRiskLearners: [
-      {
-        name: 'Rajesh Kumar',
-        email: 'rajesh.k@company.com',
-        team: 'Engineering',
-        completionRate: 15,
-        avgScore: 45,
-        lastLogin: 25,
-        riskLevel: 'high',
-        coursesEnrolled: 4,
-        coursesCompleted: 0
-      },
-      {
-        name: 'Priya Sharma',
-        email: 'priya.s@company.com',
-        team: 'Product',
-        completionRate: 30,
-        avgScore: 58,
-        lastLogin: 18,
-        riskLevel: 'high',
-        coursesEnrolled: 3,
-        coursesCompleted: 1
-      },
-      {
-        name: 'Amit Patel',
-        email: 'amit.p@company.com',
-        team: 'Engineering',
-        completionRate: 42,
-        avgScore: 62,
-        lastLogin: 12,
-        riskLevel: 'medium',
-        coursesEnrolled: 5,
-        coursesCompleted: 2
-      },
-      {
-        name: 'Sneha Reddy',
-        email: 'sneha.r@company.com',
-        team: 'Design',
-        completionRate: 25,
-        avgScore: 51,
-        lastLogin: 22,
-        riskLevel: 'high',
-        coursesEnrolled: 6,
-        coursesCompleted: 1
-      },
-      {
-        name: 'Vikram Singh',
-        email: 'vikram.s@company.com',
-        team: 'Sales',
-        completionRate: 48,
-        avgScore: 65,
-        lastLogin: 10,
-        riskLevel: 'medium',
-        coursesEnrolled: 4,
-        coursesCompleted: 2
-      },
-    ],
-
-  });
-
-  
   const formatNumber = (n) => (n != null ? n.toLocaleString('en-IN') : '--');
   // Add this ViewToggle component before the MetricCard component definition
   const ViewToggle = ({ activeView, onViewChange }) => (
@@ -1162,8 +1304,8 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
       </div>
       <div className="metric-content">
         <div className="metric-label-enhanced">{label}</div>
-        <div 
-          className={`metric-value-enhanced ${(label === "Daily Active Users" || label === "Monthly Active Users" || label === "Total Users" || label === "Modules" || label === "Assessments" || label === "Surveys" || label === "Learning Paths")  && value !== "--" ? 'metric-value-underline' : ''}`}
+        <div
+          className={`metric-value-enhanced ${(label === "Daily Active Users" || label === "Monthly Active Users" || label === "Total Users" || label === "Modules" || label === "Assessments" || label === "Surveys" || label === "Learning Paths") && value !== "--" ? 'metric-value-underline' : ''}`}
         >{value}</div>
         {subtitle && <div className="metric-subtitle">{subtitle}</div>}
       </div>
@@ -1285,12 +1427,12 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
 
   return (
     <div className="analytics-container">
-    
-   {/* Header */}
+
+      {/* Header */}
       <div className="analytics-page-header">
         {/* First row: Badge and View Toggle */}
         <div className="header-row-1">
-          <div className="header-badge" style={{marginBottom:'0px'}}>
+          <div className="header-badge" style={{ marginBottom: '0px' }}>
             <Zap size={14} />
             <span>Admin Dashboard</span>
           </div>
@@ -1361,7 +1503,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
           <div className="modal-content">
             <div className="modal-header">
               <h3>Select Custom Date Range</h3>
-              <button 
+              <button
                 className="close-button"
                 onClick={() => setShowCustomDatePicker(false)}
               >
@@ -1398,56 +1540,17 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                 </div>
               </div>
               <div className="quick-select-buttons">
-                {/* <button 
-                  className="quick-select-btn"
-                  onClick={() => {
-                    const today = new Date();
-                    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-                    setCustomDateRange({
-                      startDate: startOfMonth,
-                      endDate: today
-                    });
-                  }}
-                >
-                  This Month
-                </button>
-                <button 
-                  className="quick-select-btn"
-                  onClick={() => {
-                    const today = new Date();
-                    const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-                    const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
-                    setCustomDateRange({
-                      startDate: lastMonthStart,
-                      endDate: lastMonthEnd
-                    });
-                  }}
-                >
-                  Last Month
-                </button>
-                <button 
-                  className="quick-select-btn"
-                  onClick={() => {
-                    const today = new Date();
-                    setCustomDateRange({
-                      startDate: organizationCreatedDate,
-                      endDate: today
-                    });
-                  }}
-                  disabled={!organizationCreatedDate}
-                >
-                  All Time
-                </button> */}
+
               </div>
             </div>
             <div className="modal-footer">
-              <button 
+              <button
                 className="btn-secondary"
                 onClick={() => setShowCustomDatePicker(false)}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className="btn-primary"
                 onClick={handleCustomDateRangeApply}
                 disabled={!customDateRange.startDate || !customDateRange.endDate}
@@ -1515,7 +1618,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
               trendValue={5.3}
               color="color-quaternary"
               delay={200}
-              // onClick={() => setShowGiftPopup(true)}
+            // onClick={() => setShowGiftPopup(true)}
             />
 
           </div>
@@ -1538,7 +1641,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                       setShowUserFilters(!showUserFilters);
                       // Close other filter panels when opening this one
                       if (!showUserFilters) {
-                       
+
                         setShowAtRiskFilters(false);
                       }
                     }}
@@ -1575,7 +1678,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                 </div>
               </div>
 
-              <div className="chart-container">
+              {/* <div className="chart-container">
                 <ResponsiveContainer width="100%" height={320}>
                   <BarChart data={usageTrend}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
@@ -1583,7 +1686,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                       dataKey="date" 
                       stroke="#000000" 
                       style={{ fontSize: 12 }}
-                      tick={<CustomXAxisTick />}
+                      tick={<CustomXAxisTick data={usageTrend} />}
                       height={60}
                       dy={10}
                     />
@@ -1600,9 +1703,90 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                     <Bar dataKey="dau" fill={COLORS.primary} name="DAU" />
                   </BarChart>
                 </ResponsiveContainer>
+              </div> */}
+              <div className="chart-container">
+                <ResponsiveContainer width="100%" height={320}>
+                  <ComposedChart data={usageTrend}>
+                    <defs>
+                      <linearGradient id="colorMAU" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={COLORS.accent} stopOpacity={0.3} />
+                        <stop offset="95%" stopColor={COLORS.accent} stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorDAU" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.3} />
+                        <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                    <XAxis
+                      dataKey="formattedDate"
+                      interval={xAxisInterval}
+                      tick={({ x, y, payload }) => (
+                        <text
+                          x={x}
+                          y={y + 15}
+                          textAnchor="middle"
+                          fill="#6b7280"
+                          fontSize={11}
+                        >
+                          {payload.value}
+                        </text>
+                      )}
+                    />
+
+
+                    <YAxis stroke="#000000" style={{ fontSize: 12 }} />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div style={{
+                              background: '#fff',
+                              border: '1px solid #e5e7eb',
+                              borderRadius: '8px',
+                              padding: '12px',
+                              boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                            }}>
+                              <div style={{ fontSize: '12px', fontWeight: 600, marginBottom: '8px', color: '#374151' }}>
+                                {data.formattedDate}
+                              </div>
+                              {payload.map((entry, index) => (
+                                <div key={index} style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: entry.color }}></div>
+                                  <span style={{ color: '#6b7280' }}>{entry.name}:</span>
+                                  <span style={{ fontWeight: 600, color: '#111827' }}>{entry.value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="mau"
+                      stroke={COLORS.accent}
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#colorMAU)"
+                      name="MAU"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="dau"
+                      stroke={COLORS.primary}
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#colorDAU)"
+                      name="DAU"
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
               </div>
 
-              <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
+              <div style={{ marginTop: '50px', display: 'flex', gap: '12px' }}>
                 <div style={{ flex: 1, textAlign: 'center', padding: '12px', background: '#f9fafb', borderRadius: '12px' }}>
                   <div style={{ fontSize: '20px', fontWeight: 700, color: COLORS.primary }}>
                     {formatNumber(currentDAU)}
@@ -1632,7 +1816,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
 
             {/* Filters Panel - 20% - Conditional */}
             {showUserFilters && (
-            
+
               <div className="chart-panel">
                 <div className="panel-header-enhanced">
                   <div>
@@ -1742,7 +1926,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                       //   fetchAtRiskLearners(days);
                       // }
                       // setShowUserFilters(false); // Close filter panel
-                      
+
                       console.log('User filters applied:', userFilters);
                     }}
                     style={{
@@ -1772,7 +1956,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                   {/* Reset Filters Button */}
                   <button
                     onClick={() => {
-                      handleTimeRangeChange('30d'); // Use the proper handler
+                      //  handleTimeRangeChange(timeRange); // Use the proper handler
                       setUserFilters(prev => ({ ...prev, team: 'all', subteam: 'all' }));
                       fetchUsageTrendWithFilters({ ...userFilters, team: 'all', subteam: 'all' });
                       // setShowUserFilters(false); // Close filter panel
@@ -1840,14 +2024,14 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
 
 
           {/* At-Risk Learners */}
-           <div style={{ display: 'grid', gridTemplateColumns: showAtRiskFilters ? '80% 20%' : '100%', gap: '20px', marginBottom: '24px', transition: 'all 0.3s ease' }}>
-          <div className="chart-panel">
-            <div className="panel-header-enhanced">
-              <div>
-                <h3 className="panel-title"> Learners With No Login Activity </h3>
-                {/* <p className="panel-description">Learners requiring intervention or support</p> */}
-              </div>
-              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: showAtRiskFilters ? '80% 20%' : '100%', gap: '20px', marginBottom: '24px', transition: 'all 0.3s ease' }}>
+            <div className="chart-panel">
+              <div className="panel-header-enhanced">
+                <div>
+                  <h3 className="panel-title"> Learners With No Login Activity </h3>
+                  {/* <p className="panel-description">Learners requiring intervention or support</p> */}
+                </div>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                   {/* <Activity size={20} className="panel-icon" /> */}
 
                   {/* Filter Dropdown Button */}
@@ -1857,7 +2041,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                       // Close other filter panels when opening this one
                       if (!showAtRiskFilters) {
                         setShowUserFilters(false);
-                        
+
                       }
                     }}
                     style={{
@@ -1891,137 +2075,262 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                     Filters
                   </button>
                 </div>
-            </div>
+              </div>
 
-            <div style={{ marginTop: '20px' }}>
-              <div style={{ marginBottom: '16px', display: 'flex', gap: '12px' }}>
-                <div style={{ padding: '12px 20px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px', fontSize: '13px', fontWeight: 600, color: COLORS.danger }}>
+              <div style={{ marginTop: '20px' }}>
+                <div style={{ marginBottom: '16px', display: 'flex', gap: '12px' }}>
+                  {/* <div style={{ padding: '12px 20px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px', fontSize: '13px', fontWeight: 600, color: COLORS.danger }}>
                   ⚠️ {atRiskLearners.filter(l => getRiskLevel(l.riskFactors) === 'high').length} High Risk
+                </div> */}
+                  {/* <div style={{ padding: '12px 20px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px', fontSize: '13px', fontWeight: 600, color: COLORS.warning }}>
+                    ⚡ {atRiskLearners.filter(l => getRiskLevel(l.riskFactors) === 'medium').length} Medium Risk
+                  </div> */}
                 </div>
-                <div style={{ padding: '12px 20px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px', fontSize: '13px', fontWeight: 600, color: COLORS.warning }}>
-                  ⚡ {atRiskLearners.filter(l => getRiskLevel(l.riskFactors) === 'medium').length} Medium Risk
-                </div>
-              </div>
 
-              <div className="orgs-table-wrapper">
-                <table className="orgs-table">
-                  <thead>
-                    <tr>
-                      <th>Risk</th>
-                      <th>Learner</th>
-                      {/* <th>Team</th> */}
-                      <th>Completion</th>
-                      {/* <th>Avg Score</th> */}
-                      <th>Last Login</th>
-                      {/* <th>Courses</th> */}
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {atRiskLearners.slice(0, 5).map((learner, idx) => (
-                      <tr key={idx}>
-                        <td>
-                          <div style={{
-                            display: 'inline-block',
-                            padding: '6px 12px',
-                            borderRadius: '8px',
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            background: getRiskLevel(learner.riskFactors) === 'high' ? COLORS.danger : COLORS.warning,
-                            color: 'white'
-                          }}>
-                            {getRiskLevel(learner.riskFactors).toUpperCase()}
-                          </div>
-                        </td>
-                        <td>
-                          <div>
-                            <div style={{ fontWeight: 600, color: '#111827', fontSize: '14px' }}>
-                              {learner.name}
-                            </div>
-                            <div style={{ fontSize: '11px', color: '#6b7280' }}>
-                              {learner.email}
-                            </div>
-                          </div>
-                        </td>
-                        {/* <td style={{ color: '#374151', fontWeight: 500 }}>{learner.team}</td> */}
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{ flex: 1, maxWidth: '80px' }}>
-                              <div className="progress-bar" style={{ height: '6px' }}>
-                                <div
-                                  className="progress-fill"
-                                  style={{
-                                    width: `${learner.completionRate}%`,
-                                    background: learner.completionRate < 30 ? COLORS.danger : learner.completionRate < 50 ? COLORS.warning : COLORS.success
-                                  }}
-                                />
-                              </div>
-                            </div>
-                            <span style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>
-                              {learner.completionRate}%
-                            </span>
-                          </div>
-                        </td>
-                        {/* <td>
-                          <span style={{
-                            fontSize: '14px',
-                            fontWeight: 600, paddingLeft: "25px",
-                            color: learner.averageScore < 60 ? COLORS.danger : learner.averageScore < 75 ? COLORS.warning : COLORS.success,
-
-                          }}>
-                            {learner.averageScore}%
-                          </span>
-                        </td> */}
-                        <td>
-                          <span style={{
-                            color: !learner.lastLogin || getDaysAgo(learner.lastLogin).includes('30+') ? COLORS.danger : COLORS.warning,
-                            fontWeight: 600,
-                            fontSize: '13px'
-                          }}>
-                            {getDaysAgo(learner.lastLogin)}
-                          </span>
-                        </td>
-                        {/* <td style={{ color: '#374151' }}>
-                          {console.log('Learner courses data:', learner.coursesCompleted, learner.coursesEnrolled, learner)}
-                          {learner.coursesCompleted || 0}/{learner.coursesEnrolled || 0}
-                        </td> */}
-                        <td>
-                          <button
-                            onClick={() => {
-                              // Debug: log the learner data structure
-                              console.log('Learner data:', learner);
-                              console.log('Learner uuid:', learner.uuid);
-                              console.log('Learner userId:', learner.userId);
-                              console.log('Learner _id:', learner._id);
-                              // Fetch user analytics and open popup
-                              fetchUserAnalytics(learner.uuid);
-                            }}
-                            style={{
-                              padding: '8px 16px',
-                              background: COLORS.primary,
-                              color: 'white',
-                              border: 'none',
+                <div className="orgs-table-wrapper" style={{ minHeight: '400px' }}>
+                  {atRiskLearners.length === 0 ? (
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: '300px',
+                      color: '#9ca3af'
+                    }}>
+                      <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
+                      <div style={{ fontSize: '16px', fontWeight: 600 }}>No learners found</div>
+                      <div style={{ fontSize: '14px', marginTop: '8px' }}>Try adjusting your filters</div>
+                    </div>
+                  ) : (
+                    <table className="orgs-table">
+                      <thead>
+                        <tr>
+                          {/* <th>Risk</th> */}
+                          <th style={{ paddingLeft: '50px' }}>Learner</th>
+                          {/* <th>Team</th> */}
+                          <th>Completion</th>
+                          {/* <th>Avg Score</th> */}
+                          <th>Last Login</th>
+                          {/* <th>Courses</th> */}
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {atRiskLearners.map((learner, idx) => (
+                          <tr key={idx}>
+                            {/* <td>
+                            <div style={{
+                              display: 'inline-block',
+                              padding: '6px 12px',
                               borderRadius: '8px',
-                              fontSize: '12px',
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                              transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = COLORS.accent}
-                            onMouseLeave={(e) => e.currentTarget.style.background = COLORS.primary}
-                          >
-                            <TrendingUp size={14} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              background: getRiskLevel(learner.riskFactors) === 'high' ? COLORS.danger : COLORS.warning,
+                              color: 'white'
+                            }}>
+                              {getRiskLevel(learner.riskFactors).toUpperCase()}
+                            </div>
+                          </td> */}
+                            <td style={{ paddingLeft: "50px" }}>
+                              <div >
+                                <div style={{ fontWeight: 600, color: '#111827', fontSize: '14px' }}>
+                                  {learner.name}
+                                </div>
+                                <div style={{ fontSize: '11px', color: '#6b7280' }}>
+                                  {learner.email}
+                                </div>
+                              </div>
+                            </td>
+                            {/* <td style={{ color: '#374151', fontWeight: 500 }}>{learner.team}</td> */}
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{ flex: 1, maxWidth: '80px' }}>
+                                  <div className="progress-bar" style={{ height: '6px' }}>
+                                    <div
+                                      className="progress-fill"
+                                      style={{
+                                        width: `${learner.completionRate}%`,
+                                        background: learner.completionRate < 30 ? COLORS.danger : learner.completionRate < 50 ? COLORS.warning : COLORS.success
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                                <span style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>
+                                  {learner.completionRate}%
+                                </span>
+                              </div>
+                            </td>
+                            {/* <td>
+                            <span style={{
+                              fontSize: '14px',
+                              fontWeight: 600, paddingLeft: "25px",
+                              color: learner.averageScore < 60 ? COLORS.danger : learner.averageScore < 75 ? COLORS.warning : COLORS.success,
+
+                            }}>
+                              {learner.averageScore}%
+                            </span>
+                          </td> */}
+                            <td>
+                              <span style={{
+                                color: !learner.lastLogin || getDaysAgo(learner.lastLogin).includes('30+') ? COLORS.danger : COLORS.warning,
+                                fontWeight: 600,
+                                fontSize: '13px'
+                              }}>
+                                {getDaysAgo(learner.lastLogin)}
+                              </span>
+                            </td>
+                            {/* <td style={{ color: '#374151' }}>
+                            {console.log('Learner courses data:', learner.coursesCompleted, learner.coursesEnrolled, learner)}
+                            {learner.coursesCompleted || 0}/{learner.coursesEnrolled || 0}
+                          </td> */}
+                            <td>
+                              <button
+                                onClick={() => {
+                                  // Debug: log the learner data structure
+                                  console.log('Learner data:', learner);
+                                  console.log('Learner uuid:', learner.uuid);
+                                  console.log('Learner userId:', learner.userId);
+                                  console.log('Learner _id:', learner._id);
+                                  // Fetch user analytics and open popup
+                                  fetchUserAnalytics(learner.uuid);
+                                }}
+                                style={{
+                                  padding: '8px 16px',
+                                  background: COLORS.primary,
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '8px',
+                                  fontSize: '12px',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = COLORS.accent}
+                                onMouseLeave={(e) => e.currentTarget.style.background = COLORS.primary}
+                              >
+                                <TrendingUp size={14} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+
+                {/* Pagination Controls - Only show if there are learners */}
+                {atRiskLearners.length > 0 && (
+                  <div style={{ marginTop: '1px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '9px', background: '#f9fafb', borderRadius: '12px' }}>
+                    {/* <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                  Showing {Math.min((atRiskLearnersPage - 1) * atRiskLearnersPerPage + 1, atRiskLearnersTotal)} to {Math.min(atRiskLearnersPage * atRiskLearnersPerPage, atRiskLearnersTotal)} of {atRiskLearnersTotal} learners
+                </div> */}
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <button
+                        onClick={() => {
+                          const newPage = atRiskLearnersPage - 1;
+                          if (newPage >= 1) {
+                            setAtRiskLearnersPage(newPage);
+                            fetchAtRiskLearnersWithFilters(
+                              timeRange === 'custom'
+                                ? { ...atRiskFilters, timeRange: 'custom', startDate: customDateRange.startDate, endDate: customDateRange.endDate }
+                                : { ...atRiskFilters, timeRange: timeRange },
+                              newPage
+                            );
+                          }
+                        }}
+                        disabled={atRiskLearnersPage === 1}
+                        style={{
+                          padding: '8px 16px',
+                          background: atRiskLearnersPage === 1 ? '#e5e7eb' : COLORS.primary,
+                          color: atRiskLearnersPage === 1 ? '#9ca3af' : 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          fontWeight: 600,
+                          cursor: atRiskLearnersPage === 1 ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        Prev
+                      </button>
+                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        {(() => {
+                          const totalPages = Math.ceil(atRiskLearnersTotal / atRiskLearnersPerPage) || 1;
+                          return Array.from({ length: totalPages }, (_, i) => i + 1)
+                            .filter(page =>
+                              page === 1 ||
+                              page === totalPages ||
+                              Math.abs(page - atRiskLearnersPage) <= 1
+                            )
+                            .map((page, idx, arr) => (
+                              <React.Fragment key={page}>
+                                {idx > 0 && arr[idx - 1] !== page - 1 && (
+                                  <span style={{ color: '#9ca3af', padding: '0 4px' }}>...</span>
+                                )}
+                                <button
+                                  onClick={() => {
+                                    setAtRiskLearnersPage(page);
+                                    fetchAtRiskLearnersWithFilters(
+                                      timeRange === 'custom'
+                                        ? { ...atRiskFilters, timeRange: 'custom', startDate: customDateRange.startDate, endDate: customDateRange.endDate }
+                                        : { ...atRiskFilters, timeRange: timeRange },
+                                      page
+                                    );
+                                  }}
+                                  style={{
+                                    padding: '8px 12px',
+                                    background: atRiskLearnersPage === page ? COLORS.primary : 'white',
+                                    color: atRiskLearnersPage === page ? 'white' : '#374151',
+                                    border: atRiskLearnersPage === page ? 'none' : '2px solid #e5e7eb',
+                                    borderRadius: '8px',
+                                    fontSize: '13px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                  }}
+                                >
+                                  {page}
+                                </button>
+                              </React.Fragment>
+                            ));
+                        })()}
+                      </div>
+                      <button
+                        onClick={() => {
+                          const newPage = atRiskLearnersPage + 1;
+                          const totalPages = Math.ceil(atRiskLearnersTotal / atRiskLearnersPerPage);
+                          if (newPage <= totalPages) {
+                            setAtRiskLearnersPage(newPage);
+                            fetchAtRiskLearnersWithFilters(
+                              timeRange === 'custom'
+                                ? { ...atRiskFilters, timeRange: 'custom', startDate: customDateRange.startDate, endDate: customDateRange.endDate }
+                                : { ...atRiskFilters, timeRange: timeRange },
+                              newPage
+                            );
+                          }
+                        }}
+                        disabled={atRiskLearnersPage >= Math.ceil(atRiskLearnersTotal / atRiskLearnersPerPage)}
+                        style={{
+                          padding: '8px 16px',
+                          background: atRiskLearnersPage >= Math.ceil(atRiskLearnersTotal / atRiskLearnersPerPage) ? '#e5e7eb' : COLORS.primary,
+                          color: atRiskLearnersPage >= Math.ceil(atRiskLearnersTotal / atRiskLearnersPerPage) ? '#9ca3af' : 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          fontWeight: 600,
+                          cursor: atRiskLearnersPage >= Math.ceil(atRiskLearnersTotal / atRiskLearnersPerPage) ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-           {/* Filters Panel - 20% - Conditional */}
-            {showAtRiskFilters&& (
+            {/* Filters Panel - 20% - Conditional */}
+            {showAtRiskFilters && (
               <div className="chart-panel">
                 <div className="panel-header-enhanced">
                   <div>
@@ -2032,24 +2341,49 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '12px' }}>
-                 
 
-                  {/* Risk Level Filter */}
+                  {/* Team Filter */}
                   <div className="filter-group-enhanced">
-                    <label>Risk Level</label>
+                    <label>Team</label>
                     <select
-                      value={atRiskFilters.riskLevel}
-                      onChange={(e) => setAtRiskFilters(prev => ({ ...prev, riskLevel: e.target.value }))}
+                      value={atRiskFilters.team}
+                      onChange={(e) => {
+                        const selectedTeam = e.target.value;
+                        setAtRiskFilters(prev => ({ ...prev, team: selectedTeam, subteam: 'all' }));
+                        // Fetch subteams when team changes
+                        if (selectedTeam !== 'all') {
+                          fetchSubteamsForTeam(selectedTeam);
+                        }
+                      }}
                       className="filter-select-enhanced"
                       style={{ minWidth: 'auto', width: '100%' }}
                     >
-                      <option value="high">High Risk</option>
-                      <option value="medium">Medium Risk</option>
+                      <option value="all">All Teams</option>
+                      {teams.map(team => (
+                        <option key={team._id} value={team._id}>{team.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Subteam Filter */}
+                  <div className="filter-group-enhanced">
+                    <label>Subteam</label>
+                    <select
+                      value={atRiskFilters.subteam}
+                      onChange={(e) => setAtRiskFilters(prev => ({ ...prev, subteam: e.target.value }))}
+                      className="filter-select-enhanced"
+                      style={{ minWidth: 'auto', width: '100%' }}
+                      disabled={atRiskFilters.team === 'all'}
+                    >
+                      <option value="all">All Subteams</option>
+                      {subteams.map(subteam => (
+                        <option key={subteam._id} value={subteam._id}>{subteam.name}</option>
+                      ))}
                     </select>
                   </div>
 
                   {/* Quick Stats in Filters */}
-                 {/* Quick Stats in Filters */}
+                  {/* Quick Stats in Filters */}
                   <div style={{
                     marginTop: '12px',
                     padding: '16px',
@@ -2061,12 +2395,12 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                       QUICK STATS
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      {/* <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '13px', color: '#374151' }}>Total At-Risk</span>
                         <span style={{ fontSize: '14px', fontWeight: 700, color: COLORS.primary }}>
                           {formatNumber(atRiskLearners.length)}
                         </span>
-                      </div>
+                      </div> */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '13px', color: '#374151' }}>Never Logged In</span>
                         <span style={{ fontSize: '14px', fontWeight: 700, color: COLORS.danger }}>
@@ -2085,20 +2419,20 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                           {formatNumber(atRiskLearners.filter(l => l.lastLogin && getDaysAgo(l.lastLogin).includes('days') && !getDaysAgo(l.lastLogin).includes('30+') && !getDaysAgo(l.lastLogin).includes('7-')).length)}
                         </span>
                       </div> */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      {/* <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '13px', color: '#374151' }}>Avg Completion</span>
                         <span style={{ fontSize: '14px', fontWeight: 700, color: COLORS.success }}>
                           {atRiskLearners.length > 0 
                             ? Math.round(atRiskLearners.reduce((sum, l) => sum + (l.completionRate || 0), 0) / atRiskLearners.length) 
                             : 0}%
                         </span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      </div> */}
+                      {/* <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '13px', color: '#374151' }}>Zero Progress</span>
                         <span style={{ fontSize: '14px', fontWeight: 700, color: COLORS.warning }}>
                           {formatNumber(atRiskLearners.filter(l => (l.completionRate || 0) === 0).length)}
                         </span>
-                      </div>
+                      </div> */}
                       {/* <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '13px', color: '#374151' }}>High Risk (>60%)</span>
                         <span style={{ fontSize: '14px', fontWeight: 700, color: COLORS.danger }}>
@@ -2112,9 +2446,15 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                   <button
                     onClick={() => {
                       setIsAtRiskLearnersLoading(true);
-                      fetchAtRiskLearnersWithFilters({ ...atRiskFilters, timeRange: timeRange });
-                      // setShowAtRiskFilters(false); // Close filter panel
-                      console.log('At-Risk filters applied:', atRiskFilters);
+                      // Always use current global timeRange; include custom dates if needed
+                      const filtersToUse = timeRange === 'custom'
+                        ? { ...atRiskFilters, timeRange: 'custom', startDate: customDateRange.startDate, endDate: customDateRange.endDate }
+                        : { ...atRiskFilters, timeRange };
+                      // Reset to first page on filter apply
+                      fetchAtRiskLearnersWithFilters(filtersToUse, 1);
+                      setAtRiskLearnersPage(1);
+                      // setShowAtRiskFilters(false); // Close filter panel if desired
+                      console.log('At-Risk filters applied:', filtersToUse);
                     }}
                     style={{
                       padding: '12px 20px',
@@ -2143,10 +2483,10 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                   {/* Reset Filters Button */}
                   <button
                     onClick={() => {
-                      setAtRiskFilters({ riskLevel: 'high' });
+                      setAtRiskFilters({ team: 'all', subteam: 'all', timeRange: '7d' });
                       setShowAtRiskFilters(false); // Close filter panel
                       // Load default data
-                      fetchAtRiskLearnersWithFilters({ riskLevel: 'high', timeRange: timeRange });
+                      fetchAtRiskLearnersWithFilters({ team: 'all', subteam: 'all', timeRange: timeRange });
                     }}
                     style={{
                       padding: '12px 20px',
@@ -2402,8 +2742,8 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                       setShowCourseAdoptionFilters(!showCourseAdoptionFilters);
                       // Close other filter panels when opening this one
                       if (!showCourseAdoptionFilters) {
-                       
-                       
+
+
                         setShowCoursePerformanceFilters(false);
                         setShowAtRiskFilters(false);
                       }
@@ -2486,7 +2826,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                 </ResponsiveContainer>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px',marginTop:'30px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: '30px' }}>
                 <div style={{ textAlign: 'center', padding: '12px', background: '#f9fafb', borderRadius: '12px' }}>
                   <div style={{ fontSize: '20px', fontWeight: 700, color: COLORS.accent }}>
                     {formatNumber(courseAdoption.reduce((acc, c) => acc + c.enrolled, 0))}
@@ -2617,7 +2957,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                       setIsCourseAdoptionLoading(true);
                       fetchCourseAdoptionWithFilters({ ...courseAdoptionFilters, timeRange: timeRange });
                       // setShowCourseAdoptionFilters(false) //Close filter panel
-                     
+
                     }}
                     style={{
                       padding: '12px 20px',
@@ -2646,11 +2986,11 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                   {/* Reset Filters Button */}
                   <button
                     onClick={() => {
-                      setCourseAdoptionFilters({ category: 'all', team: 'all',subteam:'all', timeRange: timeRange });
-                      fetchCourseAdoptionWithFilters({ category: 'all', team: 'all',subteam:'all', timeRange: timeRange });
+                      setCourseAdoptionFilters({ category: 'all', team: 'all', subteam: 'all', timeRange: timeRange });
+                      fetchCourseAdoptionWithFilters({ category: 'all', team: 'all', subteam: 'all', timeRange: timeRange });
                       setShowCourseAdoptionFilters(false)
                       // Load default data with all categories and teams
-                
+
                     }}
                     style={{
                       padding: '12px 20px',
@@ -2711,15 +3051,15 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
             )}
           </div>
           {/* Course Library */}
-        <div style={{ display: 'grid', gridTemplateColumns: showCourseLibraryFilters ? '80% 20%' : '100%', gap: '20px', marginBottom: '24px', transition: 'all 0.3s ease' }}>
-          <div className="chart-panel">
-            <div className="panel-header-enhanced">
-              <div>
-                <h3 className="panel-title">Course Library Distribution</h3>
-                <p className="panel-description">Courses organized by category</p>
-              </div>
-              {/* <BookOpen size={20} className="panel-icon" /> */}
-               <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: showCourseLibraryFilters ? '80% 20%' : '100%', gap: '20px', marginBottom: '24px', transition: 'all 0.3s ease' }}>
+            <div className="chart-panel">
+              <div className="panel-header-enhanced">
+                <div>
+                  <h3 className="panel-title">Course Library Distribution</h3>
+                  <p className="panel-description">Courses organized by category</p>
+                </div>
+                {/* <BookOpen size={20} className="panel-icon" /> */}
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                   {/* <Target size={20} className="panel-icon" /> */}
 
                   {/* Filter Dropdown Button */}
@@ -2728,10 +3068,10 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                       setShowCourseLibraryFilters(!showCourseLibraryFilters);
                       // Close other filter panels when opening this one
                       if (!showCourseLibraryFilters) {
-                      
+
                         setShowCourseAdoptionFilters(false);
                         setShowCoursePerformanceFilters(false);
-                       
+
                       }
                     }}
                     style={{
@@ -2765,62 +3105,62 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                     Filters
                   </button>
                 </div>
-            </div>
+              </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginTop: '20px' }}>
-              {courseLibrary.map((cat, idx) => (
-                <div
-                  key={idx}
-                  className="health-metric clickable"
-                  onClick={() => navigate('/admin/content-modules', {
-                    state: {
-                      status: 'Published',
-                      category: cat.category,
-                      timeRange: courseFilters.timeRange,
-                      team: courseFilters.team !== 'all' ? courseFilters.team : null
-                    }
-                  })}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <div>
-                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#111827', marginBottom: '4px' }}>
-                        {cat.category}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginTop: '20px' }}>
+                {courseLibrary.map((cat, idx) => (
+                  <div
+                    key={idx}
+                    className="health-metric clickable"
+                    onClick={() => navigate('/admin/content-modules', {
+                      state: {
+                        status: 'Published',
+                        category: cat.category,
+                        timeRange: courseFilters.timeRange,
+                        team: courseFilters.team !== 'all' ? courseFilters.team : null
+                      }
+                    })}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <div>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: '#111827', marginBottom: '4px' }}>
+                          {cat.category}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                          {cat.teams} teams
+                        </div>
                       </div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                        {cat.teams} teams
+                      <div style={{
+                        width: '56px',
+                        height: '56px',
+                        borderRadius: '12px',
+                        background: CHART_COLORS[idx % CHART_COLORS.length],
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontSize: '24px',
+                        fontWeight: 700
+                      }}>
+                        {cat.courses}
                       </div>
                     </div>
-                    <div style={{
-                      width: '56px',
-                      height: '56px',
-                      borderRadius: '12px',
-                      background: CHART_COLORS[idx % CHART_COLORS.length],
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontSize: '24px',
-                      fontWeight: 700
-                    }}>
-                      {cat.courses}
+                    <div className="progress-bar">
+                      <div
+                        className="progress-fill"
+                        style={{
+                          width: `${(cat.courses / 50) * 100}%`,
+                          background: CHART_COLORS[idx % CHART_COLORS.length]
+                        }}
+                      />
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '6px' }}>
+                      {cat.courses} courses available
                     </div>
                   </div>
-                  <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{
-                        width: `${(cat.courses / 50) * 100}%`,
-                        background: CHART_COLORS[idx % CHART_COLORS.length]
-                      }}
-                    />
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '6px' }}>
-                    {cat.courses} courses available
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
             {/* Filters Panel - 20% - Conditional */}
             {showCourseLibraryFilters && (
               <div className="chart-panel">
@@ -2887,7 +3227,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                   </div>
 
                   {/* Quick Stats in Filters */}
-                   <div style={{
+                  <div style={{
                     marginTop: '12px',
                     padding: '16px',
                     background: '#f9fafb',
@@ -2916,7 +3256,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                           {formatNumber(overallCourseLibrary.reduce((sum, cat) => sum + (cat.teams || 0), 0))}
                         </span>
                       </div>
-                     
+
                     </div>
                   </div>
 
@@ -2925,7 +3265,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                     onClick={() => {
                       // fetchCourseAdoptionWithFilters(courseFilters);
                       setIsCourseLibraryLoading(true);
-                      fetchCourseLibraryWithTimeRange({...courseLibraryFilters,timeRange:timeRange});
+                      fetchCourseLibraryWithTimeRange({ ...courseLibraryFilters, timeRange: timeRange });
                       //setShowCourseLibraryFilters(false); // Close filter panel
                       // console.log('Filters applied:', courseFilters);
                     }}
@@ -2960,7 +3300,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                       setShowCourseLibraryFilters(false); // Close filter panel
                       // Load default data with all categories and teams
                       // fetchCourseAdoptionWithFilters({ category: 'all', team: 'all', timeRange: timeRange });
-                      fetchCourseLibraryWithTimeRange({ category: 'all', team: 'all',subteam: 'all', timeRange: timeRange });
+                      fetchCourseLibraryWithTimeRange({ category: 'all', team: 'all', subteam: 'all', timeRange: timeRange });
                     }}
                     style={{
                       padding: '12px 20px',
@@ -3019,26 +3359,26 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                 </div>
               </div>
             )}
-        </div>
+          </div>
 
 
           {/* Course Performance & Adoption Insights */}
-         <div style={{ display: 'grid', gridTemplateColumns: showCoursePerformanceFilters ? '80% 20%' : '100%', gap: '20px', marginBottom: '24px', transition: 'all 0.3s ease' }}>
-          <div className="chart-panel">
-            <div className="panel-header-enhanced">
-              <div>
-                <h3 className="panel-title">
-               Course Performance Insights
-              </h3>
-              <p className="panel-description">
-                {coursePerformanceFilters.content === 'modules' ? 'Top performing modules and adoption metrics' :
-                 coursePerformanceFilters.content === 'assessments' ? 'Top performing assessments and completion metrics' :
-                 coursePerformanceFilters.content === 'surveys' ? 'Survey response and completion metrics' :
-                 coursePerformanceFilters.content === 'learningpaths' ? 'Learning path progress and completion metrics' :
-                 'Top performing courses and adoption metrics'}
-              </p>
-              </div>
-               <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: showCoursePerformanceFilters ? '80% 20%' : '100%', gap: '20px', marginBottom: '24px', transition: 'all 0.3s ease' }}>
+            <div className="chart-panel">
+              <div className="panel-header-enhanced">
+                <div>
+                  <h3 className="panel-title">
+                    Course Performance Insights
+                  </h3>
+                  <p className="panel-description">
+                    {coursePerformanceFilters.content === 'modules' ? 'Top performing modules and adoption metrics' :
+                      coursePerformanceFilters.content === 'assessments' ? 'Top performing assessments and completion metrics' :
+                        coursePerformanceFilters.content === 'surveys' ? 'Survey response and completion metrics' :
+                          coursePerformanceFilters.content === 'learningpaths' ? 'Learning path progress and completion metrics' :
+                            'Top performing courses and adoption metrics'}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                   {/* <Target size={20} className="panel-icon" /> */}
 
                   {/* Filter Dropdown Button */}
@@ -3047,10 +3387,10 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                       setShowCoursePerformanceFilters(!showCoursePerformanceFilters);
                       // Close other filter panels when opening this one
                       if (!showCoursePerformanceFilters) {
-                       
+
                         setShowCourseAdoptionFilters(false);
                         setShowCourseLibraryFilters(false);
-                       
+
                       }
                     }}
                     style={{
@@ -3084,251 +3424,251 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                     Filters
                   </button>
                 </div>
-            </div>
+              </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginTop: '20px' }}>
-              {/* Top Performing Courses */}
-              <div style={{ background: '#f9fafb', padding: '20px', borderRadius: '16px',minHeight: "432px"}}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                  <TrendingUp size={18} style={{ color: COLORS.success }} />
-                  <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#111827' }}>
-                    {coursePerformanceFilters.content === 'modules' ? 'Top Performing Modules' :
-                     coursePerformanceFilters.content === 'assessments' ? 'Top Performing Assessments' :
-                     coursePerformanceFilters.content === 'surveys' ? 'Top Responded Surveys' :
-                     coursePerformanceFilters.content === 'learningpaths' ? 'Top Performing Learning Paths' :
-                     'Top Performing Courses'}
-                  </h4>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {(() => {
-                    const topPerformingCourses = coursePerformanceData && coursePerformanceData.length > 0 
-                      ? coursePerformanceData.filter(course => course.performanceLevel === 'Top Performing').slice(0, 5)
-                      : [];
-                    
-                    return topPerformingCourses.length > 0 ? (
-                      topPerformingCourses.map((course, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          background: 'white',
-                          padding: '16px',
-                          borderRadius: '12px',
-                          borderLeft: `4px solid ${COLORS.success}`,
-                          transition: 'all 0.2s',
-                          cursor: 'pointer'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateX(4px)';
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateX(0)';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '14px', fontWeight: 600, color: '#111827', marginBottom: '4px' }}>
-                              {course.name}
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                              {course.enrolled} enrolled • {course.completed} completed
-                            </div>
-                          </div>
-                          <div style={{
-                            padding: '4px 10px',
-                            borderRadius: '8px',
-                            background: 'rgba(16, 185, 129, 0.1)',
-                            fontSize: '13px',
-                            fontWeight: 700,
-                            color: COLORS.success
-                          }}>
-                            {course.completionRate}%
-                          </div>
-                        </div>
-                        <div className="progress-bar" style={{ height: '6px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginTop: '20px' }}>
+                {/* Top Performing Courses */}
+                <div style={{ background: '#f9fafb', padding: '20px', borderRadius: '16px', minHeight: "432px" }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                    <TrendingUp size={18} style={{ color: COLORS.success }} />
+                    <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#111827' }}>
+                      {coursePerformanceFilters.content === 'modules' ? 'Top Performing Modules' :
+                        coursePerformanceFilters.content === 'assessments' ? 'Top Performing Assessments' :
+                          coursePerformanceFilters.content === 'surveys' ? 'Top Responded Surveys' :
+                            coursePerformanceFilters.content === 'learningpaths' ? 'Top Performing Learning Paths' :
+                              'Top Performing Courses'}
+                    </h4>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {(() => {
+                      const topPerformingCourses = coursePerformanceData && coursePerformanceData.length > 0
+                        ? coursePerformanceData.filter(course => course.performanceLevel === 'Top Performing').slice(0, 5)
+                        : [];
+
+                      return topPerformingCourses.length > 0 ? (
+                        topPerformingCourses.map((course, idx) => (
                           <div
-                            className="progress-fill"
+                            key={idx}
                             style={{
-                              width: `${course.completionRate}%`,
-                              background: COLORS.success
+                              background: 'white',
+                              padding: '16px',
+                              borderRadius: '12px',
+                              borderLeft: `4px solid ${COLORS.success}`,
+                              transition: 'all 0.2s',
+                              cursor: 'pointer'
                             }}
-                          />
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div style={{ 
-                      textAlign: 'center', 
-                      padding: '150px 20px', 
-                      color: '#6b7280',
-                      fontSize: '14px'
-
-                    }}>
-                      <div style={{ marginBottom: '8px' }}>
-                        {coursePerformanceFilters.content === 'modules' ? 'No top performing modules available' :
-                         coursePerformanceFilters.content === 'assessments' ? 'No top performing assessments available' :
-                         coursePerformanceFilters.content === 'surveys' ? 'No top performing surveys available' :
-                         coursePerformanceFilters.content === 'learningpaths' ? 'No top performing learning paths available' :
-                         'No top performing courses available'}
-                      </div>
-                      <div style={{ fontSize: '12px', opacity: 0.7 }}>
-                        {coursePerformanceFilters.content === 'modules' || coursePerformanceFilters.content === 'assessments' ? 
-                          'Top performers need 80%+ completion and 70%+ average score' :
-                          'User activity is needed for top performance metrics'}
-                      </div>
-                    </div>
-                  );
-                  })()}
-                </div>
-              </div>
-
-              {/* Courses Needing Attention */}
-              <div style={{ background: '#f9fafb', padding: '20px', borderRadius: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                  <AlertTriangle size={18} style={{ color: COLORS.warning }} />
-                  <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#111827' }}>
-                    {coursePerformanceFilters.content === 'modules' ? 'Modules Needing Attention' :
-                     coursePerformanceFilters.content === 'assessments' ? 'Assessments Needing Attention' :
-                     coursePerformanceFilters.content === 'surveys' ? 'Surveys Needing Attention' :
-                     coursePerformanceFilters.content === 'learningpaths' ? 'Learning Paths Needing Attention' :
-                     'Courses Needing Attention'}
-                  </h4>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {(() => {
-                    const needingAttentionCourses = coursePerformanceData && coursePerformanceData.length > 0 
-                      ? coursePerformanceData.filter(course => course.performanceLevel === 'Needs Attention').slice(0, 5)
-                      : [];
-                    
-                    return needingAttentionCourses.length > 0 ? (
-                      needingAttentionCourses.map((course, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          background: 'white',
-                          padding: '16px',
-                          borderRadius: '12px',
-                          borderLeft: `4px solid ${course.completionRate < 40 ? COLORS.danger : COLORS.warning}`,
-                          transition: 'all 0.2s',
-                          cursor: 'pointer'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateX(4px)';
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateX(0)';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '14px', fontWeight: 600, color: '#111827', marginBottom: '4px' }}>
-                              {course.name}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'translateX(4px)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'translateX(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '14px', fontWeight: 600, color: '#111827', marginBottom: '4px' }}>
+                                  {course.name}
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                                  {course.enrolled} enrolled • {course.completed} completed
+                                </div>
+                              </div>
+                              <div style={{
+                                padding: '4px 10px',
+                                borderRadius: '8px',
+                                background: 'rgba(16, 185, 129, 0.1)',
+                                fontSize: '13px',
+                                fontWeight: 700,
+                                color: COLORS.success
+                              }}>
+                                {course.completionRate}%
+                              </div>
                             </div>
-                            <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                              {course.enrolled} enrolled • {course.completed} completed
+                            <div className="progress-bar" style={{ height: '6px' }}>
+                              <div
+                                className="progress-fill"
+                                style={{
+                                  width: `${course.completionRate}%`,
+                                  background: COLORS.success
+                                }}
+                              />
                             </div>
                           </div>
-                          <div style={{
-                            padding: '4px 10px',
-                            borderRadius: '8px',
-                            background: course.completionRate < 40 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                            fontSize: '13px',
-                            fontWeight: 700,
-                            color: course.completionRate < 40 ? COLORS.danger : COLORS.warning
-                          }}>
-                            {course.completionRate}%
+                        ))
+                      ) : (
+                        <div style={{
+                          textAlign: 'center',
+                          padding: '150px 20px',
+                          color: '#6b7280',
+                          fontSize: '14px'
+
+                        }}>
+                          <div style={{ marginBottom: '8px' }}>
+                            {coursePerformanceFilters.content === 'modules' ? 'No top performing modules available' :
+                              coursePerformanceFilters.content === 'assessments' ? 'No top performing assessments available' :
+                                coursePerformanceFilters.content === 'surveys' ? 'No top performing surveys available' :
+                                  coursePerformanceFilters.content === 'learningpaths' ? 'No top performing learning paths available' :
+                                    'No top performing courses available'}
+                          </div>
+                          <div style={{ fontSize: '12px', opacity: 0.7 }}>
+                            {coursePerformanceFilters.content === 'modules' || coursePerformanceFilters.content === 'assessments' ?
+                              'Top performers need 80%+ completion and 70%+ average score' :
+                              'User activity is needed for top performance metrics'}
                           </div>
                         </div>
-                        <div className="progress-bar" style={{ height: '6px' }}>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Courses Needing Attention */}
+                <div style={{ background: '#f9fafb', padding: '20px', borderRadius: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                    <AlertTriangle size={18} style={{ color: COLORS.warning }} />
+                    <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#111827' }}>
+                      {coursePerformanceFilters.content === 'modules' ? 'Modules Needing Attention' :
+                        coursePerformanceFilters.content === 'assessments' ? 'Assessments Needing Attention' :
+                          coursePerformanceFilters.content === 'surveys' ? 'Surveys Needing Attention' :
+                            coursePerformanceFilters.content === 'learningpaths' ? 'Learning Paths Needing Attention' :
+                              'Courses Needing Attention'}
+                    </h4>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {(() => {
+                      const needingAttentionCourses = coursePerformanceData && coursePerformanceData.length > 0
+                        ? coursePerformanceData.filter(course => course.performanceLevel === 'Needs Attention').slice(0, 5)
+                        : [];
+
+                      return needingAttentionCourses.length > 0 ? (
+                        needingAttentionCourses.map((course, idx) => (
                           <div
-                            className="progress-fill"
+                            key={idx}
                             style={{
-                              width: `${course.completionRate}%`,
-                              background: course.completionRate < 40 ? COLORS.danger : COLORS.warning
+                              background: 'white',
+                              padding: '16px',
+                              borderRadius: '12px',
+                              borderLeft: `4px solid ${course.completionRate < 40 ? COLORS.danger : COLORS.warning}`,
+                              transition: 'all 0.2s',
+                              cursor: 'pointer'
                             }}
-                          />
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'translateX(4px)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'translateX(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '14px', fontWeight: 600, color: '#111827', marginBottom: '4px' }}>
+                                  {course.name}
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                                  {course.enrolled} enrolled • {course.completed} completed
+                                </div>
+                              </div>
+                              <div style={{
+                                padding: '4px 10px',
+                                borderRadius: '8px',
+                                background: course.completionRate < 40 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                                fontSize: '13px',
+                                fontWeight: 700,
+                                color: course.completionRate < 40 ? COLORS.danger : COLORS.warning
+                              }}>
+                                {course.completionRate}%
+                              </div>
+                            </div>
+                            <div className="progress-bar" style={{ height: '6px' }}>
+                              <div
+                                className="progress-fill"
+                                style={{
+                                  width: `${course.completionRate}%`,
+                                  background: course.completionRate < 40 ? COLORS.danger : COLORS.warning
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div style={{
+                          textAlign: 'center',
+                          padding: '150px 20px',
+                          color: '#6b7280',
+                          fontSize: '14px'
+                        }}>
+                          <div style={{ marginBottom: '8px' }}>
+                            {coursePerformanceFilters.content === 'modules' ? 'No modules needing attention' :
+                              coursePerformanceFilters.content === 'assessments' ? 'No assessments needing attention' :
+                                coursePerformanceFilters.content === 'surveys' ? 'No surveys needing attention' :
+                                  coursePerformanceFilters.content === 'learningpaths' ? 'No learning paths needing attention' :
+                                    'No courses needing attention'}
+                          </div>
+                          <div style={{ fontSize: '12px', opacity: 0.7 }}>
+                            {coursePerformanceFilters.content === 'modules' ? 'All modules are performing well' :
+                              coursePerformanceFilters.content === 'assessments' ? 'All assessments are performing well' :
+                                coursePerformanceFilters.content === 'surveys' ? 'All surveys are performing well' :
+                                  coursePerformanceFilters.content === 'learningpaths' ? 'All learning paths are performing well' :
+                                    'All courses are performing well'}
+                          </div>
                         </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div style={{ 
-                      textAlign: 'center', 
-                      padding: '150px 20px', 
-                      color: '#6b7280',
-                      fontSize: '14px'
-                    }}>
-                      <div style={{ marginBottom: '8px' }}>
-                        {coursePerformanceFilters.content === 'modules' ? 'No modules needing attention' :
-                         coursePerformanceFilters.content === 'assessments' ? 'No assessments needing attention' :
-                         coursePerformanceFilters.content === 'surveys' ? 'No surveys needing attention' :
-                         coursePerformanceFilters.content === 'learningpaths' ? 'No learning paths needing attention' :
-                         'No courses needing attention'}
-                      </div>
-                      <div style={{ fontSize: '12px', opacity: 0.7 }}>
-                        {coursePerformanceFilters.content === 'modules' ? 'All modules are performing well' :
-                         coursePerformanceFilters.content === 'assessments' ? 'All assessments are performing well' :
-                         coursePerformanceFilters.content === 'surveys' ? 'All surveys are performing well' :
-                         coursePerformanceFilters.content === 'learningpaths' ? 'All learning paths are performing well' :
-                         'All courses are performing well'}
-                      </div>
-                    </div>
-                  );
-                  })()}
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Summary Stats */}
+              <div style={{
+                marginTop: '20px',
+                padding: '20px',
+                background: 'linear-gradient(135deg, #011F5B, #1C88C7)',
+                borderRadius: '16px',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '20px'
+              }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '28px', fontWeight: 700, color: 'white', marginBottom: '4px' }}>
+                    {coursePerformanceData.filter(c => c.performanceLevel === 'Top Performing').length}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
+                    Top Performing
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '28px', fontWeight: 700, color: 'white', marginBottom: '4px' }}>
+                    {coursePerformanceData.filter(c => c.performanceLevel === 'Good Performance').length}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
+                    Good Performance
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '28px', fontWeight: 700, color: 'white', marginBottom: '4px' }}>
+                    {coursePerformanceData.filter(c => c.performanceLevel === 'Needs Attention').length}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
+                    Needs Attention
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '28px', fontWeight: 700, color: 'white', marginBottom: '4px' }}>
+                    {coursePerformanceData.length > 0
+                      ? `${Math.round(coursePerformanceData.reduce((acc, c) => acc + Number(c.completionRate), 0) / coursePerformanceData.length)}%`
+                      : '0%'
+                    }
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
+                    Average Completion Rate
+                  </div>
                 </div>
               </div>
             </div>
-            
-            {/* Summary Stats */}
-            <div style={{
-              marginTop: '20px',
-              padding: '20px',
-              background: 'linear-gradient(135deg, #011F5B, #1C88C7)',
-              borderRadius: '16px',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: '20px'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '28px', fontWeight: 700, color: 'white', marginBottom: '4px' }}>
-                  {coursePerformanceData.filter(c => c.performanceLevel === 'Top Performing').length}
-                </div>
-                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
-                  Top Performing
-                </div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '28px', fontWeight: 700, color: 'white', marginBottom: '4px' }}>
-                  {coursePerformanceData.filter(c => c.performanceLevel === 'Good Performance').length}
-                </div>
-                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
-                  Good Performance
-                </div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '28px', fontWeight: 700, color: 'white', marginBottom: '4px' }}>
-                  {coursePerformanceData.filter(c => c.performanceLevel === 'Needs Attention').length}
-                </div>
-                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
-                  Needs Attention
-                </div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '28px', fontWeight: 700, color: 'white', marginBottom: '4px' }}>
-                  {coursePerformanceData.length > 0
-                    ? `${Math.round(coursePerformanceData.reduce((acc, c) => acc + Number(c.completionRate), 0) / coursePerformanceData.length)}%`
-                    : '0%'
-                  }
-                </div>
-                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
-                  Average Completion Rate
-                </div>
-              </div>
-            </div>
-          </div>
-           {/* Filters Panel - 20% - Conditional */}
+            {/* Filters Panel - 20% - Conditional */}
             {showCoursePerformanceFilters && (
               <div className="chart-panel">
                 <div className="panel-header-enhanced">
@@ -3345,7 +3685,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                     <label>Content</label>
                     <select
                       value={coursePerformanceFilters.content}
-                      onChange={(e) => setCoursePerformanceFilters(prev => ({ ...prev, content: e.target.value }))}  
+                      onChange={(e) => setCoursePerformanceFilters(prev => ({ ...prev, content: e.target.value }))}
                       className="filter-select-enhanced"
                       style={{ minWidth: 'auto', width: '100%' }}
                     >
@@ -3353,7 +3693,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                       <option value="assessments">Assessments</option>
                       <option value="surveys">Surveys</option>
                       <option value="learningpaths">Learning Paths</option>
-                  </select>
+                    </select>
 
                   </div>
 
@@ -3453,7 +3793,7 @@ const [overallCourseLibrary, setOverallCourseLibrary] = useState([]);
                   <button
                     onClick={() => {
                       setIsCoursePerformanceLoading(true);
-                      fetchCoursePerformanceInsights({...coursePerformanceFilters,timeRange:timeRange});
+                      fetchCoursePerformanceInsights({ ...coursePerformanceFilters, timeRange: timeRange });
                       // setShowCoursePerformanceFilters(false); // Close filter panel
                     }}
                     style={{

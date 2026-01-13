@@ -58,8 +58,8 @@ export const exportModulesToCSV = (modules, filters = {}) => {
       : '';
 
     // Get thumbnail URL
-    const thumbnailLink = module.thumbnail || module.primaryFile || '';
-
+    // const thumbnailLink = module.thumbnail || module.primaryFile || '';
+       const thumbnailLink = '';
     // Get file names
     const getFileName = (file) => {
       if (!file) return '';
@@ -74,11 +74,11 @@ export const exportModulesToCSV = (modules, filters = {}) => {
       tags,
       module.prerequisites || '',
       thumbnailLink,
-      module.instructions || '',
-      getFileName(module.primaryFile),
-      getFileName(module.additionalFile),
-      module.externalResource || '',
-      getFileName(module.externalFile),
+      module.instructions || '','','','','',
+      // getFileName(module.primaryFile),
+      // getFileName(module.additionalFile),
+      // module.externalResource || '',
+      // getFileName(module.externalFile),
       module.duration || '',
       module.credits || 0,
       module.stars || 0,

@@ -16,7 +16,7 @@ import {
   Share,
   Import,
   Eye,
-  BarChart3,CirclePause
+  BarChart3, CirclePause
 } from 'lucide-react';
 import { RiDeleteBinFill } from 'react-icons/ri';
 import { FiEdit3 } from 'react-icons/fi';
@@ -114,6 +114,13 @@ const UsersManagement = () => {
     team: '',
     subteam: '',
   });
+  // Frontend-only filters (do not trigger backend calls)
+  const [localFilters, setLocalFilters] = useState({
+    status: '',
+    role: '',
+    team: '',
+    subteam: '',
+  });
   const [roles, setRoles] = useState([]);
   const [teams, setTeams] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -147,12 +154,11 @@ const UsersManagement = () => {
   const [deactivateTargetUUIDs, setDeactivateTargetUUIDs] = useState([]);
   // Highlighted user from navigation state
   const [highlightedUser, setHighlightedUser] = useState(null);
-  // Centralized fetch: runs when filters change OR when we explicitly bump refetchIndex
+  // Centralized fetch: run once on mount and when we explicitly bump refetchIndex
+  // Do NOT re-fetch on filter or page changes; frontend applies filters/pagination
   useEffect(() => {
-    // call fetchUsers exactly once per change
-    dispatch(fetchUsers(filters));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, filters, refetchIndex]);
+    dispatch(fetchUsers({}));
+  }, [dispatch, refetchIndex]);
 
   useEffect(() => {
     getRoles();
@@ -164,23 +170,23 @@ const UsersManagement = () => {
   useEffect(() => {
     if (location.state?.highlightedUser && allUsers.length > 0) {
       const { highlightedUser: navHighlightedUser } = location.state;
-      
+
       // Find the user in the allUsers array
-      const targetUser = allUsers.find(user => 
-        user.email === navHighlightedUser.email || 
+      const targetUser = allUsers.find(user =>
+        user.email === navHighlightedUser.email ||
         user.name === navHighlightedUser.name
       );
-      
+
       if (targetUser && navHighlightedUser.showAnalytics) {
         // Set highlighted user for visual highlighting
         setHighlightedUser(targetUser);
-        
+
         // Get user ID and trigger analytics
         const userId = resolveUserId(targetUser);
         if (userId) {
           console.log('Auto-triggering analytics for highlighted user:', targetUser);
           handleUserAnalytics(userId);
-          
+
           // Clear the navigation state to prevent re-triggering
           window.history.replaceState({}, document.title);
         }
@@ -205,168 +211,8 @@ const UsersManagement = () => {
     }
   };
 
-  const sortedUsers = useMemo(() => {
-
-    let list = Array.isArray(allUsers) ? allUsers : [];
-    if (localSearch.trim()) {
-      const s = localSearch.toLowerCase();
-      list = list.filter(u =>
-        (u?.name || '').toLowerCase().includes(s) ||
-        (u?.email || '').toLowerCase().includes(s) ||
-        (u?.profile?.designation || '').toLowerCase().includes(s)
-      );
-    }
-
-    // console.log("list in users",list);
-    if (!sortKey) return list;
-    const roleLabel = (u) => typeof u?.global_role_id === 'string'
-      ? u.global_role_id
-      : (u?.global_role_id?.name || u?.global_role_id?.title || '');
-    const statusLabel = (u) => (getStatusLabel(u?.status) || '').toLowerCase();
-    const getVal = (u) => {
-      switch (sortKey) {
-        case 'name':
-          return (u?.name || '').toLowerCase();
-        case 'email':
-          return (u?.email || '').toLowerCase();
-        case 'designation':
-          return (u?.profile?.designation || u?.designation || '').toLowerCase();
-        case 'role':
-          return (roleLabel(u) || '').toLowerCase();
-        case 'status':
-          return statusLabel(u);
-        default:
-          return '';
-      }
-    };
-    const copy = [...list];
-    copy.sort((a, b) => {
-      const va = getVal(a);
-      const vb = getVal(b);
-      if (va < vb) return sortDir === 'asc' ? -1 : 1;
-      if (va > vb) return sortDir === 'asc' ? 1 : -1;
-      return 0;
-    });
-    return copy;
-  }, [allUsers, sortKey, sortDir, localSearch]);
-
-  const handleSortChange = useCallback((key) => {
-    if (sortKey === key) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortKey(key);
-      setSortDir('asc');
-    }
-  }, [sortKey]);
-
-  const getDepartments = async () => {
-    try {
-      // const res = await api.get("api/admin/getDepartments");
-      const res = await api.get("api/admin/getGroups");
-      console.log(res.data.data);
-      setDepartments(res.data.data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const handleUserAnalytics = async (userId) => {
-    try {
-      setAnalyticsLoading(true);
-      setShowAnalytics(true);
-      console.log('Fetching user analytics for user ID:', userId);
-      const response = await api.get(`/api/admin/analytics/user/${userId}`);
-      console.log('User analytics response:', response.data);
-      setAnalyticsData(response.data.data);
-    } catch (error) {
-      console.error('Error fetching user analytics:', error);
-      notifyError('Failed to load user analytics data');
-      setShowAnalytics(false);
-    } finally {
-      setAnalyticsLoading(false);
-    }
-  };
-
-
-  useEffect(() => {
-    const desiredLimit = 20;
-    if ((filters?.limit ?? null) !== desiredLimit) {
-      dispatch(setFilters({
-        ...(filters || {}),
-        limit: desiredLimit,
-        page: filters?.page || 1,
-      }));
-    }
-  }, [dispatch, filters?.limit]);
-
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setTempFilters(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleFilter = () => {
-    dispatch(setFilters({
-      ...filters,
-      ...tempFilters,
-      search: searchTerm,
-      page: 1,
-    }));
-    setShowFilters(false);
-  };
-
-  const resetFilters = () => {
-    const initialFilters = {
-      status: '',
-      role: '',
-      team: '',
-      subteam: '',
-    };
-    setTempFilters(initialFilters);
-    setSearchTerm('');
-    dispatch(clearFilters());
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    dispatch(setFilters({
-      ...filters,
-      [name]: value,
-    }));
-  };
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    dispatch(setFilters({
-      ...filters,
-      search: searchTerm,
-      page: 1,
-    }));
-  };
-
-  const clearSearch = () => {
-    setSearchTerm('');
-    dispatch(setFilters({
-      ...filters,
-      search: '',
-      page: 1,
-    }));
-  };
-
-  const getStatusLabel = (status) => {
-    const raw = typeof status === 'string'
-      ? status
-      : status?.name || status?.label || 'active';
-
-    const lower = (raw || '').toLowerCase();
-    if (lower === 'inactive') return 'Inactive';
-    if (lower === 'active') return 'Active';
-    return raw || 'Active';
-  };
-
-  const computeAssignments = (userData) => {
+  // Hoisted helper to compute team/subteam assignments for a user
+  function computeAssignments(userData) {
     if (!userData) {
       return [];
     }
@@ -427,7 +273,232 @@ const UsersManagement = () => {
     }
 
     return mapped;
+  }
+
+  // Hoisted utility to normalize status values
+  function getStatusLabel(status) {
+    let raw;
+    if (typeof status === 'string') {
+      raw = status;
+    } else if (status && typeof status === 'object') {
+      raw = status.name || status.label;
+    } else if (status === true || status === 1) {
+      raw = 'Active';
+    } else if (status === false || status === 0) {
+      raw = 'Inactive';
+    } else {
+      raw = 'Active';
+    }
+
+    const lower = (raw || '').toString().trim().toLowerCase();
+    if (lower === 'inactive') return 'Inactive';
+    if (lower === 'active') return 'Active';
+    return raw || 'Active';
+  }
+
+  const sortedUsers = useMemo(() => {
+
+    let list = Array.isArray(allUsers) && allUsers.length ? allUsers : (Array.isArray(users) ? users : []);
+    // 1) Text search (frontend)
+    if (localSearch.trim()) {
+      const s = localSearch.toLowerCase();
+      list = list.filter(u =>
+        (u?.name || '').toLowerCase().includes(s) ||
+        (u?.email || '').toLowerCase().includes(s) ||
+        (u?.profile?.designation || '').toLowerCase().includes(s)
+      );
+    }
+
+    // 2) Frontend filters: status/team/subteam/role
+    const matchesStatus = (u) => {
+      if (!localFilters.status) return true;
+      const lbl = (getStatusLabel(u?.status) || '').toLowerCase();
+      return lbl === String(localFilters.status).toLowerCase();
+    };
+    const assignmentsFor = (u) => computeAssignments(u || {});
+    const matchesTeam = (u) => {
+      if (!localFilters.team) return true;
+      const assigns = assignmentsFor(u);
+      // direct id match
+      if (assigns.some(a => String(a.teamId) === String(localFilters.team))) return true;
+      // fallback: compare by team name
+      const teamObj = (Array.isArray(teams) ? teams : []).find(t => (t?._id || t?.id || t?.uuid) === localFilters.team);
+      const selectedTeamName = teamObj?.name || teamObj?.teamName;
+      if (!selectedTeamName) return false;
+      return assigns.some(a => (a.teamName || '').toString().trim().toLowerCase() === selectedTeamName.toString().trim().toLowerCase());
+    };
+    const matchesSubteam = (u) => {
+      if (!localFilters.subteam) return true;
+      const assigns = assignmentsFor(u);
+      // direct id match
+      if (assigns.some(a => String(a.subTeamId) === String(localFilters.subteam))) return true;
+      // fallback: compare by subteam name within selected team
+      const teamObj = (Array.isArray(teams) ? teams : []).find(t => (t?._id || t?.id || t?.uuid) === localFilters.team);
+      const subs = Array.isArray(teamObj?.subTeams) ? teamObj.subTeams : [];
+      const stObj = subs.find(s => (s?._id || s?.id || s?.uuid) === localFilters.subteam);
+      const selectedSubName = stObj?.name || stObj?.subTeamName;
+      if (!selectedSubName) return false;
+      return assigns.some(a => (a.subTeamName || '').toString().trim().toLowerCase() === selectedSubName.toString().trim().toLowerCase());
+    };
+    const matchesRole = (u) => {
+      if (!localFilters.role) return true;
+      // Selected role may be an ID; find the role object for name fallback
+      const selectedRoleObj = (Array.isArray(roles) ? roles : []).find(r => (r?._id || r?.id || r?.uuid) === localFilters.role);
+      const selectedRoleName = selectedRoleObj?.name || selectedRoleObj?.title;
+
+      // Extract user's role id or object
+      const roleField = u?.global_role_id || u?.role || u?.profile?.role;
+      const userRoleId = (typeof roleField === 'object') ? (roleField?._id || roleField?.id || roleField?.uuid) : roleField;
+      const userRoleName = (typeof roleField === 'object') ? (roleField?.name || roleField?.title) : undefined;
+
+      // Match by ID first
+      if (userRoleId && String(userRoleId).toLowerCase() === String(localFilters.role).toLowerCase()) return true;
+      // Fallback: match by name if available
+      if (selectedRoleName && userRoleName) {
+        return selectedRoleName.toString().trim().toLowerCase() === userRoleName.toString().trim().toLowerCase();
+      }
+      return false;
+    };
+    list = list.filter(u => matchesStatus(u) && matchesTeam(u) && matchesSubteam(u) && matchesRole(u));
+
+    // 3) Sorting
+    if (!sortKey) return list;
+    const roleLabel = (u) => typeof u?.global_role_id === 'string'
+      ? u.global_role_id
+      : (u?.global_role_id?.name || u?.global_role_id?.title || '');
+    const statusLabel = (u) => (getStatusLabel(u?.status) || '').toLowerCase();
+    const getVal = (u) => {
+      switch (sortKey) {
+        case 'name':
+          return (u?.name || '').toLowerCase();
+        case 'email':
+          return (u?.email || '').toLowerCase();
+        case 'designation':
+          return (u?.profile?.designation || u?.designation || '').toLowerCase();
+        case 'role':
+          return (roleLabel(u) || '').toLowerCase();
+        case 'status':
+          return statusLabel(u);
+        default:
+          return '';
+      }
+    };
+    const copy = [...list];
+    copy.sort((a, b) => {
+      const va = getVal(a);
+      const vb = getVal(b);
+      if (va < vb) return sortDir === 'asc' ? -1 : 1;
+      if (va > vb) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return copy;
+  }, [allUsers, users, teams, roles, sortKey, sortDir, localSearch, localFilters.status, localFilters.team, localFilters.subteam, localFilters.role]);
+
+  const handleSortChange = useCallback((key) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  }, [sortKey]);
+
+  const getDepartments = async () => {
+    try {
+      // const res = await api.get("api/admin/getDepartments");
+      const res = await api.get("api/admin/getGroups");
+      console.log(res.data.data);
+      setDepartments(res.data.data);
+    } catch (error) {
+      console.log(error);
+    }
   };
+
+  const handleUserAnalytics = async (userId) => {
+    try {
+      setAnalyticsLoading(true);
+      setShowAnalytics(true);
+      console.log('Fetching user analytics for user ID:', userId);
+      const response = await api.get(`/api/admin/analytics/user/${userId}`);
+      console.log('User analytics response:', response.data);
+      setAnalyticsData(response.data.data);
+    } catch (error) {
+      console.error('Error fetching user analytics:', error);
+      notifyError('Failed to load user analytics data');
+      setShowAnalytics(false);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+
+  useEffect(() => {
+    const desiredLimit = 20;
+    if ((filters?.limit ?? null) !== desiredLimit) {
+      dispatch(setFilters({
+        ...(filters || {}),
+        limit: desiredLimit,
+        page: filters?.page || 1,
+      }));
+    }
+  }, [dispatch, filters?.limit]);
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setTempFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleFilter = () => {
+    // Frontend-only filtering
+    setLocalFilters({ ...tempFilters });
+    // Reset to first page locally by updating store page only (no other filters)
+    dispatch(setFilters({
+      ...filters,
+      page: 1,
+    }));
+    setShowFilters(false);
+  };
+
+  const resetFilters = () => {
+    const initialFilters = {
+      status: '',
+      role: '',
+      team: '',
+      subteam: '',
+    };
+    setTempFilters(initialFilters);
+    setLocalFilters(initialFilters);
+    setSearchTerm('');
+    // Do not clear server filters to avoid triggering backend; just reset to page 1
+    dispatch(setFilters({ ...filters, page: 1 }));
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    dispatch(setFilters({
+      ...filters,
+      [name]: value,
+    }));
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    // Frontend-only search
+    setLocalSearch(searchTerm || '');
+  };
+
+  const clearSearch = () => {
+    setSearchTerm('');
+    // Frontend-only search clear
+    setLocalSearch('');
+  };
+
+
+
+
 
   const buildUserTagLabels = (userData) => {
     if (!userData) return [];
@@ -514,8 +585,8 @@ const UsersManagement = () => {
   //   }
   // };
   const handleImportButtonClick = () => {
-  setShowImportModal(true);
-};
+    setShowImportModal(true);
+  };
   ///email verification
   const isValidEmail = (email) => {
     if (!email) return false;
@@ -676,186 +747,186 @@ const UsersManagement = () => {
   };
 
 
-  
- const handleImportFromModal = async (file) => {
-  if (!file) return;
 
-  setIsImporting(true);
+  const handleImportFromModal = async (file) => {
+    if (!file) return;
 
-  try {
-    const data = await file.arrayBuffer();
-    const workbook = XLSX.read(data, { type: "array" });
+    setIsImporting(true);
 
-    if (!workbook.SheetNames.length) {
-      notifyError("No sheets found.");
-      return;
-    }
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: "array" });
 
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+      if (!workbook.SheetNames.length) {
+        notifyError("No sheets found.");
+        return;
+      }
 
-    if (!rawRows.length) {
-      notifyError("No data found in file.");
-      return;
-    }
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-    // Build lookups from current state for dedupe
-    const teamLookup = new Map();
-    const subTeamLookup = new Map();
+      if (!rawRows.length) {
+        notifyError("No data found in file.");
+        return;
+      }
 
-    const registerTeam = (teamObj) => {
-      if (!teamObj) return;
-      const id = resolveTeamIdentifier(teamObj);
-      const nameKey = toTrimmedString(teamObj?.name || teamObj?.teamName).toLowerCase();
-      if (nameKey) teamLookup.set(nameKey, teamObj);
-      const subs = Array.isArray(teamObj?.subTeams) ? teamObj.subTeams : [];
-      subs.forEach((st) => {
-        const subName = toTrimmedString(st?.name || st?.subTeamName).toLowerCase();
-        const subId = resolveSubTeamIdentifier(st);
-        if (!id || !subName) return;
-        subTeamLookup.set(`${id}::${subName}`, st);
-        if (subId) subTeamLookup.set(`${id}::${subId}`, st);
-      });
-    };
+      // Build lookups from current state for dedupe
+      const teamLookup = new Map();
+      const subTeamLookup = new Map();
 
-    (Array.isArray(teams) ? teams : []).forEach(registerTeam);
-
-    let successCount = 0;
-    const failedUsers = [];
-
-    for (let index = 0; index < rawRows.length; index++) {
-      const rowNum = index + 2;
-      const row = normalizeRow(rawRows[index]);
-
-      const name = toTrimmedString(getValue(row, ["name"]));
-      const email = toTrimmedString(getValue(row, ["email"]));
-      const designation = toTrimmedString(getValue(row, ["designation"]));
-      const teamName = toTrimmedString(getValue(row, ["team", "team name"]));
-      const subTeamName = toTrimmedString(getValue(row, ["subteam", "sub team", "sub team name"]));
-      let roleName = toTrimmedString(getValue(row, ["role"])) || "General User";
-      const custom1 = toTrimmedString(getValue(row, ["custom1", "custom 1"]));
-
-      // Validation
-      if (teamName && !isValidTeamName(teamName)) {
-        failedUsers.push({
-          name, email, designation, teamName, subTeamName, roleName, custom1,
-          reason: "Invalid characters in Team name. Only letters, numbers, spaces, / and - are allowed"
+      const registerTeam = (teamObj) => {
+        if (!teamObj) return;
+        const id = resolveTeamIdentifier(teamObj);
+        const nameKey = toTrimmedString(teamObj?.name || teamObj?.teamName).toLowerCase();
+        if (nameKey) teamLookup.set(nameKey, teamObj);
+        const subs = Array.isArray(teamObj?.subTeams) ? teamObj.subTeams : [];
+        subs.forEach((st) => {
+          const subName = toTrimmedString(st?.name || st?.subTeamName).toLowerCase();
+          const subId = resolveSubTeamIdentifier(st);
+          if (!id || !subName) return;
+          subTeamLookup.set(`${id}::${subName}`, st);
+          if (subId) subTeamLookup.set(`${id}::${subId}`, st);
         });
-        continue;
-      }
-
-      if (subTeamName && !isValidTeamName(subTeamName)) {
-        failedUsers.push({
-          name, email, designation, teamName, subTeamName, roleName, custom1,
-          reason: "Invalid characters in Subteam name. Only letters, numbers, spaces, / and - are allowed"
-        });
-        continue;
-      }
-
-      if (!name || !email) {
-        failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Name or Email missing" });
-        continue;
-      }
-
-      if (!isValidEmail(email)) {
-        failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Invalid email format" });
-        continue;
-      }
-
-      if (!isValidLength(name, 80)) {
-        failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Name exceeds 80 characters" });
-        continue;
-      }
-
-      if (!isValidLength(designation, 100)) {
-        failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Designation too long" });
-        continue;
-      }
-
-      if (!isValidLength(custom1, 200)) {
-        failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Custom1 exceeds limit" });
-        continue;
-      }
-
-      const roleId = findRoleIdByName(roleName);
-      if (!roleId) {
-        failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: `Role "${roleName}" not found` });
-        continue;
-      }
-
-      let teamObj = null;
-      let subTeamObj = null;
-
-      try {
-        if (teamName) {
-          const existingTeam = teams?.find(
-            (t) => t?.name?.trim().toLowerCase() === teamName.trim().toLowerCase()
-          );
-
-          if (existingTeam) {
-            const teamStatus = existingTeam?.status?.toLowerCase();
-            if (teamStatus === "inactive") {
-              failedUsers.push({
-                name, email, designation, teamName, subTeamName, roleName, custom1,
-                reason: "Cannot import user into an inactive team",
-              });
-              continue;
-            }
-          }
-        }
-
-        if (teamName) teamObj = await ensureTeamByName(teamName, teamLookup, dispatch, createTeam, setTeams, setDepartments);
-        if (teamObj && subTeamName) subTeamObj = await ensureSubTeamByName(teamObj, subTeamName, subTeamLookup, dispatch, createSubTeam, setTeams);
-      } catch (err) {
-        failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: err?.message || "Team/Subteam error" });
-        continue;
-      }
-
-      const payload = {
-        name,
-        email,
-        designation,
-        team: teamObj ? resolveTeamIdentifier(teamObj) : undefined,
-        subteam: subTeamObj ? resolveSubTeamIdentifier(subTeamObj) : undefined,
-        role: roleId,
-        custom1,
-        invite: false,
       };
 
-      try {
-        await dispatch(createUser(payload)).unwrap();
-        successCount++;
-      } catch (err) {
-        failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: err?.message || "Failed to create user/User already exists" });
+      (Array.isArray(teams) ? teams : []).forEach(registerTeam);
+
+      let successCount = 0;
+      const failedUsers = [];
+
+      for (let index = 0; index < rawRows.length; index++) {
+        const rowNum = index + 2;
+        const row = normalizeRow(rawRows[index]);
+
+        const name = toTrimmedString(getValue(row, ["name"]));
+        const email = toTrimmedString(getValue(row, ["email"]));
+        const designation = toTrimmedString(getValue(row, ["designation"]));
+        const teamName = toTrimmedString(getValue(row, ["team", "team name"]));
+        const subTeamName = toTrimmedString(getValue(row, ["subteam", "sub team", "sub team name"]));
+        let roleName = toTrimmedString(getValue(row, ["role"])) || "General User";
+        const custom1 = toTrimmedString(getValue(row, ["custom1", "custom 1"]));
+
+        // Validation
+        if (teamName && !isValidTeamName(teamName)) {
+          failedUsers.push({
+            name, email, designation, teamName, subTeamName, roleName, custom1,
+            reason: "Invalid characters in Team name. Only letters, numbers, spaces, / and - are allowed"
+          });
+          continue;
+        }
+
+        if (subTeamName && !isValidTeamName(subTeamName)) {
+          failedUsers.push({
+            name, email, designation, teamName, subTeamName, roleName, custom1,
+            reason: "Invalid characters in Subteam name. Only letters, numbers, spaces, / and - are allowed"
+          });
+          continue;
+        }
+
+        if (!name || !email) {
+          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Name or Email missing" });
+          continue;
+        }
+
+        if (!isValidEmail(email)) {
+          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Invalid email format" });
+          continue;
+        }
+
+        if (!isValidLength(name, 80)) {
+          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Name exceeds 80 characters" });
+          continue;
+        }
+
+        if (!isValidLength(designation, 100)) {
+          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Designation too long" });
+          continue;
+        }
+
+        if (!isValidLength(custom1, 200)) {
+          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: "Custom1 exceeds limit" });
+          continue;
+        }
+
+        const roleId = findRoleIdByName(roleName);
+        if (!roleId) {
+          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: `Role "${roleName}" not found` });
+          continue;
+        }
+
+        let teamObj = null;
+        let subTeamObj = null;
+
+        try {
+          if (teamName) {
+            const existingTeam = teams?.find(
+              (t) => t?.name?.trim().toLowerCase() === teamName.trim().toLowerCase()
+            );
+
+            if (existingTeam) {
+              const teamStatus = existingTeam?.status?.toLowerCase();
+              if (teamStatus === "inactive") {
+                failedUsers.push({
+                  name, email, designation, teamName, subTeamName, roleName, custom1,
+                  reason: "Cannot import user into an inactive team",
+                });
+                continue;
+              }
+            }
+          }
+
+          if (teamName) teamObj = await ensureTeamByName(teamName, teamLookup, dispatch, createTeam, setTeams, setDepartments);
+          if (teamObj && subTeamName) subTeamObj = await ensureSubTeamByName(teamObj, subTeamName, subTeamLookup, dispatch, createSubTeam, setTeams);
+        } catch (err) {
+          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: err?.message || "Team/Subteam error" });
+          continue;
+        }
+
+        const payload = {
+          name,
+          email,
+          designation,
+          team: teamObj ? resolveTeamIdentifier(teamObj) : undefined,
+          subteam: subTeamObj ? resolveSubTeamIdentifier(subTeamObj) : undefined,
+          role: roleId,
+          custom1,
+          invite: false,
+        };
+
+        try {
+          await dispatch(createUser(payload)).unwrap();
+          successCount++;
+        } catch (err) {
+          failedUsers.push({ name, email, designation, teamName, subTeamName, roleName, custom1, reason: err?.message || "Failed to create user/User already exists" });
+        }
       }
-    }
 
-    // Refresh data
-    if (successCount > 0) {
-      setRefetchIndex(i => i + 1);
-      getTeams();
-    }
+      // Refresh data
+      if (successCount > 0) {
+        setRefetchIndex(i => i + 1);
+        getTeams();
+      }
 
-    // Close modal
-    setShowImportModal(false);
+      // Close modal
+      setShowImportModal(false);
 
-    if (failedUsers.length > 0) {
-      setImportResults({
-        successCount: successCount,
-        failedRows: failedUsers
-      });
-      setShowFailedImportModal(true);
-    } else {
-      notifySuccess(`Imported ${successCount} user(s).`, { title: "Import successful." });
-      clearAllSelections();
+      if (failedUsers.length > 0) {
+        setImportResults({
+          successCount: successCount,
+          failedRows: failedUsers
+        });
+        setShowFailedImportModal(true);
+      } else {
+        notifySuccess(`Imported ${successCount} user(s).`, { title: "Import successful." });
+        clearAllSelections();
+      }
+    } catch (err) {
+      notifyError("Import failed. Please check the file.");
+      setShowImportModal(false);
+    } finally {
+      setIsImporting(false);
     }
-  } catch (err) {
-    notifyError("Import failed. Please check the file.");
-    setShowImportModal(false);
-  } finally {
-    setIsImporting(false);
-  }
-};
+  };
   const userFailedColumns = [
     { key: "name", label: "Name" },
     { key: "email", label: "Email" },
@@ -1606,16 +1677,13 @@ const UsersManagement = () => {
 
   const currentPage = filters.page || currentPageState || 1;
   const itemsPerPage = filters.limit || pageSizeState || 20;
-  const totalPages = Math.max(1, Math.ceil((totalCount || 0) / itemsPerPage));
-  // Use sorted users for client-side sorting when no server filters are applied
+  const totalPages = Math.max(1, Math.ceil((sortedUsers.length || 0) / itemsPerPage));
+  // Client-side pagination from sortedUsers
   const paginatedUsers = useMemo(() => {
-    // If there are active filters (status, role, team, subteam, search), use server data
-    if (filters.status || filters.role || filters.team || filters.subteam || filters.search) {
-      return Array.isArray(users) ? users : [];
-    }
-    // Otherwise use client-side sorted data
-    return sortedUsers;
-  }, [users, sortedUsers, filters]);
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return sortedUsers.slice(start, end);
+  }, [sortedUsers, currentPage, itemsPerPage]);
 
   const currentPageUserIds = paginatedUsers
     .map((user) => resolveUserId(user))
@@ -1633,11 +1701,11 @@ const UsersManagement = () => {
 
   const derivedSelectedCount = useMemo(() => {
     if (allSelected) {
-      const total = Number(totalCount) || 0;
+      const total = Number(sortedUsers.length) || 0;
       return Math.max(0, total - (excludedIds?.length || 0));
     }
     return selectedIds.length;
-  }, [allSelected, excludedIds, selectedIds.length, totalCount]);
+  }, [allSelected, excludedIds, selectedIds.length, sortedUsers.length]);
 
   const topCheckboxChecked = useMemo(() => {
     if (!currentPageUserIds.length) return false;
@@ -1820,16 +1888,9 @@ const UsersManagement = () => {
       });
     }
   };
+  // Disable backend search on each keystroke; rely on localSearch for client-side filtering
   useEffect(() => {
-    const delay = setTimeout(() => {
-      dispatch(setFilters({
-        ...filters,
-        search: localSearch.trim(),
-        page: 1,
-      }));
-    }, 500); // backend only when typing stops
-
-    return () => clearTimeout(delay);
+    // Intentionally no backend dispatch here to prevent API calls per letter
   }, [localSearch]);
   // --- Local frontend filter (instant) ---
   const handleLocalFilter = useCallback((query) => {
@@ -1838,24 +1899,9 @@ const UsersManagement = () => {
 
   // --- Backend debounced filter ---
   const backendDebounceRef = useRef(null);
-  const handleBackendFilter = useCallback((query) => {
-    if (backendDebounceRef.current)
-      clearTimeout(backendDebounceRef.current);
-
-    backendDebounceRef.current = setTimeout(() => {
-      dispatch(setFilters({
-        ...filters,
-        search: query.name || '',
-        page: 1
-      }));
-      // dispatch(fetchUsers({
-      //   ...filters,
-      //   search: query.name || '',
-      //   page: 1,
-      //   silent: true,     // 🔥 don't show loader
-      // }));
-    }, 500);
-  }, [dispatch, filters]);
+  const handleBackendFilter = useCallback(() => {
+    // Disabled: no backend calls for search typing
+  }, []);
 
 
 
@@ -1877,13 +1923,13 @@ const UsersManagement = () => {
   //   { value: 'sales', label: 'Sales' },
   //   { value: 'support', label: 'Support' }
   // ];
-// Template configuration for user import
-const USER_IMPORT_TEMPLATE = {
-  headers: ['Name', 'Email', 'Designation', 'Team', 'Subteam', 'Role', 'Custom1'],
-  sampleData: [
-    
-  ]
-};
+  // Template configuration for user import
+  const USER_IMPORT_TEMPLATE = {
+    headers: ['Name', 'Email', 'Designation', 'Team', 'Subteam', 'Role', 'Custom1'],
+    sampleData: [
+
+    ]
+  };
   if (loading) {
     return <LoadingScreen text={"Loading users..."} />;
   }
@@ -1922,12 +1968,6 @@ const USER_IMPORT_TEMPLATE = {
                 // 1) Instant local filter
                 handleLocalFilter({ name: value });
 
-                // 2) Debounced backend fetch
-                // handleBackendFilter({ name: value });
-                if (value.trim() !== "") {
-                  handleBackendFilter({ name: value });
-                }
-
               }}
 
             />
@@ -1962,14 +2002,14 @@ const USER_IMPORT_TEMPLATE = {
               {isImporting ? 'Importing…' : 'Import'} <Import size={16} color="#6b7280" />
             </button> */}
             <button
-  className="control-btn"
-  style={{ padding: '12px 12px' }}
-  onClick={handleImportButtonClick}
-  disabled={isImporting}
-  type="button"
->
-  {isImporting ? 'Importing…' : 'Import'} <Import size={16} color="#6b7280" />
-</button>
+              className="control-btn"
+              style={{ padding: '12px 12px' }}
+              onClick={handleImportButtonClick}
+              disabled={isImporting}
+              type="button"
+            >
+              {isImporting ? 'Importing…' : 'Import'} <Import size={16} color="#6b7280" />
+            </button>
             <button
               className="control-btn"
               style={{ padding: '12px 12px' }}
@@ -2005,13 +2045,33 @@ const USER_IMPORT_TEMPLATE = {
                       { value: 'active', label: 'Active' },
                       { value: 'inactive', label: 'Inactive' }
                     ]}
-                    onChange={(value) => handleFilterChange({ target: { name: 'status', value } })}
+                    onChange={(value) => {
+                      setTempFilters(prev => ({ ...prev, status: value }));
+                    }}
                     placeholder="Select Status"
                     searchable={false}
                     className="filter-select"
                   />
                 </div>
-
+                <div className="filter-group">
+                  <div style={{ fontSize: "15px", fontWeight: "600", color: "#26334d" }}><label>Role</label></div>
+                  <CustomSelect
+                    name="role"
+                    value={tempFilters.role || ''}
+                    options={[
+                      { value: '', label: 'All Roles' },
+                      ...(Array.isArray(roles) ? roles.map(r => ({
+                        value: r?._id || r?.id || r?.uuid,
+                        label: r?.name || r?.title || 'Role'
+                      })) : [])
+                    ]}
+                    onChange={(value) => {
+                      setTempFilters(prev => ({ ...prev, role: value }));
+                    }}
+                    placeholder="Select Role"
+                    className="filter-select"
+                  />
+                </div>
                 {/* Team filter */}
                 <div className="filter-group">
                   <div style={{ fontSize: "15px", fontWeight: "600", color: "#26334d" }}><label>Team</label></div>
@@ -2053,28 +2113,16 @@ const USER_IMPORT_TEMPLATE = {
                       }
                       return options;
                     })()}
-                    onChange={(value) => handleFilterChange({ target: { name: 'subteam', value } })}
+                    onChange={(value) => {
+                      setTempFilters(prev => ({ ...prev, subteam: value }));
+                    }}
                     placeholder="Select Subteam"
                     isDisabled={!tempFilters.team}
                     className="filter-select"
                   />
                 </div>
 
-                {/* <div className="filter-group">
-                    <label>Role</label>
-                    <select
-                      name="role"
-                      value={tempFilters.role || ''}
-                      onChange={handleFilterChange}
-                    >
-                      <option value="">All Roles</option>
-                      {roles.map(role => (
-                        <option key={role._id} value={role._id}>
-                          {role.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div> */}
+
 
                 <div className="user-filter-actions">
                   <button
@@ -2112,28 +2160,28 @@ const USER_IMPORT_TEMPLATE = {
             {showBulkAction && (
               <div className="user-bulk-action-panel" style={{ top: '50px', right: '-92px', padding: "15px" }} ref={bulkPanelRef}>
                 <div className="bulk-action-header">
-                  <label className="bulk-action-title" style={{marginBottom:"10px"}}>Items Selected: {derivedSelectedCount}</label>
+                  <label className="bulk-action-title" style={{ marginBottom: "10px" }}>Items Selected: {derivedSelectedCount}</label>
                 </div>
                 <div className="bulk-action-actions" style={{ display: 'flex', gap: 10, flexDirection: 'column', alignItems: 'center' }}>
                   <button
-                    className="btn-primary" 
+                    className="btn-primary"
                     disabled={!allSelected && selectedIds.length === 0}
                     onClick={handleOpenAssignForSelected}
                   >
-                     <Users size={16} color="white" />Assign to Team
-                  </button>
-                  <button
-                    className="btn-primary" 
-                    disabled={!allSelected && selectedIds.length === 0}
-                    onClick={() => handleBulkAction('deactivate')}
-                    style={{ background: '#6b7280',width:"100%",justifyContent:"center" }}
-                  >
-                     <CirclePause size={16} color="white" />Deactivate
+                    <Users size={16} color="white" />Assign to Team
                   </button>
                   <button
                     className="btn-primary"
                     disabled={!allSelected && selectedIds.length === 0}
-                    onClick={() => handleBulkAction('delete')} style={{ background: "red",width:"100%", justifyContent:"center" }}
+                    onClick={() => handleBulkAction('deactivate')}
+                    style={{ background: '#6b7280', width: "100%", justifyContent: "center" }}
+                  >
+                    <CirclePause size={16} color="white" />Deactivate
+                  </button>
+                  <button
+                    className="btn-primary"
+                    disabled={!allSelected && selectedIds.length === 0}
+                    onClick={() => handleBulkAction('delete')} style={{ background: "red", width: "100%", justifyContent: "center" }}
                   >
                     <RiDeleteBinFill size={16} color="white" /> Delete
                   </button>
@@ -2152,7 +2200,7 @@ const USER_IMPORT_TEMPLATE = {
             Add User
           </button>
         </div>
-       
+
         <SelectionBanner
           selectionScope={selectionScope}
           selectedCount={derivedSelectedCount}
@@ -2552,16 +2600,16 @@ const USER_IMPORT_TEMPLATE = {
           exportType="users" // ✅ Specify this is for users
         />
         <ImportModal
-  isOpen={showImportModal}
-  onClose={() => setShowImportModal(false)}
-  onImport={handleImportFromModal}
-  templateHeaders={USER_IMPORT_TEMPLATE.headers}
-  templateData={USER_IMPORT_TEMPLATE.sampleData}
-  title="Import Users"
-  acceptedFormats=".csv,.xlsx,.xls"
-  maxSizeText="Maximum size: 25 MB"
-  isImporting={isImporting}
-/>
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onImport={handleImportFromModal}
+          templateHeaders={USER_IMPORT_TEMPLATE.headers}
+          templateData={USER_IMPORT_TEMPLATE.sampleData}
+          title="Import Users"
+          acceptedFormats=".csv,.xlsx,.xls"
+          maxSizeText="Maximum size: 25 MB"
+          isImporting={isImporting}
+        />
       </div>
     </div>
   );
