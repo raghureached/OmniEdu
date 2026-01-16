@@ -17,13 +17,11 @@ export const CourseCard = ({
   setPayload,
   setData,
   ribbonTag
-
 }) => {
   // console.log(data,contentType)
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  // const [showModulePopUp,setShowModulePopUp] = useState(false);
   const buttonStatus = {
     "assigned": "Start",
     "enrolled": "Start",
@@ -50,7 +48,7 @@ export const CourseCard = ({
     const type = contentType?.toLowerCase()?.replace(/\s+/g, '');
     if (!type) return;
 
-    const isGlobal = data.who === "Global";
+    const isGlobal = ribbonTag;
 
     // ASSIGNED  (only org assignments should hit this)
     if (status === "assigned") {

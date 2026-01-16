@@ -68,13 +68,6 @@ const createTicket = async (req, res) => {
 
     const ticket = await UserTicket.create(ticketData);
 
-    await logActivity({
-      userId: req.user._id,
-      action: "CREATE_TICKET",
-      details: `Created ticket: ${ticket.ticketId}`,
-      status: "success"
-    });
-
     res.status(201).json({
       isSuccess: true,
       message: "Ticket created successfully",
@@ -126,12 +119,7 @@ const updateTicketStatus = async (req, res) => {
       });
     }
 
-    await logActivity({
-      userId: req.user._id,
-      action: "UPDATE_TICKET_STATUS",
-      details: `Updated ticket ${ticketId} status to ${status}`,
-      status: "success"
-    });
+   
 
     res.status(200).json({
       isSuccess: true,

@@ -69,12 +69,7 @@ const HelpCenter = () => {
       answer: 'You can update your profile information by navigating to the My Profile page and clicking on the "Edit Profile" button.',
       category: 'Account'
     },
-    { 
-      id: 6, 
-      question: 'Can I download course materials for offline use?', 
-      answer: 'Yes, most courses offer downloadable materials. Look for the download icon next to the course content in the Learning Hub.',
-      category: 'Courses'
-    }
+    
   ];
   
   // Categories for filter with icons

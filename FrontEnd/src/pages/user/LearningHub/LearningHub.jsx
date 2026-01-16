@@ -13,6 +13,7 @@ import LoadingScreen from '../../../components/common/Loading/Loading';
 import { Search, Filter, Share } from 'lucide-react';
 import { GoX } from 'react-icons/go';
 import { useLocation } from 'react-router-dom';
+import CustomSelect from '../../../components/dropdown/DropDown'
 
 const LearningHub = () => {
   const dispatch = useDispatch();
@@ -279,7 +280,7 @@ const LearningHub = () => {
                   </span>
                   <div className="filter-group">
                     <label>Type</label>
-                    <select
+                    {/* <select
                       name="type"
                       value={tempFilters?.type || ""}
                       onChange={handleFilterChange}
@@ -289,22 +290,35 @@ const LearningHub = () => {
                       <option value="Assessment">Assessment</option>
                       <option value="Learning Path">Learning Path</option>
                       <option value="SCORM">SCORM</option>
-                    </select>
+                    </select> */}
+                    <CustomSelect 
+                      value={tempFilters?.type || ""}
+                      searchable={false}
+                      options={[
+                        { value: "", label: "All" },
+                        { value: "Module", label: "Module" },
+                        { value: "Assessment", label: "Assessment" },
+                        { value: "Learning Path", label: "Learning Path" },
+                        { value: "SCORM", label: "SCORM" },
+                      ]}
+                      onChange={(value) => handleFilterChange({ target: { name: 'type', value } })}
+                    />
                   </div>
                   <div className="filter-group">
                     <label>Category</label>
-                    <select
-                      name="category"
+                    <CustomSelect 
                       value={tempFilters?.category || ""}
-                      onChange={handleFilterChange}
-                    >
-                      <option value="">All</option>
-                      {categories.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    </select>
+                      searchable={false}
+                      options={[
+                        { value: "", label: "All" },
+                        ...categories.map((category) => ({
+                          value: category,
+                          label: category,
+                        })),
+                      ]}
+                      onChange={(value) => handleFilterChange({ target: { name: 'category', value } })}
+                    />
+                      
                   </div>
                   <div className="filter-actions">
                     <button className="btn-secondary" onClick={resetFilters} style={{ padding: '6px 12px', fontSize: '14px' }}>
@@ -437,6 +451,7 @@ const LearningHub = () => {
                   if (!content) return null;
                   const rawType = module?.contentType || module?.assignment_id?.contentType || module?.enrollment_id?.contentType || "";
                   const normType = normalizeType(rawType);
+                  const assignId = module?.assignment_id?._id || module?.enrollment_id?._id;
                   return (
                     <CourseCard
                       key={module._id}
@@ -444,6 +459,7 @@ const LearningHub = () => {
                       contentType={normType}
                       progressPct={100}
                       status="completed"
+                      assign_id={assignId}
                       ribbonTag={module.who} 
                     />
                   );

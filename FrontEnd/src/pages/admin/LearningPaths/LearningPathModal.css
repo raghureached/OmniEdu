@@ -385,3 +385,82 @@
   font-size: 1.05rem;
   font-weight: 600;
 }
+
+/* Learning Path picker filter (lp-fil-*) */
+.lp-fil-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lp-fil-panel {
+  z-index: 1000;
+  width: 360px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.lp-fil-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.lp-fil-title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.lp-fil-close {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #64748b;
+  padding: 4px;
+  border-radius: 6px;
+}
+.lp-fil-close:hover { background: #f1f5f9; }
+
+.lp-fil-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+
+.lp-fil-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lp-fil-label {
+  color: #0f172a;
+  font-size: 13px;
+  width: 80px;
+}
+
+.lp-fil-select {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #0f172a;
+  background: #fff;
+}
+
+.lp-fil-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.lp-fil-btn { min-width: 72px; }

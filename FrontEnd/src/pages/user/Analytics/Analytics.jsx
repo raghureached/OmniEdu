@@ -390,7 +390,7 @@ const LearnerAnalytics = () => {
                     </div>
                 </div>
                 <div className="learning-dashboard-card">
-                    <h4 className="learning-card-title">Achievements & Leaderboard <span> <LuCalendarOff size={16} /> </span></h4>
+                    <h4 className="learning-card-title">Achievements & Leaderboard(Overall) <span> <LuCalendarOff size={16} /> </span></h4>
 
                     <div className="learning-achievements-container">
                         <div style={{ display: "flex", gap: "10px", flexDirection: "column" }}>

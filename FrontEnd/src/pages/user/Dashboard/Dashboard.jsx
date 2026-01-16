@@ -224,23 +224,25 @@ const Dashboard = () => {
             <div className="learning-dashboard-card learning-training-summary">
               <h4 className="learning-card-title">Training Summary</h4>
               <div className="learning-training-stats">
-                <div className="learning-stat-item" onClick={() => navigate('/user/completed')}>
+                <div className="learning-stat-item" onClick={() => navigate('/user/completed')} style={
+                  {cursor:"pointer"}
+                }>
                   <div className="learning-stat-icon completed">
                     <FaCheckCircle />
                   </div>
                   <div className="learning-stat-info">
                     <span className="learning-stat-label">Completed</span>
-                    <span className="learning-stat-value">{stats.completed}</span>
+                    <span className="learning-stat-value">{stats.completed || 0}</span>
                   </div>
                 </div>
 
-                <div className="learning-stat-item" onClick={() => navigate('/user/inProgress')}>
+                <div className="learning-stat-item" onClick={() => navigate('/user/inProgress')} style={{cursor:"pointer"}}>
                   <div className="learning-stat-icon in-progress">
                     <FaHourglassHalf />
                   </div>
                   <div className="learning-stat-info">
                     <span className="learning-stat-label">In Progress</span>
-                    <span className="learning-stat-value">{stats.in_progress}</span>
+                    <span className="learning-stat-value">{stats.in_progress || 0}</span>
                   </div>
                 </div>
                 <div className="learning-stat-item">
@@ -249,43 +251,43 @@ const Dashboard = () => {
                   </div>
                   <div className="learning-stat-info">
                     <span className="learning-stat-label">Completion Rate</span>
-                    <span className="learning-stat-value">{stats.in_progress}</span>
+                    <span className="learning-stat-value">{stats.completionRate || 0}%</span>
                   </div>
                 </div>
 
-                <div className="learning-stat-item" onClick={() => navigate('/user/assigned')}>
+                <div className="learning-stat-item" onClick={() => navigate('/user/assigned')} style={{cursor:"pointer"}}>
                   <div className="learning-stat-icon not-started">
                     <FaPlayCircle />
                   </div>
                   <div className="learning-stat-info">
                     <span className="learning-stat-label">Not Started</span>
-                    <span className="learning-stat-value">{stats.enrolled - stats.completed - stats.in_progress}</span>
+                    <span className="learning-stat-value">{(stats.enrolled - stats.completed - stats.in_progress) || 0}</span>
                   </div>
                 </div>
 
-                <div className="learning-stat-item" onClick={() => navigate('/user/assigned')}>
+                <div className="learning-stat-item" onClick={() => navigate('/user/assigned')} style={{cursor:"pointer"}}>
                   <div className="learning-stat-icon overdue">
                     <FaExclamationTriangle />
                   </div>
                   <div className="learning-stat-info">
                     <span className="learning-stat-label">Overdue</span>
-                    <span className="learning-stat-value">{stats.expired}</span>
+                    <span className="learning-stat-value">{stats.expired || 0}</span>
                   </div>
                 </div>
 
-                <div className="learning-stat-item" onClick={() => navigate('/user/assigned')}>
+                <div className="learning-stat-item" onClick={() => navigate('/user/assigned')} style={{cursor:"pointer"}}>
                   <div className="learning-stat-icon time-spent-total">
                     <FaClock />
                   </div>
                   <div className="learning-stat-info">
                     <span className="learning-stat-label">Time Spent</span>
-                    <span className="learning-stat-value">{stats.expired}</span>
+                    <span className="learning-stat-value">{stats.timeSpent || 0}hr(s)</span>
                   </div>
                 </div>
               </div>
             </div>
           <div className="learning-dashboard-card">
-            <h4 className="learning-card-title">Achievements & Leaderboard</h4>
+            <h4 className="learning-card-title">Achievements & Leaderboard(Overall)</h4>
             <div className="learning-achievements-container">
               <div style={{ display: "flex", gap: "10px", flexDirection: "column" }}>
                 <div className="learning-achievement-item">
@@ -348,44 +350,8 @@ const Dashboard = () => {
 
             </div>
             <p className="learning-motivational-text">Keep climbing the leaderboard!</p>
-
-
           </div>
-          {/* <div className="learning-dashboard-card learning-leaderboard-overview">
-<h4 className="learning-card-title">Leaderboard</h4>
-<div className="learning-leaderboard-container">
-<div className="learning-leaderboard-item">
-<div className="learning-leaderboard-position">
-<div className="learning-position-badge">
-<FaMedal className="learning-medal-icon" />
-<span className="learning-position-number">#{leaderboardPositions.team || 0}</span>
-</div>
-<div className="learning-position-info">
-<span className="learning-position-label">Team Rank</span>
-<span className="learning-position-total">of {leaderboard.team.length}</span>
-</div>
-</div>
-</div>
-
-<div className="learning-leaderboard-item">
-<div className="learning-leaderboard-position">
-<div className="learning-position-badge">
-<FaAward className="learning-medal-icon" />
-<span className="learning-position-number">#{leaderboardPositions.organization || 0}</span>
-</div>
-<div className="learning-position-info">
-<span className="learning-position-label">Organization Rank</span>
-<span className="learning-position-total">of {leaderboard.totalUsers}</span>
-</div>
-</div>
-</div>
-</div>
-<p className="learning-motivational-text">Keep climbing the leaderboard!</p>
-</div> */}
-
-
         </div>
-
       </div>
     </div>
   );

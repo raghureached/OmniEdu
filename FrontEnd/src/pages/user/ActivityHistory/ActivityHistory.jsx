@@ -21,6 +21,7 @@ const ActivityHistory = () => {
     rating: 5,
     comment: ''
   });
+  const [panel,OpenPanel] = useState(false)
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -414,7 +415,7 @@ const ActivityHistory = () => {
               <th>Credits</th>
               <th>Stars</th>
               <th>Badges</th>
-
+             
             </tr>
           </thead>
           <tbody>
@@ -427,7 +428,7 @@ const ActivityHistory = () => {
                     <td>{activity.type.charAt(0).toUpperCase() + activity.type.slice(1)}</td>
                     <td className="activity-name-cell">
                       <div className="activity-name-with-icon">
-                        <span>{activity.name}</span>
+                        <span onClick={()=>OpenPanel(true)}>{activity.name}</span>
                         <div className="activity-info-icon-wrapper" title={getTooltipText(activity)}>
                           {/* <span className="activity-info-icon">ℹ️</span> */}
                         </div>
@@ -448,8 +449,11 @@ const ActivityHistory = () => {
                       {activity.stars}
                     </td>
                     <td>{activity.badges}</td>
+                    
                   </tr>
+                
                 ))
+               
               ) : (
                 <tr>
                   <td colSpan="12" className="activity-no-activities">
@@ -468,7 +472,7 @@ const ActivityHistory = () => {
           </tbody>
         </table>
       </div>
-
+      
       {/* Feedback Modal */}
       {showFeedbackForm && currentActivity && (
         <div className="activity-feedback-modal-overlay">

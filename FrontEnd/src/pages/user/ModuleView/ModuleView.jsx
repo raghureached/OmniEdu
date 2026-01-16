@@ -8,10 +8,13 @@ import VideoPlayer from '../../../components/VideoPlayer/VideoPlayer';
 import api from '../../../services/api';
 import LoadingScreen from '../../../components/common/Loading/Loading';
 import { notifyError, notifySuccess } from '../../../utils/notification';
+import { useConfirm } from '../../../components/ConfirmDialogue/ConfirmDialog';
+
 
 const ModuleView = ({ id, lpId }) => {
     // console.log(id)
     const navigate = useNavigate();
+    const {confirm} = useConfirm() 
     const [data, setData] = useState(null);
     const [activeTab, setActiveTab] = useState('preview');
     const [showModal, setShowModal] = useState(false);
@@ -275,17 +278,24 @@ const ModuleView = ({ id, lpId }) => {
         }
     }
 
-    const handleComplete = async () => {
+    const handleComplete =     async() => {
         if (data.submissionEnabled) {
             if (!submission) {
-                alert("Please submit a file before marking the module complete");
+                // alert("Please submit a file before marking the module complete");
+                const ok = await confirm({
+                    title:"Please submit a file before marking the module complete.",
+                    type:'warning'
+                })
+
                 return;
             }
         }
         if (id) {
             const res = await api.post(`/api/user/markComplete/${lpId}/${data._id}`);
             if (res.status === 200) {
-                alert('Module marked complete!');
+                notifySuccess({
+                    message:"Module marked Complete."
+                })
             }
             return;
         }
@@ -299,7 +309,9 @@ const ModuleView = ({ id, lpId }) => {
 
             const res = await api.post(`/api/user/markComplete/${data._id}`, rewards);
             if (res.status === 200) {
-                alert('Module marked complete!');
+                notifySuccess({
+                    message:"Module marked as complete."
+                });
             }
         } catch (error) {
             console.error('Error marking module complete:', error);

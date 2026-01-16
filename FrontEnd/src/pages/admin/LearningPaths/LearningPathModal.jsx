@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { categories } from '../../../utils/constants';
 import { useDispatch, useSelector } from 'react-redux';
 import '../../globalAdmin/GlobalModuleManagement/GlobalModuleModal.css';
 import './LearningPathModal.css';
@@ -11,7 +12,7 @@ import { addLearningPath, editLearningPath } from '../../../store/slices/learnin
 import LearningPathPreview from '../../../components/common/Preview/LearningPathPreview';
 import api from '../../../services/api';
 import { FiTrash2 } from 'react-icons/fi';
-import { categories } from '../../../utils/constants';
+
 import { notifyError, notifySuccess } from '../../../utils/notification';
 import CustomLoader from '../../../components/common/Loading/CustomLoader';
 import CustomLoader2 from '../../../components/common/Loading/CustomLoader2';
@@ -62,6 +63,39 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
   const [selectedSurveys, setSelectedSurveys] = useState([]); // ids
   const [search, setSearch] = useState({ module: '', assessment: '', survey: '' });
   const [teams, setTeams] = useState([]);
+  const [filter, setFilter] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const filterButtonRef = useRef(null);
+  const filterPanelRef = useRef(null);
+  const [filterPanelStyle, setFilterPanelStyle] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const target = event.target;
+      if (
+        filter &&
+        !(
+          (filterPanelRef.current && filterPanelRef.current.contains(target)) ||
+          (filterButtonRef.current && filterButtonRef.current.contains(target))
+        )
+      ) {
+        setFilter(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [filter]);
+
+  const updateFilterPanelPosition = () => {
+  const rect = filterButtonRef.current?.getBoundingClientRect();
+  if (rect) {
+    const nudge = 120; // move left by 120px
+    setFilterPanelStyle({
+      top: rect.bottom + window.scrollY + 8,
+      left: Math.max(8, rect.left + window.scrollX - nudge),
+    });
+  }
+};
   useEffect(() => {
     const fetchTeams = async () => {
       try {
@@ -93,11 +127,12 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
   const [tagInput, setTagInput] = useState('');
   // Always use uuid as the identifier
   const itemsByType = {
-    module: (modules || []).map(m => ({ id: m._id, uuid: m.uuid, title: m.title })),
+    module: (modules || []).map(m => ({ id: m._id, uuid: m.uuid, title: m.title, category: m.category, })),
     assessment: (assessments || []).map(a => ({
       id: a._id,
       uuid: a.uuid,
       title: a.title,
+      category: a.category,
       // total questions and duration from the provided shape
       totalQuestions: Array.isArray(a?.questions) ? a.questions.length : (a?.totalQuestions || 0),
       duration: Number(a?.duration) || undefined,
@@ -106,7 +141,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
       percentage_to_pass: a?.percentage_to_pass,
       display_answers: a?.display_answers,
     })),
-    survey: (surveys || []).map(s => ({ id: s._id, uuid: s.uuid, title: s.title })),
+    survey: (surveys || []).map(s => ({ id: s._id, uuid: s.uuid, title: s.title, category: s.category, })),
   };
 
   // Auto-compute total duration from selected items (modules/assessments/surveys)
@@ -251,13 +286,13 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
       const response = await api.post('/api/admin/enhanceText', { title });
       setTags(response.data.data.tags);
       setForm({ ...form, title: response.data.data.title, description: response.data.data.description, tagsText: response.data.data.tags.join(', ') });
-      notifySuccess("Tags, Title and Description enhanced successfully",{
+      notifySuccess("Tags, Title and Description enhanced successfully", {
         message: "Tags, Title and Description enhanced successfully",
         title: "Tags, Title and Description enhanced successfully"
       });
     } catch (error) {
       // console.error('Error enhancing text:', error);
-      notifyError("Failed to enhance text",{
+      notifyError("Failed to enhance text", {
         message: error.message,
         title: "Failed to enhance text"
       });
@@ -286,7 +321,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
     }
   };
 
-  const handleSubmit = async(e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title.trim()) return;
     // derive arrays by type from ordered pathItems to keep consistency
@@ -302,13 +337,13 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
     };
 
     const res = await dispatch(addLearningPath(payload));
-    if(addLearningPath.fulfilled.match(res)){
-      notifySuccess("Learning Path created successfully",{
+    if (addLearningPath.fulfilled.match(res)) {
+      notifySuccess("Learning Path created successfully", {
         message: "Learning Path created successfully",
         title: "Learning Path created successfully"
       });
-    }else{
-      notifyError("Failed to create Learning Path",{
+    } else {
+      notifyError("Failed to create Learning Path", {
         message: res.payload.message,
         title: "Failed to create Learning Path"
       });
@@ -337,13 +372,13 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
     };
     // console.log(payload);
     const res = await dispatch(editLearningPath({ uuid: initialData.uuid, ...payload }));
-    if(editLearningPath.fulfilled.match(res)){
-      notifySuccess("Learning Path updated successfully",{
+    if (editLearningPath.fulfilled.match(res)) {
+      notifySuccess("Learning Path updated successfully", {
         message: "Learning Path updated successfully",
         title: "Learning Path updated successfully"
       });
-    }else{
-      notifyError("Failed to update Learning Path",{
+    } else {
+      notifyError("Failed to update Learning Path", {
         message: res.payload.message,
         title: "Failed to update Learning Path"
       });
@@ -378,12 +413,12 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
               <div className="module-overlay__step">
                 <div className="module-overlay__form-group">
                   <label className="module-overlay__form-label"><span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Title <span className="module-overlay__required">*</span><span>{aiProcessing && <CustomLoader2 size={16} text={'Loading...'} />}</span></span></label>
-                  <input className="addOrg-form-input" type="text" name="title" value={form.title} onChange={handleChange} placeholder="Enter learning path name" autoComplete="off" required style={{ width: '100%' }}  disabled={aiProcessing}/>
+                  <input className="addOrg-form-input" type="text" name="title" value={form.title} onChange={handleChange} placeholder="Enter learning path name" autoComplete="off" required style={{ width: '100%' }} disabled={aiProcessing} />
                 </div>
-                
+
                 <div className="module-overlay__form-group">
                   <label className="module-overlay__form-label"><span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Description <span className="module-overlay__required">*</span><span>{aiProcessing && <CustomLoader2 size={16} text={'Loading...'} />}</span></span></label>
-                  <textarea className="addOrg-form-input" name="description" value={form.description} onChange={handleChange} placeholder="Enter detailed description" rows={4} style={{ width: '100%' }} disabled={aiProcessing}/>
+                  <textarea className="addOrg-form-input" name="description" value={form.description} onChange={handleChange} placeholder="Enter detailed description" rows={4} style={{ width: '100%' }} disabled={aiProcessing} />
                 </div>
                 <button
                   type="button"
@@ -451,7 +486,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                 </div>
                 <div className="module-overlay__form-group">
                   <label className="module-overlay__form-label"><span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>Prerequisites<span className="module-overlay__required">*</span></span></label>
-                  <input className="addOrg-form-input" type="text" name="prerequisite" value={form.prerequisite} onChange={handleChange} placeholder="Enter prerequisites" autoComplete="off" style={{ width: '100%' }} disabled={aiProcessing}/>
+                  <input className="addOrg-form-input" type="text" name="prerequisite" value={form.prerequisite} onChange={handleChange} placeholder="Enter prerequisites" autoComplete="off" style={{ width: '100%' }} disabled={aiProcessing} />
                 </div>
                 <div className="module-overlay__form-group">
                   <label className="module-overlay__form-label">Thumbnail<span className="module-overlay__required">*</span></label>
@@ -559,7 +594,7 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                         </div>
 
                         {/* Search */}
-                        <div className="module-overlay__form-group">
+                        <div className="module-overlay__form-group" style={{ display: "flex", justifyContent: "space-between" }}>
                           <input
                             className="addOrg-form-input"
                             type="text"
@@ -567,12 +602,86 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                             value={pickerSearch}
                             onChange={(e) => setPickerSearch(e.target.value)}
                           />
+                          <button
+                            ref={filterButtonRef}
+                            className='btn-secondary'
+                            onClick={() => { setFilter(prev => { const next = !prev; if (next) updateFilterPanelPosition(); return next; }); }}
+                          >
+                            Filter
+                          </button>
                         </div>
+                        {filter && (
+                          <div
+                            ref={filterPanelRef}
+                            style={{
+                              position: 'absolute',
+                              top: filterPanelStyle.top,
+                              left: filterPanelStyle.left,
+                              zIndex: 1000,
+                              width: 520,           // was 360
+                              background: '#fff',
+                              border: '1px solid #e5e7eb',
+                              borderRadius: 12,
+                              boxShadow: '0 10px 30px rgba(0,0,0,0.08)'
+                            }}
+                          >
+                            {/* Header */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderBottom: '1px solid #e5e7eb' }}>
+                              <h3 style={{ margin: 0, color: '#0f172a', fontSize: 16, fontWeight: 600 }}>Filters</h3>
+                              <button
+                                onClick={() => setFilter(false)}
+                                aria-label="Close"
+                                title="Close"
+                                style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#64748b', padding: 4, borderRadius: 6 }}
+                              >
+                                <GoX size={16} />
+                              </button>
+                            </div>
+                            {/* Body */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <div className='form-group' style={{ display: 'flex', gap: 8, width: '100%' }}>
+                                  <label style={{ color: '#0f172a', fontSize: 13, width: 80 }}>Category</label>
+                                  <div style={{ width: '100%', minWidth: 300 }}>  {/* ensure a comfortable min width */}
+                                    <CustomSelect
+                                      value={selectedCategory || ''}
+                                      options={[{ value: '', label: 'All' }, ...categories.map(c => ({ value: c, label: c }))]}
+                                      onChange={(value) => setSelectedCategory(value)}
+                                      placeholder="Select Category"
+                                      searchable={false}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            {/* Footer */}
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '10px 12px', borderTop: '1px solid #e5e7eb' }}>
+                              <button
+                                className='btn-secondary'
+                                onClick={() => { setSelectedCategory(''); setFilter(false); }}
+                              >
+                                Clear
+                              </button>
+                              <button
+                                className='btn-primary'
+                                onClick={() => setFilter(false)}
+                              >
+                                Apply
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
 
                         {/* List */}
                         <div className="lp-picker-list">
                           {itemsByType[pickerType]
-                            .filter(x => !pickerSearch || (x.title || '').toLowerCase().includes(pickerSearch.toLowerCase()))
+                            .filter(x => {
+                              // console.log(x)
+                              const matchesSearch = !pickerSearch || (x.title || '').toLowerCase().includes(pickerSearch.toLowerCase());
+                              const matchesCategory = !selectedCategory || x.category === selectedCategory;
+                              return matchesSearch && matchesCategory;
+                            })
                             .map(x => {
                               const isSelected = pathItems.some(it => it.id === x.id || it.uuid === x.uuid);
                               // console.log(isSelected)
@@ -674,25 +783,25 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                     <label className="module-overlay__form-label">
                       Credits
                     </label>
-                    <CustomSelect 
-                        name="credits" 
-                        value={String(form.credits || 0)}
-                        options={[
-                            { value: "0", label: "0" },
-                            { value: "1", label: "1" },
-                            { value: "2", label: "2" },
-                            { value: "3", label: "3" },
-                            { value: "4", label: "4" },
-                            { value: "5", label: "5" },
-                            { value: "6", label: "6" },
-                            { value: "7", label: "7" },
-                            { value: "8", label: "8" },
-                            { value: "9", label: "9" }
-                        ]}
-                        onChange={(value) => handleChange({ target: { name: 'credits', value } })}
-                        className='addOrg-form-input' 
-                        style={{ width: '180px' }}
-                        searchable={false}
+                    <CustomSelect
+                      name="credits"
+                      value={String(form.credits || 0)}
+                      options={[
+                        { value: "0", label: "0" },
+                        { value: "1", label: "1" },
+                        { value: "2", label: "2" },
+                        { value: "3", label: "3" },
+                        { value: "4", label: "4" },
+                        { value: "5", label: "5" },
+                        { value: "6", label: "6" },
+                        { value: "7", label: "7" },
+                        { value: "8", label: "8" },
+                        { value: "9", label: "9" }
+                      ]}
+                      onChange={(value) => handleChange({ target: { name: 'credits', value } })}
+                      className='addOrg-form-input'
+                      style={{ width: '180px' }}
+                      searchable={false}
                     />
                   </div>
                   <div className='module-overlay__form-group'>
@@ -700,25 +809,25 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                       Stars
                     </label>
 
-                    <CustomSelect 
-                        name="stars" 
-                        value={String(form.stars || 0)}
-                        options={[
-                            { value: "0", label: "0" },
-                            { value: "1", label: "1" },
-                            { value: "2", label: "2" },
-                            { value: "3", label: "3" },
-                            { value: "4", label: "4" },
-                            { value: "5", label: "5" },
-                            { value: "6", label: "6" },
-                            { value: "7", label: "7" },
-                            { value: "8", label: "8" },
-                            { value: "9", label: "9" }
-                        ]}
-                        onChange={(value) => handleChange({ target: { name: 'stars', value } })}
-                        className='addOrg-form-input' 
-                        style={{ width: '180px' }}
-                        searchable={false}
+                    <CustomSelect
+                      name="stars"
+                      value={String(form.stars || 0)}
+                      options={[
+                        { value: "0", label: "0" },
+                        { value: "1", label: "1" },
+                        { value: "2", label: "2" },
+                        { value: "3", label: "3" },
+                        { value: "4", label: "4" },
+                        { value: "5", label: "5" },
+                        { value: "6", label: "6" },
+                        { value: "7", label: "7" },
+                        { value: "8", label: "8" },
+                        { value: "9", label: "9" }
+                      ]}
+                      onChange={(value) => handleChange({ target: { name: 'stars', value } })}
+                      className='addOrg-form-input'
+                      style={{ width: '180px' }}
+                      searchable={false}
                     />
                   </div>
                   <div className='module-overlay__form-group'>
@@ -726,25 +835,25 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                       Badges
                     </label>
                     {/* <span className="slider-value">{newContent.badges || 0}</span> */}
-                    <CustomSelect 
-                        name="badges" 
-                        value={String(form.badges || 0)}
-                        options={[
-                            { value: "0", label: "0" },
-                            { value: "1", label: "1" },
-                            { value: "2", label: "2" },
-                            { value: "3", label: "3" },
-                            { value: "4", label: "4" },
-                            { value: "5", label: "5" },
-                            { value: "6", label: "6" },
-                            { value: "7", label: "7" },
-                            { value: "8", label: "8" },
-                            { value: "9", label: "9" }
-                        ]}
-                        onChange={(value) => handleChange({ target: { name: 'badges', value } })}
-                        className='addOrg-form-input' 
-                        style={{ width: '180px' }}
-                        searchable={false}
+                    <CustomSelect
+                      name="badges"
+                      value={String(form.badges || 0)}
+                      options={[
+                        { value: "0", label: "0" },
+                        { value: "1", label: "1" },
+                        { value: "2", label: "2" },
+                        { value: "3", label: "3" },
+                        { value: "4", label: "4" },
+                        { value: "5", label: "5" },
+                        { value: "6", label: "6" },
+                        { value: "7", label: "7" },
+                        { value: "8", label: "8" },
+                        { value: "9", label: "9" }
+                      ]}
+                      onChange={(value) => handleChange({ target: { name: 'badges', value } })}
+                      className='addOrg-form-input'
+                      style={{ width: '180px' }}
+                      searchable={false}
                     />
                   </div>
                 </div>
@@ -754,72 +863,72 @@ const LearningPathModal = ({ isOpen, onClose, onSave, initialData }) => {
                   <div className="lp-grid-3">
                     <div>
                       <label className="module-overlay__form-label">Category <span className="module-overlay__required">*</span></label>
-                      <CustomSelect 
-                        className="addOrg-form-input" 
-                        name="category" 
+                      <CustomSelect
+                        className="addOrg-form-input"
+                        name="category"
                         value={form.category || ''}
                         options={[
-                            { value: "", label: "Select Category" },
-                            ...(categories.map((category) => ({
-                                value: category,
-                                label: category
-                            })) || [])
+                          { value: "", label: "Select Category" },
+                          ...(categories.map((category) => ({
+                            value: category,
+                            label: category
+                          })) || [])
                         ]}
                         onChange={(value) => handleChange({ target: { name: 'category', value } })}
                         style={{ width: '100%' }}
                         placeholder="Select Category"
-                    />
+                      />
                     </div>
-                    
+
                     <div>
                       <label className="module-overlay__form-label">Target Team<span className="module-overlay__required">*</span></label>
                       <div >
-                        <CustomSelect 
-                            className="addOrg-form-input" 
-                            name="team" 
-                            value={form.team._id || initialData?.team || ''}
-                            options={[
-                                { value: "", label: "Select a Team" },
-                                ...(teams.map((team) => ({
-                                    value: team._id,
-                                    label: team.name
-                                })) || [])
-                            ]}
-                            onChange={(value) => handleChange({ target: { name: 'team', value } })}
-                            style={{ width: '100%' }}
-                            placeholder="Select a Team"
+                        <CustomSelect
+                          className="addOrg-form-input"
+                          name="team"
+                          value={form.team || initialData?.team || ''}
+                          options={[
+                            { value: "", label: "Select a Team" },
+                            ...(teams.map((team) => ({
+                              value: team._id,
+                              label: team.name
+                            })) || [])
+                          ]}
+                          onChange={(value) => handleChange({ target: { name: 'team', value } })}
+                          style={{ width: '100%' }}
+                          placeholder="Select a Team"
                         />
                       </div>
-                      
+
                     </div>
                     <div>
                       <label className="module-overlay__form-label">Target Sub Team<span className="module-overlay__required">*</span></label>
 
-                        <CustomSelect 
-                            className="addOrg-form-input" 
-                            name="subteam" 
-                            value={form.subteam._id || initialData?.subteam || ''}
-                            options={[
-                                { value: "", label: "Select a Sub-team" },
-                                ...((initialData?.team.length > 0 ?
-                                    teams.filter((team) => team._id === initialData?.team).flatMap((team) =>
-                                        team.subTeams.map((subteam) => ({
-                                            value: subteam._id,
-                                            label: subteam.name
-                                        }))
-                                    ) :
-                                    teams.filter((team) => team.id === form.team).flatMap((team) =>
-                                        team.subTeams.map((subteam) => ({
-                                            value: subteam._id,
-                                            label: subteam.name
-                                        }))
-                                    )) || [])
-                            ]}
-                            onChange={(value) => handleChange({ target: { name: 'subteam', value } })}
-                            style={{ width: '100%' }}
-                            placeholder="Select a Sub-team"
-                        />
-                      </div>
+                      <CustomSelect
+                        className="addOrg-form-input"
+                        name="subteam"
+                        value={form.subteam || initialData?.subteam || ''}
+                        options={[
+                          { value: "", label: "Select a Sub-team" },
+                          ...((initialData?.team.length > 0 ?
+                            teams.filter((team) => team._id === initialData?.team).flatMap((team) =>
+                              team.subTeams.map((subteam) => ({
+                                value: subteam._id,
+                                label: subteam.name
+                              }))
+                            ) :
+                            teams.filter((team) => team.id === form.team).flatMap((team) =>
+                              team.subTeams.map((subteam) => ({
+                                value: subteam._id,
+                                label: subteam.name
+                              }))
+                            )) || [])
+                        ]}
+                        onChange={(value) => handleChange({ target: { name: 'subteam', value } })}
+                        style={{ width: '100%' }}
+                        placeholder="Select a Sub-team"
+                      />
+                    </div>
                   </div>
                 </div>
 

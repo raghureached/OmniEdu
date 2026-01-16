@@ -66,7 +66,7 @@ const getStats = async (req, res) => {
     const totalParticipants = await User.countDocuments({ organization_id: req.user.organization_id });
     const leaderboardPosition = leaderboard.findIndex((l) => l.user_id.toString() === req.user._id.toString()) + 1;
     const teams = await UserProfile.findOne({ user_id: req.user._id }).select("teams");
-    const PrimaryTeam = teams.teams[0].team_id;
+    const PrimaryTeam = teams?.teams[0]?.team_id;
     const leaderboardinTeam = await Leaderboard.find({ team_id: PrimaryTeam }).sort({ noOfhoursCompleted: -1 });
     const position = leaderboardinTeam.findIndex((l) => l.user_id.toString() === req.user._id.toString()) + 1;
     // For course completion - Filter by date
@@ -97,7 +97,7 @@ const getStats = async (req, res) => {
     })
 
   } catch (error) {
-    console.log(error)
+    // console.log(error)
     return res.status(500).json({
       isSuccess: false,
       message: "Failed to Fetch Stats",

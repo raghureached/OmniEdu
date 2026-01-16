@@ -81,7 +81,7 @@ router.route("/submitSurvey").post(submitSurvey)
 
 
 /////////STATS?/////////////
-router.route("/getStats").get(getContentStats)
+router.route("/getStats").get(getStats)
 router.route("/getUserRewards").get(getUserRewards)
 
 /////////ANALYTICS/////////////
